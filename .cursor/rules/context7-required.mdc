@@ -1,0 +1,18 @@
+---
+description: Context7 docs are mandatory before using any external library
+alwaysApply: true
+---
+
+# Context7 documentation is mandatory for external libraries
+
+**STRICT — no exceptions.**
+
+Before writing, editing, or reviewing any code that touches an external library, framework, SDK, API, or CLI tool (e.g. React, React Router, Vite, Salesforce SFDX/LWR, Tailwind, any npm package), you MUST:
+
+1. Call the `context7` MCP tools (`resolve-library-id` then the docs query tool) to fetch current, real documentation for that library/version.
+2. Base your usage, APIs, config, and syntax on what Context7 returns — not on prior training knowledge, memory, or assumption.
+3. Do this even if you are confident you already know the API. Training data can be outdated or wrong about versions actually used in this project.
+
+Do not skip this step for "simple" or "well-known" usage. If Context7 has no coverage for a given library, say so explicitly instead of falling back to assumed knowledge, and confirm the approach with the user before proceeding.
+
+This rule applies to all external dependencies used anywhere under this project, including the UI Bundle (`force-app/main/default/uiBundles/`).

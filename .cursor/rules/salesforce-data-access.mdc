@@ -1,0 +1,61 @@
+---
+description: Salesforce Data SDK, GraphQL, and CSP rules for data access code
+globs: "**/api/**/*.{ts,tsx},**/hooks/**/*.{ts,tsx},**/*.graphql,**/cspTrustedSites/**"
+alwaysApply: false
+---
+
+# Salesforce data access rules
+
+**Before writing any code that connects to Salesforce, you MUST invoke the `using-ui-bundle-salesforce-data` skill. Do not write any data access code without consulting it first.**
+
+This applies to: GraphQL queries/mutations, REST calls, SDK initialization, custom hooks that fetch data, or any code that imports from `@salesforce/platform-sdk`.
+
+- **All data access uses the Data SDK** (`@salesforce/platform-sdk`) via `createDataSDK()`.
+- **Never** use `fetch()` or `axios` directly for Salesforce data.
+- **GraphQL is preferred** for record operations (`sdk.graphql`). Use `sdk.fetch` only when GraphQL cannot cover the case (UI API REST, Apex REST, Connect REST, Einstein LLM).
+- Use optional chaining: `sdk.graphql?.()`, `sdk.fetch?.()`.
+- Apply the `@optional` directive to all record fields for field-level security resilience.
+- Verify field and object names via `scripts/graphql-search.sh` before writing queries.
+- Use `__SF_API_VERSION__` global for API version in REST calls.
+- **Blocked APIs:** Enterprise REST query endpoint (`/query` with SOQL), `@AuraEnabled` Apex, Chatter API.
+
+## Permitted APIs
+
+| API | Method | Endpoints / Use Case |
+|-----|--------|----------------------|
+| GraphQL | `sdk.graphql` | All record queries and mutations via `uiapi { }` namespace |
+| UI API REST | `sdk.fetch` | `/services/data/v{ver}/ui-api/records/{id}` |
+| Apex REST | `sdk.fetch` | `/services/apexrest/{resource}` |
+| Connect REST | `sdk.fetch` | `/services/data/v{ver}/connect/...` |
+| Einstein LLM | `sdk.fetch` | `/services/data/v{ver}/einstein/llm/prompt/generations` |
+
+Any endpoint not listed above is not permitted.
+
+## GraphQL non-negotiable rules
+
+1. **Schema is the single source of truth** — confirm every entity/field via the schema search script. Never guess.
+2. **`@optional` on all record fields** — FLS causes entire queries to fail if any field is inaccessible.
+3. **Correct mutation syntax** — mutations wrap under `uiapi(input: { allOrNone: true/false })`.
+4. **Explicit `first:` in every query** — omitting defaults to 10. Include `pageInfo` for paginated queries.
+5. **SOQL-derived execution limits** — max 10 subqueries, max 5 child-to-parent levels, max 1 parent-to-child, max 2,000 records per subquery.
+6. **HTTP 200 does not mean success** — always check the `errors` array in the response body.
+
+## GraphQL inline queries
+
+Must use the `gql` template tag from `@salesforce/platform-sdk`. For complex queries, use external `.graphql` files with codegen.
+
+## Current user info
+
+Use GraphQL (`uiapi { currentUser { Id Name { value } } }`), not Chatter.
+
+## Schema file (`schema.graphql`)
+
+Never open or parse `schema.graphql` directly (265K+ lines). Use `scripts/graphql-search.sh`.
+
+- **Generate/refresh:** `npm run graphql:schema` from the UI Bundle directory
+- **When to regenerate:** After metadata deploys that change objects, fields, or permission sets
+- **After regenerating:** Always re-run `npm run graphql:codegen` and `npm run build`
+
+## CSP trusted sites
+
+Any external domain the app calls must have a `.cspTrustedSite-meta.xml` under `<sfdx-source>/cspTrustedSites/`. URLs must be HTTPS with no trailing slash, no path, and no wildcards.

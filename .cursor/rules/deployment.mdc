@@ -1,0 +1,35 @@
+---
+description: Salesforce deploy order and post-deployment org setup
+alwaysApply: false
+---
+
+# Deploying and post-deployment org setup
+
+## Deploying
+
+**Deployment order matters.** Metadata (objects, permission sets) must be deployed before fetching the GraphQL schema. After any metadata deployment that changes objects, fields, or permissions, re-run schema fetch and codegen.
+
+**Deployment steps:**
+
+1. Authenticate to the target org
+2. Build the UI Bundle (`npm run build` in the UI Bundle directory)
+3. Deploy metadata (`sf project deploy start --source-dir <packageDir> --target-org <alias>`)
+
+```bash
+# Deploy UI Bundle only
+sf project deploy start --source-dir <sfdx-source>/ui-bundles --target-org <alias>
+
+# Deploy all metadata
+sf project deploy start --source-dir <packageDir> --target-org <alias>
+```
+
+**Do not open the app after deployment.** Do not run `sf org open`, do not guess the runtime URL, and do not construct paths like `/s/<appName>`. Deployment is complete when the `sf project deploy start` command succeeds.
+
+## Post-deployment org setup
+
+These steps apply after a fresh deployment to configure the org. They are not part of routine deployment.
+
+1. Assign permission sets
+2. Import data (only with user confirmation)
+3. Fetch GraphQL schema + run codegen (`npm run graphql:schema && npm run graphql:codegen`)
+4. Rebuild the UI Bundle (`npm run build` — schema changes may affect generated types)

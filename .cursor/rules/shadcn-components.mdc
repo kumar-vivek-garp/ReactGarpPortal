@@ -1,0 +1,36 @@
+---
+description: Check local then shadcn before hand-writing UI components
+globs: "**/uiBundles/**/components/**/*.{ts,tsx},**/uiBundles/**/components.json"
+alwaysApply: false
+---
+
+# Adding UI components — check before installing, install before hand-writing
+
+**STRICT — follow this order every time a component is needed.**
+
+## 1. Check if it already exists locally
+
+Look in `src/components/atoms/`, `src/components/molecules/`, and `src/components/organisms/` first. If a component that does the job already exists, reuse it — do not reinstall or hand-author a duplicate.
+
+## 2. Check whether shadcn/ui provides it
+
+If not present locally, use the `context7` MCP tools to query current shadcn/ui documentation/registry and confirm:
+- the component exists in shadcn's registry
+- its exact registry name for the install command
+- its current API/props
+
+Do not rely on memory for whether shadcn has a given component.
+
+## 3. If shadcn provides it: install it, don't hand-write it
+
+Run `npx shadcn@latest add <component>` from the UI Bundle directory. It lands in `src/components/atoms/` via `components.json`'s `aliases.ui`.
+
+## 4. If shadcn does NOT provide it: hand-author it, but classify it first
+
+Only write by hand when Context7 confirms no shadcn equivalent. Classify the atomic-design tier:
+
+- **Atom** (`src/components/atoms/`) — single primitive; rare to hand-author
+- **Molecule** (`src/components/molecules/`) — small composition of atoms
+- **Organism** (`src/components/organisms/`) — larger section from atoms/molecules
+
+Build hand-authored molecules/organisms from existing atoms — don't reinvent a shadcn/Radix primitive inside a bigger composition.

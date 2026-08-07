@@ -20,7 +20,8 @@
     "prettier": "prettier --write \"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}\"",
     "prettier:verify": "prettier --check \"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}\"",
     "precommit": "lint-staged",
-    "setup": "node scripts/org-setup.mjs"
+    "setup": "node scripts/org-setup.mjs",
+    "dev:sf": "sf ui-bundle dev --target-org devjuly25a --name garpportal"
   },
   "devDependencies": {
     "@lwc/eslint-plugin-lwc": "^3.3.0",

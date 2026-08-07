@@ -1,0 +1,44 @@
+---
+description: UI Bundle atomic design, Tailwind, TanStack Router, and layout conventions
+globs: "**/uiBundles/**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# UI, component, and routing conventions
+
+## UI
+
+- **Atomic design:** shadcn/ui primitives land in `src/components/atoms/`. Hand-authored compositions go in `molecules/` and `organisms/`. Before importing any component, verify the file exists AND the named export exists — read the file first.
+- To add a new atom: `npx shadcn add <component>` from the UI Bundle directory.
+- **Styling:** Tailwind CSS only. No inline `style={{}}`. Use `cn()` from `@/lib/utils` for conditional classes.
+- **Icons:** Lucide React.
+- **Path alias:** `@/*` maps to `src/*`.
+- **TypeScript:** No `any`. Use proper types, generics, or `unknown`.
+- **Components:** Accept `className?: string`. Extract shared state to hooks in `src/hooks/`.
+- **React apps must not** import Salesforce platform modules (`lightning/*`, `@wire`, LWC APIs).
+
+## Routing
+
+- **TanStack Router, file-based.** Plugin scans `src/pages` and generates `src/routeTree.gen.ts` — never hand-edit it.
+- **One folder per page:** `src/pages/<name>/index.tsx`. Do not use flat sibling files for new pages.
+- `src/pages/__root.tsx` is the root route — renders `<Outlet />` and `<TanStackRouterDevtools />`.
+- `src/pages/index.tsx` redirects to `/home` only — it must not render a page.
+- Navigation uses `<Link>`/`useNavigate` with absolute paths (`/dashboard`).
+- `basepath` is read from `SFDC_ENV.basePath` in `app.tsx` — preserve this pattern.
+
+## Layout groups (`_appLayout`, `_authLayout`)
+
+```
+pages/
+├── _appLayout/
+│   ├── route.tsx        # pathless layout — no URL segment
+│   └── home/index.tsx   # -> /home
+└── _authLayout/
+    ├── route.tsx
+    └── login/index.tsx  # -> /login
+```
+
+- Underscore prefix = pathless layout (wraps children, no URL segment).
+- Both `route.tsx` files currently render only `<Outlet />` — **no nav, no chrome** until decided.
+- New app pages → `_appLayout/<name>/index.tsx`. New auth pages → `_authLayout/<name>/index.tsx`.
+- Shared header/nav/footer belong in `src/components/organisms/`, composed into layout `route.tsx`.

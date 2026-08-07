@@ -1,0 +1,33 @@
+---
+description: Theme tokens only — no hardcoded colors, radii, or fonts
+globs: "**/uiBundles/**/*.{ts,tsx,css}"
+alwaysApply: false
+---
+
+# Theme tokens only — no hardcoded colors, ever
+
+**STRICT — no exceptions, applies to every component tier (atoms/molecules/organisms/pages).**
+
+All color, radius, and font values in the UI Bundle come from the theme tokens defined in `src/styles/global.css` (`:root`, `.dark`, `@theme inline`). Never introduce a color any other way.
+
+## Forbidden
+
+- Raw color literals: hex (`#00A2DD`), `rgb()`, `hsl()`, `oklch()` inline
+- Tailwind arbitrary-value colors: `bg-[#00A2DD]`, `text-[oklch(...)]`
+- Tailwind stock palette utilities: `bg-blue-500`, `text-red-600`, `border-gray-300`, `bg-white`, `text-black`, etc.
+- Inline `style={{ color: ... }}` / `style={{ backgroundColor: ... }}` for brand or semantic colors
+- Hardcoded `border-radius` or arbitrary `rounded-[Npx]` — use `--radius`-derived utilities (`rounded-sm/md/lg/xl/full`)
+
+## Required instead
+
+- **Semantic slots:** `bg-background`, `text-foreground`, `bg-card`, `bg-primary`/`text-primary-foreground`, `bg-secondary`/`text-secondary-foreground`, `bg-muted`/`text-muted-foreground`, `bg-accent`/`text-accent-foreground`, `bg-destructive`/`text-destructive-foreground`, `border-border`, `bg-input`, `ring-ring`, `bg-sidebar*`, `bg-toolbar`/`text-toolbar-foreground`
+- **Named brand tokens:** Before using one, open `src/styles/global.css` and read `@theme inline` plus `:root`. Every brand color is `--color-<name>` / `--color-<name>-foreground` — always use the declared `-foreground` partner. **`global.css` is the source of truth** — do not enumerate brand tokens in this rule
+- **Fonts:** `font-sans` and `--font-heading` are applied in `@layer base` — don't hardcode font names in components
+
+## If a design needs a color that doesn't exist yet
+
+Add a new token to `global.css` first (raw value in `:root`/`.dark`, mirrored into `@theme inline`, provenance comment), then consume via its utility class. Never hardcode "just this once."
+
+## Before trusting any color/font as "the current live theme"
+
+If a task depends on knowing what's currently live in production, verify by inspecting the running production app (browser/devtools), not by assuming sandbox metadata matches production.
