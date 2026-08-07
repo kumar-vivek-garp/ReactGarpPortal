@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { LoginForm } from "@/components/organisms/login-form";
+import { pageTitle } from "@/lib/document-title";
 
 export const Route = createFileRoute("/_authLayout/Login/")({
+	head: () => ({
+		meta: [{ title: pageTitle("Login") }],
+	}),
 	component: Login,
 });
 
@@ -22,7 +26,7 @@ function Login() {
 				className="h-auto w-full max-w-sm"
 			/>
 			<LoginForm />
-			<footer className="flex flex-col items-center gap-3 text-sm text-corporate-navy-foreground">
+			<footer className="flex flex-col items-center gap-3 text-caption text-corporate-navy-foreground">
 				<ul className="flex flex-wrap justify-center gap-4">
 					{FOOTER_LINKS.map((link) => (
 						<li key={link.label}>

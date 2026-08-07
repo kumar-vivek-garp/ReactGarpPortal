@@ -5,6 +5,7 @@
 @import '@fontsource/nunito-sans/500.css';
 @import '@fontsource/nunito-sans/700.css';
 @import '@fontsource/nunito-sans/800.css';
+@import '@fontsource/material-symbols-outlined/400.css';
 
 /* Klinic Slab has no npm/Google Fonts package — hotlinked from GARP's own CDN,
    matching exactly what the live production app does (see .claude/rules/theming.md
@@ -76,6 +77,26 @@
 	body {
 		@apply antialiased bg-white font-sans;
 	}
+
+	/*
+	 * Material Symbols Outlined — used for sidebar icons to match live
+	 * Angular mat-icon ligatures (exception to Lucide-only convention).
+	 */
+	.material-symbols-outlined {
+		font-family: 'Material Symbols Outlined', sans-serif;
+		font-weight: 400;
+		font-style: normal;
+		font-size: 1.25rem;
+		line-height: 1;
+		letter-spacing: normal;
+		text-transform: none;
+		display: inline-block;
+		white-space: nowrap;
+		word-wrap: normal;
+		direction: ltr;
+		-webkit-font-smoothing: antialiased;
+		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+	}
 }
 
 @import 'tw-animate-css';
@@ -84,6 +105,29 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+	/*
+	 * App chrome split — matches live BreakpointService (< 960 = mobile).
+	 * Generates `app:` / `max-app:` variants (60rem = 960px).
+	 */
+	--breakpoint-app: 60rem;
+
+	/* Content caps — live $page-width / footer grid / login form */
+	--max-width-page: 62.5rem; /* 1000px */
+	--max-width-footer: 80rem; /* 1280px */
+	--max-width-auth: 26.25rem; /* 420px */
+
+	/* Semantic type roles — prefer these over ad-hoc text-sm/base in shell UI */
+	--text-caption: 0.75rem; /* 12px — legal / fine print */
+	--text-caption--line-height: 1.25rem;
+	--text-body: 0.875rem; /* 14px — default copy */
+	--text-body--line-height: 1.25rem;
+	--text-nav: 1rem; /* 16px — top-nav labels (step down at mid widths in components) */
+	--text-nav--line-height: 1.25rem;
+	--text-section: 0.875rem; /* 14px — footer / sidebar section titles */
+	--text-section--line-height: 1.25rem;
+	--text-title: 1.875rem; /* 30px — page / login titles */
+	--text-title--line-height: 2.25rem;
+
 	--color-background: var(--background);
 	--color-foreground: var(--foreground);
 	--color-card: var(--card);
@@ -152,6 +196,12 @@
 	--color-light-yellow-foreground: var(--light-yellow-foreground);
 	--color-pink: var(--pink);
 	--color-pink-foreground: var(--pink-foreground);
+	--color-rai-orange: var(--rai-orange);
+	--color-rai-orange-foreground: var(--rai-orange-foreground);
+	--color-rai-blue: var(--rai-blue);
+	--color-rai-blue-foreground: var(--rai-blue-foreground);
+	--color-surface-gradient-start: var(--surface-gradient-start);
+	--color-surface-gradient-end: var(--surface-gradient-end);
 }
 
 :root {
@@ -184,6 +234,12 @@
 	--light-yellow-foreground: oklch(0 0 0);
 	--pink: oklch(0.9188 0.0288 17.7); /* from garpApp source: #F7DDDD */
 	--pink-foreground: oklch(0 0 0);
+	--rai-orange: oklch(0.7489 0.1796 57.8); /* live-verified: #FF8B00, RAI mega-menu headline "R" */
+	--rai-orange-foreground: oklch(0 0 0); /* black passes at 8.95:1, white fails at 2.35:1 */
+	--rai-blue: oklch(0.5848 0.2101 267); /* live-verified: #446DF6, RAI mega-menu headline "AI" */
+	--rai-blue-foreground: oklch(0 0 0); /* black passes at 4.76:1, a clearer margin than white's tight 4.41:1 */
+	--surface-gradient-start: oklch(0.9583 0.0214 291.7); /* live-verified: #F1EFFF, top stop of the sidebar/footer chrome gradient */
+	--surface-gradient-end: oklch(0.9649 0.0116 197); /* live-verified: #EBF6F6, bottom stop of the same gradient */
 
 	--background: oklch(1 0 0); /* live-verified */
 	--foreground: oklch(0 0 0); /* live-verified: true black, not a softened designer-black */
@@ -278,5 +334,46 @@
 	h5,
 	h6 {
 		font-family: var(--font-heading);
+	}
+}
+
+@layer components {
+	/* Reusable content shells — pair with max-w-page / max-w-footer theme tokens */
+	.page-container {
+		@apply mx-auto w-full max-w-page px-4 md:px-6 lg:px-8;
+	}
+
+	.footer-container {
+		@apply mx-auto w-full max-w-footer;
+	}
+
+	/*
+	 * Named grid layout for the footer's section columns, copied from the
+	 * live footer's own grid-template-areas (garpApp2, .footer_grid) so the
+	 * uneven column heights (FRM/SCR/RAI tall, Additional Education/About Us
+	 * stacked, etc.) match exactly rather than approximating via CSS columns.
+	 * Row tracks are `auto` (not the live site's literal px heights) since
+	 * those px values are just a byproduct of its own font metrics.
+	 * Column tracks match live: fixed social column + equal 1fr link columns
+	 * inside max-w-footer (1280px), so ultrawide never stretches the grid.
+	 */
+	.footer-sections-grid {
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+	}
+	@media (min-width: 1024px) {
+		.footer-sections-grid {
+			display: grid;
+			grid-template-columns: 300px repeat(4, 1fr);
+			grid-template-rows: auto auto auto auto;
+			grid-template-areas:
+				"logo frm scr rai education"
+				"logo frm scr rai about"
+				"logo membership resources events industry"
+				"logo membership resources events industry";
+			column-gap: 25px;
+			row-gap: 15px;
+		}
 	}
 }

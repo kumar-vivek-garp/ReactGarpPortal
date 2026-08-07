@@ -16,6 +16,7 @@ import { Route as AppLayoutDashboardIndexRouteImport } from './pages/_appLayout/
 import { Route as AppLayoutEventsIndexRouteImport } from './pages/_appLayout/events/index'
 import { Route as AppLayoutHelpCenterIndexRouteImport } from './pages/_appLayout/help-center/index'
 import { Route as AppLayoutMembershipIndexRouteImport } from './pages/_appLayout/membership/index'
+import { Route as AppLayoutMyAccountIndexRouteImport } from './pages/_appLayout/my-account/index'
 import { Route as AppLayoutProgramsIndexRouteImport } from './pages/_appLayout/programs/index'
 import { Route as AppLayoutStudyMaterialsIndexRouteImport } from './pages/_appLayout/study-materials/index'
 import { Route as AuthLayoutLoginIndexRouteImport } from './pages/_authLayout/Login/index'
@@ -55,6 +56,11 @@ const AppLayoutMembershipIndexRoute =
     path: '/membership/',
     getParentRoute: () => AppLayoutRouteRoute,
   } as any)
+const AppLayoutMyAccountIndexRoute = AppLayoutMyAccountIndexRouteImport.update({
+  id: '/my-account/',
+  path: '/my-account/',
+  getParentRoute: () => AppLayoutRouteRoute,
+} as any)
 const AppLayoutProgramsIndexRoute = AppLayoutProgramsIndexRouteImport.update({
   id: '/programs/',
   path: '/programs/',
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/events/': typeof AppLayoutEventsIndexRoute
   '/help-center/': typeof AppLayoutHelpCenterIndexRoute
   '/membership/': typeof AppLayoutMembershipIndexRoute
+  '/my-account/': typeof AppLayoutMyAccountIndexRoute
   '/programs/': typeof AppLayoutProgramsIndexRoute
   '/study-materials/': typeof AppLayoutStudyMaterialsIndexRoute
   '/Login/': typeof AuthLayoutLoginIndexRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/events': typeof AppLayoutEventsIndexRoute
   '/help-center': typeof AppLayoutHelpCenterIndexRoute
   '/membership': typeof AppLayoutMembershipIndexRoute
+  '/my-account': typeof AppLayoutMyAccountIndexRoute
   '/programs': typeof AppLayoutProgramsIndexRoute
   '/study-materials': typeof AppLayoutStudyMaterialsIndexRoute
   '/Login': typeof AuthLayoutLoginIndexRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/_appLayout/events/': typeof AppLayoutEventsIndexRoute
   '/_appLayout/help-center/': typeof AppLayoutHelpCenterIndexRoute
   '/_appLayout/membership/': typeof AppLayoutMembershipIndexRoute
+  '/_appLayout/my-account/': typeof AppLayoutMyAccountIndexRoute
   '/_appLayout/programs/': typeof AppLayoutProgramsIndexRoute
   '/_appLayout/study-materials/': typeof AppLayoutStudyMaterialsIndexRoute
   '/_authLayout/Login/': typeof AuthLayoutLoginIndexRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
     | '/events/'
     | '/help-center/'
     | '/membership/'
+    | '/my-account/'
     | '/programs/'
     | '/study-materials/'
     | '/Login/'
@@ -123,6 +133,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/help-center'
     | '/membership'
+    | '/my-account'
     | '/programs'
     | '/study-materials'
     | '/Login'
@@ -135,6 +146,7 @@ export interface FileRouteTypes {
     | '/_appLayout/events/'
     | '/_appLayout/help-center/'
     | '/_appLayout/membership/'
+    | '/_appLayout/my-account/'
     | '/_appLayout/programs/'
     | '/_appLayout/study-materials/'
     | '/_authLayout/Login/'
@@ -197,6 +209,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLayoutMembershipIndexRouteImport
       parentRoute: typeof AppLayoutRouteRoute
     }
+    '/_appLayout/my-account/': {
+      id: '/_appLayout/my-account/'
+      path: '/my-account'
+      fullPath: '/my-account/'
+      preLoaderRoute: typeof AppLayoutMyAccountIndexRouteImport
+      parentRoute: typeof AppLayoutRouteRoute
+    }
     '/_appLayout/programs/': {
       id: '/_appLayout/programs/'
       path: '/programs'
@@ -226,6 +245,7 @@ interface AppLayoutRouteRouteChildren {
   AppLayoutEventsIndexRoute: typeof AppLayoutEventsIndexRoute
   AppLayoutHelpCenterIndexRoute: typeof AppLayoutHelpCenterIndexRoute
   AppLayoutMembershipIndexRoute: typeof AppLayoutMembershipIndexRoute
+  AppLayoutMyAccountIndexRoute: typeof AppLayoutMyAccountIndexRoute
   AppLayoutProgramsIndexRoute: typeof AppLayoutProgramsIndexRoute
   AppLayoutStudyMaterialsIndexRoute: typeof AppLayoutStudyMaterialsIndexRoute
 }
@@ -235,6 +255,7 @@ const AppLayoutRouteRouteChildren: AppLayoutRouteRouteChildren = {
   AppLayoutEventsIndexRoute: AppLayoutEventsIndexRoute,
   AppLayoutHelpCenterIndexRoute: AppLayoutHelpCenterIndexRoute,
   AppLayoutMembershipIndexRoute: AppLayoutMembershipIndexRoute,
+  AppLayoutMyAccountIndexRoute: AppLayoutMyAccountIndexRoute,
   AppLayoutProgramsIndexRoute: AppLayoutProgramsIndexRoute,
   AppLayoutStudyMaterialsIndexRoute: AppLayoutStudyMaterialsIndexRoute,
 }

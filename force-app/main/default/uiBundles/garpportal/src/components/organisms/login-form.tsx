@@ -10,9 +10,9 @@ import { Label } from "@/components/atoms/label"
 
 function LoginForm() {
 	return (
-		<Card className="w-full max-w-[420px] bg-secondary">
+		<Card className="w-full max-w-auth bg-secondary">
 			<CardHeader>
-				<CardTitle className="text-center text-3xl font-medium">Sign In</CardTitle>
+				<CardTitle className="text-center font-heading text-title font-medium">Sign In</CardTitle>
 			</CardHeader>
 			<CardContent>
 				<form className="flex flex-col gap-4">
@@ -41,7 +41,7 @@ function LoginForm() {
 					<Button type="submit" className="mt-2 h-[60px]">
 						Sign In
 					</Button>
-					<div className="flex items-center justify-center gap-2 text-sm">
+					<div className="flex items-center justify-center gap-2 text-body">
 						<a href="/registration" className="font-semibold text-primary hover:underline">
 							Create Account
 						</a>
