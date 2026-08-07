@@ -10,7 +10,7 @@ const CURRENT_MEMBER = {
 
 function AppSidebar() {
 	return (
-		<aside className="hidden w-[294px] shrink-0 flex-col bg-linear-to-b from-surface-gradient-start to-surface-gradient-end app:flex">
+		<aside className="sticky top-20 hidden h-[calc(100vh-5rem)] w-[294px] shrink-0 flex-col self-start overflow-y-auto bg-linear-to-b from-surface-gradient-start to-surface-gradient-end app:flex">
 			<SidebarProfileLink name={CURRENT_MEMBER.name} garpId={CURRENT_MEMBER.garpId} />
 			<div className="border-t border-background" />
 			<nav className="flex flex-col divide-y divide-background">
