@@ -1,0 +1,76 @@
+---
+paths:
+  - "**/uiBundles/**/api/**/*.ts"
+  - "**/uiBundles/**/api/**/*.tsx"
+  - "**/uiBundles/**/hooks/**/*.ts"
+  - "**/uiBundles/**/hooks/**/*.tsx"
+---
+
+# API client, errors, and React Query toasts
+
+Foundation lives in `src/api/client/`. **Every new Salesforce/network call goes through this flow.** Also follow `salesforce-data-access` (Data SDK / GraphQL rules).
+
+## Request flow (mandatory)
+
+```
+UI / hook / route beforeLoad
+  → useQuery | useMutation | ensureQueryData
+  → api/<domain>/*.ts  (domain function)
+  → createDataSDK + sdk.fetch / sdk.graphql  (or approved local DEV path)
+  → normalize → return T  |  throw AppError
+  → MutationCache / QueryCache → Sonner (via meta)
+```
+
+## Adding a new API
+
+1. **Domain module** under `src/api/<domain>/` (e.g. `api/auth/login.ts`). Export typed `async` functions that return `T` or throw `AppError`.
+2. **Transport:** `createDataSDK()` + `sdk.fetch?.` / `sdk.graphql?.` only (see Salesforce data rules). Do not call `fetch` for org APIs except the documented local-CLI DEV gateway.
+3. **Normalize HTTP/Apex bodies** with `normalizeHttpResponse` + `unwrapApiResult` from `@/api/client`. Map Apex `{ errors: string[] }` into `AppError` — **never swallow server messages**.
+4. **Do not** return `{ status, data, error }` from `queryFn` / `mutationFn`. React Query must see throw-on-failure. Use `ApiResult` only inside the client, then `unwrap`.
+5. **Hook** in `src/hooks/` wrapping `useQuery` / `useMutation`. Set toast `meta` intentionally (below).
+6. **Query keys** colocated with the domain (`query-options.ts` or `keys.ts`).
+
+## Errors
+
+- Throw `AppError` (or `AuthApiError` for legacy auth). Include `messages: string[]` and `status` when known.
+- `notifyError` always surfaces server text. If `meta.errorTitle` is set, title = override and **description = server messages**.
+- Never replace API `errors[]` with a generic string when the body already has messages.
+
+## Toast policy (`src/api/client/query-client.ts`)
+
+Toaster is mounted **once** in `pages/__root.tsx` (`Toaster` from `@/components/atoms/sonner`, `position="top-center"`). Do not remount in layouts.
+
+| Kind | Default | Opt out / in |
+|------|---------|----------------|
+| Mutation error | Toast | `meta: { silent: true }` |
+| Mutation success | No toast | `meta: { successMessage: "…" }` |
+| Query error | Silent | `meta: { toastError: true }` |
+
+Auth probes (`currentUser`) stay silent. Prefer toast for API failures; use inline field errors for client validation only (avoid double-notifying the same API error).
+
+```ts
+// ✅ mutation with success + error title (server detail still shown)
+useMutation({
+  mutationFn: saveProfile,
+  meta: { successMessage: "Profile saved", errorTitle: "Save failed" },
+})
+
+// ✅ silent mutation (form owns messaging)
+useMutation({ mutationFn: login, meta: { silent: true } })
+
+// ✅ query that should toast
+useQuery({ ...options, meta: { toastError: true } })
+```
+
+Imperative toasts from anywhere: `notifySuccess` / `notifyWarning` / `notifyError` from `@/api/client`.
+
+## Folder ownership
+
+| Path | Put here |
+|------|----------|
+| `src/api/client/` | queryClient, AppError, normalize, notify |
+| `src/api/<domain>/` | Endpoint functions + query options/keys |
+| `src/auth/` | Session, logout, startUrl, SFDC env (not HTTP) |
+| `src/hooks/` | React Query / UI hooks that call `api/*` |
+| `src/lib/` | Dumb helpers only (`utils.ts`, `document-title.ts`) |
+| `src/config/` | Static config (e.g. navigation) |

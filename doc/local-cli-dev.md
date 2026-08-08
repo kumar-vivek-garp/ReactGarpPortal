@@ -1,0 +1,64 @@
+# Local CLI development (never in production)
+
+Use your Salesforce CLI admin session to call real sandbox APIs from localhost without Experience `Site.login`.
+
+## Does this affect other Experience apps?
+
+**No.** This is a local Node process + Vite DEV proxy only. Do not change Digital Experiences Login & Registration.
+
+## Prerequisites
+
+1. Salesforce CLI (`sf`)
+2. Org login:
+
+```bash
+sf org login web --alias devjuly25a
+```
+
+## Run (two terminals)
+
+**Terminal 1 — gateway (repo root):**
+
+```bash
+npm run local-sf
+```
+
+Expect: `listening on http://127.0.0.1:8787` and `authenticated as …`
+
+**Terminal 2 — UI Bundle (repo root):**
+
+```bash
+npm run local-ui
+```
+
+Open http://localhost:5173 → **Continue with Salesforce CLI**.
+
+## What works / what does not
+
+| | Local CLI gateway | Experience site |
+|---|---|---|
+| Member REST (`/memberportal/*`) | Yes (via CLI token) | Yes (session cookie) |
+| GraphQL `currentUser` | Yes (usually your **admin** user) | Community member |
+| `Site.login` / shared Experience logout | No — bypassed | Yes — use deployed URL |
+
+Real Sign In / Sign Out / shared session with other apps: still test on
+
+`https://garp--devjuly25a.sandbox.my.site.com/garpportal`
+
+## Production safety
+
+- Gateway code lives in `tools/local-dev/` (not deployed with the UI Bundle).
+- Binds `127.0.0.1` only.
+- React path is `import.meta.env.DEV && localhost` only.
+- Production `vite build` must not include `/__local_sf` usage (verify after build).
+
+## Env
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `SF_TARGET_ORG` | `devjuly25a` | CLI alias |
+| `LOCAL_SF_PORT` | `8787` | Gateway port |
+
+## No Apex / Setup required
+
+This path uses existing REST/GraphQL with the CLI Bearer token. No Connected App and no Apex changes for the basic flow.

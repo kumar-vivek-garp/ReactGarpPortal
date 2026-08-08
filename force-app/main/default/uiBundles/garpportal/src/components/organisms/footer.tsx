@@ -9,8 +9,8 @@ import {
 	FOOTER_LEGAL_LINKS,
 	FOOTER_SOCIAL_LINKS,
 	FOOTER_TAGLINE,
-} from "@/lib/navigation/footer-misc-links"
-import { FOOTER_NAV_SECTIONS } from "@/lib/navigation/footer-nav-sections"
+} from "@/config/navigation/footer-misc-links"
+import { FOOTER_NAV_SECTIONS } from "@/config/navigation/footer-nav-sections"
 
 // "Full" (not "Short") is deliberate: it's the only non-knockout variant that
 // includes the "Global Association of Risk Professionals" wordmark, matching
@@ -18,7 +18,7 @@ import { FOOTER_NAV_SECTIONS } from "@/lib/navigation/footer-nav-sections"
 const GARP_LOGO_URL = "https://www.garp.org/hubfs/Website/Logos/GARP%20Corporate%20Logo%20-%20Full.png"
 
 // Maps each section's data key to the live footer's own named grid-area (see
-// the `.footer-sections-grid` rule in global.css) — literal strings, not
+  // the `.footer-sections-grid` rule in styles/layout.css) — literal strings, not
 // interpolated, so Tailwind's build-time class scanner can see them.
 const SECTION_GRID_AREA_CLASS: Record<string, string> = {
 	frm: "lg:[grid-area:frm]",

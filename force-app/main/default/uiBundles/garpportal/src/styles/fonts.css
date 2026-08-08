@@ -1,0 +1,152 @@
+/*
+ * Nunito Sans — same HubSpot files + weight mapping as the live GARP portal
+ * (sfdcAppFonts / Login). Live CSS maps Bold→500 and ExtraBold→700; we keep
+ * that and alias 300/600/800 so Tailwind utilities resolve to those files.
+ */
+@font-face {
+	font-family: 'Nunito Sans';
+	src: url('https://www.garp.org/hubfs/Website/Common/Fonts/Nunito_Sans/NunitoSans-Light.ttf')
+		format('truetype');
+	font-weight: 100;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Nunito Sans';
+	src: url('https://www.garp.org/hubfs/Website/Common/Fonts/Nunito_Sans/NunitoSans-Light.ttf')
+		format('truetype');
+	font-weight: 300;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Nunito Sans';
+	src: url('https://www.garp.org/hubfs/Website/Common/Fonts/Nunito_Sans/NunitoSans-Regular.ttf')
+		format('truetype');
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Nunito Sans';
+	src: url('https://www.garp.org/hubfs/Website/Common/Fonts/Nunito_Sans/NunitoSans-Bold.ttf')
+		format('truetype');
+	font-weight: 500;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Nunito Sans';
+	src: url('https://www.garp.org/hubfs/Website/Common/Fonts/Nunito_Sans/NunitoSans-Bold.ttf')
+		format('truetype');
+	font-weight: 600;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Nunito Sans';
+	src: url('https://www.garp.org/hubfs/Website/Common/Fonts/Nunito_Sans/NunitoSans-ExtraBold.ttf')
+		format('truetype');
+	font-weight: 700;
+	font-style: normal;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Nunito Sans';
+	src: url('https://www.garp.org/hubfs/Website/Common/Fonts/Nunito_Sans/NunitoSans-ExtraBold.ttf')
+		format('truetype');
+	font-weight: 800;
+	font-style: normal;
+	font-display: swap;
+}
+
+/*
+ * Material Symbols Outlined — self-hosted 7-glyph subset (~2.6KB woff2).
+ * Glyphs: account_circle, auto_stories, calendar_month, group, help, home, psychology
+ * Regenerate: see src/assets/fonts/README.md
+ */
+@font-face {
+	font-family: 'Material Symbols Outlined';
+	font-style: normal;
+	font-weight: 400;
+	font-display: block;
+	src: url('../assets/fonts/material-symbols-outlined-subset.woff2') format('woff2');
+}
+
+/* Klinic Slab has no npm/Google Fonts package — hotlinked from GARP's own CDN,
+   matching exactly what the live production app does (see .claude/rules/theming.md
+   and the theme design-plan history for the licensing rationale). */
+@font-face {
+	font-family: 'Klinic Slab';
+	src: url('https://www.garp.org/hubfs/Website/GARP%20Member%20Portal%202.0/assets/fonts/Klinic-Slab/KlinicSlabLight.woff')
+		format('woff');
+	font-weight: 300;
+	font-style: normal;
+}
+@font-face {
+	font-family: 'Klinic Slab';
+	src: url('https://www.garp.org/hubfs/Website/GARP%20Member%20Portal%202.0/assets/fonts/Klinic-Slab/KlinicSlabLightIt.woff')
+		format('woff');
+	font-weight: 300;
+	font-style: italic;
+}
+@font-face {
+	font-family: 'Klinic Slab';
+	src: url('https://www.garp.org/hubfs/Website/GARP%20Member%20Portal%202.0/assets/fonts/Klinic-Slab/KlinicSlabBook.woff')
+		format('woff');
+	font-weight: 400;
+	font-style: normal;
+}
+@font-face {
+	font-family: 'Klinic Slab';
+	src: url('https://www.garp.org/hubfs/Website/GARP%20Member%20Portal%202.0/assets/fonts/Klinic-Slab/KlinicSlabBookIt.woff')
+		format('woff');
+	font-weight: 700;
+	font-style: italic;
+}
+@font-face {
+	font-family: 'Klinic Slab';
+	src: url('https://www.garp.org/hubfs/Website/GARP%20Member%20Portal%202.0/assets/fonts/Klinic-Slab/KlinicSlabMedium.woff')
+		format('woff');
+	font-weight: 500;
+	font-style: normal;
+}
+@font-face {
+	font-family: 'Klinic Slab';
+	src: url('https://www.garp.org/hubfs/Website/GARP%20Member%20Portal%202.0/assets/fonts/Klinic-Slab/KlinicSlabMediumIt.woff')
+		format('woff');
+	font-weight: 500;
+	font-style: italic;
+}
+@font-face {
+	font-family: 'Klinic Slab';
+	src: url('https://www.garp.org/hubfs/Website/GARP%20Member%20Portal%202.0/assets/fonts/Klinic-Slab/KlinicSlabBold.woff')
+		format('woff');
+	font-weight: 700;
+	font-style: normal;
+}
+@font-face {
+	font-family: 'Klinic Slab';
+	src: url('https://www.garp.org/hubfs/Website/GARP%20Member%20Portal%202.0/assets/fonts/Klinic-Slab/KlinicSlabBoldIt.woff')
+		format('woff');
+	font-weight: 700;
+	font-style: italic;
+}
+
+/* Material Symbols Outlined — sidebar / profile ligatures (subset font above). */
+.material-symbols-outlined {
+	font-family: 'Material Symbols Outlined', sans-serif;
+	font-weight: 400;
+	font-style: normal;
+	font-size: 1.25rem;
+	line-height: 1;
+	letter-spacing: normal;
+	text-transform: none;
+	display: inline-block;
+	white-space: nowrap;
+	word-wrap: normal;
+	direction: ltr;
+	-webkit-font-feature-settings: 'liga';
+	font-feature-settings: 'liga';
+	-webkit-font-smoothing: antialiased;
+}

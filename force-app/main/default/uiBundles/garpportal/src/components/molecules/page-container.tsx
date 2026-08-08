@@ -3,8 +3,8 @@ import type { ComponentProps } from "react"
 import { cn } from "@/lib/utils"
 
 /**
- * Centers main page content at the live `$page-width` cap (1000px / `max-w-page`).
- * Use inside app layout `main` (and any future page that needs the same shell).
+ * Main-column content shell. Fills the area beside the sidebar with modest
+ * horizontal gutters (`px-4`). Prefer this over ad-hoc padding on pages.
  */
 function PageContainer({ className, ...props }: ComponentProps<"div">) {
 	return <div className={cn("page-container", className)} {...props} />

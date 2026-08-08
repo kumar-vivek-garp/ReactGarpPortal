@@ -10,7 +10,7 @@ import {
 	XiaohongshuIcon,
 	YoutubeIcon,
 } from "@/components/atoms/social-icons"
-import type { SocialLink } from "@/lib/navigation/types"
+import type { SocialLink } from "@/config/navigation/types"
 
 const SOCIAL_ICONS = {
 	WeChat: WeChatIcon,

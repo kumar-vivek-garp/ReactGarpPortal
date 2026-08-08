@@ -12,8 +12,26 @@ const schemaPath = resolve(__dirname, '../../../../../schema.graphql');
 const schemaExists = existsSync(schemaPath);
 
 export default defineConfig(({ mode }) => {
+  const isProd = mode === 'production'
+
   return {
     base: './',
+    // Local CLI gateway (tools/local-dev) — development only; never used in production build.
+    ...(isProd
+      ? {}
+      : {
+          server: {
+            port: 5173,
+            strictPort: true,
+            proxy: {
+              '/__local_sf': {
+                target: `http://127.0.0.1:${process.env.LOCAL_SF_PORT || 8787}`,
+                changeOrigin: true,
+                rewrite: (p: string) => p.replace(/^\/__local_sf/, ''),
+              },
+            },
+          },
+        }),
     plugins: [
       tailwindcss(),
       tanstackRouter({
@@ -21,6 +39,11 @@ export default defineConfig(({ mode }) => {
         autoCodeSplitting: true,
         routesDirectory: './src/pages',
         generatedRouteTree: './src/routeTree.gen.ts',
+        codeSplittingOptions: {
+          // Lazy-load route `component` only. Keep `pendingComponent` eager so a
+          // shell can paint while the UI chunk downloads (and while beforeLoad runs).
+          defaultBehavior: [['component']],
+        },
       }),
       react(),
       salesforce(),
@@ -44,6 +67,48 @@ export default defineConfig(({ mode }) => {
       outDir: resolve(__dirname, 'dist'),
       assetsDir: 'assets',
       sourcemap: false,
+      rollupOptions: {
+        output: {
+          /**
+           * Keep the entry chunk small: split heavy node_modules into cacheable
+           * vendor groups (avoids a single >500kB JS warning and improves caching).
+           */
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return
+
+            if (
+              id.includes('node_modules/react-dom') ||
+              id.includes('node_modules/react/') ||
+              id.includes('node_modules/scheduler')
+            ) {
+              return 'react-vendor'
+            }
+
+            if (id.includes('@tanstack/')) {
+              return 'tanstack'
+            }
+
+            if (id.includes('@salesforce/')) {
+              return 'salesforce'
+            }
+
+            if (
+              id.includes('@react-spring/') ||
+              id.includes('radix-ui') ||
+              id.includes('lucide-react') ||
+              id.includes('class-variance-authority') ||
+              id.includes('clsx') ||
+              id.includes('tailwind-merge')
+            ) {
+              return 'ui-vendor'
+            }
+
+            if (id.includes('node_modules/zod')) {
+              return 'zod'
+            }
+          },
+        },
+      },
     },
 
     // Resolve aliases (shared between build and test)

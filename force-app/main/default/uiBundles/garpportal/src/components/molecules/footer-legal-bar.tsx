@@ -1,4 +1,4 @@
-import type { ExternalNavLink } from "@/lib/navigation/types"
+import type { ExternalNavLink } from "@/config/navigation/types"
 
 type FooterLegalBarProps = {
 	links: ExternalNavLink[]

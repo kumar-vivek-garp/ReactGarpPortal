@@ -4,9 +4,98 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+      /*
+       * Pre-JS boot splash — hidden until BOOT_SPLASH_DELAY_MS so fast networks
+       * never flash logo/bar; slow loads still get a shell inside #root.
+       * Do NOT paint html/body navy here — unlayered styles beat Tailwind @layer
+       * base and leak through the app main column.
+       */
+      #boot-splash {
+        box-sizing: border-box;
+        min-height: 100vh;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5rem;
+        padding: 2rem 1rem;
+        background-color: #081a31;
+        background-image: url("https://www.garp.org/hubfs/GARP%20Design/membership/image/bckgd-dark-gradient-1.png");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        font-family: system-ui, sans-serif;
+        color: #fff;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+      }
+      #boot-splash.boot-splash--visible {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+      }
+      #boot-splash img {
+        width: min(100%, 20rem);
+        height: auto;
+      }
+      #boot-splash .boot-bar {
+        width: min(100%, 12rem);
+        height: 3px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.2);
+      }
+      #boot-splash .boot-bar > span {
+        display: block;
+        width: 40%;
+        height: 100%;
+        background: #fff;
+        animation: boot-slide 1.1s ease-in-out infinite;
+      }
+      @keyframes boot-slide {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(250%); }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div
+        id="boot-splash"
+        role="status"
+        aria-busy="true"
+        aria-label="Loading GARP"
+        aria-hidden="true"
+      >
+        <img
+          src="https://www.garp.org/hubfs/Website/Logos/GARP%20Corporate%20Logo%20-%20Full%20Knockout.png"
+          alt="GARP - Global Association of Risk Professionals"
+        />
+        <div class="boot-bar" aria-hidden="true"><span></span></div>
+      </div>
+    </div>
+    <script>
+      (function () {
+        var BOOT_SPLASH_DELAY_MS = 200
+        var splash = document.getElementById("boot-splash")
+        if (!splash) return
+        window.setTimeout(function () {
+          if (!splash.isConnected) return
+          splash.classList.add("boot-splash--visible")
+          splash.setAttribute("aria-hidden", "false")
+        }, BOOT_SPLASH_DELAY_MS)
+      })()
+    </script>
     <script type="module" src="src/app.tsx"></script>
   </body>
 </html>

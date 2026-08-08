@@ -12,6 +12,8 @@ paths:
 
 **Before writing any code that connects to Salesforce, you MUST invoke the `using-ui-bundle-salesforce-data` skill. Do not write any data access code without consulting it first.**
 
+After the SDK call, normalize and surface errors via `src/api/client/` (see **api-client-and-errors**): return `T` or throw `AppError`, wire React Query `meta` for Sonner — do not invent a parallel fetch/toast stack.
+
 This applies to: GraphQL queries/mutations, REST calls, SDK initialization, custom hooks that fetch data, or any code that imports from `@salesforce/platform-sdk`.
 
 - **All data access uses the Data SDK** (`@salesforce/platform-sdk`) via `createDataSDK()`.
@@ -50,7 +52,7 @@ Must use the `gql` template tag from `@salesforce/platform-sdk` — plain templa
 
 ## Current user info
 
-Use GraphQL (`uiapi { currentUser { Id Name { value } } }`), not Chatter (`/chatter/users/me`).
+Use GraphQL (`uiapi { currentUser { Id Name { value @optional } Contact { GARP_Member_ID__c { value @optional } } } }`), not Chatter (`/chatter/users/me`).
 
 ## Schema file (`schema.graphql`)
 

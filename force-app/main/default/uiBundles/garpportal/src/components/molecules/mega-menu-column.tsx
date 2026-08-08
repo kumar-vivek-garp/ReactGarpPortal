@@ -1,4 +1,4 @@
-import type { MegaMenuColumn } from "@/lib/navigation/types"
+import type { MegaMenuColumn } from "@/config/navigation/types"
 import { cn } from "@/lib/utils"
 
 type MegaMenuColumnViewProps = {

@@ -1,12 +1,11 @@
 import { useEffect } from "react"
 import { animated, useSpring } from "@react-spring/web"
-import { LogOut } from "lucide-react"
 
-import { Button } from "@/components/atoms/button"
 import { MobileNavBar } from "@/components/molecules/mobile-nav-sheet"
 import { NavMegaMenuItem } from "@/components/molecules/nav-mega-menu-item"
-import { GARP_LOGO_KNOCKOUT } from "@/lib/navigation/garp-logos"
-import { TOP_NAV_ITEMS } from "@/lib/navigation/top-nav-items"
+import { SignOutButton } from "@/components/molecules/sign-out-button"
+import { GARP_LOGO_KNOCKOUT } from "@/config/navigation/garp-logos"
+import { TOP_NAV_ITEMS } from "@/config/navigation/top-nav-items"
 import { useNavigationStore } from "@/store/navigation-store"
 
 function Navbar() {
@@ -44,14 +43,7 @@ function Navbar() {
 				</nav>
 
 				<div className="ml-auto flex shrink-0 items-center pr-4">
-					<Button
-						variant="default"
-						size="sm"
-						className="gap-2 whitespace-nowrap text-body max-[1000px]:px-3 max-[1000px]:text-caption"
-					>
-						<LogOut className="size-4" />
-						Sign Out
-					</Button>
+					<SignOutButton className="whitespace-nowrap text-body max-[1000px]:px-3 max-[1000px]:text-caption" />
 				</div>
 			</header>
 

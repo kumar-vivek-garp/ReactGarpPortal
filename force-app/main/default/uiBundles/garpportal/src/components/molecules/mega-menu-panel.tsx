@@ -1,6 +1,6 @@
 import { MegaMenuColumnView } from "@/components/molecules/mega-menu-column"
 import { MegaMenuHeadingText } from "@/components/molecules/mega-menu-heading"
-import type { TopNavItem } from "@/lib/navigation/types"
+import type { TopNavItem } from "@/config/navigation/types"
 import { cn } from "@/lib/utils"
 
 type MegaMenuPanelProps = {

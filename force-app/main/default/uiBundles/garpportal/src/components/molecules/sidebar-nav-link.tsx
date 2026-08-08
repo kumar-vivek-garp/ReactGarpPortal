@@ -2,7 +2,7 @@ import { Link, useLocation } from "@tanstack/react-router"
 
 import { MaterialSymbol } from "@/components/atoms/material-symbol"
 import { cn } from "@/lib/utils"
-import type { AppRoute } from "@/lib/navigation/types"
+import type { AppRoute } from "@/config/navigation/types"
 
 type SidebarNavLinkProps = {
 	to: AppRoute

@@ -1,4 +1,4 @@
-import type { MegaMenuHeading } from "@/lib/navigation/types"
+import type { MegaMenuHeading } from "@/config/navigation/types"
 
 function MegaMenuHeadingText({ heading }: { heading: MegaMenuHeading }) {
 	if (heading.highlightToken === "rai-split") {

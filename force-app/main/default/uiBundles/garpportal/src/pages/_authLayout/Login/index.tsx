@@ -1,21 +1,28 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router"
+import { z } from "zod"
 
-import { LoginForm } from "@/components/organisms/login-form";
-import { pageTitle } from "@/lib/document-title";
+import { LoginForm } from "@/components/organisms/login-form"
+import { AUTH_REDIRECT_PARAM } from "@/auth/constants"
+import { pageTitle } from "@/lib/document-title"
+
+const loginSearchSchema = z.object({
+	[AUTH_REDIRECT_PARAM]: z.string().optional().catch(undefined),
+})
 
 export const Route = createFileRoute("/_authLayout/Login/")({
+	validateSearch: loginSearchSchema,
 	head: () => ({
 		meta: [{ title: pageTitle("Login") }],
 	}),
 	component: Login,
-});
+})
 
 const FOOTER_LINKS = [
 	{ label: "Bylaws", href: "https://www.garp.org/bylaws" },
 	{ label: "Code of Conduct", href: "https://www.garp.org/code-of-conduct" },
 	{ label: "Privacy Notice", href: "https://www.garp.org/privacy-notice" },
 	{ label: "Terms of Use", href: "https://www.garp.org/terms-of-use" },
-];
+]
 
 function Login() {
 	return (
@@ -39,5 +46,5 @@ function Login() {
 				<p>&copy; {new Date().getFullYear()} Global Association of Risk Professionals</p>
 			</footer>
 		</div>
-	);
+	)
 }

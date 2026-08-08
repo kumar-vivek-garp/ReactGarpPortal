@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils"
-import type { FooterNavSection } from "@/lib/navigation/types"
+import type { FooterNavSection } from "@/config/navigation/types"
 
 function FooterNavSectionView({ section, className }: { section: FooterNavSection; className?: string }) {
 	return (

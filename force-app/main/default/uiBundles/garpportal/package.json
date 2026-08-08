@@ -19,13 +19,10 @@
     "graphql:schema": "node scripts/get-graphql-schema.mjs"
   },
   "dependencies": {
-    "@fontsource/material-symbols-outlined": "^5.3.2",
-    "@fontsource/nunito-sans": "^5.3.0",
     "@react-spring/web": "^10.1.2",
     "@salesforce/platform-sdk": "^10.12.2",
     "@salesforce/ui-bundle": "^10.12.2",
     "@tailwindcss/vite": "^4.1.17",
-    "@tanstack/react-form": "^1.27.7",
     "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-query-devtools": "^5.101.4",
     "@tanstack/react-router": "^1.170.20",
@@ -37,6 +34,7 @@
     "react": "^19.2.0",
     "react-day-picker": "^9.14.0",
     "react-dom": "^19.2.0",
+    "react-hook-form": "^7.85.0",
     "shadcn": "^3.8.5",
     "sonner": "^1.7.0",
     "tailwind-merge": "^3.5.0",

@@ -21,7 +21,9 @@
     "prettier:verify": "prettier --check \"**/*.{cls,cmp,component,css,html,js,json,md,page,trigger,xml,yaml,yml}\"",
     "precommit": "lint-staged",
     "setup": "node scripts/org-setup.mjs",
-    "dev:sf": "sf ui-bundle dev --target-org devjuly25a --name garpportal"
+    "dev:sf": "sf ui-bundle dev --target-org devjuly25a --name garpportal",
+    "local-sf": "node tools/local-dev/server.mjs",
+    "local-ui": "npm run dev --prefix force-app/main/default/uiBundles/garpportal"
   },
   "devDependencies": {
     "@lwc/eslint-plugin-lwc": "^3.3.0",

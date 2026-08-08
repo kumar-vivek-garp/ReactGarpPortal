@@ -1,0 +1,9 @@
+{
+  "name": "garp-portal-local-sf",
+  "private": true,
+  "type": "module",
+  "description": "Localhost-only Salesforce CLI token proxy. Do not deploy.",
+  "scripts": {
+    "start": "node server.mjs"
+  }
+}

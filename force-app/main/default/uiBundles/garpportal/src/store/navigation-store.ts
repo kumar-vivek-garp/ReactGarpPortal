@@ -1,6 +1,6 @@
 import { create } from "zustand"
 
-import type { TopNavItem } from "@/lib/navigation/types"
+import type { TopNavItem } from "@/config/navigation/types"
 
 /** Grace period so the cursor can cross the toolbar → panel gap without closing. */
 const DESKTOP_NAV_CLOSE_DELAY_MS = 300

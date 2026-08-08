@@ -3,7 +3,7 @@ import { animated, useSpring, useTransition } from "@react-spring/web"
 import { ChevronDown } from "lucide-react"
 
 import { MegaMenuPanel } from "@/components/molecules/mega-menu-panel"
-import type { TopNavItem } from "@/lib/navigation/types"
+import type { TopNavItem } from "@/config/navigation/types"
 import { cn } from "@/lib/utils"
 import { useNavigationStore } from "@/store/navigation-store"
 

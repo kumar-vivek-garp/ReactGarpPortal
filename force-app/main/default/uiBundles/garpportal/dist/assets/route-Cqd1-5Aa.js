@@ -1,0 +1,1 @@
+import{j as t}from"./react-vendor-CbpEVQuA.js";import{O as r}from"./tanstack-BbPdz0pH.js";import{P as o}from"./page-enter-fade-LPcojBT9.js";import"./ui-vendor-BVLTwMZ0.js";import"./utils-DoXw85WE.js";function i(){return t.jsx(o,{className:"min-h-screen",children:t.jsx(r,{})})}export{i as component};

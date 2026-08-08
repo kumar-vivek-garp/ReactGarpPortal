@@ -1,0 +1,13 @@
+/* Reliable enter fade after boot/pending shell (spring also applied when available). */
+@keyframes page-enter-fade {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+.page-enter-fade {
+	animation: page-enter-fade 0.4s ease-out both;
+}

@@ -1,29 +1,28 @@
 import { useEffect } from "react"
 import { Link } from "@tanstack/react-router"
 import { animated, useSpring, useTransition } from "@react-spring/web"
-import { ChevronDown, ChevronLeft, LogOut, Menu, X } from "lucide-react"
+import { ChevronDown, ChevronLeft, Menu, X } from "lucide-react"
 
-import { Button } from "@/components/atoms/button"
 import { MaterialSymbol } from "@/components/atoms/material-symbol"
 import { MegaMenuPanel } from "@/components/molecules/mega-menu-panel"
 import { SidebarProfileLink } from "@/components/molecules/sidebar-profile-link"
+import { SidebarProfileSkeleton } from "@/components/molecules/sidebar-profile-skeleton"
+import { SignOutButton } from "@/components/molecules/sign-out-button"
 import { useCloseMobileNavOnNavigate } from "@/hooks/use-close-mobile-nav-on-navigate"
-import { GARP_LOGO_COLOR, GARP_LOGO_KNOCKOUT } from "@/lib/navigation/garp-logos"
-import { SIDE_NAV_ITEMS } from "@/lib/navigation/side-nav-items"
-import { TOP_NAV_ITEMS } from "@/lib/navigation/top-nav-items"
+import { useCurrentUser } from "@/hooks/use-current-user"
+import { GARP_LOGO_COLOR, GARP_LOGO_KNOCKOUT } from "@/config/navigation/garp-logos"
+import { SIDE_NAV_ITEMS } from "@/config/navigation/side-nav-items"
+import { TOP_NAV_ITEMS } from "@/config/navigation/top-nav-items"
 import { cn } from "@/lib/utils"
 import { useNavigationStore } from "@/store/navigation-store"
-
-// TODO: replace with the authenticated member's profile once session data is wired in.
-const CURRENT_MEMBER = {
-	name: "GARP Member",
-	garpId: "—",
-}
 
 const PANEL_SPRING = { mass: 0.85, tension: 300, friction: 28 }
 const DRILL_SPRING = { mass: 0.8, tension: 340, friction: 28 }
 
 function MobileNavBar() {
+	const { data: user, isPending } = useCurrentUser()
+	const showProfileSkeleton = isPending && !user
+	const displayName = user?.name?.trim() || "GARP Member"
 	const isOpen = useNavigationStore((state) => state.isMobileNavOpen)
 	const selectedItem = useNavigationStore((state) => state.mobileSelectedNavItem)
 	const openMobileNav = useNavigationStore((state) => state.openMobileNav)
@@ -151,11 +150,15 @@ function MobileNavBar() {
 										<>
 											<nav className="flex flex-col pt-2">
 												<div className="px-2">
-													<SidebarProfileLink
-														name={CURRENT_MEMBER.name}
-														garpId={CURRENT_MEMBER.garpId}
-														uppercase={false}
-													/>
+													{showProfileSkeleton ? (
+														<SidebarProfileSkeleton />
+													) : (
+														<SidebarProfileLink
+															name={displayName}
+															garpId={user?.garpId?.trim() || "—"}
+															uppercase={false}
+														/>
+													)}
 												</div>
 												{SIDE_NAV_ITEMS.map(({ to, label, icon }) => (
 													<Link
@@ -172,10 +175,7 @@ function MobileNavBar() {
 												))}
 											</nav>
 											<div className="p-[18px]">
-												<Button variant="default" size="default" className="gap-2">
-													<LogOut className="size-4" />
-													Sign Out
-												</Button>
+												<SignOutButton size="default" />
 											</div>
 											<p className="mt-1 px-[30px] pt-2 pb-1 text-xl leading-tight font-extrabold text-foreground">
 												Browse &amp; Explore
