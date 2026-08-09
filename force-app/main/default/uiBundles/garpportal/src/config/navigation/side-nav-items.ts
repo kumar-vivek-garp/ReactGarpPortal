@@ -1,17 +1,27 @@
+import type { LucideIcon } from "lucide-react"
+import {
+	BookOpen,
+	Brain,
+	CalendarDays,
+	CircleHelp,
+	Home,
+	Users,
+} from "lucide-react"
+
 import type { SideNavLink } from "./types"
 
+export type SideNavItem = SideNavLink & {
+	icon: LucideIcon
+}
+
 /**
- * Icon names are Material Symbols Outlined ligatures, matching live Angular
- * `mat-icon` text on SideNavbarComponent:
- * home_outline → home, auto_stories_outline → auto_stories,
- * psychology_outline → psychology, group, calendar_month_outline → calendar_month,
- * help_outline → help (Outlined font already provides the outline style).
+ * Side nav routes + Lucide icons (bundled SVG — no icon font / network fetch).
  */
-export const SIDE_NAV_ITEMS: (SideNavLink & { icon: string })[] = [
-	{ to: "/dashboard", label: "Dashboard", icon: "home" },
-	{ to: "/programs", label: "Programs", icon: "auto_stories" },
-	{ to: "/study-materials", label: "Study Materials", icon: "psychology" },
-	{ to: "/membership", label: "Membership Benefits", icon: "group" },
-	{ to: "/events", label: "Events", icon: "calendar_month" },
-	{ to: "/help-center", label: "Help Center", icon: "help" },
+export const SIDE_NAV_ITEMS: SideNavItem[] = [
+	{ to: "/dashboard", label: "Dashboard", icon: Home },
+	{ to: "/programs", label: "Programs", icon: BookOpen },
+	{ to: "/study-materials", label: "Study Materials", icon: Brain },
+	{ to: "/membership", label: "Membership Benefits", icon: Users },
+	{ to: "/events", label: "Events", icon: CalendarDays },
+	{ to: "/help-center", label: "Help Center", icon: CircleHelp },
 ]

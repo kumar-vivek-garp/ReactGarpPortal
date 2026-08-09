@@ -1,1 +1,0 @@
-import{j as o}from"./react-vendor-CbpEVQuA.js";import{u as e,a as r}from"./ui-vendor-BVLTwMZ0.js";import{c as i}from"./utils-DoXw85WE.js";function p({children:t,className:s}){const a=e({from:{opacity:0},to:{opacity:1},config:{mass:1,tension:140,friction:26}});return o.jsx(r.div,{className:i("page-enter-fade",s),style:a,children:t})}export{p as P};

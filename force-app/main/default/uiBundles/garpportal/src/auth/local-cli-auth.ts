@@ -1,4 +1,8 @@
 import type { CurrentUser } from "@/api/auth/current-user"
+import {
+	mapContactProfileExtras,
+	type ContactProfileQueryResult,
+} from "@/api/auth/contact-profile"
 import { isLocalViteHost } from "@/auth/sfdc-env"
 
 /** Vite DEV + localhost only. Compiles to false in production builds. */
@@ -66,6 +70,7 @@ type CurrentUserQueryResult = {
 				Contact?: {
 					Id?: string | null
 					GARP_Member_ID__c?: { value?: string | null } | null
+					Photo_URL__c?: { value?: string | null } | null
 				} | null
 			} | null
 		} | null
@@ -80,11 +85,69 @@ type MemberPortalMeEnvelope = {
 		fullName?: string
 		email?: string
 		garpId?: string
+		photoUrl?: string
+	}
+}
+
+async function fetchContactProfileExtrasViaLocalCli(
+	contactId: string,
+): Promise<{
+	garpId: string | null
+	photoUrl: string | null
+	fullName: string | null
+} | null> {
+	const query = `
+		query ContactProfileExtras($contactId: ID!, $first: Int!) {
+			uiapi {
+				query {
+					Contact(where: { Id: { eq: $contactId } }, first: $first) {
+						edges {
+							node {
+								Id
+								Name @optional { value }
+								GARP_Member_ID__c @optional { value }
+								GARP_ID__c @optional { value }
+								Photo_URL__c @optional { value }
+							}
+						}
+						pageInfo { hasNextPage endCursor }
+					}
+				}
+			}
+		}
+	`
+
+	try {
+		const response = await localSfFetch(
+			`/services/data/v${DEFAULT_API_VERSION}/graphql`,
+			{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Accept: "application/json",
+				},
+				body: JSON.stringify({
+					query,
+					variables: { contactId, first: 1 },
+				}),
+			},
+		)
+		if (!response.ok) return null
+		const payload = (await response.json()) as {
+			data?: ContactProfileQueryResult
+			errors?: unknown[]
+		}
+		if (payload.errors?.length) return null
+		const node = payload.data?.uiapi?.query?.Contact?.edges?.[0]?.node
+		if (!node?.Id) return null
+		return mapContactProfileExtras(node)
+	} catch {
+		return null
 	}
 }
 
 /**
- * GraphQL currentUser (+ Contact GARP ID) via local CLI proxy.
+ * GraphQL currentUser (+ Contact GARP ID + photo) via local CLI proxy.
  * Falls back to memberportal/me when GraphQL is unavailable but REST works.
  */
 export async function fetchCurrentUserViaLocalCli(): Promise<CurrentUser | null> {
@@ -96,12 +159,16 @@ export async function fetchCurrentUserViaLocalCli(): Promise<CurrentUser | null>
 					Name { value @optional }
 					Contact {
 						Id
-						GARP_Member_ID__c { value @optional }
+						GARP_Member_ID__c @optional { value }
+						Photo_URL__c @optional { value }
 					}
 				}
 			}
 		}
 	`
+
+	let userIdFromGraphql: string | null = null
+	let nameFromGraphql = ""
 
 	try {
 		const response = await localSfFetch(
@@ -121,11 +188,35 @@ export async function fetchCurrentUserViaLocalCli(): Promise<CurrentUser | null>
 			if (!payload.errors?.length) {
 				const currentUser = payload.data?.uiapi?.currentUser
 				if (currentUser?.Id) {
-					const rawGarpId = currentUser.Contact?.GARP_Member_ID__c?.value?.trim()
-					return {
-						id: currentUser.Id,
-						name: currentUser.Name?.value ?? "",
-						garpId: rawGarpId ? rawGarpId : null,
+					userIdFromGraphql = currentUser.Id
+					nameFromGraphql = currentUser.Name?.value ?? ""
+					const rawContactId = currentUser.Contact?.Id?.trim() || null
+					let garpId =
+						currentUser.Contact?.GARP_Member_ID__c?.value?.trim() || null
+					let photoUrl =
+						currentUser.Contact?.Photo_URL__c?.value?.trim() || null
+					let name = nameFromGraphql
+
+					// CLI User often has Contact: null on uiapi.currentUser — fall
+					// through to memberportal/me for contactId / photo / GARP ID.
+					if (rawContactId) {
+						if (!garpId || !photoUrl) {
+							const extras =
+								await fetchContactProfileExtrasViaLocalCli(rawContactId)
+							if (extras) {
+								garpId = garpId ?? extras.garpId
+								photoUrl = photoUrl ?? extras.photoUrl
+								if (!name.trim() && extras.fullName) name = extras.fullName
+							}
+						}
+
+						return {
+							id: currentUser.Id,
+							name,
+							garpId,
+							contactId: rawContactId,
+							photoUrl,
+						}
 					}
 				}
 			}
@@ -138,11 +229,32 @@ export async function fetchCurrentUserViaLocalCli(): Promise<CurrentUser | null>
 	if (me && typeof me === "object" && me.ok && me.data) {
 		const data = me.data
 		if (data.contactId || data.fullName || data.email) {
-			const rawGarpId = data.garpId?.trim()
+			const rawContactId = data.contactId?.trim() || null
+			let garpId = data.garpId?.trim() || null
+			let photoUrl = data.photoUrl?.trim() || null
+			let name =
+				nameFromGraphql.trim() ||
+				data.fullName ||
+				data.email ||
+				"CLI Member"
+
+			if (rawContactId && (!garpId || !photoUrl)) {
+				const extras = await fetchContactProfileExtrasViaLocalCli(rawContactId)
+				if (extras) {
+					garpId = garpId ?? extras.garpId
+					photoUrl = photoUrl ?? extras.photoUrl
+					if ((!data.fullName || !data.fullName.trim()) && extras.fullName) {
+						name = extras.fullName
+					}
+				}
+			}
+
 			return {
-				id: data.contactId ?? "local-cli-member",
-				name: data.fullName ?? data.email ?? "CLI Member",
-				garpId: rawGarpId ? rawGarpId : null,
+				id: userIdFromGraphql ?? data.contactId ?? "local-cli-member",
+				name,
+				garpId,
+				contactId: rawContactId,
+				photoUrl,
 			}
 		}
 	}

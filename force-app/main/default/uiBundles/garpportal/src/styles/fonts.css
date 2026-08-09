@@ -60,19 +60,6 @@
 	font-display: swap;
 }
 
-/*
- * Material Symbols Outlined — self-hosted 7-glyph subset (~2.6KB woff2).
- * Glyphs: account_circle, auto_stories, calendar_month, group, help, home, psychology
- * Regenerate: see src/assets/fonts/README.md
- */
-@font-face {
-	font-family: 'Material Symbols Outlined';
-	font-style: normal;
-	font-weight: 400;
-	font-display: block;
-	src: url('../assets/fonts/material-symbols-outlined-subset.woff2') format('woff2');
-}
-
 /* Klinic Slab has no npm/Google Fonts package — hotlinked from GARP's own CDN,
    matching exactly what the live production app does (see .claude/rules/theming.md
    and the theme design-plan history for the licensing rationale). */
@@ -131,22 +118,4 @@
 		format('woff');
 	font-weight: 700;
 	font-style: italic;
-}
-
-/* Material Symbols Outlined — sidebar / profile ligatures (subset font above). */
-.material-symbols-outlined {
-	font-family: 'Material Symbols Outlined', sans-serif;
-	font-weight: 400;
-	font-style: normal;
-	font-size: 1.25rem;
-	line-height: 1;
-	letter-spacing: normal;
-	text-transform: none;
-	display: inline-block;
-	white-space: nowrap;
-	word-wrap: normal;
-	direction: ltr;
-	-webkit-font-feature-settings: 'liga';
-	font-feature-settings: 'liga';
-	-webkit-font-smoothing: antialiased;
 }

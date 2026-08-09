@@ -1,16 +1,16 @@
 import { Link, useLocation } from "@tanstack/react-router"
+import type { LucideIcon } from "lucide-react"
 
-import { MaterialSymbol } from "@/components/atoms/material-symbol"
 import { cn } from "@/lib/utils"
 import type { AppRoute } from "@/config/navigation/types"
 
 type SidebarNavLinkProps = {
 	to: AppRoute
 	label: string
-	icon: string
+	icon: LucideIcon
 }
 
-function SidebarNavLink({ to, label, icon }: SidebarNavLinkProps) {
+function SidebarNavLink({ to, label, icon: Icon }: SidebarNavLinkProps) {
 	const { pathname } = useLocation()
 	const isActive = pathname === to || pathname.startsWith(`${to}/`)
 
@@ -28,7 +28,7 @@ function SidebarNavLink({ to, label, icon }: SidebarNavLinkProps) {
 					isActive ? "bg-primary text-primary-foreground" : "bg-border text-dark-blue-gray"
 				)}
 			>
-				<MaterialSymbol name={icon} className="text-[22px]" />
+				<Icon className="size-[22px]" aria-hidden />
 			</span>
 			{label}
 		</Link>

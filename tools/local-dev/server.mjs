@@ -186,6 +186,12 @@ const server = http.createServer(async (req, res) => {
 			return await proxyToSalesforce(req, res, upstreamPath)
 		}
 
+		// Profile photos / Attachments (Contact.Photo_URL__c FileDownload paths)
+		if (url.pathname.startsWith("/servlet/")) {
+			const upstreamPath = `${url.pathname}${url.search}`
+			return await proxyToSalesforce(req, res, upstreamPath)
+		}
+
 		sendJson(res, 404, {
 			ok: false,
 			error: `Unknown path: ${url.pathname}`,

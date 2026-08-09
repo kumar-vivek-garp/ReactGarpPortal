@@ -17,6 +17,7 @@ function AppSidebar({ forceSkeleton = false }: { forceSkeleton?: boolean }) {
 				<SidebarProfileLink
 					name={displayName}
 					garpId={user?.garpId?.trim() || "—"}
+					avatarUrl={user?.photoUrl ?? undefined}
 				/>
 			)}
 			<div className="border-t border-background" />

@@ -46,3 +46,13 @@ $RECYCLE.BIN/
 **/__pycache__/
 **/.venv/
 **/venv/
+
+# React UI Bundle build output (build locally / in CI before deploy)
+**/uiBundles/**/dist/
+**/uiBundles/**/build/
+**/uiBundles/**/*.tsbuildinfo
+
+# Apex classes — keep out of commits from this workspace
+# Note: already-tracked files still show as modified until you leave them unstaged
+# (gitignore does not untrack existing files). Do not `git add` this folder.
+force-app/main/default/classes/

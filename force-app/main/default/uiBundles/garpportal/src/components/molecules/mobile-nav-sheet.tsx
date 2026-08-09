@@ -3,7 +3,6 @@ import { Link } from "@tanstack/react-router"
 import { animated, useSpring, useTransition } from "@react-spring/web"
 import { ChevronDown, ChevronLeft, Menu, X } from "lucide-react"
 
-import { MaterialSymbol } from "@/components/atoms/material-symbol"
 import { MegaMenuPanel } from "@/components/molecules/mega-menu-panel"
 import { SidebarProfileLink } from "@/components/molecules/sidebar-profile-link"
 import { SidebarProfileSkeleton } from "@/components/molecules/sidebar-profile-skeleton"
@@ -156,19 +155,20 @@ function MobileNavBar() {
 														<SidebarProfileLink
 															name={displayName}
 															garpId={user?.garpId?.trim() || "—"}
+															avatarUrl={user?.photoUrl ?? undefined}
 															uppercase={false}
 														/>
 													)}
 												</div>
-												{SIDE_NAV_ITEMS.map(({ to, label, icon }) => (
+												{SIDE_NAV_ITEMS.map(({ to, label, icon: Icon }) => (
 													<Link
 														key={to}
 														to={to}
 														className="flex items-center gap-4 border-b border-border px-6 py-3.5 text-base text-foreground last:border-b-0 active:bg-accent/60"
 													>
-														<MaterialSymbol
-															name={icon}
-															className="shrink-0 text-[22px] text-dark-blue-gray"
+														<Icon
+															className="size-[22px] shrink-0 text-dark-blue-gray"
+															aria-hidden
 														/>
 														{label}
 													</Link>

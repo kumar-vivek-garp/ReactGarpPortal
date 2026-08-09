@@ -1,0 +1,177 @@
+import { animated, useTransition } from "@react-spring/web"
+import { useNavigate } from "@tanstack/react-router"
+
+import { accountContactToView } from "@/api/account/account-contact-map"
+import { Tabs, TabsList, TabsTrigger } from "@/components/atoms/tabs"
+import { AccountSectionCard } from "@/components/molecules/account-section-card"
+import {
+	ProfileCompletenessMeter,
+	ProfileCompletenessMeterSkeleton,
+} from "@/components/molecules/profile-completeness-meter"
+import {
+	AccountInformationError,
+	AccountInformationPanel,
+	AccountInformationSkeleton,
+} from "@/components/organisms/account-information-panel"
+import { OrderHistoryPanel } from "@/components/organisms/order-history-panel"
+import { useAccount } from "@/hooks/use-account"
+import { useAccountContact } from "@/hooks/use-account-contact"
+import { useCurrentUser } from "@/hooks/use-current-user"
+import type { MyAccountTab } from "@/config/my-account"
+import { cn } from "@/lib/utils"
+
+const TAB_ITEMS: Array<{ value: MyAccountTab; label: string }> = [
+	{ value: "account-information", label: "Account Information" },
+	{ value: "contact-preferences", label: "Contact Preferences" },
+	{ value: "order-history", label: "Order History" },
+]
+
+const TAB_SPRING = { mass: 0.9, tension: 320, friction: 26 }
+
+const pillTriggerClassName = cn(
+	"h-auto flex-none shrink-0 cursor-pointer rounded-full border-0 px-5 py-2 text-sm font-semibold shadow-none",
+	"bg-muted text-foreground hover:bg-muted/80 hover:text-foreground",
+	"data-[state=active]:bg-deep-purple data-[state=active]:text-deep-purple-foreground",
+	"data-[state=active]:hover:bg-deep-purple data-[state=active]:hover:text-deep-purple-foreground",
+	"after:hidden",
+)
+
+type MyAccountPanelProps = {
+	tab: MyAccountTab
+}
+
+function ComingSoonPanel({ title }: { title: string }) {
+	return (
+		<div className="max-w-xl">
+			<AccountSectionCard title={title}>
+				<p className="text-sm text-muted-foreground">Coming soon.</p>
+			</AccountSectionCard>
+		</div>
+	)
+}
+
+function MyAccountPanel({ tab }: MyAccountPanelProps) {
+	const navigate = useNavigate({ from: "/my-account/" })
+	const { data: user } = useCurrentUser()
+	/** REST: completeness scoring only (+ contactId bootstrap if session Contact is blank). */
+	const accountQuery = useAccount()
+	const contactId =
+		user?.contactId?.trim() ||
+		accountQuery.data?.identity.contactId?.trim() ||
+		""
+
+	/** GraphQL: Account Information panel fields. */
+	const contactQuery = useAccountContact(
+		contactId,
+		tab === "account-information" && Boolean(contactId),
+	)
+
+	const completeness = accountQuery.data?.completeness
+	const showMeter = Boolean(completeness && !completeness.isComplete)
+	const reserveMeterSlot = accountQuery.isPending || showMeter
+
+	const panelPending =
+		tab === "account-information" &&
+		((!contactId && accountQuery.isPending) ||
+			(Boolean(contactId) && contactQuery.isPending))
+	const panelError =
+		tab === "account-information" &&
+		!panelPending &&
+		(accountQuery.isError ||
+			(Boolean(contactId) && contactQuery.isError) ||
+			!contactId)
+	const panelAccount =
+		contactQuery.data != null ? accountContactToView(contactQuery.data) : null
+
+	const tabTransitions = useTransition(tab, {
+		from: { opacity: 0, transform: "translateY(10px)" },
+		enter: { opacity: 1, transform: "translateY(0px)" },
+		leave: { opacity: 0, transform: "translateY(-8px)" },
+		config: TAB_SPRING,
+		exitBeforeEnter: true,
+	})
+
+	return (
+		<Tabs
+			value={tab}
+			onValueChange={(value) => {
+				void navigate({
+					search: { tab: value as MyAccountTab },
+					replace: true,
+				})
+			}}
+			className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
+		>
+			{/* Fixed chrome: heading + progress/tabs — does not scroll. */}
+			<header className="shrink-0 space-y-4">
+				<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+					My Account
+				</h1>
+
+				<div
+					className={cn(
+						"flex flex-col gap-4",
+						reserveMeterSlot && "sm:flex-row sm:items-center sm:justify-between sm:gap-6",
+					)}
+				>
+					{reserveMeterSlot ? (
+						<div className="w-full max-w-md sm:min-w-0 sm:flex-1">
+							{accountQuery.isPending ? (
+								<ProfileCompletenessMeterSkeleton />
+							) : showMeter && completeness ? (
+								<ProfileCompletenessMeter
+									percent={completeness.percentComplete}
+									missing={completeness.missing}
+								/>
+							) : null}
+						</div>
+					) : null}
+
+					<div className="overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+						<TabsList className="h-auto w-max gap-3 bg-transparent p-0">
+							{TAB_ITEMS.map((item) => (
+								<TabsTrigger
+									key={item.value}
+									value={item.value}
+									className={pillTriggerClassName}
+								>
+									{item.label}
+								</TabsTrigger>
+							))}
+						</TabsList>
+					</div>
+				</div>
+			</header>
+
+			{/* Only this region scrolls; spring fade/slide on tab change. */}
+			<div className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+				{tabTransitions((style, currentTab) => (
+					<animated.div
+						key={currentTab}
+						role="tabpanel"
+						style={style}
+						className="pb-2"
+					>
+						{currentTab === "account-information" ? (
+							<>
+								{panelPending ? <AccountInformationSkeleton /> : null}
+								{!panelPending && panelError ? <AccountInformationError /> : null}
+								{!panelPending && panelAccount ? (
+									<AccountInformationPanel account={panelAccount} />
+								) : null}
+							</>
+						) : null}
+						{currentTab === "contact-preferences" ? (
+							<ComingSoonPanel title="Contact Preferences" />
+						) : null}
+						{currentTab === "order-history" ? (
+							<OrderHistoryPanel enabled={tab === "order-history"} />
+						) : null}
+					</animated.div>
+				))}
+			</div>
+		</Tabs>
+	)
+}
+
+export { MyAccountPanel }
