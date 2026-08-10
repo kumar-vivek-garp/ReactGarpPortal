@@ -162,11 +162,38 @@ function EntitlementCard({ material }: { material: StudyMaterial }) {
 	)
 }
 
+function CatalogueCardSkeleton() {
+	return (
+		<Skeleton className="flex h-full flex-col gap-4 overflow-hidden rounded-xl border border-border py-0">
+			{/* Image band — matches CatalogueCard h-44 muted frame */}
+			<div className="flex h-44 items-center justify-center bg-muted/40 p-4">
+				<Skeleton className="h-full w-full max-w-[12rem] rounded-md" />
+			</div>
+			<div className="space-y-2 px-5 pt-1">
+				<Skeleton className="h-5 w-4/5" />
+				<Skeleton className="h-4 w-28" />
+			</div>
+			<div className="flex-1 space-y-2 px-5">
+				<Skeleton className="h-3.5 w-full" />
+				<Skeleton className="h-3.5 w-full" />
+				<Skeleton className="h-3.5 w-3/4" />
+			</div>
+			<div className="mt-auto flex justify-end px-5 pb-5">
+				<Skeleton className="h-4 w-28" />
+			</div>
+		</Skeleton>
+	)
+}
+
 function StudyMaterialsContentSkeleton() {
 	return (
-		<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-busy>
+		<div
+			className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+			aria-busy
+			aria-label="Loading study materials"
+		>
 			{[0, 1, 2, 3, 4, 5, 6, 7].map((key) => (
-				<Skeleton key={key} className="h-72 w-full rounded-xl" />
+				<CatalogueCardSkeleton key={key} />
 			))}
 		</div>
 	)

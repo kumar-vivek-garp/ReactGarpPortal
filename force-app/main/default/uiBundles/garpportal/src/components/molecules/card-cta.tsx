@@ -1,6 +1,7 @@
 import { CircleArrowRight, Lock } from "lucide-react"
 import { Link } from "@tanstack/react-router"
 
+import { parseInternalAppHref } from "@/lib/parse-internal-app-href"
 import { cn } from "@/lib/utils"
 
 type CardCtaProps = {
@@ -9,11 +10,14 @@ type CardCtaProps = {
 	isExternal: boolean
 	locked?: boolean
 	newWindow?: boolean
+	/** When true, renders a non-interactive CTA (e.g. Register Now). */
+	disabled?: boolean
 	className?: string
 }
 
 /**
  * Benefit / hero CTA — external `<a>` or in-app TanStack `Link` from Apex flags.
+ * In-app URLs may include a query string (`/membership?tab=directory`).
  */
 function CardCta({
 	label,
@@ -21,6 +25,7 @@ function CardCta({
 	isExternal,
 	locked = false,
 	newWindow = false,
+	disabled = false,
 	className,
 }: CardCtaProps) {
 	if (!label || !url) return null
@@ -35,8 +40,17 @@ function CardCta({
 
 	const styles = cn(
 		"inline-flex items-center gap-2 text-sm font-semibold text-foreground hover:text-garp-cyan",
+		disabled && "pointer-events-none opacity-50 hover:text-foreground",
 		className,
 	)
+
+	if (disabled) {
+		return (
+			<span className={styles} aria-disabled="true">
+				{inner}
+			</span>
+		)
+	}
 
 	if (isExternal) {
 		return (
@@ -50,8 +64,19 @@ function CardCta({
 		)
 	}
 
+	const { pathname, search } = parseInternalAppHref(url)
+	const hasSearch = Object.keys(search).length > 0
+
+	if (hasSearch) {
+		return (
+			<Link to={pathname} search={search} className={styles}>
+				{inner}
+			</Link>
+		)
+	}
+
 	return (
-		<Link to={url} className={styles}>
+		<Link to={pathname} className={styles}>
 			{inner}
 		</Link>
 	)

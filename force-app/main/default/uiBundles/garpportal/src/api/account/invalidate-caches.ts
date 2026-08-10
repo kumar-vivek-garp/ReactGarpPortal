@@ -2,6 +2,7 @@ import type { QueryClient } from "@tanstack/react-query"
 
 import { accountQueryKeys } from "@/api/account/query-options"
 import { authQueryKeys } from "@/api/auth/query-options"
+import { contactPreferencesQueryKeys } from "@/api/contact-preferences/query-options"
 import { personalInfoQueryKeys } from "@/api/personal-info"
 
 /**
@@ -10,6 +11,7 @@ import { personalInfoQueryKeys } from "@/api/personal-info"
  * - GraphQL AccountContact (information panel)
  * - GraphQL currentUser (sidebar photo / garpId)
  * - personal-info edit hydrate
+ * - contact preferences
  */
 export async function invalidateAccountCaches(
 	queryClient: QueryClient,
@@ -23,6 +25,9 @@ export async function invalidateAccountCaches(
 		queryClient.invalidateQueries({ queryKey: authQueryKeys.currentUser }),
 		queryClient.invalidateQueries({
 			queryKey: personalInfoQueryKeys.edit(trimmedId),
+		}),
+		queryClient.invalidateQueries({
+			queryKey: contactPreferencesQueryKeys.detail(trimmedId),
 		}),
 	])
 }

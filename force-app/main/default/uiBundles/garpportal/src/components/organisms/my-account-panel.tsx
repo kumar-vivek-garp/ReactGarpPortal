@@ -3,7 +3,6 @@ import { useNavigate } from "@tanstack/react-router"
 
 import { accountContactToView } from "@/api/account/account-contact-map"
 import { Tabs, TabsList, TabsTrigger } from "@/components/atoms/tabs"
-import { AccountSectionCard } from "@/components/molecules/account-section-card"
 import {
 	ProfileCompletenessMeter,
 	ProfileCompletenessMeterSkeleton,
@@ -13,6 +12,10 @@ import {
 	AccountInformationPanel,
 	AccountInformationSkeleton,
 } from "@/components/organisms/account-information-panel"
+import {
+	ContactPreferencesPanel,
+	ContactPreferencesSkeleton,
+} from "@/components/organisms/contact-preferences-panel"
 import { OrderHistoryPanel } from "@/components/organisms/order-history-panel"
 import { useAccount } from "@/hooks/use-account"
 import { useAccountContact } from "@/hooks/use-account-contact"
@@ -38,16 +41,6 @@ const pillTriggerClassName = cn(
 
 type MyAccountPanelProps = {
 	tab: MyAccountTab
-}
-
-function ComingSoonPanel({ title }: { title: string }) {
-	return (
-		<div className="max-w-xl">
-			<AccountSectionCard title={title}>
-				<p className="text-sm text-muted-foreground">Coming soon.</p>
-			</AccountSectionCard>
-		</div>
-	)
 }
 
 function MyAccountPanel({ tab }: MyAccountPanelProps) {
@@ -82,6 +75,13 @@ function MyAccountPanel({ tab }: MyAccountPanelProps) {
 			!contactId)
 	const panelAccount =
 		contactQuery.data != null ? accountContactToView(contactQuery.data) : null
+
+	const prefsPending =
+		tab === "contact-preferences" && !contactId && accountQuery.isPending
+	const prefsMissingContact =
+		tab === "contact-preferences" &&
+		!prefsPending &&
+		!contactId
 
 	const tabTransitions = useTransition(tab, {
 		from: { opacity: 0, transform: "translateY(10px)" },
@@ -162,7 +162,21 @@ function MyAccountPanel({ tab }: MyAccountPanelProps) {
 							</>
 						) : null}
 						{currentTab === "contact-preferences" ? (
-							<ComingSoonPanel title="Contact Preferences" />
+							<>
+								{prefsPending ? <ContactPreferencesSkeleton /> : null}
+								{prefsMissingContact ? (
+									<p className="text-sm text-muted-foreground">
+										We couldn&apos;t load your contact preferences. Please try again
+										later.
+									</p>
+								) : null}
+								{!prefsPending && contactId ? (
+									<ContactPreferencesPanel
+										contactId={contactId}
+										enabled={tab === "contact-preferences"}
+									/>
+								) : null}
+							</>
 						) : null}
 						{currentTab === "order-history" ? (
 							<OrderHistoryPanel enabled={tab === "order-history"} />

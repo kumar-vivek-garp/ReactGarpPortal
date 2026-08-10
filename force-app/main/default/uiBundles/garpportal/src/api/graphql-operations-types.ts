@@ -133,6 +133,31 @@ export type CurrentUserQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type CurrentUserQuery = { uiapi: { currentUser?: { Id: string, Name?: { value?: string | null } | null, Contact?: { Id: string, GARP_Member_ID__c?: { value?: string | null } | null, Photo_URL__c?: { value?: string | null } | null } | null } | null } };
 
+export type ContactPreferencesQueryVariables = Exact<{
+  contactId: Scalars['ID']['input'];
+  first: Scalars['Int']['input'];
+}>;
+
+
+export type ContactPreferencesQuery = { uiapi: { query: { Contact?: { edges?: Array<{ node?: { Id: string, Email?: { value?: string | null } | null, MobilePhone?: { value?: string | null } | null, Mobile_Phone_Code__c?: { value?: string | null } | null, SMS_Promotional_Updates__c?: { value?: boolean | null } | null, SMS_Registration_Updates__c?: { value?: boolean | null } | null } | null } | null> | null } | null } } };
+
+export type RequestEmailPreferencesMutationVariables = Exact<{
+  contactId: Scalars['IdOrRef']['input'];
+  updatedAt?: InputMaybe<Scalars['DateTime']['input']>;
+}>;
+
+
+export type RequestEmailPreferencesMutation = { uiapi: { ContactUpdate?: { success?: boolean | null } | null } };
+
+export type UpdateSmsPreferencesMutationVariables = Exact<{
+  contactId: Scalars['IdOrRef']['input'];
+  smsPromotional?: InputMaybe<Scalars['Boolean']['input']>;
+  smsRegistration?: InputMaybe<Scalars['Boolean']['input']>;
+}>;
+
+
+export type UpdateSmsPreferencesMutation = { uiapi: { ContactUpdate?: { success?: boolean | null, Record?: { SMS_Promotional_Updates__c?: { value?: boolean | null } | null, SMS_Registration_Updates__c?: { value?: boolean | null } | null } | null } | null } };
+
 export type SearchMemberDirectoryQueryVariables = Exact<{
   term: Scalars['String']['input'];
   first: Scalars['Int']['input'];
