@@ -23,6 +23,14 @@ export default defineConfig(({ mode }) => {
           server: {
             port: 5173,
             strictPort: true,
+            // Leading-dot matches any subdomain (ngrok free URLs rotate).
+            allowedHosts: [
+              '.ngrok-free.dev',
+              '.ngrok-free.app',
+              '.ngrok.app',
+              '.ngrok.dev',
+              '.ngrok.io',
+            ],
             proxy: {
               '/__local_sf': {
                 target: `http://127.0.0.1:${process.env.LOCAL_SF_PORT || 8787}`,

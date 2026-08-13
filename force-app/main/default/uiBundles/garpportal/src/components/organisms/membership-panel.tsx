@@ -10,13 +10,13 @@ import { Skeleton } from "@/components/atoms/skeleton"
 import { Tabs, TabsList, TabsTrigger } from "@/components/atoms/tabs"
 import { BenefitCard } from "@/components/molecules/benefit-card"
 import { DirectorySearch } from "@/components/molecules/directory-search"
+import { StaggerReveal } from "@/components/molecules/stagger-reveal"
 import type { MembershipTab } from "@/config/membership"
 import { useMembership } from "@/hooks/use-membership"
 import { formatLongDate } from "@/lib/account-format"
 import { resolvePortalAssetUrl } from "@/lib/resolve-portal-asset-url"
+import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
 import { cn } from "@/lib/utils"
-
-const TAB_SPRING = { mass: 0.9, tension: 320, friction: 26 }
 
 const TAB_ITEMS: Array<{ value: MembershipTab; label: string }> = [
 	{ value: "benefits", label: "Member Benefits" },
@@ -24,7 +24,7 @@ const TAB_ITEMS: Array<{ value: MembershipTab; label: string }> = [
 ]
 
 const pillTriggerClassName = cn(
-	"h-auto flex-none shrink-0 cursor-pointer rounded-full border-0 px-5 py-2 text-sm font-semibold shadow-none",
+	"h-auto flex-none shrink-0 cursor-pointer rounded-xl border-0 px-5 py-2 text-sm font-semibold shadow-none",
 	"bg-muted text-foreground hover:bg-muted/80 hover:text-foreground",
 	"data-[state=active]:bg-deep-purple data-[state=active]:text-deep-purple-foreground",
 	"data-[state=active]:hover:bg-deep-purple data-[state=active]:hover:text-deep-purple-foreground",
@@ -52,7 +52,7 @@ function MembershipHeroSkeleton() {
 					<Skeleton className="h-3.5 w-full" />
 					<Skeleton className="h-3.5 w-5/6" />
 					<Skeleton className="h-3.5 w-4/5" />
-					<Skeleton className="h-9 w-44 rounded-full" />
+					<Skeleton className="h-9 w-44 rounded-xl" />
 				</div>
 			</div>
 		</Skeleton>
@@ -87,7 +87,7 @@ function MembershipBenefitsSkeleton() {
 			<MembershipHeroSkeleton />
 			<section className="space-y-4">
 				<Skeleton className="h-6 w-48" />
-				<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+				<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 					{[0, 1, 2, 3].map((key) => (
 						<BenefitCardSkeleton key={key} withImage={key !== 1} />
 					))}
@@ -221,11 +221,14 @@ function BenefitsTabBody({
 						<h2 className="font-heading text-xl font-semibold tracking-wide text-foreground">
 							{section.name}
 						</h2>
-						<div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+						<StaggerReveal
+							className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+							itemClassName="h-full"
+						>
 							{section.benefits.map((benefit) => (
 								<BenefitCard key={benefit.id} benefit={benefit} />
 							))}
-						</div>
+						</StaggerReveal>
 					</section>
 				))
 			)}
@@ -269,13 +272,7 @@ function MembershipPanel({ tab }: MembershipPanelProps) {
 	const navigate = useNavigate({ from: "/membership/" })
 	const { data, isLoading, isError } = useMembership()
 
-	const tabTransitions = useTransition(tab, {
-		from: { opacity: 0, transform: "translateY(10px)" },
-		enter: { opacity: 1, transform: "translateY(0px)" },
-		leave: { opacity: 0, transform: "translateY(-8px)" },
-		config: TAB_SPRING,
-		exitBeforeEnter: true,
-	})
+	const tabTransitions = useTransition(tab, TAB_PANEL_TRANSITION)
 
 	return (
 		<Tabs

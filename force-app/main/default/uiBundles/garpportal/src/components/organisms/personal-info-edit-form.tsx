@@ -146,8 +146,8 @@ function PersonalInfoEditFormSkeleton() {
 			<section className="flex flex-col gap-3 sm:flex-row sm:items-center">
 				<Skeleton className="size-20 shrink-0 rounded-full" />
 				<div className="flex flex-wrap gap-2">
-					<Skeleton className="h-9 w-28 rounded-full" />
-					<Skeleton className="h-9 w-20 rounded-full" />
+					<Skeleton className="h-9 w-28 rounded-xl" />
+					<Skeleton className="h-9 w-20 rounded-xl" />
 				</div>
 			</section>
 

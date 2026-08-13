@@ -5,6 +5,7 @@ import type { PortalOrder } from "@/api/orders/types"
 import { Button } from "@/components/atoms/button"
 import { Input } from "@/components/atoms/input"
 import { Skeleton } from "@/components/atoms/skeleton"
+import { StaggerReveal } from "@/components/molecules/stagger-reveal"
 import { useOrders } from "@/hooks/use-orders"
 import { formatLongDate, formatMoney } from "@/lib/account-format"
 import { cn } from "@/lib/utils"
@@ -138,7 +139,7 @@ function OrderRowSkeleton({ showPay = false }: { showPay?: boolean }) {
 			<Skeleton className="h-4 w-full max-w-xs" />
 			<Skeleton className="h-4 w-16 sm:justify-self-end" />
 			<Skeleton className="h-6 w-16 rounded-full" />
-			{showPay ? <Skeleton className="h-8 w-20 rounded-full sm:justify-self-end" /> : null}
+			{showPay ? <Skeleton className="h-8 w-20 rounded-xl sm:justify-self-end" /> : null}
 		</Skeleton>
 	)
 }
@@ -224,9 +225,11 @@ function OrderSection({
 						<span>Status</span>
 						{showPay ? <span className="text-right">Action</span> : null}
 					</div>
-					{orders.map((order) => (
-						<OrderRow key={order.id} order={order} showPay={showPay} />
-					))}
+					<StaggerReveal className="space-y-3">
+						{orders.map((order) => (
+							<OrderRow key={order.id} order={order} showPay={showPay} />
+						))}
+					</StaggerReveal>
 				</div>
 			)}
 		</section>

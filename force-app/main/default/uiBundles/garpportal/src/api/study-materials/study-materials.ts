@@ -5,7 +5,9 @@ import {
 	normalizeHttpResponse,
 	unwrapApiResult,
 } from "@/api/client"
+import { normalizeStudyMaterialsPayload } from "@/api/study-materials/normalize"
 import type {
+	ApexStudyMaterialsPayload,
 	MemberPortalEnvelope,
 	StudyMaterialsView,
 } from "@/api/study-materials/types"
@@ -13,9 +15,8 @@ import type {
 const STUDY_MATERIALS_PATH = "/services/apexrest/memberportal/studyMaterials"
 
 /**
- * Loads study materials catalogue + entitlements from Apex
- * `GARP_MemberPortal_API` (studyMaterials action).
- * Unwraps `{ ok, data }` / `{ ok, error }` into `StudyMaterialsView` or throws `AppError`.
+ * Loads study materials from Apex `GARP_Portal_API` (studyMaterials action).
+ * Maps legacy `studyMaterialsInfo` buckets into the React panel model.
  */
 export async function fetchStudyMaterials(): Promise<StudyMaterialsView> {
 	const sdk = await createDataSDK()
@@ -25,7 +26,7 @@ export async function fetchStudyMaterials(): Promise<StudyMaterialsView> {
 	})
 
 	const result = await normalizeHttpResponse<
-		MemberPortalEnvelope<StudyMaterialsView>
+		MemberPortalEnvelope<ApexStudyMaterialsPayload>
 	>(response, {
 		unreachableMessage: "Unable to reach the study materials service.",
 		fallbackErrorMessage: "Unable to load study materials. Please try again.",
@@ -47,5 +48,5 @@ export async function fetchStudyMaterials(): Promise<StudyMaterialsView> {
 		})
 	}
 
-	return envelope.data
+	return normalizeStudyMaterialsPayload(envelope.data)
 }

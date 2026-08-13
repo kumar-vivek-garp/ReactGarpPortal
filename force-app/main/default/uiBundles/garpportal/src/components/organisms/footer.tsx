@@ -1,5 +1,6 @@
 import { ArrowRight } from "lucide-react"
 
+import { FooterBackToTop } from "@/components/molecules/footer-back-to-top"
 import { FooterLegalBar } from "@/components/molecules/footer-legal-bar"
 import { FooterNavSectionView } from "@/components/molecules/footer-nav-section"
 import { FooterSocialLinks } from "@/components/molecules/footer-social-links"
@@ -59,6 +60,7 @@ function Footer() {
 			<div className="footer-container mt-10">
 				<FooterLegalBar links={FOOTER_LEGAL_LINKS} copyright={FOOTER_COPYRIGHT} />
 			</div>
+			<FooterBackToTop />
 		</footer>
 	)
 }

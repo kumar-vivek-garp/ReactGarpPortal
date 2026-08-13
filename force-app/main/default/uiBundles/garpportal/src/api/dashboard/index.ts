@@ -1,5 +1,7 @@
 export type {
 	DashboardCardMeta,
+	DashboardEnrolledPreview,
+	DashboardEventPreview,
 	DashboardView,
 	DismissCardResult,
 	MemberPortalEnvelope,

@@ -89,19 +89,21 @@ function NavMegaMenuItem({ item }: { item: TopNavItem }) {
 					/*
 					 * Wrapper starts at the toolbar bottom (top-20) so the cursor can travel
 					 * through the gap into the panel without hitting the dim overlay.
+					 * While leaving (`!isActive`), disable pointer events on the whole
+					 * wrapper so the fading panel cannot call keepOpen and reopen.
 					 */
 					<div
 						className="fixed top-20 z-[2000] pt-3"
-						style={{ left }}
-						onMouseEnter={keepOpen}
-						onMouseLeave={scheduleCloseDesktopNav}
+						style={{
+							left,
+							pointerEvents: isActive ? "auto" : "none",
+						}}
+						onMouseEnter={isActive ? keepOpen : undefined}
+						onMouseLeave={isActive ? scheduleCloseDesktopNav : undefined}
 					>
 						<animated.div
 							className="relative w-fit min-w-[350px] max-w-[calc(100vw-40px)] origin-top cursor-default rounded-[10px] border border-surface-gradient-end bg-[#f5f5f5] p-2.5 shadow-[0px_8px_16px_0px_rgba(0,0,0,0.2)]"
-							style={{
-								...style,
-								pointerEvents: isActive ? "auto" : "none",
-							}}
+							style={style}
 						>
 							{/* Caret tooltip — mirrors live `.dropdown::after` pointing at the trigger. */}
 							<span

@@ -21,6 +21,7 @@ import { useAccount } from "@/hooks/use-account"
 import { useAccountContact } from "@/hooks/use-account-contact"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import type { MyAccountTab } from "@/config/my-account"
+import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
 import { cn } from "@/lib/utils"
 
 const TAB_ITEMS: Array<{ value: MyAccountTab; label: string }> = [
@@ -29,10 +30,8 @@ const TAB_ITEMS: Array<{ value: MyAccountTab; label: string }> = [
 	{ value: "order-history", label: "Order History" },
 ]
 
-const TAB_SPRING = { mass: 0.9, tension: 320, friction: 26 }
-
 const pillTriggerClassName = cn(
-	"h-auto flex-none shrink-0 cursor-pointer rounded-full border-0 px-5 py-2 text-sm font-semibold shadow-none",
+	"h-auto flex-none shrink-0 cursor-pointer rounded-xl border-0 px-5 py-2 text-sm font-semibold shadow-none",
 	"bg-muted text-foreground hover:bg-muted/80 hover:text-foreground",
 	"data-[state=active]:bg-deep-purple data-[state=active]:text-deep-purple-foreground",
 	"data-[state=active]:hover:bg-deep-purple data-[state=active]:hover:text-deep-purple-foreground",
@@ -83,13 +82,7 @@ function MyAccountPanel({ tab }: MyAccountPanelProps) {
 		!prefsPending &&
 		!contactId
 
-	const tabTransitions = useTransition(tab, {
-		from: { opacity: 0, transform: "translateY(10px)" },
-		enter: { opacity: 1, transform: "translateY(0px)" },
-		leave: { opacity: 0, transform: "translateY(-8px)" },
-		config: TAB_SPRING,
-		exitBeforeEnter: true,
-	})
+	const tabTransitions = useTransition(tab, TAB_PANEL_TRANSITION)
 
 	return (
 		<Tabs
@@ -143,7 +136,7 @@ function MyAccountPanel({ tab }: MyAccountPanelProps) {
 				</div>
 			</header>
 
-			{/* Only this region scrolls; spring fade/slide on tab change. */}
+			{/* Only this region scrolls; cards stagger in via StaggerReveal inside panels. */}
 			<div className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 				{tabTransitions((style, currentTab) => (
 					<animated.div

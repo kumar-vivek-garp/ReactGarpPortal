@@ -1,13 +1,11 @@
 import { useCallback, useState } from "react"
-import { animated, useSpring } from "@react-spring/web"
 
 import { Skeleton } from "@/components/atoms/skeleton"
 import { DashboardCard } from "@/components/molecules/dashboard-card"
-import { useDashboard } from "@/hooks/use-dashboard"
+import { StaggerReveal } from "@/components/molecules/stagger-reveal"
+import { useDashboardCards } from "@/hooks/use-dashboard-cards"
 import { useDismissDashboardCard } from "@/hooks/use-dismiss-dashboard-card"
 import { cn } from "@/lib/utils"
-
-const PANEL_SPRING = { mass: 0.9, tension: 320, friction: 26 }
 
 type DashboardCardSkeletonProps = {
 	/** Exam-style header image placeholder. */
@@ -80,27 +78,22 @@ function DashboardSkeleton() {
 			aria-busy
 			aria-label="Loading dashboard"
 		>
-			<DashboardCardSkeleton body="meter" />
-			<DashboardCardSkeleton withImage body="lines" />
+			<DashboardCardSkeleton body="lines" />
+			<DashboardCardSkeleton body="lines" />
 			<DashboardCardSkeleton body="search" />
 		</div>
 	)
 }
 
 /**
- * Member home dashboard — ranked cards from `GET /memberportal/dashboard`.
- * Dismiss is optimistic; Apex persists via `dismissCard`.
+ * Member home dashboard — Apex cards plus enrolled/events composed with
+ * the legacy visibility rules. Dismiss is optimistic; Apex persists via
+ * `dismissCard`.
  */
 function DashboardPanel({ className }: { className?: string }) {
-	const { data, isLoading, isError } = useDashboard()
+	const { cards: composedCards, isLoading, isError } = useDashboardCards()
 	const dismissMutation = useDismissDashboardCard()
 	const [dismissed, setDismissed] = useState<string[]>([])
-
-	const enter = useSpring({
-		from: { opacity: 0, transform: "translateY(8px)" },
-		to: { opacity: 1, transform: "translateY(0px)" },
-		config: PANEL_SPRING,
-	})
 
 	const handleDismiss = useCallback(
 		(key: string) => {
@@ -128,12 +121,10 @@ function DashboardPanel({ className }: { className?: string }) {
 		)
 	}
 
-	const cards = (data?.cards ?? []).filter(
-		(card) => !dismissed.includes(card.key),
-	)
+	const cards = composedCards.filter((card) => !dismissed.includes(card.key))
 
 	return (
-		<animated.div className={cn("space-y-6", className)} style={enter}>
+		<div className={cn("space-y-6", className)}>
 			<h1 className="sr-only">Dashboard</h1>
 
 			{cards.length === 0 ? (
@@ -146,7 +137,10 @@ function DashboardPanel({ className }: { className?: string }) {
 					</p>
 				</div>
 			) : (
-				<div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+				<StaggerReveal
+					className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
+					itemClassName="h-full"
+				>
 					{cards.map((card) => (
 						<DashboardCard
 							key={card.key}
@@ -154,9 +148,9 @@ function DashboardPanel({ className }: { className?: string }) {
 							onDismiss={handleDismiss}
 						/>
 					))}
-				</div>
+				</StaggerReveal>
 			)}
-		</animated.div>
+		</div>
 	)
 }
 

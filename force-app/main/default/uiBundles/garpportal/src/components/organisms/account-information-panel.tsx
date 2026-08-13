@@ -8,6 +8,7 @@ import { AccountEditDialog } from "@/components/molecules/account-edit-dialog"
 import { AccountFieldGrid } from "@/components/molecules/account-field-grid"
 import { AccountFieldList } from "@/components/molecules/account-field-list"
 import { AccountSectionCard } from "@/components/molecules/account-section-card"
+import { StaggerReveal } from "@/components/molecules/stagger-reveal"
 import { PersonalInfoEditForm } from "@/components/organisms/personal-info-edit-form"
 import type { AccountView } from "@/api/account/types"
 import { addressLines, formatLongDate } from "@/lib/account-format"
@@ -105,7 +106,10 @@ function AccountInformationPanel({ account }: AccountInformationPanelProps) {
 	)
 
 	return (
-		<div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+		<StaggerReveal
+			className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
+			itemClassName="h-full"
+		>
 			<AccountSectionCard
 				title="Personal Information"
 				action={
@@ -314,7 +318,7 @@ function AccountInformationPanel({ account }: AccountInformationPanelProps) {
 					emptyMessage="No areas of expertise selected yet."
 				/>
 			</AccountSectionCard>
-		</div>
+		</StaggerReveal>
 	)
 }
 

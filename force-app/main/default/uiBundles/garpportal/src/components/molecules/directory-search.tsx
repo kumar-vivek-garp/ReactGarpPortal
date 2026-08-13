@@ -81,7 +81,7 @@ function DirectorySearch({
 					size="icon"
 					aria-label="Search"
 					disabled={!canSubmit}
-					className="absolute top-1/2 right-0.5 size-9 -translate-y-1/2 rounded-md text-foreground hover:text-garp-cyan"
+					className="absolute top-1/2 right-0.5 size-9 -translate-y-1/2 rounded-md text-foreground hover:text-primary"
 				>
 					{searching ? (
 						<Loader2 className="size-4 animate-spin" />

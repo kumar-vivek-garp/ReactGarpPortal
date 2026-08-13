@@ -1,7 +1,24 @@
 import type { Completeness, Identity, MemberPortalEnvelope } from "@/api/account/types"
 import type { PortalCard } from "@/api/membership/types"
 
-/** Provider meta payloads from `GARP_MemberPortal_Service.buildDashboard`. */
+/** Preview row for the Enrolled Programs dashboard card. */
+export type DashboardEnrolledPreview = {
+	programType: string
+	name: string
+	adminPartIName: string | null
+	adminPartIIName: string | null
+}
+
+/** Preview row for the My Events dashboard card. */
+export type DashboardEventPreview = {
+	eventId: string
+	eventType: string
+	eventName: string
+	eventStartDate: string | null
+	eventUrl: string | null
+}
+
+/** Provider meta payloads from dashboard composition (Apex + client). */
 export type DashboardCardMeta = {
 	percentComplete?: number
 	missing?: string[]
@@ -13,6 +30,8 @@ export type DashboardCardMeta = {
 	registrationEnd?: string | null
 	searchEnabled?: boolean
 	optedIn?: boolean
+	enrolledPrograms?: DashboardEnrolledPreview[]
+	upcomingEvents?: DashboardEventPreview[]
 }
 
 export type DashboardView = {
