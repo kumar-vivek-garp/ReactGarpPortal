@@ -3,6 +3,11 @@ export {
 	normalizeHttpResponse,
 	readJsonBody,
 } from "@/api/client/http"
+export {
+	assertMemberPortalEnvelopeOk,
+	isMemberPortalEnvelopeOk,
+	unwrapMemberPortalEnvelope,
+} from "@/api/client/member-portal-envelope"
 export { notifyError, notifySuccess, notifyWarning } from "@/api/client/notify"
 export { queryClient } from "@/api/client/query-client"
 export {

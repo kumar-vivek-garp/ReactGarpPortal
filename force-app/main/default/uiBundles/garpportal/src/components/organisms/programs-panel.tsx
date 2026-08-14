@@ -10,7 +10,7 @@ import type {
 	OtherProgram,
 } from "@/api/programs"
 import { Skeleton } from "@/components/atoms/skeleton"
-import { Tabs, TabsList, TabsTrigger } from "@/components/atoms/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/atoms/tabs"
 import { ProgramCard } from "@/components/molecules/program-card"
 import { StaggerReveal } from "@/components/molecules/stagger-reveal"
 import type { ProgramsTab } from "@/config/programs"
@@ -146,12 +146,13 @@ function ProgramsTabBody({
 			return <ProgramsEmptyState {...emptyForTab(tab)} />
 		}
 		return (
-			<ProgramGrid>
-				{enrolled.map((program) => (
+					<ProgramGrid>
+				{enrolled.map((program, index) => (
 					<ProgramCard
 						key={program.programType}
 						variant="inProgress"
 						program={program}
+						priority={index < 3}
 					/>
 				))}
 			</ProgramGrid>
@@ -163,12 +164,13 @@ function ProgramsTabBody({
 			return <ProgramsEmptyState {...emptyForTab(tab)} />
 		}
 		return (
-			<ProgramGrid>
-				{completed.map((program) => (
+					<ProgramGrid>
+				{completed.map((program, index) => (
 					<ProgramCard
 						key={program.programType}
 						variant="completed"
 						program={program}
+						priority={index < 3}
 					/>
 				))}
 			</ProgramGrid>
@@ -180,12 +182,13 @@ function ProgramsTabBody({
 			return <ProgramsEmptyState {...emptyForTab(tab)} />
 		}
 		return (
-			<ProgramGrid>
-				{other.map((program) => (
+					<ProgramGrid>
+				{other.map((program, index) => (
 					<ProgramCard
 						key={program.programType}
 						variant="other"
 						program={program}
+						priority={index < 3}
 					/>
 				))}
 			</ProgramGrid>
@@ -216,14 +219,15 @@ function ProgramsTabBody({
 						</span>
 					</h2>
 					<ProgramGrid>
-						{enrolled.map((program) => (
-							<ProgramCard
-								key={program.programType}
-								variant="inProgress"
-								program={program}
-							/>
-						))}
-					</ProgramGrid>
+				{enrolled.map((program, index) => (
+					<ProgramCard
+						key={program.programType}
+						variant="inProgress"
+						program={program}
+						priority={index < 3}
+					/>
+				))}
+			</ProgramGrid>
 				</section>
 			) : null}
 
@@ -236,14 +240,15 @@ function ProgramsTabBody({
 						</span>
 					</h2>
 					<ProgramGrid>
-						{completed.map((program) => (
-							<ProgramCard
-								key={program.programType}
-								variant="completed"
-								program={program}
-							/>
-						))}
-					</ProgramGrid>
+				{completed.map((program, index) => (
+					<ProgramCard
+						key={program.programType}
+						variant="completed"
+						program={program}
+						priority={index < 3}
+					/>
+				))}
+			</ProgramGrid>
 				</section>
 			) : null}
 
@@ -256,14 +261,15 @@ function ProgramsTabBody({
 						</span>
 					</h2>
 					<ProgramGrid>
-						{other.map((program) => (
-							<ProgramCard
-								key={program.programType}
-								variant="other"
-								program={program}
-							/>
-						))}
-					</ProgramGrid>
+				{other.map((program, index) => (
+					<ProgramCard
+						key={program.programType}
+						variant="other"
+						program={program}
+						priority={index < 3}
+					/>
+				))}
+			</ProgramGrid>
 				</section>
 			) : null}
 		</div>
@@ -323,7 +329,7 @@ function ProgramsPanel({ tab }: ProgramsPanelProps) {
 								>
 									{item.label}
 									{!isLoading ? (
-										<span className="ml-1.5 font-normal opacity-70">
+										<span className="ml-1.5 font-normal text-inherit">
 											({count})
 										</span>
 									) : null}
@@ -344,20 +350,32 @@ function ProgramsPanel({ tab }: ProgramsPanelProps) {
 				) : null}
 
 				{!isLoading && !isError
-					? tabTransitions((style, currentTab) => (
-							<animated.div
-								key={currentTab}
-								role="tabpanel"
-								style={style}
-								className="pb-2"
+					? TAB_ITEMS.map((item) => (
+							<TabsContent
+								key={item.value}
+								value={item.value}
+								forceMount
+								className={cn(
+									"mt-0 outline-none data-[state=inactive]:hidden",
+								)}
 							>
-								<ProgramsTabBody
-									tab={currentTab}
-									enrolled={enrolled}
-									completed={completed}
-									other={other}
-								/>
-							</animated.div>
+								{item.value === tab
+									? tabTransitions((style, currentTab) => (
+											<animated.div
+												key={currentTab}
+												style={style}
+												className="pb-2"
+											>
+												<ProgramsTabBody
+													tab={currentTab}
+													enrolled={enrolled}
+													completed={completed}
+													other={other}
+												/>
+											</animated.div>
+										))
+									: null}
+							</TabsContent>
 						))
 					: null}
 			</div>

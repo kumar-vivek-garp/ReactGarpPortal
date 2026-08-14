@@ -1,9 +1,9 @@
 import { createDataSDK } from "@salesforce/platform-sdk"
 
 import {
-	AppError,
 	normalizeHttpResponse,
 	unwrapApiResult,
+	unwrapMemberPortalEnvelope,
 } from "@/api/client"
 import type { AccountView, MemberPortalEnvelope } from "@/api/account/types"
 
@@ -11,7 +11,7 @@ const ACCOUNT_PATH = "/services/apexrest/memberportal/account"
 
 /**
  * Loads the composed My Account view from Apex `GARP_MemberPortal_API`.
- * Unwraps `{ ok, data }` / `{ ok, error }` into `AccountView` or throws `AppError`.
+ * Unwraps the memberportal envelope into `AccountView` or throws `AppError`.
  */
 export async function fetchAccount(): Promise<AccountView> {
 	const sdk = await createDataSDK()
@@ -30,19 +30,9 @@ export async function fetchAccount(): Promise<AccountView> {
 
 	const envelope = unwrapApiResult(result)
 
-	if (!envelope.ok) {
-		throw new AppError({
-			messages: [envelope.error ?? "Unable to load account."],
-			status: result.status,
-		})
-	}
-
-	if (!envelope.data) {
-		throw new AppError({
-			messages: ["No account data was returned."],
-			status: result.status,
-		})
-	}
-
-	return envelope.data
+	return unwrapMemberPortalEnvelope(envelope, {
+		fallbackErrorMessage: "Unable to load account.",
+		missingDataMessage: "No account data was returned.",
+		status: result.status,
+	})
 }

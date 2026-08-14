@@ -345,7 +345,7 @@ function EventsPanel({ tab }: EventsPanelProps) {
 									<Icon className="size-4" aria-hidden />
 									{item.label}
 									{!isLoading ? (
-										<span className="ml-0.5 font-normal opacity-70">
+										<span className="ml-0.5 font-normal text-inherit">
 											({count})
 										</span>
 									) : null}

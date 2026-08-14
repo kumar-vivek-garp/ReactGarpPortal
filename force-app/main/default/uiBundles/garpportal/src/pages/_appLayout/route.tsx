@@ -3,6 +3,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 
 import type { CurrentUser } from "@/api/auth/current-user"
 import { authQueryKeys, ensureCurrentUser } from "@/api/auth/query-options"
+import { programsQueryOptions } from "@/api/programs"
 import { MainLoadingBar } from "@/components/molecules/main-loading-bar"
 import { PageContainer } from "@/components/molecules/page-container"
 import { PageEnterFade } from "@/components/molecules/page-enter-fade"
@@ -27,15 +28,21 @@ export const Route = createFileRoute("/_appLayout")({
 	 * and with a low pendingMs that flashes AppRoutePending on every sidebar click.
 	 */
 	beforeLoad: ({ context, location }) => {
+		const warmPrograms = () => {
+			// Fire-and-forget: dashboard + programs both need this payload.
+			void context.queryClient.prefetchQuery(programsQueryOptions)
+		}
 		const cached = context.queryClient.getQueryData<CurrentUser | null>(
 			authQueryKeys.currentUser,
 		)
 		if (cached !== undefined) {
 			if (!cached) redirectToLogin(location)
+			warmPrograms()
 			return
 		}
 		return ensureCurrentUser(context.queryClient).then((user) => {
 			if (!user) redirectToLogin(location)
+			warmPrograms()
 		})
 	},
 	// Delay pending shell so sync/microtask auth resolves without a flash.

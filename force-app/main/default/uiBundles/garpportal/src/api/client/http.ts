@@ -4,8 +4,10 @@ import { apiFail, apiOk, type ApiResult } from "@/api/client/result"
 type ErrorsBody = {
 	errors?: string[]
 	message?: string
-	/** GARP_MemberPortal_API `{ ok, error }` envelope. */
+	/** Legacy `{ ok, error }` envelope. */
 	error?: string
+	/** Current memberportal Apex envelope. */
+	errorMessage?: string | null
 }
 
 /**
@@ -55,6 +57,12 @@ export async function normalizeHttpResponse<T>(
 		}
 		if (body?.error) {
 			return apiFail(new AppError({ messages: [body.error], status }), status)
+		}
+		if (body?.errorMessage) {
+			return apiFail(
+				new AppError({ messages: [body.errorMessage], status }),
+				status,
+			)
 		}
 		return apiFail(
 			new AppError({

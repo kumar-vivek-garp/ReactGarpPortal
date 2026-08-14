@@ -1,9 +1,9 @@
 import { createDataSDK } from "@salesforce/platform-sdk"
 
 import {
-	AppError,
 	normalizeHttpResponse,
 	unwrapApiResult,
+	unwrapMemberPortalEnvelope,
 } from "@/api/client"
 import type {
 	MemberPortalEnvelope,
@@ -15,7 +15,7 @@ const MEMBERSHIP_PATH = "/services/apexrest/memberportal/membership"
 /**
  * Loads membership identity hero + benefit sections from Apex
  * `GARP_MemberPortal_API` (membership action).
- * Unwraps `{ ok, data }` / `{ ok, error }` into `MembershipView` or throws `AppError`.
+ * Unwraps the memberportal envelope into `MembershipView` or throws `AppError`.
  */
 export async function fetchMembership(): Promise<MembershipView> {
 	const sdk = await createDataSDK()
@@ -33,19 +33,9 @@ export async function fetchMembership(): Promise<MembershipView> {
 
 	const envelope = unwrapApiResult(result)
 
-	if (!envelope.ok) {
-		throw new AppError({
-			messages: [envelope.error ?? "Unable to load membership."],
-			status: result.status,
-		})
-	}
-
-	if (!envelope.data) {
-		throw new AppError({
-			messages: ["No membership data was returned."],
-			status: result.status,
-		})
-	}
-
-	return envelope.data
+	return unwrapMemberPortalEnvelope(envelope, {
+		fallbackErrorMessage: "Unable to load membership.",
+		missingDataMessage: "No membership data was returned.",
+		status: result.status,
+	})
 }

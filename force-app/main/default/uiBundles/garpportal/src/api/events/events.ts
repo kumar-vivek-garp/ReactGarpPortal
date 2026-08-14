@@ -4,6 +4,7 @@ import {
 	AppError,
 	normalizeHttpResponse,
 	unwrapApiResult,
+	unwrapMemberPortalEnvelope,
 } from "@/api/client"
 import type { EventsView, MemberPortalEnvelope } from "@/api/events/types"
 
@@ -30,31 +31,23 @@ export async function fetchEvents(): Promise<EventsView> {
 
 	const envelope = unwrapApiResult(result)
 
-	if (!envelope.ok) {
-		throw new AppError({
-			messages: [envelope.error ?? "Unable to load events."],
-			status: result.status,
-		})
-	}
+	const data = unwrapMemberPortalEnvelope(envelope, {
+		fallbackErrorMessage: "Unable to load events.",
+		missingDataMessage: "No events data was returned.",
+		status: result.status,
+	})
 
-	if (!envelope.data) {
+	if (data.statusCode !== 200) {
 		throw new AppError({
-			messages: ["No events data was returned."],
-			status: result.status,
-		})
-	}
-
-	if (envelope.data.statusCode !== 200) {
-		throw new AppError({
-			messages: [envelope.data.statusMessage ?? "Unable to load events."],
-			status: envelope.data.statusCode,
+			messages: [data.statusMessage ?? "Unable to load events."],
+			status: data.statusCode,
 		})
 	}
 
 	return {
-		...envelope.data,
-		registeredEvents: envelope.data.registeredEvents ?? [],
-		upcomingChapterMeetings: envelope.data.upcomingChapterMeetings ?? [],
-		upcomingOtherEvents: envelope.data.upcomingOtherEvents ?? [],
+		...data,
+		registeredEvents: data.registeredEvents ?? [],
+		upcomingChapterMeetings: data.upcomingChapterMeetings ?? [],
+		upcomingOtherEvents: data.upcomingOtherEvents ?? [],
 	}
 }

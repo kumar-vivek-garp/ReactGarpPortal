@@ -1,9 +1,9 @@
 import { createDataSDK } from "@salesforce/platform-sdk"
 
 import {
-	AppError,
 	normalizeHttpResponse,
 	unwrapApiResult,
+	unwrapMemberPortalEnvelope,
 } from "@/api/client"
 import type {
 	DashboardView,
@@ -32,19 +32,9 @@ export async function fetchDashboard(): Promise<DashboardView> {
 
 	const envelope = unwrapApiResult(result)
 
-	if (!envelope.ok) {
-		throw new AppError({
-			messages: [envelope.error ?? "Unable to load the dashboard."],
-			status: result.status,
-		})
-	}
-
-	if (!envelope.data) {
-		throw new AppError({
-			messages: ["No dashboard data was returned."],
-			status: result.status,
-		})
-	}
-
-	return envelope.data
+	return unwrapMemberPortalEnvelope(envelope, {
+		fallbackErrorMessage: "Unable to load the dashboard.",
+		missingDataMessage: "No dashboard data was returned.",
+		status: result.status,
+	})
 }

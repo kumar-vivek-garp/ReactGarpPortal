@@ -4,6 +4,7 @@ import {
 	AppError,
 	normalizeHttpResponse,
 	unwrapApiResult,
+	unwrapMemberPortalEnvelope,
 } from "@/api/client"
 import type {
 	MemberPortalEnvelope,
@@ -44,29 +45,20 @@ export async function fetchProgramDetail(
 
 	const envelope = unwrapApiResult(result)
 
-	if (!envelope.ok) {
-		throw new AppError({
-			messages: [envelope.error ?? "Unable to load program details."],
-			status: result.status,
-		})
-	}
+	const data = unwrapMemberPortalEnvelope(envelope, {
+		fallbackErrorMessage: "Unable to load program details.",
+		missingDataMessage: "No program detail data was returned.",
+		status: result.status,
+	})
 
-	if (!envelope.data) {
-		throw new AppError({
-			messages: ["No program detail data was returned."],
-			status: result.status,
-		})
-	}
-
-	if (envelope.data.statusCode !== 200) {
+	if (data.statusCode !== 200) {
 		throw new AppError({
 			messages: [
-				envelope.data.statusMessage ??
-					"Unable to load program details.",
+				data.statusMessage ?? "Unable to load program details.",
 			],
-			status: envelope.data.statusCode,
+			status: data.statusCode,
 		})
 	}
 
-	return envelope.data
+	return data
 }

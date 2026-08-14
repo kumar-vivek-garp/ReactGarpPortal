@@ -33,7 +33,15 @@ function Navbar() {
 			{/* Desktop toolbar — mirrors live app-desktop-nav-bar (fixed 80px black bar). */}
 			<header className="fixed top-0 right-0 left-0 z-[1000] box-border hidden h-20 max-w-[100vw] items-center bg-toolbar text-toolbar-foreground app:flex">
 				<a href="https://www.garp.org/" className="mr-[25px] ml-[38px] shrink-0">
-					<img src={GARP_LOGO_KNOCKOUT} alt="GARP logo" className="w-[125px]" />
+					<img
+						src={GARP_LOGO_KNOCKOUT}
+						alt="GARP logo"
+						width={125}
+						height={36}
+						decoding="async"
+						fetchPriority="high"
+						className="w-[125px]"
+					/>
 				</a>
 
 				<nav className="flex min-w-0 flex-1 items-center" aria-label="Primary">

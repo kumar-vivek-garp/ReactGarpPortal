@@ -38,7 +38,14 @@ function Footer() {
 		<footer className="bg-linear-to-b from-surface-gradient-start to-surface-gradient-end px-8 py-10 font-sans text-foreground">
 			<div className="footer-sections-grid footer-container">
 				<div className="flex flex-col gap-4 lg:[grid-area:logo]">
-					<img src={GARP_LOGO_URL} alt="GARP - Global Association of Risk Professionals" className="h-9 w-auto" />
+					<img
+						src={GARP_LOGO_URL}
+						alt="GARP - Global Association of Risk Professionals"
+						width={518}
+						height={68}
+						decoding="async"
+						className="h-9 w-auto"
+					/>
 					<p className="text-body text-foreground">{FOOTER_TAGLINE}</p>
 					<a
 						href={FOOTER_CONTACT_LINK.url}

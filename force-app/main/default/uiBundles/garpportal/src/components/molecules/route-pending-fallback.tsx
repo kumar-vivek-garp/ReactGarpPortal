@@ -48,7 +48,15 @@ function AppRoutePending() {
 			{/* Match live Navbar: fixed 80px black toolbar (desktop). */}
 			<header className="box-border flex h-16 max-w-[100vw] items-center bg-toolbar text-toolbar-foreground app:h-20">
 				<div className="mr-[25px] ml-4 shrink-0 app:ml-[38px]">
-					<img src={GARP_LOGO_KNOCKOUT} alt="GARP logo" className="w-[100px] app:w-[125px]" />
+					<img
+						src={GARP_LOGO_KNOCKOUT}
+						alt="GARP logo"
+						width={125}
+						height={36}
+						decoding="async"
+						fetchPriority="high"
+						className="w-[100px] app:w-[125px]"
+					/>
 				</div>
 				<div className="ml-auto flex shrink-0 items-center gap-3 pr-4">
 					<div className="hidden h-8 w-20 animate-pulse rounded-md bg-white/15 app:block" />

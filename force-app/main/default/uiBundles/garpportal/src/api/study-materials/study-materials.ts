@@ -1,9 +1,9 @@
 import { createDataSDK } from "@salesforce/platform-sdk"
 
 import {
-	AppError,
 	normalizeHttpResponse,
 	unwrapApiResult,
+	unwrapMemberPortalEnvelope,
 } from "@/api/client"
 import { normalizeStudyMaterialsPayload } from "@/api/study-materials/normalize"
 import type {
@@ -34,19 +34,11 @@ export async function fetchStudyMaterials(): Promise<StudyMaterialsView> {
 
 	const envelope = unwrapApiResult(result)
 
-	if (!envelope.ok) {
-		throw new AppError({
-			messages: [envelope.error ?? "Unable to load study materials."],
-			status: result.status,
-		})
-	}
+	const data = unwrapMemberPortalEnvelope(envelope, {
+		fallbackErrorMessage: "Unable to load study materials.",
+		missingDataMessage: "No study materials data was returned.",
+		status: result.status,
+	})
 
-	if (!envelope.data) {
-		throw new AppError({
-			messages: ["No study materials data was returned."],
-			status: result.status,
-		})
-	}
-
-	return normalizeStudyMaterialsPayload(envelope.data)
+	return normalizeStudyMaterialsPayload(data)
 }

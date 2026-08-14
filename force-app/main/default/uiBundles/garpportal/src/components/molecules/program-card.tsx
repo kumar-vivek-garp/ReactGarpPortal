@@ -29,6 +29,8 @@ type ProgramCardVariant = "inProgress" | "completed" | "other"
 type ProgramCardProps = {
 	variant: ProgramCardVariant
 	program: EnrolledProgram | CompletedProgram | OtherProgram
+	/** Mark above-the-fold logos as LCP candidates. */
+	priority?: boolean
 	className?: string
 }
 
@@ -59,7 +61,12 @@ function nextOpenCopy(program: OtherProgram): string | null {
 	return null
 }
 
-function ProgramCard({ variant, program, className }: ProgramCardProps) {
+function ProgramCard({
+	variant,
+	program,
+	priority = false,
+	className,
+}: ProgramCardProps) {
 	const info = program.programInformation
 	const name = displayName(info)
 	const logoUrl =
@@ -115,7 +122,12 @@ function ProgramCard({ variant, program, className }: ProgramCardProps) {
 				{logoUrl ? (
 					<img
 						src={logoUrl}
-						alt=""
+						alt={`${name} program logo`}
+						width={280}
+						height={160}
+						decoding="async"
+						fetchPriority={priority ? "high" : "auto"}
+						loading={priority ? "eager" : "lazy"}
 						className="max-h-full max-w-full rounded-xl object-contain"
 						onError={(event) => {
 							event.currentTarget.style.display = "none"
@@ -172,7 +184,7 @@ function ProgramCard({ variant, program, className }: ProgramCardProps) {
 
 					{variant === "other" && learnMoreUrl ? (
 						<CardCta
-							label="Learn More"
+							label={`Learn more about ${name}`}
 							url={learnMoreUrl}
 							isExternal
 							newWindow

@@ -1,8 +1,10 @@
+import type { Identity, MemberPortalEnvelope } from "@/api/account/types"
 import type { CurrentUser } from "@/api/auth/current-user"
 import {
 	mapContactProfileExtras,
 	type ContactProfileQueryResult,
 } from "@/api/auth/contact-profile"
+import { isMemberPortalEnvelopeOk } from "@/api/client"
 import { isLocalViteHost } from "@/auth/sfdc-env"
 
 /** Vite DEV + localhost only. Compiles to false in production builds. */
@@ -78,16 +80,17 @@ type CurrentUserQueryResult = {
 	errors?: unknown[]
 }
 
-type MemberPortalMeEnvelope = {
-	ok?: boolean
-	data?: {
-		contactId?: string
-		fullName?: string
-		email?: string
-		garpId?: string
-		photoUrl?: string
-	}
+/** `/memberportal/me` payload used for local CLI CurrentUser fallback. */
+type MemberPortalMeData = {
+	contactId?: string | null
+	firstName?: string | null
+	lastName?: string | null
+	garpId?: string | null
+	avatarPhotoURL?: string | null
+	identity?: Partial<Identity> | null
 }
+
+type MemberPortalMeEnvelope = MemberPortalEnvelope<MemberPortalMeData>
 
 async function fetchContactProfileExtrasViaLocalCli(
 	contactId: string,
@@ -226,40 +229,52 @@ export async function fetchCurrentUserViaLocalCli(): Promise<CurrentUser | null>
 	}
 
 	const me = await fetchMemberPortalMeViaLocalCli()
-	if (me && typeof me === "object" && me.ok && me.data) {
-		const data = me.data
-		if (data.contactId || data.fullName || data.email) {
-			const rawContactId = data.contactId?.trim() || null
-			let garpId = data.garpId?.trim() || null
-			let photoUrl = data.photoUrl?.trim() || null
-			let name =
-				nameFromGraphql.trim() ||
-				data.fullName ||
-				data.email ||
-				"CLI Member"
+	if (!me || !isMemberPortalEnvelopeOk(me) || !me.data) {
+		return null
+	}
 
-			if (rawContactId && (!garpId || !photoUrl)) {
-				const extras = await fetchContactProfileExtrasViaLocalCli(rawContactId)
-				if (extras) {
-					garpId = garpId ?? extras.garpId
-					photoUrl = photoUrl ?? extras.photoUrl
-					if ((!data.fullName || !data.fullName.trim()) && extras.fullName) {
-						name = extras.fullName
-					}
-				}
-			}
+	const data = me.data
+	const identity = data.identity
+	const rawContactId =
+		identity?.contactId?.trim() || data.contactId?.trim() || null
+	let garpId = identity?.garpId?.trim() || data.garpId?.trim() || null
+	let photoUrl =
+		identity?.photoUrl?.trim() || data.avatarPhotoURL?.trim() || null
+	const identityFullName = identity?.fullName?.trim() || null
+	const identityEmail = identity?.email?.trim() || null
+	const composedName = [data.firstName, data.lastName]
+		.map((part) => part?.trim())
+		.filter(Boolean)
+		.join(" ")
+	let name =
+		nameFromGraphql.trim() ||
+		identityFullName ||
+		composedName ||
+		identityEmail ||
+		"CLI Member"
 
-			return {
-				id: userIdFromGraphql ?? data.contactId ?? "local-cli-member",
-				name,
-				garpId,
-				contactId: rawContactId,
-				photoUrl,
+	if (!rawContactId && !identityFullName && !identityEmail && !composedName) {
+		return null
+	}
+
+	if (rawContactId && (!garpId || !photoUrl)) {
+		const extras = await fetchContactProfileExtrasViaLocalCli(rawContactId)
+		if (extras) {
+			garpId = garpId ?? extras.garpId
+			photoUrl = photoUrl ?? extras.photoUrl
+			if (!identityFullName && extras.fullName) {
+				name = extras.fullName
 			}
 		}
 	}
 
-	return null
+	return {
+		id: userIdFromGraphql ?? rawContactId ?? "local-cli-member",
+		name,
+		garpId,
+		contactId: rawContactId,
+		photoUrl,
+	}
 }
 
 /** Member portal identity via local CLI gateway. */

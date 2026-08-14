@@ -93,9 +93,11 @@ export type AccountView = {
 	otherAddress: PortalAddress
 }
 
-/** Envelope returned by GARP_MemberPortal_API. */
+/** Envelope returned by GARP_Portal_API / memberportal Apex REST. */
 export type MemberPortalEnvelope<T> = {
-	ok: boolean
+	status: string
+	statusCode: number
+	errorMessage: string | null
+	warnings?: string[]
 	data?: T
-	error?: string
 }

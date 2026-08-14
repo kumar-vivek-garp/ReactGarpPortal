@@ -4,6 +4,7 @@ import {
 	AppError,
 	normalizeHttpResponse,
 	unwrapApiResult,
+	unwrapMemberPortalEnvelope,
 } from "@/api/client"
 import type {
 	MemberPortalEnvelope,
@@ -32,33 +33,23 @@ export async function fetchPrograms(): Promise<ProgramsView> {
 
 	const envelope = unwrapApiResult(result)
 
-	if (!envelope.ok) {
-		throw new AppError({
-			messages: [envelope.error ?? "Unable to load programs."],
-			status: result.status,
-		})
-	}
+	const data = unwrapMemberPortalEnvelope(envelope, {
+		fallbackErrorMessage: "Unable to load programs.",
+		missingDataMessage: "No programs data was returned.",
+		status: result.status,
+	})
 
-	if (!envelope.data) {
+	if (data.statusCode !== 200) {
 		throw new AppError({
-			messages: ["No programs data was returned."],
-			status: result.status,
-		})
-	}
-
-	if (envelope.data.statusCode !== 200) {
-		throw new AppError({
-			messages: [
-				envelope.data.statusMessage ?? "Unable to load programs.",
-			],
-			status: envelope.data.statusCode,
+			messages: [data.statusMessage ?? "Unable to load programs."],
+			status: data.statusCode,
 		})
 	}
 
 	return {
-		...envelope.data,
-		enrolledPrograms: envelope.data.enrolledPrograms ?? [],
-		completedPrograms: envelope.data.completedPrograms ?? [],
-		otherPrograms: envelope.data.otherPrograms ?? [],
+		...data,
+		enrolledPrograms: data.enrolledPrograms ?? [],
+		completedPrograms: data.completedPrograms ?? [],
+		otherPrograms: data.otherPrograms ?? [],
 	}
 }

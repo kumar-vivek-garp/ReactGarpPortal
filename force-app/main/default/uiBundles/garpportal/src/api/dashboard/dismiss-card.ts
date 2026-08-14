@@ -2,6 +2,7 @@ import { createDataSDK } from "@salesforce/platform-sdk"
 
 import {
 	AppError,
+	assertMemberPortalEnvelopeOk,
 	normalizeHttpResponse,
 	unwrapApiResult,
 } from "@/api/client"
@@ -41,12 +42,10 @@ export async function dismissCard(key: string): Promise<DismissCardResult> {
 
 	const envelope = unwrapApiResult(result)
 
-	if (!envelope.ok) {
-		throw new AppError({
-			messages: [envelope.error ?? "Unable to dismiss this card."],
-			status: result.status,
-		})
-	}
+	assertMemberPortalEnvelopeOk(envelope, {
+		fallbackErrorMessage: "Unable to dismiss this card.",
+		status: result.status,
+	})
 
 	return envelope.data ?? { dismissed: trimmed }
 }

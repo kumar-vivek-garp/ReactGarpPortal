@@ -4,6 +4,7 @@ import {
 	AppError,
 	normalizeHttpResponse,
 	unwrapApiResult,
+	unwrapMemberPortalEnvelope,
 } from "@/api/client"
 import type {
 	CaseSummary,
@@ -48,19 +49,9 @@ export async function submitCase(input: SubmitCaseInput): Promise<CaseSummary> {
 
 	const envelope = unwrapApiResult(result)
 
-	if (!envelope.ok) {
-		throw new AppError({
-			messages: [envelope.error ?? "Unable to submit your support case."],
-			status: result.status,
-		})
-	}
-
-	if (!envelope.data) {
-		throw new AppError({
-			messages: ["No case confirmation was returned."],
-			status: result.status,
-		})
-	}
-
-	return envelope.data
+	return unwrapMemberPortalEnvelope(envelope, {
+		fallbackErrorMessage: "Unable to submit your support case.",
+		missingDataMessage: "No case confirmation was returned.",
+		status: result.status,
+	})
 }
