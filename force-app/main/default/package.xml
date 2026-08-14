@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
-    <!--<types>
+    <!-- Portal Apex only — avoid wildcard ApexClass (pulls deleted legacy names). -->
+    <types>
+        <members>GARP_Portal_*</members>
+        <name>ApexClass</name>
+    </types>
+    <!--
+    <types>
         <members>garpportal</members>
         <name>CustomSite</name>
     </types>
@@ -15,7 +21,7 @@
     <types>
         <members>garpportal</members>
         <name>Network</name>
-    </types>-->
-    <types>     <members>*</members>     <name>ApexClass</name> </types>
+    </types>
+    -->
     <version>67.0</version>
 </Package>
