@@ -10,28 +10,31 @@
  *
  * Base endpoint: /services/apexrest/memberportal/<action>
  *
- *   GET  /memberportal/me              signed-in member identity + membership summary
- *   GET  /memberportal/dashboard       identity, completeness meter and dynamic cards
- *   GET  /memberportal/account         My Account sections and addresses
- *   GET  /memberportal/membership      benefits grouped into sections, with gating
- *   GET  /memberportal/options         picklist + chapter options for the edit forms
- *   GET  /memberportal/examWindow      current/next exam registration window
- *   GET  /memberportal/examResults     exam registrations, results and quartiles
- *   GET  /memberportal/studyMaterials  eBook entitlements and access links
- *   GET  /memberportal/events          registered events + open upcoming events
- *   GET  /memberportal/orders          purchase history
- *   GET  /memberportal/cases           support cases the member has raised
+ *   GET  /memberportal/me              -> GARP_MemberPortal_MeService
+ *   GET  /memberportal/dashboard       -> GARP_MemberPortal_DashboardService
+ *   GET  /memberportal/account         -> GARP_MemberPortal_AccountService
+ *   GET  /memberportal/membership      -> GARP_MemberPortal_MembershipService
+ *   GET  /memberportal/options         -> GARP_MemberPortal_OptionsService
+ *   GET  /memberportal/examWindow      -> GARP_MemberPortal_ExamWindowService
+ *   GET  /memberportal/examResults     -> GARP_MemberPortal_ExamResultsService
+ *   GET  /memberportal/studyMaterials  -> GARP_MemberPortal_StudyMaterialsService
+ *   GET  /memberportal/events          -> GARP_MemberPortal_EventsService
+ *   GET  /memberportal/orders          -> GARP_MemberPortal_OrdersService
+ *   GET  /memberportal/cases           -> GARP_MemberPortal_CasesService
  *
- *   POST /memberportal/profile      { "values": { "<Contact field>": <value> } }
- *   POST /memberportal/dismissCard  { "key": "<GARP_Portal_Card__mdt DeveloperName>" }
- *   POST /memberportal/submitCase   { "subject": "...", "description": "..." }
+ *   POST /memberportal/profile      -> GARP_MemberPortal_ProfileService
+ *                                      { "values": { "<Contact field>": <value> } }
+ *   POST /memberportal/dismissCard  -> GARP_MemberPortal_DismissCardService
+ *                                      { "key": "<GARP_Portal_Card__mdt DeveloperName>" }
+ *   POST /memberportal/submitCase   -> GARP_MemberPortal_SubmitCaseService
+ *                                      { "subject": "...", "description": "..." }
  *
  * The Guest User profile does NOT need access to this class — every action
  * requires a Contact-linked user. The community member profile (or a permission
  * set assigned to it) must be granted Apex Class Access to GARP_MemberPortal_API,
  * otherwise these endpoints return 403.
  */
-@RestResource(urlMapping='/memberportal/*')
+@RestResource(urlMapping='/memberportalold/*')
 global without sharing class GARP_MemberPortal_API {
 
     @HttpGet

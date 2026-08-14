@@ -155,7 +155,8 @@ public class GARP_BC_Courses {
         return GARP_BC_Registration.getRegistrationInfo(getFRRRegistrationSettings(regCode));
     }
 
-    public static GARP_BC_Registration.programRegistrationInfo getFFRRegistrationSettings() {
+    // US-63665: FFR B2B Registration
+    public static GARP_BC_Registration.programRegistrationInfo getFFRRegistrationSettings(String regCode) {
         GARP_BC_Registration.programRegistrationInfo programRegistrationInfo = new GARP_BC_Registration.programRegistrationInfo();
         programRegistrationInfo.registrationType = 'ffr';
         programRegistrationInfo.mainMemberProductCode = 'FCBR';
@@ -163,6 +164,7 @@ public class GARP_BC_Courses {
         programRegistrationInfo.retakeProductCode  = NULL;
         programRegistrationInfo.studyMatProductCodes = new List<String>{'FFRXF'};
         programRegistrationInfo.addOnsProductCodes  = new List<String>{'MEMI','MEMC'};
+        programRegistrationInfo.regCode = regCode; // US-63665: FFR B2B Registration
         programRegistrationInfo.formName = 'course-fbr';
         programRegistrationInfo.contractRecTypeName = 'FBR Program';
         programRegistrationInfo.eventId = null;
@@ -176,8 +178,9 @@ public class GARP_BC_Courses {
         return programRegistrationInfo;
     }
 
-    public static GARP_BC_Registration.getRegistrationInfo GetFFRRegistrationInfo() {
-        return GARP_BC_Registration.getRegistrationInfo(getFFRRegistrationSettings());
+    // US-63665: FFR B2B Registration
+    public static GARP_BC_Registration.getRegistrationInfo GetFFRRegistrationInfo(String regCode) {
+        return GARP_BC_Registration.getRegistrationInfo(getFFRRegistrationSettings(regCode));
     }
 
     public static GARP_BC_Registration.programRegistrationInfo getFRR25RegistrationSettings(String regCode) {
@@ -260,6 +263,35 @@ public class GARP_BC_Courses {
 
     public static GARP_BC_Registration.getRegistrationInfo getFRR25RegistrationInfo(String regCode) {
         return GARP_BC_Registration.getRegistrationInfo(getFRR25RegistrationSettings(regCode));
+    }
+
+    public static GARP_BC_Registration.programRegistrationInfo getARPMRegistrationSettings(String regCode) {
+        GARP_BC_Registration.programRegistrationInfo programRegistrationInfo = new GARP_BC_Registration.programRegistrationInfo();
+
+        programRegistrationInfo.registrationType = 'arpm';
+        programRegistrationInfo.mainMemberProductCode = 'ARPMM';
+        programRegistrationInfo.mainNonMemberProductCode = 'ARPMNM';
+        programRegistrationInfo.mainCertifiedProductCode = 'ARPMM';
+        programRegistrationInfo.retakeProductCode = null;
+        programRegistrationInfo.teamRegDiscountProductCode = null;
+        programRegistrationInfo.studyMatProductCodes = new List<String>();
+        programRegistrationInfo.addOnsProductCodes = new List<String>{'MEMI','MEMC'};
+        programRegistrationInfo.teamProductCodes = new List<String>{};
+        programRegistrationInfo.regCode = regCode;
+        programRegistrationInfo.formName = 'course-arpm';
+        programRegistrationInfo.contractRecTypeName = 'ARPM Program';
+        programRegistrationInfo.eventId = null;
+        programRegistrationInfo.eventType = null;
+        programRegistrationInfo.allowMemberPublicRegistration = False;
+        programRegistrationInfo.addressVerificationDisabled = False;
+
+        programRegistrationInfo.programInformation = GARP_BC_MyPrograms.getProgramInformation('arpm', NULL);
+
+        return programRegistrationInfo;
+    }
+
+    public static GARP_BC_Registration.getRegistrationInfo getARPMRegistrationInfo(String regCode) {
+        return GARP_BC_Registration.getRegistrationInfo(getARPMRegistrationSettings(regCode));
     }
 
     public class microCourseInfo {
@@ -940,7 +972,7 @@ public class GARP_BC_Courses {
         retIsEligible.isEligible = false;
         retIsEligible.message = null;
         GARP_Common.debugLog('GARP_BC_Courses', 'isEligibleCourse', 'courseType', courseType);
-        if (courseType != 'ffr' && courseType != 'frr' && courseType != 'frr25' && courseType != 'micro') {
+        if (courseType != 'ffr' && courseType != 'frr' && courseType != 'frr25' && courseType != 'micro' && courseType != 'arpm') {
             retIsEligible.message = 'Invalid course type';
             return retIsEligible;
         }
@@ -1062,6 +1094,69 @@ public class GARP_BC_Courses {
             if (teamRegInfo == null && !isRetake) {
                 retIsEligible.message = 'Micro Courses are only available via B2B Deals';
                 return retIsEligible;
+            }
+            retIsEligible.isEligible = true;
+            GARP_Common.debugLog('GARP_BC_Courses', 'isEligibleCourse', 'eligible', true);
+            return retIsEligible;
+        }
+        if (courseType == 'arpm') {
+            List<Exam_Group__c> examGroups = [SELECT Id FROM Exam_Group__c WHERE Active__c = true AND RecordType.Name = 'ARPM'];
+            if (examGroups.isEmpty()) {
+                retIsEligible.message = 'This program is not currently available';
+                return retIsEligible;
+            }
+            if (membershipInfo == null || membershipInfo.accountRecord == null) {
+                retIsEligible.message = 'You must be logged in to register for this course';
+                return retIsEligible;
+            }
+            Boolean isFRMQualified = False;
+            if (membershipInfo.isFRMCertified) {
+                isFRMQualified = True;
+            } else {
+                Id frmRecId = RecordTypeHelper.GetRecordTypeId('Contract', 'FRM Program');
+                List<Contract> lstFRMContract = [
+                    SELECT Id, Status, (SELECT Id, RecordType.DeveloperName, Exam__c, Status__c FROM Candidate_Requirements__r WHERE RecordType.DeveloperName = 'Exam')
+                    FROM Contract
+                    WHERE AccountId = :membershipInfo.accountRecord.Id AND RecordTypeId = :frmRecId AND Status != 'Canceled'
+                    ORDER BY StartDate DESC LIMIT 1
+                ];
+                if (!lstFRMContract.isEmpty()) {
+                    Contract frmContract = lstFRMContract[0];
+                    if (frmContract.Status == 'Completed') {
+                        isFRMQualified = True;
+                    } else {
+                        Boolean passPart1 = False;
+                        Boolean passPart2 = False;
+                        for (Candidate_Requirement__c cr : frmContract.Candidate_Requirements__r) {
+                            if (cr.Exam__c == 'FRM Part I' && cr.Status__c == 'Completed') {
+                                passPart1 = True;
+                            }
+                            if (cr.Exam__c == 'FRM Part II' && cr.Status__c == 'Completed') {
+                                passPart2 = True;
+                            }
+                        }
+                        if (passPart1 && passPart2) {
+                            isFRMQualified = True;
+                        }
+                    }
+                }
+            }
+            GARP_Common.debugLog('GARP_BC_Courses', 'isEligibleCourse', 'isFRMQualified', isFRMQualified);
+            if (!isFRMQualified) {
+                retIsEligible.message = 'This course is limited to candidates who have passed both parts of the FRM Exam.';
+                return retIsEligible;
+            }
+            Id arpmRecId = RecordTypeHelper.GetRecordTypeId('Contract', 'ARPM Program');
+            List<Contract> lstARPMContract = [SELECT Id, Status FROM Contract WHERE AccountId = :membershipInfo.accountRecord.Id AND RecordTypeId = :arpmRecId AND Status != 'Canceled' AND Status != 'Draft' ORDER BY StartDate];
+            if (!lstARPMContract.isEmpty()) {
+                Contract c = lstARPMContract[0];
+                if (c.Status == 'Activated' || c.Status == 'Activated ( Auto-Renew )') {
+                    retIsEligible.message = 'You are already enrolled in this program';
+                    return retIsEligible;
+                } else if (c.Status == 'Completed') {
+                    retIsEligible.message = 'You have already completed this program';
+                    return retIsEligible;
+                }
             }
             retIsEligible.isEligible = true;
             GARP_Common.debugLog('GARP_BC_Courses', 'isEligibleCourse', 'eligible', true);
@@ -1233,6 +1328,10 @@ public class GARP_BC_Courses {
             recordTypeName = setRegistrationInfo.programRegistrationInfo.microCourseInfo.programType;
             contractName = setRegistrationInfo.programRegistrationInfo.microCourseInfo.courseCode;
             contractTerm = 3;
+        } else if (courseType == 'arpm') {
+            recordTypeName = 'ARPM Program';
+            contractName = 'ARPM';
+            contractTerm = 6;
         } else {
             return null;
         }
@@ -1307,6 +1406,9 @@ public class GARP_BC_Courses {
             }
             examCode = setRegistrationInfo.programRegistrationInfo.microCourseInfo.courseCode;
             nameLabel = 'Pass ' + examCode;
+        } else if (courseType == 'ARPM') {
+            nameLabel = 'Complete ARPM';
+            examCode = 'ARPM';
         } else {
             return null;
         }
@@ -1389,7 +1491,7 @@ public class GARP_BC_Courses {
      */
     public static Exam_Attempt__c createCourseExamRegistrationByType(GARP_BC_Registration.setRegistrationInfo setRegistrationInfo, GARP_BC_Registration.setRegistrationReturnInfo setRegistrationReturnInfo, List<Candidate_Requirement__c> contractRequirements, String registrationType) {
         GARP_Common.debugLog('GARP_BC_Courses', 'createCourseExamRegistrationByType', 'registrationType', registrationType);
-        if (registrationType != 'frr' && registrationType != 'frr25' && registrationType != 'micro') return null;
+        if (registrationType != 'frr' && registrationType != 'frr25' && registrationType != 'micro' && registrationType != 'arpm') return null;
         String contractRecordTypeName;
         String attemptRecordTypeName;
         String examCodeForSite;
@@ -1444,6 +1546,15 @@ public class GARP_BC_Courses {
                 Candidate_Requirement__c = examCandidateReqId,
                 RecordTypeId = frrExamAttemptRecordTypeId
             );
+        }
+        // Case 00888108: Check consentInfo or teamRegInfo
+        if (setRegistrationInfo.consentInfo != NULL) {
+            if (setRegistrationInfo.consentInfo.consentReleaseExamResults != NULL && setRegistrationInfo.consentInfo.consentReleaseExamResults == True) {
+                newExamAttempt.Consent_Release_Exam_Results__c = DateTime.now();
+            }
+        }
+        if (newExamAttempt.Consent_Release_Exam_Results__c == null && setRegistrationInfo.teamRegInfo != NULL && setRegistrationInfo.teamRegInfo.consentReleaseExamResults != NULL && setRegistrationInfo.teamRegInfo.consentReleaseExamResults == True) {
+            newExamAttempt.Consent_Release_Exam_Results__c = DateTime.now();
         }
         GARP_Common.debugLog('GARP_BC_Courses', 'createCourseExamRegistrationByType', 'newExamAttempt', newExamAttempt);
         return newExamAttempt;

@@ -69,6 +69,11 @@ public class stripe_checkout {
                     logoWebSiteUrl = 'https://www.garp.org/rai';
                     regSlug = 'rai';
                 }
+                when 'arpm' {
+                    logoURL = 'https://www.garp.org/hubfs/Website/Logos/GARP%20Corporate%20Logo%20-%20Short%20Knockout.png';
+                    logoWebSiteUrl = 'https://www.garp.org';
+                    regSlug = 'arpm';
+                }
                 when else {
                     logoURL = 'https://www.garp.org/hubfs/Website/Logos/GARP%20Corporate%20Logo%20-%20Short%20Knockout.png';
                     logoWebSiteUrl = 'https://www.garp.org';
@@ -134,7 +139,7 @@ public class stripe_checkout {
             // Fetch Order
             List<Opportunity> lstOpp = [select Id, AccountId, Account.Member_First_Name__c, Account.Member_Last_Name__c, Name, StageName, Display_Invoice_Number__c, Amount, Billing_Email__c, Auto_Renew__c, B2B_Deal_Item__r.Access_Code__c,
                                         Shipping_Street__c, Shipping_City__c, Shipping_State__c, Shipping_Postal_Code__c, Shipping_Country__c, Shipping_Phone_No__c,
-                                        Billing_Address__c, Billing_City__c, Billing_State_Text__c, Billing_Zip_Postal__c, Billing_Country__c, Billing_Phone__c,
+                                        Billing_Address__c, Billing_City__c, Billing_State_Text__c, Billing_Zip_Postal__c, Billing_Country__c, Billing_Phone__c,B2B_Deal_Item__c,
                                         (select Id, Description, PricebookEntryId, Quantity, UnitPrice, SortOrder, TotalPrice, Product2.Name, Product2.Stripe_Tax_Code__c, Product2.ProductCode, Product2.Tax_Rate__c, Product2.Do_Not_Charge_VAT__c, Product2.Do_Not_Charge_VAT_Countries__c FROM OpportunityLineItems),
                                         (select id, ChargentOrders__Gateway__c, ChargentOrders__Subtotal__c, ChargentOrders__Charge_Amount__c,
                                          ChargentOrders__Tokenization__c, ChargentOrders__Order_Information__c

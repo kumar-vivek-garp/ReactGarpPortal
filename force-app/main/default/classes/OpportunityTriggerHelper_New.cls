@@ -99,6 +99,7 @@ public class OpportunityTriggerHelper_New {
         Id SCRRecordTypeID = RecordTypeHelper.getRecordTypeIdFromSchema('Contract','SCR_Program');
         Id RiskAIProgramID = RecordTypeHelper.getRecordTypeIdFromSchema('Contract','Risk_AI_Program');
         Id RAIJProgramID = RecordTypeHelper.getRecordTypeIdFromSchema('Contract','RAIJ_Program');
+        Id ARPMProgramID = RecordTypeHelper.getRecordTypeIdFromSchema('Contract','ARPM_Program');
         // Get Micro Course Programs
         List<Exam__c> lstExam = [select id, MC_Course_Program_Record_Type_API_Name__c from Exam__c where Exam_Group__r.RecordType.Name = 'MicroCourse'];
         Set<String> microCourseRecordTypes = new Set<String>();
@@ -179,7 +180,7 @@ public class OpportunityTriggerHelper_New {
                 objContr.status = 'Activated';
                 updateContract = true;
             }
-            if(objContr.status == 'Draft' && (objContr.recordTypeID == SCRRecordTypeID || objContr.recordTypeID == RiskAIProgramID || objContr.recordTypeID == RAIJProgramID || objContr.recordTypeID == frrRecTypeId || objContr.recordTypeID == frr25RecTypeId || microCourseRecordTypes.contains(objContr.recordTypeID)) && objContr.Opportunity__c == renewOppId){
+            if(objContr.status == 'Draft' && (objContr.recordTypeID == SCRRecordTypeID || objContr.recordTypeID == RiskAIProgramID || objContr.recordTypeID == RAIJProgramID || objContr.recordTypeID == frrRecTypeId || objContr.recordTypeID == frr25RecTypeId || objContr.recordTypeID == ARPMProgramID || microCourseRecordTypes.contains(objContr.recordTypeID)) && objContr.Opportunity__c == renewOppId){
                 objContr.status = 'Activated';
                 objContr.StartDate = system.today();
                 updateContract = true;

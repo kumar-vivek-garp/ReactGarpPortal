@@ -13,6 +13,13 @@ import {
 } from "@/components/atoms/card"
 import { CardCta } from "@/components/molecules/card-cta"
 import { formatLongDate } from "@/lib/account-format"
+import {
+	programDetailsHref,
+	programDetailsPath,
+	programLearnMoreUrl,
+	programRegistrationHref,
+	supportsInAppProgramDetail,
+} from "@/lib/program-card-links"
 import { stripProgramFormalName } from "@/lib/program-formal-name"
 import { resolvePortalAssetUrl } from "@/lib/resolve-portal-asset-url"
 import { cn } from "@/lib/utils"
@@ -34,16 +41,6 @@ function displayName(info: ProgramInformation | null | undefined): string {
 	)
 }
 
-function isSafeHttpUrl(url: string | null | undefined): url is string {
-	if (!url?.trim()) return false
-	try {
-		const parsed = new URL(url.trim())
-		return parsed.protocol === "http:" || parsed.protocol === "https:"
-	} catch {
-		return false
-	}
-}
-
 function adminLines(program: EnrolledProgram | CompletedProgram | OtherProgram) {
 	if (!("adminPartIName" in program)) return []
 	return [program.adminPartIName, program.adminPartIIName].filter(
@@ -54,8 +51,7 @@ function adminLines(program: EnrolledProgram | CompletedProgram | OtherProgram) 
 function nextOpenCopy(program: OtherProgram): string | null {
 	if (program.isRegistrationOpen) return null
 	const date =
-		formatLongDate(program.nextRegistrationOpenDate?.slice(0, 10)) ??
-		null
+		formatLongDate(program.nextRegistrationOpenDate?.slice(0, 10)) ?? null
 	const admin = program.nextRegistrationOpenAdminName?.trim()
 	if (admin && date) return `${admin} registration will open on ${date}`
 	if (date) return `Registration will open on ${date}`
@@ -77,8 +73,36 @@ function ProgramCard({ variant, program, className }: ProgramCardProps) {
 		variant === "other" && "isRegistrationOpen" in program
 			? nextOpenCopy(program)
 			: null
-	const policyUrl = isSafeHttpUrl(info?.policyURL) ? info.policyURL : null
-	const showFooter = variant === "other"
+
+	const showDetails =
+		variant === "inProgress" || variant === "completed"
+	const inAppDetails = showDetails
+		? programDetailsPath(program.programType)
+		: null
+	const externalDetails =
+		showDetails && !supportsInAppProgramDetail(program.programType)
+			? programDetailsHref(program.programType)
+			: null
+	const detailsUrl = inAppDetails ?? externalDetails
+	const detailsIsExternal = !inAppDetails && Boolean(externalDetails)
+	const learnMoreUrl = programLearnMoreUrl(
+		program.programType,
+		info?.policyURL,
+	)
+	const isOther = variant === "other" && "isRegistrationOpen" in program
+	const registrationUrl =
+		isOther && program.isRegistrationOpen
+			? programRegistrationHref(
+					info?.registrationPath,
+					program.programType,
+					program.isMicroCourse,
+				)
+			: null
+
+	const showFooter =
+		Boolean(detailsUrl) ||
+		Boolean(registrationUrl) ||
+		Boolean(learnMoreUrl && variant === "other")
 
 	return (
 		<Card
@@ -130,16 +154,26 @@ function ProgramCard({ variant, program, className }: ProgramCardProps) {
 
 			{showFooter ? (
 				<CardFooter className="mt-auto flex flex-wrap items-center gap-x-6 gap-y-2 px-5 pb-5">
-					<CardCta
-						label="Register Now"
-						url="#"
-						isExternal={false}
-						disabled
-					/>
-					{policyUrl ? (
+					{detailsUrl ? (
+						<CardCta
+							label="View Details"
+							url={detailsUrl}
+							isExternal={detailsIsExternal}
+						/>
+					) : null}
+
+					{registrationUrl ? (
+						<CardCta
+							label="Register Now"
+							url={registrationUrl}
+							isExternal
+						/>
+					) : null}
+
+					{variant === "other" && learnMoreUrl ? (
 						<CardCta
 							label="Learn More"
-							url={policyUrl}
+							url={learnMoreUrl}
 							isExternal
 							newWindow
 						/>

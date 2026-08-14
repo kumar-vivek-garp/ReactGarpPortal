@@ -23,7 +23,7 @@ public class GARP_Courses_test {
 
     @isTest
     public static void testFRRNotAvail() { runTestFRRNotAvail(); }
-    
+
     public static void runTestFRRAvail() {
         GARP_TestFactory.createCountryCodes();
         String examGroupRecordTypeId = RecordTypeHelper.GetRecordTypeId('Exam_Group__c', 'ICBRR');
@@ -62,7 +62,7 @@ public class GARP_Courses_test {
 
     @isTest
     public static void testFRRAvail() { runTestFRRAvail(); }
-    
+
     public static void runTestFRRAuth() {
         GARP_TestFactory.createCountryCodes();
         GARP_TestFactory.IndividualMemberSetup setup = GARP_TestFactory.setupIndividualMember();
@@ -115,7 +115,7 @@ public class GARP_Courses_test {
 
     @isTest
     public static void testFRRAuth() { runTestFRRAuth(); }
-    
+
     public static void runTestFRR25() {
         GARP_TestFactory.createCountryCodes();
         String examGroupRecordTypeId = RecordTypeHelper.GetRecordTypeId('Exam_Group__c', 'FRR25');
@@ -179,13 +179,13 @@ public class GARP_Courses_test {
         test.startTest();
         GARP_MS_Courses.getFRR25RegistrationInfo(teamRegCode);
         GARP_BC_Registration.programRegistrationInfo programRegistrationInfo = GARP_BC_Courses.getFRR25RegistrationSettings(teamRegCode);
-        
+
         List<String> regProducts = new List<String>{'SHIPFRR25'};
         if (String.isNotBlank(programRegistrationInfo.teamRegDiscountProductCode)) {
             regProducts.add(programRegistrationInfo.teamRegDiscountProductCode);
         }
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(regProducts), new Set<String>{}, new Set<String>{}, new Set<String>{});
-        
+
         GARP_TestFactory.createProducts(GARP_TestFactory.getAuxProductList(), new Set<String>{}, new Set<String>{}, new Set<String>{});
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.mainMemberProductCode), new Set<String>{}, new Set<String>{}, new Set<String>{});
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.mainNonMemberProductCode), new Set<String>{}, new Set<String>{}, new Set<String>{});
@@ -222,19 +222,19 @@ public class GARP_Courses_test {
         GARP_TestFactory.createCountryCodes();
         GARP_TestFactory.IndividualMemberSetup setup = GARP_TestFactory.setupIndividualMember();
         User user = setup.user;
-        
+
         String examGroupRecordTypeId = RecordTypeHelper.GetRecordTypeId('Exam_Group__c', 'FRR25');
         Exam_Group__c objExamGrp = new Exam_Group__c();
         objExamGrp.Active__c = true;
         objExamGrp.RecordTypeId = examGroupRecordTypeId;
         insert objExamGrp;
-        
+
         Exam__c ex = new Exam__c(Name='FRR25',Exam__c='FRR25',Exam_Date__c=Date.Today(), Exam_Group__c = objExamGrp.id);
         Insert ex;
         Exam_Sites__c exmSite = new Exam_Sites__c(exam__c = ex.id);
         insert exmSite;
         test.startTest();
-        
+
         GARP_BC_Registration.programRegistrationInfo programRegistrationInfo = GARP_BC_Courses.getFRR25RegistrationSettings(NULL);
         List<String> prods = new List<String>();
         prods.add('SHIPFRR25');
@@ -242,7 +242,7 @@ public class GARP_Courses_test {
         prods.add(programRegistrationInfo.mainNonMemberProductCode);
         List<String> prodList = GARP_TestFactory.createProductList(prods);
         GARP_TestFactory.createProducts(prodList, new Set<String>{}, new Set<String>{}, new Set<String>{});
-        
+
         Set<String> setStudyMats = new Set<String>();
         setStudyMats.addAll(programRegistrationInfo.studyMatProductCodes);
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.studyMatProductCodes), new Set<String>{'CBRX'}, new Set<String>{}, setStudyMats);
@@ -274,7 +274,7 @@ public class GARP_Courses_test {
     public static void testFRR25Auth() { runTestFRR25Auth(); }
 
     public static void runTestFRRMicro() {
-        
+
         GARP_TestFactory.createCountryCodes();
 
         Exam__c ex = new Exam__c(Name='FRRMC1',Exam__c='FRRMC1',Exam_Date__c=Date.Today(),MC_Course_Name__c='FRR MC1',MC_Course_Form_Key__c='form-mc1',
@@ -292,14 +292,14 @@ public class GARP_Courses_test {
         System.debug('!!teamReg:' + teamReg);
 
         test.startTest();
-                        
+
         // Get Reg Info
         GARP_MS_Courses.getMicroCourseRegistrationInfo('FRRMC1','123'); // Just call to cover
         GARP_BC_Registration.programRegistrationInfo programRegistrationInfo = GARP_BC_Courses.getMicroCourseRegistrationSettings('FRRMC1','123');
-        
-		// Setup Products        
+
+		// Setup Products
         List<String> prodSHIP = new List<String>{'SHIPMC:SHIPMC:4040:100'};
-        GARP_TestFactory.createProducts(prodSHIP, new Set<String>{}, new Set<String>{}, new Set<String>{});        
+        GARP_TestFactory.createProducts(prodSHIP, new Set<String>{}, new Set<String>{}, new Set<String>{});
     	GARP_TestFactory.createProducts(GARP_TestFactory.getAuxProductList(), new Set<String>{}, new Set<String>{}, new Set<String>{});
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.mainMemberProductCode), new Set<String>{}, new Set<String>{}, new Set<String>{});
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.mainNonMemberProductCode), new Set<String>{}, new Set<String>{}, new Set<String>{});
@@ -307,7 +307,7 @@ public class GARP_Courses_test {
         setStudyMats.addAll(programRegistrationInfo.studyMatProductCodes);
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.studyMatProductCodes), new Set<String>{}, new Set<String>{}, setStudyMats);
         GARP_TestFactory.createShippingRates(new List<String>{'FRRMC1HB:4030'});
-        
+
 		GARP_BC_Registration.getRegistrationInfo regInfo = GARP_BC_Registration.getRegistrationInfo(programRegistrationInfo);
         System.assertEquals('Success', regInfo.status, 'getRegistrationInfo should return Success. statusMessage: ' + regInfo.statusMessage);
         String formNameFRRMicro = (programRegistrationInfo != null && String.isNotBlank(programRegistrationInfo.formName)) ? programRegistrationInfo.formName : 'form';
@@ -318,7 +318,7 @@ public class GARP_Courses_test {
         GARP_BC_Registration.getRegistrationFeesInfo getRegistrationFeesInfo = GARP_TestFactory.setupGetFeesInfo('Stripe', False, regInfo);
         GARP_BC_Registration.registrationFees regFees = GARP_BC_Registration.getRegistrationFees(getRegistrationFeesInfo);
         System.assertEquals('Success', regFees.status, 'getRegistrationFees should return Success. message: ' + regFees.message);
-        GARP_BC_Registration.setRegistrationInfo setRegistrationInfo = GARP_TestFactory.setupSetRegistrationInfo(verifyExistingCustomerReturnInfo, programRegistrationInfo, getRegistrationFeesInfo, regFees);        
+        GARP_BC_Registration.setRegistrationInfo setRegistrationInfo = GARP_TestFactory.setupSetRegistrationInfo(verifyExistingCustomerReturnInfo, programRegistrationInfo, getRegistrationFeesInfo, regFees);
         GARP_BC_Registration.setRegistrationReturnInfo setRegistrationReturnInfo = GARP_BC_Registration.setRegistration(setRegistrationInfo);
         System.assertEquals('Success', setRegistrationReturnInfo.status, 'setRegistration should return Success. message: ' + setRegistrationReturnInfo.message);
         System.assertNotEquals(null, setRegistrationReturnInfo.accountId, 'Registration should return account');
@@ -336,7 +336,7 @@ public class GARP_Courses_test {
         User user = setup.user;
         Contact contact = setup.contact;
         Opportunity opp = setup.opp;
-                
+
         // Create Expired Contract
         Contract programContract = new Contract(
             Name = 'MC1',
@@ -351,7 +351,7 @@ public class GARP_Courses_test {
         INSERT programContract;
         programContract.Status = 'Expired';
         UPDATE programContract;
-        
+
         Exam__c ex = new Exam__c(Name='FRRMC1',Exam__c='FRRMC1',Exam_Date__c=Date.Today(),MC_Course_Name__c='FRR MC1',MC_Course_Form_Key__c='form-mc1',
                                  MC_Course_Study_Materials_Product_Codes__c='FRRMC1HB,FRRMC1BP',
                                  MC_Course_Program_Record_Type__c='FRR MC1 Program',MC_Course_Program_Record_Type_API_Name__c='FRR_MC1_Program',
@@ -359,31 +359,31 @@ public class GARP_Courses_test {
                                  MC_Course_Retake_Product_Code__c='MC12A');
         insert ex;
         System.debug('!!exam:' + ex);
-        
+
         Exam_Sites__c exmSite = new Exam_Sites__c(exam__c = ex.id);
         insert exmSite;
-        
+
         // Create Team Reg Info
         Team_Registration__c teamReg = GARP_TestFactory.createTeamReg('FRRMC1',100,False,False,False);
         System.debug('!!teamReg:' + teamReg);
-        
+
         // Get Reg Info
         GARP_MS_Courses.getMicroCourseRegistrationInfo('FRRMC1','123'); // Just call to cover
         GARP_BC_Registration.programRegistrationInfo programRegistrationInfo = GARP_BC_Courses.getMicroCourseRegistrationSettings('FRRMC1','123');
 
         // Setup Products
         List<String> prodSHIP = new List<String>{'SHIPMC:SHIPMC:4040:100'};
-        GARP_TestFactory.createProducts(prodSHIP, new Set<String>{}, new Set<String>{}, new Set<String>{});        
+        GARP_TestFactory.createProducts(prodSHIP, new Set<String>{}, new Set<String>{}, new Set<String>{});
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.mainMemberProductCode), new Set<String>{}, new Set<String>{}, new Set<String>{});
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.mainNonMemberProductCode), new Set<String>{}, new Set<String>{}, new Set<String>{});
         Set<String> setStudyMats = new Set<String>();
         setStudyMats.addAll(programRegistrationInfo.studyMatProductCodes);
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.studyMatProductCodes), new Set<String>{'CBRX'}, new Set<String>{}, setStudyMats);
         GARP_TestFactory.createShippingRates(new List<String>{'FRRMC1HB:4030'});
-                
+
         test.startTest();
-        
-        
+
+
         System.runAs(user) {
             String userId = UserInfo.getUserId();
             System.debug('!!userId:' + userId);
@@ -391,7 +391,7 @@ public class GARP_Courses_test {
 		GARP_BC_Registration.getRegistrationInfo regInfo = GARP_BC_Registration.getRegistrationInfo(programRegistrationInfo);
         System.assertEquals('Success', regInfo.status, 'getRegistrationInfo should return Success. statusMessage: ' + regInfo.statusMessage);
             GARP_TestFactory.createForm('form');
-            GARP_BC_Registration.verifyExistingCustomerInfo verifyExistingCustomerInfo = new GARP_BC_Registration.verifyExistingCustomerInfo();            
+            GARP_BC_Registration.verifyExistingCustomerInfo verifyExistingCustomerInfo = new GARP_BC_Registration.verifyExistingCustomerInfo();
             verifyExistingCustomerInfo.firstName = 'GARPQA';
             verifyExistingCustomerInfo.lastName = 'TEST';
             verifyExistingCustomerInfo.email = contact.email;
@@ -406,7 +406,7 @@ public class GARP_Courses_test {
             GARP_BC_Registration.registrationFees regFees = GARP_BC_Registration.getRegistrationFees(getRegistrationFeesInfo);
             System.assertEquals('Success', regFees.status, 'getRegistrationFees should return Success. message: ' + regFees.message);
             // Set Order
-            GARP_BC_Registration.setRegistrationInfo setRegistrationInfo = GARP_TestFactory.setupSetRegistrationInfo(verifyExistingCustomerReturnInfo, programRegistrationInfo, getRegistrationFeesInfo, regFees);        
+            GARP_BC_Registration.setRegistrationInfo setRegistrationInfo = GARP_TestFactory.setupSetRegistrationInfo(verifyExistingCustomerReturnInfo, programRegistrationInfo, getRegistrationFeesInfo, regFees);
             GARP_BC_Registration.setRegistrationReturnInfo setRegistrationReturnInfo = GARP_BC_Registration.setRegistration(setRegistrationInfo);
             System.assertEquals('Success', setRegistrationReturnInfo.status, 'setRegistration should return Success. message: ' + setRegistrationReturnInfo.message);
             System.assertNotEquals(null, setRegistrationReturnInfo.accountId, 'Registration should return account');
@@ -420,18 +420,18 @@ public class GARP_Courses_test {
     public static void testFRRMicroAuth() { runTestFRRMicroAuth(); }
 
     public static void runTestFFR() {
-        
+
         GARP_TestFactory.createCountryCodes();
 
         test.startTest();
-                        
+
         // Get Reg Info
-        GARP_MS_Courses.getFFRRegistrationInfo(); // Just call to cover
-        GARP_BC_Registration.programRegistrationInfo programRegistrationInfo = GARP_BC_Courses.getFFRRegistrationSettings();
-        
-		// Setup Products        
+        GARP_MS_Courses.getFFRRegistrationInfo(null); // US-63665: FFR B2B Registration
+        GARP_BC_Registration.programRegistrationInfo programRegistrationInfo = GARP_BC_Courses.getFFRRegistrationSettings(null); // US-63665: FFR B2B Registration
+
+		// Setup Products
         List<String> prodSHIP = new List<String>{'SHIPFFR:SHIPFFR:4040:100'};
-        GARP_TestFactory.createProducts(prodSHIP, new Set<String>{}, new Set<String>{}, new Set<String>{});        
+        GARP_TestFactory.createProducts(prodSHIP, new Set<String>{}, new Set<String>{}, new Set<String>{});
     	GARP_TestFactory.createProducts(GARP_TestFactory.getAuxProductList(), new Set<String>{}, new Set<String>{}, new Set<String>{});
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.mainMemberProductCode), new Set<String>{}, new Set<String>{}, new Set<String>{});
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.mainNonMemberProductCode), new Set<String>{}, new Set<String>{}, new Set<String>{});
@@ -439,7 +439,7 @@ public class GARP_Courses_test {
         setStudyMats.addAll(programRegistrationInfo.studyMatProductCodes);
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.studyMatProductCodes), new Set<String>{'FFRXF'}, new Set<String>{}, setStudyMats);
         GARP_TestFactory.createShippingRates(new List<String>{'CBRHB:4030'});
-        
+
 		GARP_BC_Registration.getRegistrationInfo regInfo = GARP_BC_Registration.getRegistrationInfo(programRegistrationInfo);
         System.assertEquals('Success', regInfo.status, 'getRegistrationInfo should return Success. statusMessage: ' + regInfo.statusMessage);
         String formNameFFR = (programRegistrationInfo != null && String.isNotBlank(programRegistrationInfo.formName)) ? programRegistrationInfo.formName : 'form';
@@ -452,7 +452,7 @@ public class GARP_Courses_test {
         GARP_BC_Registration.registrationFees regFees = GARP_BC_Registration.getRegistrationFees(getRegistrationFeesInfo);
         System.assertEquals('Success', regFees.status, 'getRegistrationFees should return Success. message: ' + regFees.message);
         // Set Order
-        GARP_BC_Registration.setRegistrationInfo setRegistrationInfo = GARP_TestFactory.setupSetRegistrationInfo(verifyExistingCustomerReturnInfo, programRegistrationInfo, getRegistrationFeesInfo, regFees);        
+        GARP_BC_Registration.setRegistrationInfo setRegistrationInfo = GARP_TestFactory.setupSetRegistrationInfo(verifyExistingCustomerReturnInfo, programRegistrationInfo, getRegistrationFeesInfo, regFees);
         GARP_BC_Registration.setRegistrationReturnInfo setRegistrationReturnInfo = GARP_BC_Registration.setRegistration(setRegistrationInfo);
         System.assertEquals('Success', setRegistrationReturnInfo.status, 'setRegistration should return Success. message: ' + setRegistrationReturnInfo.message);
         System.assertNotEquals(null, setRegistrationReturnInfo.accountId, 'Registration should return account');
@@ -487,25 +487,25 @@ public class GARP_Courses_test {
         INSERT programContract;
         programContract.Status = 'Expired';
         UPDATE programContract;
-        
+
         // Get Reg Info
-        GARP_MS_Courses.getFFRRegistrationInfo(); // Just call to cover
-        GARP_BC_Registration.programRegistrationInfo programRegistrationInfo = GARP_BC_Courses.getFFRRegistrationSettings();
-        
-		// Setup Products        
+        GARP_MS_Courses.getFFRRegistrationInfo(null); // US-63665: FFR B2B Registration
+        GARP_BC_Registration.programRegistrationInfo programRegistrationInfo = GARP_BC_Courses.getFFRRegistrationSettings(null); // US-63665: FFR B2B Registration
+
+		// Setup Products
         List<String> prodSHIP = new List<String>{'SHIPFFR:SHIPFFR:4040:100'};
-        GARP_TestFactory.createProducts(prodSHIP, new Set<String>{}, new Set<String>{}, new Set<String>{});        
+        GARP_TestFactory.createProducts(prodSHIP, new Set<String>{}, new Set<String>{}, new Set<String>{});
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.mainMemberProductCode), new Set<String>{}, new Set<String>{}, new Set<String>{});
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.mainNonMemberProductCode), new Set<String>{}, new Set<String>{}, new Set<String>{});
         Set<String> setStudyMats = new Set<String>();
         setStudyMats.addAll(programRegistrationInfo.studyMatProductCodes);
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.studyMatProductCodes), new Set<String>{'FFRXF'}, new Set<String>{}, setStudyMats);
         GARP_TestFactory.createShippingRates(new List<String>{'CBRHB:4030'});
-        
+
         System.runAs(user) {
             String userId = UserInfo.getUserId();
             System.debug('!!userId:' + userId);
-            
+
 		GARP_BC_Registration.getRegistrationInfo regInfo = GARP_BC_Registration.getRegistrationInfo(programRegistrationInfo);
         System.assertEquals('Success', regInfo.status, 'getRegistrationInfo should return Success. statusMessage: ' + regInfo.statusMessage);
             String formNameFFRAuth = (programRegistrationInfo != null && String.isNotBlank(programRegistrationInfo.formName)) ? programRegistrationInfo.formName : 'form';
@@ -523,27 +523,67 @@ public class GARP_Courses_test {
     @isTest
     public static void testFFRAuth() { runTestFFRAuth(); }
 
+    // US-63665: FFR B2B Registration
+    public static void runTestFFRTeamReg() {
+        GARP_TestFactory.createCountryCodes();
+        Team_Registration__c teamReg = GARP_TestFactory.createTeamReg('FFR', NULL, False, False, False);
+        String teamRegCode = (teamReg != null && teamReg.Access_Code__c != null) ? teamReg.Access_Code__c : '123';
+        test.startTest();
+        GARP_MS_Courses.getFFRRegistrationInfo(teamRegCode);
+        GARP_BC_Registration.programRegistrationInfo programRegistrationInfo = GARP_BC_Courses.getFFRRegistrationSettings(teamRegCode);
+
+        List<String> prodSHIP = new List<String>{'SHIPFFR:SHIPFFR:4040:100'};
+        GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(prodSHIP), new Set<String>{}, new Set<String>{}, new Set<String>{});
+        GARP_TestFactory.createProducts(GARP_TestFactory.getAuxProductList(), new Set<String>{}, new Set<String>{}, new Set<String>{});
+        GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.mainMemberProductCode), new Set<String>{}, new Set<String>{}, new Set<String>{});
+        GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.mainNonMemberProductCode), new Set<String>{}, new Set<String>{}, new Set<String>{});
+        Set<String> setStudyMats = new Set<String>();
+        setStudyMats.addAll(programRegistrationInfo.studyMatProductCodes);
+        GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.studyMatProductCodes), new Set<String>{'FFRXF'}, new Set<String>{}, setStudyMats);
+        GARP_TestFactory.createShippingRates(new List<String>{'CBRHB:4030'});
+        GARP_BC_Registration.getRegistrationInfo regInfo = GARP_BC_Registration.getRegistrationInfo(programRegistrationInfo);
+        System.assertEquals('Success', regInfo.status, 'getRegistrationInfo should return Success. statusMessage: ' + regInfo.statusMessage);
+        String formNameFFRTR = (programRegistrationInfo != null && String.isNotBlank(programRegistrationInfo.formName)) ? programRegistrationInfo.formName : 'form';
+        GARP_TestFactory.createForm(formNameFFRTR);
+        GARP_BC_Registration.verifyExistingCustomerInfo verifyExistingCustomerInfo = GARP_TestFactory.setupVerifyExistingCustomerInfo(programRegistrationInfo);
+        GARP_BC_Registration.verifyExistingCustomerReturnInfo verifyExistingCustomerReturnInfo = GARP_BC_Registration.verifyExistingCustomer(verifyExistingCustomerInfo);
+        System.assertEquals('Success', verifyExistingCustomerReturnInfo.status, 'verifyExistingCustomer should return Success. message: ' + verifyExistingCustomerReturnInfo.message);
+        GARP_BC_Registration.getRegistrationFeesInfo getRegistrationFeesInfo = GARP_TestFactory.setupGetFeesInfo('Stripe', False, regInfo);
+        getRegistrationFeesInfo.teamRegCode = teamRegCode;
+        GARP_BC_Registration.registrationFees regFees = GARP_BC_Registration.getRegistrationFees(getRegistrationFeesInfo);
+        System.assertEquals('Success', regFees.status, 'getRegistrationFees should return Success. message: ' + regFees.message);
+        GARP_BC_Registration.setRegistrationInfo setRegistrationInfo = GARP_TestFactory.setupSetRegistrationInfo(verifyExistingCustomerReturnInfo, programRegistrationInfo, getRegistrationFeesInfo, regFees);
+        setRegistrationInfo.teamRegInfo = regInfo.teamRegInfo;
+        GARP_BC_Registration.setRegistrationReturnInfo setRegistrationReturnInfo = GARP_BC_Registration.setRegistration(setRegistrationInfo);
+        System.assertEquals('Success', setRegistrationReturnInfo.status, 'setRegistration should return Success. message: ' + setRegistrationReturnInfo.message);
+        System.assertNotEquals(null, setRegistrationReturnInfo.accountId, 'Registration should return account.');
+        test.stopTest();
+    }
+
+    @isTest
+    public static void testFFRTeamReg() { runTestFFRTeamReg(); }
+
     public static void runTestSCR() {
         GARP_TestFactory.createCountryCodes();
-        
-        System.debug('Setup Exam!!');        
+
+        System.debug('Setup Exam!!');
         ExamRegistrationTestDataFactory.setupChargent();
-        ExamRegistrationTestDataFactory.setupAccountOwner();     
-        
+        ExamRegistrationTestDataFactory.setupAccountOwner();
+
         System.debug('Start Test!!');
         test.startTest();
-        
+
         // Get Reg Info
         GARP_MS_Courses.getSCRRegistrationInfo(NULL); // Just call to cover
         GARP_BC_Registration.programRegistrationInfo programRegistrationInfo = GARP_BC_Courses.getSCRRegistrationSettings(NULL);
-        
-		// Setup Products        
+
+		// Setup Products
         List<String> regProducts = new List<String>{'SHIPSCR'};
         if (String.isNotBlank(programRegistrationInfo.studyMaterialDiscountProductCode)) {
             regProducts.add(programRegistrationInfo.studyMaterialDiscountProductCode);
         }
-        GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(regProducts), new Set<String>{}, new Set<String>{}, new Set<String>{});        
-    	GARP_TestFactory.createProducts(GARP_TestFactory.getAuxProductList(), new Set<String>{}, new Set<String>{}, new Set<String>{});		 
+        GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(regProducts), new Set<String>{}, new Set<String>{}, new Set<String>{});
+    	GARP_TestFactory.createProducts(GARP_TestFactory.getAuxProductList(), new Set<String>{}, new Set<String>{}, new Set<String>{});
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.mainProductCodes), new Set<String>{}, new Set<String>{}, new Set<String>{});
         Set<String> setStudyMats = new Set<String>();
         setStudyMats.addAll(programRegistrationInfo.studyMatProductCodes);
@@ -569,7 +609,7 @@ public class GARP_Courses_test {
         GARP_BC_Registration.registrationFees regFees = GARP_BC_Registration.getRegistrationFees(getRegistrationFeesInfo);
         System.assertEquals('Success', regFees.status, 'getRegistrationFees should return Success. message: ' + regFees.message);
         // Set Order
-        GARP_BC_Registration.setRegistrationInfo setRegistrationInfo = GARP_TestFactory.setupSetRegistrationInfo(verifyExistingCustomerReturnInfo, programRegistrationInfo, getRegistrationFeesInfo, regFees);        
+        GARP_BC_Registration.setRegistrationInfo setRegistrationInfo = GARP_TestFactory.setupSetRegistrationInfo(verifyExistingCustomerReturnInfo, programRegistrationInfo, getRegistrationFeesInfo, regFees);
         GARP_BC_Registration.setRegistrationReturnInfo setRegistrationReturnInfo = GARP_BC_Registration.setRegistration(setRegistrationInfo);
         System.assertEquals('Success', setRegistrationReturnInfo.status, 'setRegistration should return Success. message: ' + setRegistrationReturnInfo.message);
         System.assertNotEquals(null, setRegistrationReturnInfo.accountId, 'Registration should return account');
@@ -658,18 +698,18 @@ public class GARP_Courses_test {
         INSERT programContract;
         programContract.Status = 'Expired';
         UPDATE programContract;
-        
-        System.debug('Setup Exam!!');        
+
+        System.debug('Setup Exam!!');
         ExamRegistrationTestDataFactory.setupChargent();
-        ExamRegistrationTestDataFactory.setupAccountOwner();     
-        
+        ExamRegistrationTestDataFactory.setupAccountOwner();
+
         System.debug('Start Test!!');
         test.startTest();
-        
+
         // Get Reg Info
         GARP_MS_Courses.getSCRRegistrationInfo(NULL); // Just call to cover
         GARP_BC_Registration.programRegistrationInfo programRegistrationInfo = GARP_BC_Courses.getSCRRegistrationSettings(NULL);
-        
+
 		// Setup Products
         List<String> regProducts = new List<String>{'SHIPSCR'};
         if (String.isNotBlank(programRegistrationInfo.studyMaterialDiscountProductCode)) {
@@ -682,11 +722,11 @@ public class GARP_Courses_test {
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.studyMatProductCodes, 150), new Set<String>{'SCRX','SCRBP'}, new Set<String>{}, setStudyMats);
         GARP_TestFactory.createShippingRates(new List<String>{'SCRH:4030'});
         ExamRegistrationTestDataFactory.setupSCRExamRegistrationDependencyObjects(programRegistrationInfo);
-        
+
         System.runAs(user) {
             String userId = UserInfo.getUserId();
             System.debug('!!userId:' + userId);
-            
+
 		GARP_BC_Registration.getRegistrationInfo regInfo = GARP_BC_Registration.getRegistrationInfo(programRegistrationInfo);
         System.assertEquals('Success', regInfo.status, 'getRegistrationInfo should return Success. statusMessage: ' + regInfo.statusMessage);
             GARP_BC_Registration.verifyExistingCustomerInfo verifyExistingCustomerInfo = GARP_TestFactory.setupVerifyExistingCustomerInfo(programRegistrationInfo);
@@ -713,32 +753,32 @@ public class GARP_Courses_test {
 
     public static void runTestRAIJ() {
         GARP_TestFactory.createCountryCodes();
-        
-        System.debug('Setup Exam!!');        
+
+        System.debug('Setup Exam!!');
         ExamRegistrationTestDataFactory.setupChargent();
-        ExamRegistrationTestDataFactory.setupAccountOwner();     
-        
+        ExamRegistrationTestDataFactory.setupAccountOwner();
+
         System.debug('Start Test!!');
         test.startTest();
-        
+
         // Get Reg Info
         GARP_MS_Courses.getRAIJRegistrationInfo(NULL); // Just call to cover
         GARP_BC_Registration.programRegistrationInfo programRegistrationInfo = GARP_BC_Courses.getRAIJRegistrationSettings(NULL);
-        
+
 		// Setup Products
         List<String> regProducts = new List<String>{'SHIPRAIJ'};
         if (String.isNotBlank(programRegistrationInfo.studyMaterialDiscountProductCode)) {
             regProducts.add(programRegistrationInfo.studyMaterialDiscountProductCode);
         }
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(regProducts), new Set<String>{}, new Set<String>{}, new Set<String>{});
-    	GARP_TestFactory.createProducts(GARP_TestFactory.getAuxProductList(), new Set<String>{}, new Set<String>{}, new Set<String>{});		 
+    	GARP_TestFactory.createProducts(GARP_TestFactory.getAuxProductList(), new Set<String>{}, new Set<String>{}, new Set<String>{});
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.mainProductCodes), new Set<String>{}, new Set<String>{}, new Set<String>{});
         Set<String> setStudyMats = new Set<String>();
         setStudyMats.addAll(programRegistrationInfo.studyMatProductCodes);
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.studyMatProductCodes, 150), new Set<String>{'RAIJX','RAIJBP'}, new Set<String>{}, setStudyMats);
         GARP_TestFactory.createShippingRates(new List<String>{'RAIJH:4030'});
         ExamRegistrationTestDataFactory.setupRAIJExamRegistrationDependencyObjects(programRegistrationInfo);
-        
+
 		GARP_BC_Registration.getRegistrationInfo regInfo = GARP_BC_Registration.getRegistrationInfo(programRegistrationInfo);
         System.assertEquals('Success', regInfo.status, 'getRegistrationInfo should return Success. statusMessage: ' + regInfo.statusMessage);
         GARP_BC_Registration.verifyExistingCustomerInfo verifyExistingCustomerInfo = GARP_TestFactory.setupVerifyExistingCustomerInfo(programRegistrationInfo);
@@ -758,7 +798,7 @@ public class GARP_Courses_test {
         GARP_BC_Registration.registrationFees regFees = GARP_BC_Registration.getRegistrationFees(getRegistrationFeesInfo);
         System.assertEquals('Success', regFees.status, 'getRegistrationFees should return Success. message: ' + regFees.message);
         // Set Order
-        GARP_BC_Registration.setRegistrationInfo setRegistrationInfo = GARP_TestFactory.setupSetRegistrationInfo(verifyExistingCustomerReturnInfo, programRegistrationInfo, getRegistrationFeesInfo, regFees);        
+        GARP_BC_Registration.setRegistrationInfo setRegistrationInfo = GARP_TestFactory.setupSetRegistrationInfo(verifyExistingCustomerReturnInfo, programRegistrationInfo, getRegistrationFeesInfo, regFees);
         GARP_BC_Registration.setRegistrationReturnInfo setRegistrationReturnInfo = GARP_BC_Registration.setRegistration(setRegistrationInfo);
         System.assertEquals('Success', setRegistrationReturnInfo.status, 'setRegistration should return Success. message: ' + setRegistrationReturnInfo.message);
         System.assertNotEquals(null, setRegistrationReturnInfo.accountId, 'Registration should return account');
@@ -847,18 +887,18 @@ public class GARP_Courses_test {
         INSERT programContract;
         programContract.Status = 'Expired';
         UPDATE programContract;
-        
-        System.debug('Setup Exam!!');        
+
+        System.debug('Setup Exam!!');
         ExamRegistrationTestDataFactory.setupChargent();
-        ExamRegistrationTestDataFactory.setupAccountOwner();     
-        
+        ExamRegistrationTestDataFactory.setupAccountOwner();
+
         System.debug('Start Test!!');
         test.startTest();
-        
+
         // Get Reg Info
         GARP_MS_Courses.getRAIJRegistrationInfo(NULL); // Just call to cover
         GARP_BC_Registration.programRegistrationInfo programRegistrationInfo = GARP_BC_Courses.getRAIJRegistrationSettings(NULL);
-        
+
 		// Setup Products
         List<String> regProducts = new List<String>{'SHIPRAIJ'};
         if (String.isNotBlank(programRegistrationInfo.studyMaterialDiscountProductCode)) {
@@ -871,11 +911,11 @@ public class GARP_Courses_test {
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.studyMatProductCodes, 150), new Set<String>{'RAIJX','RAIJBP'}, new Set<String>{}, setStudyMats);
         GARP_TestFactory.createShippingRates(new List<String>{'RAIJH:4030'});
         ExamRegistrationTestDataFactory.setupRAIJExamRegistrationDependencyObjects(programRegistrationInfo);
-        
+
         System.runAs(user) {
             String userId = UserInfo.getUserId();
             System.debug('!!userId:' + userId);
-            
+
 		GARP_BC_Registration.getRegistrationInfo regInfo = GARP_BC_Registration.getRegistrationInfo(programRegistrationInfo);
         System.assertEquals('Success', regInfo.status, 'getRegistrationInfo should return Success. statusMessage: ' + regInfo.statusMessage);
             GARP_BC_Registration.verifyExistingCustomerInfo verifyExistingCustomerInfo = GARP_TestFactory.setupVerifyExistingCustomerInfo(programRegistrationInfo);
@@ -902,14 +942,14 @@ public class GARP_Courses_test {
 
     public static void runTestRiskAI() {
         GARP_TestFactory.createCountryCodes();
-        
-        System.debug('Setup Exam!!');        
+
+        System.debug('Setup Exam!!');
         ExamRegistrationTestDataFactory.setupChargent();
-        ExamRegistrationTestDataFactory.setupAccountOwner();     
+        ExamRegistrationTestDataFactory.setupAccountOwner();
 
         System.debug('Start Test!!');
         test.startTest();
-        
+
         // Get Reg Info
         GARP_MS_Courses.getRiskAIRegistrationInfo(NULL); // Just call to cover
         GARP_BC_Registration.programRegistrationInfo programRegistrationInfo = GARP_BC_Courses.getRiskAIRegistrationSettings(NULL);
@@ -927,7 +967,7 @@ public class GARP_Courses_test {
         Set<String> setStudyMats = new Set<String>();
         setStudyMats.addAll(programRegistrationInfo.studyMatProductCodes);
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.studyMatProductCodes, 150), new Set<String>{'RAIBP'}, new Set<String>{}, setStudyMats);
-        
+
 		GARP_BC_Registration.getRegistrationInfo regInfo = GARP_BC_Registration.getRegistrationInfo(programRegistrationInfo);
         System.assertEquals('Success', regInfo.status, 'getRegistrationInfo should return Success. statusMessage: ' + regInfo.statusMessage);
         GARP_BC_Registration.verifyExistingCustomerInfo verifyExistingCustomerInfo = GARP_TestFactory.setupVerifyExistingCustomerInfo(programRegistrationInfo);
@@ -947,7 +987,7 @@ public class GARP_Courses_test {
         GARP_BC_Registration.registrationFees regFees = GARP_BC_Registration.getRegistrationFees(getRegistrationFeesInfo);
         System.assertEquals('Success', regFees.status, 'getRegistrationFees should return Success. message: ' + regFees.message);
         // Set Order
-        GARP_BC_Registration.setRegistrationInfo setRegistrationInfo = GARP_TestFactory.setupSetRegistrationInfo(verifyExistingCustomerReturnInfo, programRegistrationInfo, getRegistrationFeesInfo, regFees);        
+        GARP_BC_Registration.setRegistrationInfo setRegistrationInfo = GARP_TestFactory.setupSetRegistrationInfo(verifyExistingCustomerReturnInfo, programRegistrationInfo, getRegistrationFeesInfo, regFees);
         GARP_BC_Registration.setRegistrationReturnInfo setRegistrationReturnInfo = GARP_BC_Registration.setRegistration(setRegistrationInfo);
         System.assertEquals('Success', setRegistrationReturnInfo.status, 'setRegistration should return Success. message: ' + setRegistrationReturnInfo.message);
         System.assertNotEquals(null, setRegistrationReturnInfo.accountId, 'Registration should return account');
@@ -1018,7 +1058,7 @@ public class GARP_Courses_test {
         User user = setup.user;
         Contact contact = setup.contact;
         Opportunity opp = setup.opp;
-        
+
         // Create Expired Contract
         Contract programContract = new Contract(
             Name = 'Risk AI',
@@ -1034,13 +1074,13 @@ public class GARP_Courses_test {
         programContract.Status = 'Expired';
         UPDATE programContract;
 
-        System.debug('Setup Exam!!');        
+        System.debug('Setup Exam!!');
         ExamRegistrationTestDataFactory.setupChargent();
-        ExamRegistrationTestDataFactory.setupAccountOwner();     
+        ExamRegistrationTestDataFactory.setupAccountOwner();
 
         System.debug('Start Test!!');
         test.startTest();
-        
+
         // Get Reg Info
         GARP_MS_Courses.getRiskAIRegistrationInfo(NULL); // Just call to cover
         GARP_BC_Registration.programRegistrationInfo programRegistrationInfo = GARP_BC_Courses.getRiskAIRegistrationSettings(NULL);
@@ -1057,7 +1097,7 @@ public class GARP_Courses_test {
         Set<String> setStudyMats = new Set<String>();
         setStudyMats.addAll(programRegistrationInfo.studyMatProductCodes);
         GARP_TestFactory.createProducts(GARP_TestFactory.createProductList(programRegistrationInfo.studyMatProductCodes, 150), new Set<String>{'RAIBP'}, new Set<String>{}, setStudyMats);
-        
+
         System.runAs(user) {
             String userId = UserInfo.getUserId();
             System.debug('!!userId:' + userId);

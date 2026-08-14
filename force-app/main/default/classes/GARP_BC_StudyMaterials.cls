@@ -474,7 +474,7 @@ public class GARP_BC_StudyMaterials {
         GARP_BC_Registration.programRegistrationInfo raijSettings = GARP_BC_Courses.getRAIJRegistrationSettings(null);
         GARP_BC_Registration.programRegistrationInfo frrSettings = GARP_BC_Courses.getFRRRegistrationSettings(null);
         GARP_BC_Registration.programRegistrationInfo frr25Settings = GARP_BC_Courses.getFRR25RegistrationSettings(null);
-        GARP_BC_Registration.programRegistrationInfo ffrSettings = GARP_BC_Courses.getFFRRegistrationSettings();
+        GARP_BC_Registration.programRegistrationInfo ffrSettings = GARP_BC_Courses.getFFRRegistrationSettings(null); // US-63665: FFR B2B Registration
         
         List<String> frmStudyMatProductCodes = frmSettings.studyMatProductCodes;
         List<String> scrStudyMatProductCodes = scrSettings.studyMatProductCodes;

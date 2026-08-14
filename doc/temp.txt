@@ -1,0 +1,26 @@
+https://garp--devjuly25a.sandbox.my.site.com/garpportal/sf/api/services/data/v67.0/graphql
+
+{
+    "data": {
+        "uiapi": {
+            "currentUser": {
+                "Id": "005gP000005IJSjQAO",
+                "Name": {
+                    "value": "QATEST TEST"
+                },
+                "Contact": {
+                    "Id": "003gP000009J6u3QAC",
+                    "GARP_Member_ID__c": {
+                        "value": "2472763"
+                    },
+                    "Photo_URL__c": {
+                        "value": "/servlet/servlet.FileDownload?file=00PgP000006Q6hRUAS"
+                    }
+                }
+            }
+        }
+    },
+    "errors": [],
+    "extensions": {}
+}
+

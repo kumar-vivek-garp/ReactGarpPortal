@@ -20,6 +20,7 @@ import { Route as AppLayoutMyAccountIndexRouteImport } from './pages/_appLayout/
 import { Route as AppLayoutProgramsIndexRouteImport } from './pages/_appLayout/programs/index'
 import { Route as AppLayoutStudyMaterialsIndexRouteImport } from './pages/_appLayout/study-materials/index'
 import { Route as AuthLayoutLoginIndexRouteImport } from './pages/_authLayout/Login/index'
+import { Route as AppLayoutProgramsProgramTypeIndexRouteImport } from './pages/_appLayout/programs/$programType/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -77,6 +78,12 @@ const AuthLayoutLoginIndexRoute = AuthLayoutLoginIndexRouteImport.update({
   path: '/Login/',
   getParentRoute: () => AuthLayoutRouteRoute,
 } as any)
+const AppLayoutProgramsProgramTypeIndexRoute =
+  AppLayoutProgramsProgramTypeIndexRouteImport.update({
+    id: '/programs/$programType/',
+    path: '/programs/$programType/',
+    getParentRoute: () => AppLayoutRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/programs/': typeof AppLayoutProgramsIndexRoute
   '/study-materials/': typeof AppLayoutStudyMaterialsIndexRoute
   '/Login/': typeof AuthLayoutLoginIndexRoute
+  '/programs/$programType/': typeof AppLayoutProgramsProgramTypeIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -99,6 +107,7 @@ export interface FileRoutesByTo {
   '/programs': typeof AppLayoutProgramsIndexRoute
   '/study-materials': typeof AppLayoutStudyMaterialsIndexRoute
   '/Login': typeof AuthLayoutLoginIndexRoute
+  '/programs/$programType': typeof AppLayoutProgramsProgramTypeIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -113,6 +122,7 @@ export interface FileRoutesById {
   '/_appLayout/programs/': typeof AppLayoutProgramsIndexRoute
   '/_appLayout/study-materials/': typeof AppLayoutStudyMaterialsIndexRoute
   '/_authLayout/Login/': typeof AuthLayoutLoginIndexRoute
+  '/_appLayout/programs/$programType/': typeof AppLayoutProgramsProgramTypeIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/programs/'
     | '/study-materials/'
     | '/Login/'
+    | '/programs/$programType/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '/programs'
     | '/study-materials'
     | '/Login'
+    | '/programs/$programType'
   id:
     | '__root__'
     | '/'
@@ -150,6 +162,7 @@ export interface FileRouteTypes {
     | '/_appLayout/programs/'
     | '/_appLayout/study-materials/'
     | '/_authLayout/Login/'
+    | '/_appLayout/programs/$programType/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -237,6 +250,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLayoutLoginIndexRouteImport
       parentRoute: typeof AuthLayoutRouteRoute
     }
+    '/_appLayout/programs/$programType/': {
+      id: '/_appLayout/programs/$programType/'
+      path: '/programs/$programType'
+      fullPath: '/programs/$programType/'
+      preLoaderRoute: typeof AppLayoutProgramsProgramTypeIndexRouteImport
+      parentRoute: typeof AppLayoutRouteRoute
+    }
   }
 }
 
@@ -248,6 +268,7 @@ interface AppLayoutRouteRouteChildren {
   AppLayoutMyAccountIndexRoute: typeof AppLayoutMyAccountIndexRoute
   AppLayoutProgramsIndexRoute: typeof AppLayoutProgramsIndexRoute
   AppLayoutStudyMaterialsIndexRoute: typeof AppLayoutStudyMaterialsIndexRoute
+  AppLayoutProgramsProgramTypeIndexRoute: typeof AppLayoutProgramsProgramTypeIndexRoute
 }
 
 const AppLayoutRouteRouteChildren: AppLayoutRouteRouteChildren = {
@@ -258,6 +279,8 @@ const AppLayoutRouteRouteChildren: AppLayoutRouteRouteChildren = {
   AppLayoutMyAccountIndexRoute: AppLayoutMyAccountIndexRoute,
   AppLayoutProgramsIndexRoute: AppLayoutProgramsIndexRoute,
   AppLayoutStudyMaterialsIndexRoute: AppLayoutStudyMaterialsIndexRoute,
+  AppLayoutProgramsProgramTypeIndexRoute:
+    AppLayoutProgramsProgramTypeIndexRoute,
 }
 
 const AppLayoutRouteRouteWithChildren = AppLayoutRouteRoute._addFileChildren(

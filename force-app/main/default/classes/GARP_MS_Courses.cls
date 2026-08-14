@@ -10,19 +10,20 @@ public class GARP_MS_Courses {
     public static GARP_BC_Registration.getRegistrationInfo getFRR25RegistrationInfo(String regCode) {
         return GARP_BC_Courses.getFRR25RegistrationInfo(regCode);
     }
-    
+
     @RemoteAction
     public static GARP_BC_Registration.getRegistrationInfo getMicroCourseRegistrationInfo(String courseCode, String regCode) {
         return GARP_BC_Courses.getMicroCourseRegistrationInfo(courseCode, regCode);
     }
 
-    
-    
+
+
+    // US-63665: FFR B2B Registration
     @RemoteAction
-    public static GARP_BC_Registration.getRegistrationInfo getFFRRegistrationInfo() {
-        return GARP_BC_Courses.getFFRRegistrationInfo();
+    public static GARP_BC_Registration.getRegistrationInfo getFFRRegistrationInfo(String regCode) {
+        return GARP_BC_Courses.getFFRRegistrationInfo(regCode);
     }
-    
+
     @RemoteAction
     public static GARP_BC_Registration.getRegistrationInfo getSCRRegistrationInfo(String regCode) {
         return GARP_BC_Courses.getSCRRegistrationInfo(regCode);
@@ -37,6 +38,6 @@ public class GARP_MS_Courses {
     public static GARP_BC_Registration.getRegistrationInfo getRAIJRegistrationInfo(String regCode) {
         return GARP_BC_Courses.getRAIJRegistrationInfo(regCode);
     }
-    
+
     public GARP_MS_Courses(sfdcAppRemoter ctrl){}
 }

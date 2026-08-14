@@ -62,4 +62,75 @@ export type ProgramsView = {
 	microCourseConfig: Record<string, MicroCourseConfig> | null
 }
 
+/** Apex `programState` values on `ProgramDetail`. */
+export type ProgramDetailState =
+	| "Completed"
+	| "EnrollmentExpired"
+	| "CVSubmission"
+	| "ExamAttempt"
+	| string
+
+/** One exam part card (`GARP_Portal_ProgramDetailService.ExamPartInfo`). */
+export type ExamPartInfo = {
+	examPartState: string | null
+	examAttemptAdminName: string | null
+	examAttemptId: string | null
+	lastDateforADA: string | null
+	examFormat: string | null
+	unpaidOrderId: string | null
+	unpaidOrderPayByDate: string | null
+	deferredAdminName: string | null
+	deferredExamSetupOpenDate: string | null
+	isDeferralOpen: boolean | null
+	schedulingAwaitingToOpenOpenDate: string | null
+	schedulingIsComplete: boolean | null
+	isSchedulingOpen: boolean | null
+	schedulingDeadline: string | null
+	schedulingExamDateTimeSelected: string | null
+	schedulingExamDateTimeZoneSelected: string | null
+	schedulingExamLocationSelected: string | null
+	schedulingExamProviderName: string | null
+	showTakeExam: boolean | null
+	schedulingExamAccessURL: string | null
+	unpaidDeferralOrderId: string | null
+	resultsAvailableDateTime: string | null
+	resultsAvailableStatement: string | null
+	result: string | null
+	isResultStale: boolean | null
+	badgeURL: string | null
+	badgePageURL: string | null
+}
+
+/** `GET /memberportal/programDetail` inner payload. */
+export type ProgramDetail = {
+	statusMessage: string | null
+	statusCode: number | null
+	programState: ProgramDetailState | null
+	programType: string | null
+	programCompletedDate: string | null
+	certificateDownloadURL: string | null
+	/** Apex typo — keep as returned. */
+	digitalBadgheURL: string | null
+	isAnyPartSchedulingOpen: boolean | null
+	isAnyPartDeferalOpen: boolean | null
+	isAnyPartDeferred: boolean | null
+	programInformation: ProgramInformation | null
+	examPart1Info: ExamPartInfo | null
+	examPart2Info: ExamPartInfo | null
+	currentRegistrationIsOpen: boolean | null
+	currentRegistrationAdminName: string | null
+	nextRegistrationAdminName: string | null
+	nextRegistrationOpenDate: string | null
+	currentRegistrationCanRegPartI: boolean | null
+	currentRegistrationCanAddPartII: boolean | null
+	cvStatus: string | null
+}
+
+/** `GET /memberportal/programDetail` view (`DetailView`). */
+export type ProgramDetailView = {
+	statusMessage: string | null
+	statusCode: number
+	programsDetailInfo: ProgramDetail | null
+}
+
 export type { MemberPortalEnvelope }

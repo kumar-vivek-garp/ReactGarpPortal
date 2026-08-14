@@ -481,9 +481,10 @@ public class garpAppRemoter {
         return GARP_MS_Courses.getRAIJRegistrationInfo(regCode);
     }
 
+    // US-63665: FFR B2B Registration
     @RemoteAction
     public static GARP_BC_Registration.getRegistrationInfo getFFRRegistrationInfo(String regCode) {
-        return GARP_MS_Courses.getFFRRegistrationInfo();
+        return GARP_MS_Courses.getFFRRegistrationInfo(regCode);
     }
 
     @RemoteAction

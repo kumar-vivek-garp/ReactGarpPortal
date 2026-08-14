@@ -41,6 +41,7 @@ public class GARP_Registration_test {
     @isTest public static void runCoursesFRRMicroAuth() { createStripe(); GARP_Courses_test.runTestFRRMicroAuth(); }
     @isTest public static void runCoursesFFR() { createStripe(); GARP_Courses_test.runTestFFR(); }
     @isTest public static void runCoursesFFRAuth() { createStripe(); GARP_Courses_test.runTestFFRAuth(); }
+    @isTest public static void runCoursesFFRTeamReg() { createStripe(); GARP_Courses_test.runTestFFRTeamReg(); } // US-63665: FFR B2B Registration
     @isTest public static void runCoursesSCR() { createStripe(); GARP_Courses_test.runTestSCR(); }
     @isTest public static void runCoursesSCRAuth() { createStripe(); GARP_Courses_test.runTestSCRAuth(); }
     @isTest public static void runCoursesRAIJ() { createStripe(); GARP_Courses_test.runTestRAIJ(); }

@@ -10,7 +10,7 @@ public class GARP_BC_Registration {
         public String programId;
         public String registrationId;
         public String orderNumber;
-        public String company;
+
         public Decimal total;
         public Decimal tax;
         public Decimal shipping;
@@ -604,7 +604,7 @@ public class GARP_BC_Registration {
         // Authenticated and Non-Events
         if(programRegistrationInfo.registrationType != 'event' && programRegistrationInfo.registrationType != 'checkout') {
 
-            if(programRegistrationInfo.registrationType == 'ffr' || programRegistrationInfo.registrationType == 'frr' || programRegistrationInfo.registrationType == 'frr25') {
+            if(programRegistrationInfo.registrationType == 'ffr' || programRegistrationInfo.registrationType == 'frr' || programRegistrationInfo.registrationType == 'frr25' || programRegistrationInfo.registrationType == 'arpm') {
                 GARP_BC_Courses.isEligibleCourseReturnInfo courseElig = GARP_BC_Courses.isEligibleCourse(regInfo.membershipInfo, programRegistrationInfo.registrationType, regInfo.teamRegInfo, null);
                 regInfo.notEligibleErrorMessage = courseElig.message;
                 regInfo.isEligible = courseElig.isEligible;
@@ -2186,65 +2186,45 @@ public class GARP_BC_Registration {
 
                 regFees.orderTaxInfo = retTax.orderTaxInfo;
 
-                // ===== Tax product resolution — DYNAMIC via custom metadata =====
-                // The tax product code is resolved from the taxtype -> product-code mapping on
-                // Stripe_Auth_Configuration__mdt.Stripe_Product_Code__c (reusing
-                // StripeTaxCalUtil.getStripeAuthConfig + parseTaxTypeToProductCode), replacing the
-                // hardcoded sales_tax/igst/gst branches. New tax countries = metadata change only.
-                /* --- legacy hardcoded logic (retained for reference) ---
                 if(retTax.orderTaxInfo.taxType == 'sales_tax' && retTax.orderTaxInfo.state == 'NJ') {
                     fndPbe = mapProd.get('SLSTX');
                     if (fndPbe == null) { return returnProductNotFound(regFees, 'SLSTX'); }
+                    GARP_Common.debugLog('GARP_BC_Registration','getRegistrationFees','get NJ Sales tax Product',fndPbe);
+
                     GARP_BC_Orders.productInfo addProd = setProductInfo(new GARP_BC_Orders.productInfo(fndPbe), getRegistrationFeesInfo.programRegistrationInfo, membershipInfo, fndPbe, False);
+
                     addProd.amount = ((Decimal)retTax.orderTaxInfo.amount / 100).setScale(2);
+
+                    GARP_Common.debugLog('GARP_BC_Registration','getRegistrationFees','Final Tax Prod',addProd);
                     regFees.feeProducts.add(addProd);
                     regFees.njSalesTax = addProd.amount;
                 } else if(retTax.orderTaxInfo.taxType == 'igst') {
                     fndPbe = mapProd.get('IGSTTAX');
                     if (fndPbe == null) { return returnProductNotFound(regFees, 'IGSTTAX'); }
-                    GARP_BC_Orders.productInfo addProd = setProductInfo(new GARP_BC_Orders.productInfo(fndPbe), getRegistrationFeesInfo.programRegistrationInfo, membershipInfo, fndPbe, False);
-                    addProd.amount = ((Decimal)retTax.orderTaxInfo.amount / 100).setScale(2);
-                    regFees.feeProducts.add(addProd);
-                    vatSalesTaxAmount = addProd.amount;
-                    regFees.vatSalesTax = addProd;
-                } else if(retTax.orderTaxInfo.taxType == 'gst') {
-                    fndPbe = mapProd.get('GSTTAX');
-                    if (fndPbe == null) { return returnProductNotFound(regFees, 'GSTTAX'); }
-                    GARP_BC_Orders.productInfo addProd = setProductInfo(new GARP_BC_Orders.productInfo(fndPbe), getRegistrationFeesInfo.programRegistrationInfo, membershipInfo, fndPbe, False);
-                    addProd.amount = ((Decimal)retTax.orderTaxInfo.amount / 100).setScale(2);
-                    regFees.feeProducts.add(addProd);
-                    vatSalesTaxAmount = addProd.amount;
-                    regFees.vatSalesTax = addProd;
-                }
-                --- end legacy hardcoded logic --- */
-
-                Stripe_Auth_Configuration__mdt stripeCfg = StripeTaxCalUtil.getStripeAuthConfig();
-                Map<String, String> taxTypeToProductCode = StripeTaxCalUtil.parseTaxTypeToProductCode(
-                    stripeCfg == null ? null : stripeCfg.Stripe_Product_Code__c);
-
-                String taxTypeKey = retTax.orderTaxInfo.taxType == null ? null : retTax.orderTaxInfo.taxType.toLowerCase();
-                String taxPrCode = taxTypeKey == null ? null : taxTypeToProductCode.get(taxTypeKey);
-                // Legacy parity: US sales tax is only applied for New Jersey.
-                if(taxTypeKey == 'sales_tax' && retTax.orderTaxInfo.state != 'NJ') { taxPrCode = null; }
-
-                if(String.isNotBlank(taxPrCode)) {
-                    fndPbe = mapProd.get(taxPrCode);
-                    if (fndPbe == null) { return returnProductNotFound(regFees, taxPrCode); }
-                    GARP_Common.debugLog('GARP_BC_Registration','getRegistrationFees','dynamic tax product',fndPbe);
+                    GARP_Common.debugLog('GARP_BC_Registration','getRegistrationFees','get India Sales tax Product',fndPbe);
 
                     GARP_BC_Orders.productInfo addProd = setProductInfo(new GARP_BC_Orders.productInfo(fndPbe), getRegistrationFeesInfo.programRegistrationInfo, membershipInfo, fndPbe, False);
+
                     addProd.amount = ((Decimal)retTax.orderTaxInfo.amount / 100).setScale(2);
 
                     GARP_Common.debugLog('GARP_BC_Registration','getRegistrationFees','Final Tax Prod',addProd);
                     regFees.feeProducts.add(addProd);
 
-                    // Preserve legacy field split: NJ sales tax -> njSalesTax; all others -> vatSalesTax.
-                    if(taxTypeKey == 'sales_tax') {
-                        regFees.njSalesTax = addProd.amount;
-                    } else {
-                        vatSalesTaxAmount = addProd.amount;
-                        regFees.vatSalesTax = addProd;
-                    }
+                    vatSalesTaxAmount = addProd.amount;
+                    regFees.vatSalesTax = addProd;
+                } else if(retTax.orderTaxInfo.taxType == 'gst') {
+                    fndPbe = mapProd.get('GSTTAX');
+                    if (fndPbe == null) { return returnProductNotFound(regFees, 'GSTTAX'); }
+                    GARP_Common.debugLog('GARP_BC_Registration','getRegistrationFees','get Singapore Sales tax Product',fndPbe);
+
+                    GARP_BC_Orders.productInfo addProd = setProductInfo(new GARP_BC_Orders.productInfo(fndPbe), getRegistrationFeesInfo.programRegistrationInfo, membershipInfo, fndPbe, False);
+
+                    addProd.amount = ((Decimal)retTax.orderTaxInfo.amount / 100).setScale(2);
+
+                    GARP_Common.debugLog('GARP_BC_Registration','getRegistrationFees','Final Tax Prod',addProd);
+                    regFees.feeProducts.add(addProd);
+                    vatSalesTaxAmount = addProd.amount;
+                    regFees.vatSalesTax = addProd;
                 }
             }
         }
@@ -2377,7 +2357,7 @@ public class GARP_BC_Registration {
         // Authenticated and Non-Events
         if(setRegistrationInfo.programRegistrationInfo.registrationType != 'event' && setRegistrationInfo.programRegistrationInfo.registrationType != 'checkout') {
 
-            if(setRegistrationInfo.programRegistrationInfo.registrationType == 'ffr' || setRegistrationInfo.programRegistrationInfo.registrationType == 'frr' || setRegistrationInfo.programRegistrationInfo.registrationType == 'frr25') {
+            if(setRegistrationInfo.programRegistrationInfo.registrationType == 'ffr' || setRegistrationInfo.programRegistrationInfo.registrationType == 'frr' || setRegistrationInfo.programRegistrationInfo.registrationType == 'frr25' || setRegistrationInfo.programRegistrationInfo.registrationType == 'arpm') {
                 GARP_BC_Courses.isEligibleCourseReturnInfo courseElig = GARP_BC_Courses.isEligibleCourse(membershipInfo, setRegistrationInfo.programRegistrationInfo.registrationType, teamRegInfo, null);
                 notEligibleErrorMessage = courseElig.message;
                 isEligible = courseElig.isEligible;
@@ -2517,7 +2497,7 @@ public class GARP_BC_Registration {
         setRegistrationReturnInfo.OrderId = retsetOrder.orderId;
 
         setRegistrationReturnInfo.orderNumber = retsetOrder.orderNumber;
-        setRegistrationReturnInfo.company = retsetOrder.company;
+       // setRegistrationReturnInfo.company = retsetOrder.company;
         setRegistrationReturnInfo.total = retsetOrder.total;
         setRegistrationReturnInfo.tax = retsetOrder.tax;
         setRegistrationReturnInfo.shipping = retsetOrder.shipping;
@@ -2811,6 +2791,14 @@ public class GARP_BC_Registration {
             } else {
                 // Error
             }
+        } else if(setRegistrationInfo.programRegistrationInfo.registrationType == 'arpm') {
+            GARP_BC_Courses.returnCreateCourseContract ret = GARP_BC_Courses.createCourseContract(setRegistrationInfo, setRegistrationReturnInfo, membershipInfo, 'arpm');
+            if(ret != null) {
+                if(ret.isNew) {
+                    newContracts.add(ret.frrContract);
+                }
+                retInfo.mainContract = ret.frrContract;
+            }
         } else if(setRegistrationInfo.programRegistrationInfo.registrationType == 'scr' || setRegistrationInfo.programRegistrationInfo.registrationType == 'raij' || setRegistrationInfo.programRegistrationInfo.registrationType == 'riskai') {
             Contract mainContract = GARP_BC_Courses.createExamContract(setRegistrationInfo, setRegistrationReturnInfo, membershipInfo, setRegistrationInfo.programRegistrationInfo.registrationType);
             newContracts.add(mainContract);
@@ -2935,7 +2923,7 @@ public class GARP_BC_Registration {
                 insert newReg;
                 newRegs.add(newReg);
             }
-        } else if (registrationType == 'frr' || registrationType == 'frr25' || registrationType == 'micro') {
+        } else if (registrationType == 'frr' || registrationType == 'frr25' || registrationType == 'micro' || registrationType == 'arpm') {
             Exam_Attempt__c newReg = GARP_BC_Courses.createCourseExamRegistrationByType(setRegistrationInfo, setRegistrationReturnInfo, contractRequirements, registrationType);
             GARP_Common.debugLog('GARP_BC_Registration','createRegistrations','newReg',newReg);
             if (newReg != null) {
@@ -3564,6 +3552,9 @@ public class GARP_BC_Registration {
         if(programRegistrationInfo.registrationType == 'frr25') {
             teamExamTypes.add('FRR25');
             productLine = 'FRR25';
+        }else if(programRegistrationInfo.registrationType == 'ffr') {
+            teamExamTypes.add('FFR');
+            productLine = 'FFR';
         } else if(programRegistrationInfo.registrationType == 'micro') {
             teamExamTypes.add(programRegistrationInfo.microCourseInfo.courseCode);
             productLine = programRegistrationInfo.microCourseInfo.courseCode;
