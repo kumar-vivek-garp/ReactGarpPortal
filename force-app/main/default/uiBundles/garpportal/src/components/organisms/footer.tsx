@@ -12,11 +12,11 @@ import {
 	FOOTER_TAGLINE,
 } from "@/config/navigation/footer-misc-links"
 import { FOOTER_NAV_SECTIONS } from "@/config/navigation/footer-nav-sections"
+import { GARP_LOGO_FULL_COLOR } from "@/config/navigation/garp-logos"
 
 // "Full" (not "Short") is deliberate: it's the only non-knockout variant that
 // includes the "Global Association of Risk Professionals" wordmark, matching
 // the live footer's inline logo lockup (confirmed via its rendered ~7.6:1 aspect ratio).
-const GARP_LOGO_URL = "https://www.garp.org/hubfs/Website/Logos/GARP%20Corporate%20Logo%20-%20Full.png"
 
 // Maps each section's data key to the live footer's own named grid-area (see
   // the `.footer-sections-grid` rule in styles/layout.css) — literal strings, not
@@ -39,7 +39,7 @@ function Footer() {
 			<div className="footer-sections-grid footer-container">
 				<div className="flex flex-col gap-4 lg:[grid-area:logo]">
 					<img
-						src={GARP_LOGO_URL}
+						src={GARP_LOGO_FULL_COLOR}
 						alt="GARP - Global Association of Risk Professionals"
 						width={518}
 						height={68}

@@ -13,7 +13,7 @@ import { Input } from "@/components/atoms/input"
 import { Label } from "@/components/atoms/label"
 import { useLogin } from "@/hooks/use-login"
 import { AUTH_REDIRECT_PARAM } from "@/auth/constants"
-import { isLocalViteHost } from "@/auth/sfdc-env"
+import { isLocalCliAuthEnabled } from "@/auth/local-cli-auth"
 import { getSafeStartUrl } from "@/auth/start-url"
 
 type LoginFormValues = {
@@ -23,13 +23,11 @@ type LoginFormValues = {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-const LocalCliContinue = import.meta.env.DEV
-	? lazy(() =>
-			import("@/components/molecules/local-cli-continue").then((m) => ({
-				default: m.LocalCliContinue,
-			})),
-		)
-	: null
+const LocalCliContinue = lazy(() =>
+	import("@/components/molecules/local-cli-continue").then((m) => ({
+		default: m.LocalCliContinue,
+	})),
+)
 
 function LoginForm() {
 	const search = useSearch({ from: "/_authLayout/Login/" })
@@ -37,7 +35,7 @@ function LoginForm() {
 		typeof search[AUTH_REDIRECT_PARAM] === "string" ? search[AUTH_REDIRECT_PARAM] : undefined,
 	)
 	const loginMutation = useLogin()
-	const showLocalCli = Boolean(import.meta.env.DEV && isLocalViteHost() && LocalCliContinue)
+	const showLocalCli = isLocalCliAuthEnabled()
 
 	const {
 		register,
@@ -142,7 +140,7 @@ function LoginForm() {
 					</div>
 				</form>
 
-				{showLocalCli && LocalCliContinue ? (
+				{showLocalCli ? (
 					<Suspense fallback={null}>
 						<LocalCliContinue />
 					</Suspense>

@@ -12,8 +12,8 @@ import { clearLocalLogoutFlag } from "@/auth/local-session"
 import { queryClient } from "@/api/client"
 
 /**
- * DEV + localhost only (lazy-loaded from LoginForm). Uses the local CLI gateway
- * instead of Experience Site.login.
+ * Localhost only (lazy-loaded from LoginForm on Vite `dev` / `preview`).
+ * Uses the local CLI gateway instead of Experience Site.login.
  */
 function LocalCliContinue() {
 	const navigate = useNavigate()

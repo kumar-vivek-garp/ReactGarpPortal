@@ -3,6 +3,7 @@ import { z } from "zod"
 
 import { LoginForm } from "@/components/organisms/login-form"
 import { AUTH_REDIRECT_PARAM } from "@/auth/constants"
+import { GARP_AUTH_BG, GARP_LOGO_FULL } from "@/config/navigation/garp-logos"
 import { pageTitle } from "@/lib/document-title"
 
 const loginSearchSchema = z.object({
@@ -26,9 +27,12 @@ const FOOTER_LINKS = [
 
 function Login() {
 	return (
-		<div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-[url('https://www.garp.org/hubfs/GARP%20Design/membership/image/bckgd-dark-gradient-1.png')] bg-cover bg-fixed bg-no-repeat px-4 py-12">
+		<div
+			className="flex min-h-screen flex-col items-center justify-center gap-8 bg-cover bg-fixed bg-no-repeat px-4 py-12"
+			style={{ backgroundImage: `url('${GARP_AUTH_BG}')` }}
+		>
 			<img
-				src="https://www.garp.org/hubfs/Website/Logos/GARP%20Corporate%20Logo%20-%20Full%20Knockout.png"
+				src={GARP_LOGO_FULL}
 				alt="GARP - Global Association of Risk Professionals"
 				className="h-auto w-full max-w-sm"
 			/>

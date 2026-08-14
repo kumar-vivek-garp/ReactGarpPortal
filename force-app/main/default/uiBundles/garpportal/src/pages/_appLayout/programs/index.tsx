@@ -4,7 +4,7 @@ import { preload } from "react-dom"
 import type { ProgramsView } from "@/api/programs"
 import { programsQueryOptions } from "@/api/programs"
 import { ProgramsPanel } from "@/components/organisms/programs-panel"
-import { COMMON_PROGRAM_LOGO_URLS } from "@/config/program-logos"
+import { COMMON_PROGRAM_LOGO_URLS, localizeProgramLogoUrl } from "@/config/program-logos"
 import { programsSearchSchema } from "@/config/programs"
 import { pageTitle } from "@/lib/document-title"
 import { resolvePortalAssetUrl } from "@/lib/resolve-portal-asset-url"
@@ -19,10 +19,11 @@ function preloadProgramLogos(view: ProgramsView | undefined) {
 		...view.completedPrograms,
 		...view.otherPrograms,
 	]
-		.map(
-			(program) =>
+		.map((program) =>
+			localizeProgramLogoUrl(
 				resolvePortalAssetUrl(program.programInformation?.myProgramsLogoURL) ??
-				program.programInformation?.myProgramsLogoURL,
+					program.programInformation?.myProgramsLogoURL,
+			),
 		)
 		.filter((url): url is string => Boolean(url))
 		.slice(0, 3)

@@ -1,6 +1,6 @@
 import { getSfdcEnv, isLocalViteHost } from "@/auth/sfdc-env"
 
-/** Must match Vite proxy + `LOCAL_SF_PREFIX` in local-cli-auth (dev-only). */
+/** Must match Vite proxy + `LOCAL_SF_PREFIX` in local-cli-auth (localhost Vite). */
 const LOCAL_SF_ASSET_PREFIX = "/__local_sf" as const
 const LOCAL_SF_API_VERSION = "67.0"
 

@@ -38,6 +38,9 @@ function SidebarProfileLink({
 				<AvatarImage
 					src={resolvedAvatarUrl}
 					alt={name}
+					width={44}
+					height={44}
+					decoding="async"
 					className="size-full object-cover"
 				/>
 				<AvatarFallback

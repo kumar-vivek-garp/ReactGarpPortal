@@ -22,6 +22,7 @@ import { useCountryOptions } from "@/hooks/use-country-options"
 import { usePersonalInfoEditData } from "@/hooks/use-personal-info-edit-data"
 import { useProfilePhoto } from "@/hooks/use-profile-photo"
 import { useUpdatePersonalInfo } from "@/hooks/use-update-personal-info"
+import { resizeProfilePhoto } from "@/lib/resize-profile-photo"
 import { resolvePortalAssetUrl } from "@/lib/resolve-portal-asset-url"
 import { cn } from "@/lib/utils"
 
@@ -404,34 +405,29 @@ function PersonalInfoEditForm({ contactId, onSaved }: PersonalInfoEditFormProps)
 			return
 		}
 
-		const reader = new FileReader()
-		reader.onload = () => {
-			const result = typeof reader.result === "string" ? reader.result : ""
-			const base64 = result.includes(",") ? result.split(",")[1] : result
-			if (!base64 || !result) {
-				setPhotoError("Unable to read the selected file.")
+		void (async () => {
+			let resized
+			try {
+				// Downscale + square-crop before Attachment create (silent).
+				resized = await resizeProfilePhoto(file)
+			} catch {
+				setPhotoError("Unable to prepare the selected photo.")
 				return
 			}
-			// Show the selected file immediately; swap to the server URL after upload.
-			setLocalPhotoUrl(result)
-			void uploadPhoto
-				.mutateAsync({
+
+			setLocalPhotoUrl(resized.dataUrl)
+			try {
+				const url = await uploadPhoto.mutateAsync({
 					contactId,
-					base64Body: base64,
-					fileName: file.name,
+					base64Body: resized.base64Body,
+					fileName: resized.fileName,
 				})
-				.then((url) => {
-					setLocalPhotoUrl(url)
-				})
-				.catch(() => {
-					setLocalPhotoUrl(undefined)
-					// Toast via MutationCache.
-				})
-		}
-		reader.onerror = () => {
-			setPhotoError("Unable to read the selected file.")
-		}
-		reader.readAsDataURL(file)
+				setLocalPhotoUrl(url)
+			} catch {
+				setLocalPhotoUrl(undefined)
+				// Toast via MutationCache.
+			}
+		})()
 	}
 
 	const handleRemovePhoto = () => {

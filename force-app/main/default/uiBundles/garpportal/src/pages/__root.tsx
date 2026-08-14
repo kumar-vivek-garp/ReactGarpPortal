@@ -4,11 +4,12 @@ import { lazy, Suspense } from "react"
 import { preconnect, preload } from "react-dom"
 
 import { Toaster } from "@/components/atoms/sonner"
-import {
-	CRITICAL_FONT_URLS,
-	GARP_HUB_ORIGIN,
-} from "@/config/program-logos"
+import { COMMON_PROGRAM_LOGO_URLS, GARP_HUB_ORIGIN } from "@/config/program-logos"
 import { GARP_LOGO_KNOCKOUT } from "@/config/navigation/garp-logos"
+import klinicBook from "@/assets/fonts/KlinicSlabBook.woff2?url"
+import klinicBold from "@/assets/fonts/KlinicSlabBold.woff2?url"
+import nunitoBold from "@/assets/fonts/NunitoSans-Bold.woff2?url"
+import nunitoRegular from "@/assets/fonts/NunitoSans-Regular.woff2?url"
 
 export type RouterContext = {
 	queryClient: QueryClient
@@ -30,6 +31,14 @@ const QueryDevtools = import.meta.env.DEV
 		)
 	: null
 
+/** Above-the-fold faces — preload so fonts are not chained behind CSS parse. */
+const CRITICAL_FONT_PRELOADS = [
+	{ href: nunitoRegular, type: "font/woff2" },
+	{ href: nunitoBold, type: "font/woff2" },
+	{ href: klinicBook, type: "font/woff2" },
+	{ href: klinicBold, type: "font/woff2" },
+] as const
+
 export const Route = createRootRouteWithContext<RouterContext>()({
 	head: () => ({
 		meta: [
@@ -42,8 +51,16 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 		],
 		links: [
 			{ rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+			// Remaining HubSpot: optional China QR images in the footer dialog.
 			{ rel: "preconnect", href: GARP_HUB_ORIGIN, crossOrigin: "anonymous" },
 			{ rel: "dns-prefetch", href: GARP_HUB_ORIGIN },
+			...CRITICAL_FONT_PRELOADS.map(({ href, type }) => ({
+				rel: "preload" as const,
+				href,
+				as: "font" as const,
+				type,
+				crossOrigin: "anonymous" as const,
+			})),
 		],
 	}),
 	component: RootComponent,
@@ -51,10 +68,18 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
 function RootComponent() {
 	preconnect(GARP_HUB_ORIGIN, { crossOrigin: "anonymous" })
-	for (const href of CRITICAL_FONT_URLS) {
-		preload(href, { as: "font", type: "font/ttf", crossOrigin: "anonymous" })
+	for (const { href, type } of CRITICAL_FONT_PRELOADS) {
+		preload(href, {
+			as: "font",
+			type,
+			crossOrigin: "anonymous",
+			fetchPriority: "high",
+		})
 	}
 	preload(GARP_LOGO_KNOCKOUT, { as: "image", fetchPriority: "high" })
+	for (const href of COMMON_PROGRAM_LOGO_URLS) {
+		preload(href, { as: "image" })
+	}
 
 	return (
 		<>

@@ -101,8 +101,8 @@ export async function fetchCurrentUser(): Promise<CurrentUser | null> {
 		return null
 	}
 
-	// DEV + localhost: identity via CLI gateway (tree-shaken out of production builds).
-	if (import.meta.env.DEV && isLocalViteHost()) {
+	// Localhost Vite (dev or preview): identity via CLI gateway.
+	if (isLocalViteHost()) {
 		const { fetchCurrentUserViaLocalCli } = await import("@/auth/local-cli-auth")
 		return fetchCurrentUserViaLocalCli()
 	}

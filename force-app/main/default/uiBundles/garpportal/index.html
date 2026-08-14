@@ -8,26 +8,12 @@
       content="GARP Member Portal — manage your FRM, SCR, RAI, and membership programs, study materials, events, and account."
     />
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-    <!-- Warm HubSpot CDN early: fonts, logos, and program card LCP images. -->
+    <!-- First-party brand assets (long-cache via Vite / public/). HubSpot only for program card art. -->
     <link rel="preconnect" href="https://www.garp.org" crossorigin />
     <link rel="dns-prefetch" href="https://www.garp.org" />
     <link
       rel="preload"
-      href="https://www.garp.org/hubfs/Website/Common/Fonts/Nunito_Sans/NunitoSans-Regular.ttf"
-      as="font"
-      type="font/ttf"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      href="https://www.garp.org/hubfs/Website/Common/Fonts/Nunito_Sans/NunitoSans-Bold.ttf"
-      as="font"
-      type="font/ttf"
-      crossorigin
-    />
-    <link
-      rel="preload"
-      href="https://www.garp.org/hubfs/Website/Logos/GARP%20Corporate%20Logo%20-%20Short%20Knockout.png"
+      href="./brand/garp-logo-short-knockout.png"
       as="image"
       fetchpriority="high"
     />
@@ -54,7 +40,7 @@
         gap: 1.5rem;
         padding: 2rem 1rem;
         background-color: #081a31;
-        background-image: url("https://www.garp.org/hubfs/GARP%20Design/membership/image/bckgd-dark-gradient-1.png");
+        background-image: url("./brand/bg-dark-gradient.jpg");
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
@@ -105,7 +91,7 @@
         aria-hidden="true"
       >
         <img
-          src="https://www.garp.org/hubfs/Website/Logos/GARP%20Corporate%20Logo%20-%20Full%20Knockout.png"
+          src="./brand/garp-logo-full-knockout.png"
           alt="GARP - Global Association of Risk Professionals"
         />
         <div class="boot-bar" aria-hidden="true"><span></span></div>

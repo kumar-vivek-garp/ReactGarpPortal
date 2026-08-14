@@ -1,4 +1,4 @@
-import { useRef } from "react"
+import { useRef, useState } from "react"
 
 import {
 	FacebookIcon,
@@ -28,6 +28,7 @@ const iconLinkClassName =
 
 function SocialQrButton({ link }: { link: SocialLink & { kind: "qr" } }) {
 	const dialogRef = useRef<HTMLDialogElement>(null)
+	const [shouldLoadQr, setShouldLoadQr] = useState(false)
 	const Icon = SOCIAL_ICONS[link.name as keyof typeof SOCIAL_ICONS]
 
 	return (
@@ -35,7 +36,10 @@ function SocialQrButton({ link }: { link: SocialLink & { kind: "qr" } }) {
 			<button
 				type="button"
 				aria-label={link.name}
-				onClick={() => dialogRef.current?.showModal()}
+				onClick={() => {
+					setShouldLoadQr(true)
+					dialogRef.current?.showModal()
+				}}
 				className={iconLinkClassName}
 			>
 				<Icon className="size-[26px]" />
@@ -45,7 +49,16 @@ function SocialQrButton({ link }: { link: SocialLink & { kind: "qr" } }) {
 				onClick={() => dialogRef.current?.close()}
 				className="fixed top-1/2 left-1/2 w-[300px] max-w-full -translate-x-1/2 -translate-y-1/2 rounded-lg border p-4 backdrop:bg-foreground/50"
 			>
-				<img src={link.qrImageUrl} alt={link.qrAlt} className="max-w-full" />
+				{shouldLoadQr ? (
+					<img
+						src={link.qrImageUrl}
+						alt={link.qrAlt}
+						width={268}
+						height={268}
+						decoding="async"
+						className="max-w-full"
+					/>
+				) : null}
 			</dialog>
 		</>
 	)

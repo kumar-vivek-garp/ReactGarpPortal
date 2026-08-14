@@ -1,8 +1,5 @@
-import { GARP_LOGO_FULL, GARP_LOGO_KNOCKOUT } from "@/config/navigation/garp-logos"
+import { GARP_AUTH_BG, GARP_LOGO_FULL, GARP_LOGO_KNOCKOUT } from "@/config/navigation/garp-logos"
 import { LOGIN_PATH } from "@/auth/constants"
-
-const AUTH_BG =
-	"https://www.garp.org/hubfs/GARP%20Design/membership/image/bckgd-dark-gradient-1.png"
 
 function isAuthPath(pathname: string): boolean {
 	return (
@@ -17,7 +14,7 @@ function AuthRoutePending() {
 	return (
 		<div
 			className="flex min-h-screen flex-col items-center justify-center gap-8 bg-cover bg-fixed bg-no-repeat px-4 py-12"
-			style={{ backgroundImage: `url('${AUTH_BG}')` }}
+			style={{ backgroundImage: `url('${GARP_AUTH_BG}')` }}
 			role="status"
 			aria-busy="true"
 			aria-label="Loading sign in"

@@ -11,35 +11,50 @@ import { tanstackRouter } from '@tanstack/router-plugin/vite';
 const schemaPath = resolve(__dirname, '../../../../../schema.graphql');
 const schemaExists = existsSync(schemaPath);
 
-export default defineConfig(({ mode }) => {
-  const isProd = mode === 'production'
+const localSfGatewayTarget = `http://127.0.0.1:${process.env.LOCAL_SF_PORT || 8787}`
 
+/** Browser → `tools/local-dev` gateway (CLI Bearer token). */
+const localSfPrefixProxy = {
+  '/__local_sf': {
+    target: localSfGatewayTarget,
+    changeOrigin: true,
+    rewrite: (p: string) => p.replace(/^\/__local_sf/, ''),
+  },
+} as const
+
+/**
+ * Preview has no Salesforce UI-bundle `/services` middleware. Dev keeps that
+ * plugin path; preview routes Apex/GraphQL through the CLI gateway instead.
+ */
+const localSfServicesProxy = {
+  '/services': {
+    target: localSfGatewayTarget,
+    changeOrigin: true,
+  },
+} as const
+
+export default defineConfig(() => {
   return {
     base: './',
-    // Local CLI gateway (tools/local-dev) — development only; never used in production build.
-    ...(isProd
-      ? {}
-      : {
-          server: {
-            port: 5173,
-            strictPort: true,
-            // Leading-dot matches any subdomain (ngrok free URLs rotate).
-            allowedHosts: [
-              '.ngrok-free.dev',
-              '.ngrok-free.app',
-              '.ngrok.app',
-              '.ngrok.dev',
-              '.ngrok.io',
-            ],
-            proxy: {
-              '/__local_sf': {
-                target: `http://127.0.0.1:${process.env.LOCAL_SF_PORT || 8787}`,
-                changeOrigin: true,
-                rewrite: (p: string) => p.replace(/^\/__local_sf/, ''),
-              },
-            },
-          },
-        }),
+    // Local CLI gateway — `vite` + `vite preview` (UI still gates on localhost).
+    server: {
+      port: 5173,
+      strictPort: true,
+      // Leading-dot matches any subdomain (ngrok free URLs rotate).
+      allowedHosts: [
+        '.ngrok-free.dev',
+        '.ngrok-free.app',
+        '.ngrok.app',
+        '.ngrok.dev',
+        '.ngrok.io',
+      ],
+      proxy: { ...localSfPrefixProxy },
+    },
+    preview: {
+      port: 4173,
+      strictPort: true,
+      proxy: { ...localSfPrefixProxy, ...localSfServicesProxy },
+    },
     plugins: [
       tailwindcss(),
       tanstackRouter({
@@ -78,8 +93,10 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           /**
-           * Keep the entry chunk small: split heavy node_modules into cacheable
-           * vendor groups (avoids a single >500kB JS warning and improves caching).
+           * Keep the entry chunk small: split heavy shared runtimes into
+           * cacheable vendor groups. Do NOT force Radix / Lucide / Spring into
+           * one `ui-vendor` chunk — that loads unused UI code on every page
+           * (Lighthouse “Reduce unused JavaScript”). Let route splits own them.
            */
           manualChunks(id) {
             if (!id.includes('node_modules')) return
@@ -98,17 +115,6 @@ export default defineConfig(({ mode }) => {
 
             if (id.includes('@salesforce/')) {
               return 'salesforce'
-            }
-
-            if (
-              id.includes('@react-spring/') ||
-              id.includes('radix-ui') ||
-              id.includes('lucide-react') ||
-              id.includes('class-variance-authority') ||
-              id.includes('clsx') ||
-              id.includes('tailwind-merge')
-            ) {
-              return 'ui-vendor'
             }
 
             if (id.includes('node_modules/zod')) {

@@ -12,6 +12,7 @@ import {
 	CardTitle,
 } from "@/components/atoms/card"
 import { CardCta } from "@/components/molecules/card-cta"
+import { localizeProgramLogoUrl } from "@/config/program-logos"
 import { formatLongDate } from "@/lib/account-format"
 import {
 	programDetailsHref,
@@ -69,10 +70,11 @@ function ProgramCard({
 }: ProgramCardProps) {
 	const info = program.programInformation
 	const name = displayName(info)
-	const logoUrl =
+	const logoUrl = localizeProgramLogoUrl(
 		resolvePortalAssetUrl(info?.myProgramsLogoURL) ??
-		info?.myProgramsLogoURL ??
-		undefined
+			info?.myProgramsLogoURL ??
+			undefined,
+	)
 	const admins = variant === "inProgress" ? adminLines(program) : []
 	const description =
 		variant === "other" ? info?.description?.trim() || null : null

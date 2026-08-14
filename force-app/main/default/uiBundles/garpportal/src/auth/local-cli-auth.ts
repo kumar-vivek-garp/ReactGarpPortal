@@ -7,9 +7,13 @@ import {
 import { isMemberPortalEnvelopeOk } from "@/api/client"
 import { isLocalViteHost } from "@/auth/sfdc-env"
 
-/** Vite DEV + localhost only. Compiles to false in production builds. */
+/**
+ * Localhost only (Vite `dev` and `preview`). Safe on Experience Cloud because
+ * `isLocalViteHost()` is false there. Kept available in production builds so
+ * `npm run preview` can use “Continue with Salesforce CLI”.
+ */
 export function isLocalCliAuthEnabled(): boolean {
-	return import.meta.env.DEV && isLocalViteHost()
+	return isLocalViteHost()
 }
 
 /** Browser path → Vite proxy → tools/local-dev gateway (no token in the browser). */
