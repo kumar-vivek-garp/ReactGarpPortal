@@ -23,8 +23,8 @@ function MegaMenuColumnView({
 					className={cn(
 						"font-extrabold hover:underline",
 						isDesktop
-							? "whitespace-nowrap text-xl text-dark-blue-gray"
-							: "text-xl text-foreground"
+							? "whitespace-nowrap text-xl text-foreground"
+							: "text-xl text-foreground",
 					)}
 				>
 					{column.header}
@@ -33,7 +33,7 @@ function MegaMenuColumnView({
 				<p
 					className={cn(
 						"font-extrabold text-foreground",
-						isDesktop ? "whitespace-nowrap text-xl text-dark-blue-gray" : "text-xl"
+						isDesktop ? "whitespace-nowrap text-xl" : "text-xl",
 					)}
 				>
 					{column.header}
@@ -52,8 +52,8 @@ function MegaMenuColumnView({
 							className={cn(
 								"block font-bold text-foreground no-underline",
 								isDesktop
-									? "whitespace-nowrap hover:underline hover:decoration-[0.15em] hover:underline-offset-[0.2em]"
-									: "px-2 py-3 text-base"
+									? "whitespace-nowrap hover:text-primary hover:underline hover:decoration-[0.15em] hover:underline-offset-[0.2em]"
+									: "px-2 py-3 text-base",
 							)}
 						>
 							{link.title}

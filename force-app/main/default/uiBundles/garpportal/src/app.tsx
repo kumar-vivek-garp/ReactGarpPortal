@@ -4,6 +4,10 @@ import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 
 import { queryClient } from "@/api/client"
+import {
+	bootstrapThemeFromStore,
+	subscribeSystemColorScheme,
+} from "@/store/theme-store"
 import { routeTree } from "./routeTree.gen"
 import "./styles/global.css"
 
@@ -25,6 +29,9 @@ declare module "@tanstack/react-router" {
 		router: typeof router
 	}
 }
+
+bootstrapThemeFromStore()
+subscribeSystemColorScheme()
 
 createRoot(document.getElementById("root")!).render(
 	<StrictMode>

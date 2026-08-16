@@ -14,12 +14,12 @@ function MegaMenuPanel({ item, variant = "desktop", className }: MegaMenuPanelPr
 	const columnCount = item.column3 ? 3 : 2
 
 	return (
-		<div className={cn(isDesktop ? "text-dark-blue-gray" : "", className)}>
+		<div className={cn(isDesktop ? "text-popover-foreground" : "", className)}>
 			{item.heading ? (
 				<h3
 					className={cn(
 						"font-sans font-extrabold text-foreground",
-						isDesktop ? "mb-0 px-5 pt-5 text-xl" : "mb-5 text-lg font-bold"
+						isDesktop ? "mb-0 px-5 pt-5 text-xl" : "mb-5 text-lg font-bold",
 					)}
 				>
 					<MegaMenuHeadingText heading={item.heading} />
@@ -29,10 +29,10 @@ function MegaMenuPanel({ item, variant = "desktop", className }: MegaMenuPanelPr
 				className={cn(
 					isDesktop
 						? cn(
-								"grid w-max gap-5 p-5 text-dark-blue-gray",
-								columnCount === 3 ? "grid-cols-3" : "grid-cols-2"
+								"grid w-max gap-5 p-5 text-popover-foreground",
+								columnCount === 3 ? "grid-cols-3" : "grid-cols-2",
 							)
-						: "flex flex-col gap-6"
+						: "flex flex-col gap-6",
 				)}
 			>
 				<MegaMenuColumnView

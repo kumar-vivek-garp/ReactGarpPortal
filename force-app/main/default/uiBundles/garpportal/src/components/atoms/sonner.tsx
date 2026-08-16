@@ -8,14 +8,18 @@ import {
 } from "lucide-react"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 
+import { useThemeStore } from "@/store/theme-store"
+
 /**
  * App-wide toast host (shadcn Sonner). Mount once in `__root`.
- * Theme is fixed to light — this SPA does not use next-themes.
+ * Theme follows the resolved light/dark appearance from the theme store.
  */
 function Toaster({ ...props }: ToasterProps) {
+	const theme = useThemeStore((s) => s.resolved)
+
 	return (
 		<Sonner
-			theme="light"
+			theme={theme}
 			className="toaster group"
 			position="top-center"
 			icons={{

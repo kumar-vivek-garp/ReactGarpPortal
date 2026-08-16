@@ -7,6 +7,7 @@ import { MegaMenuPanel } from "@/components/molecules/mega-menu-panel"
 import { SidebarProfileLink } from "@/components/molecules/sidebar-profile-link"
 import { SidebarProfileSkeleton } from "@/components/molecules/sidebar-profile-skeleton"
 import { SignOutButton } from "@/components/molecules/sign-out-button"
+import { ThemeToggle } from "@/components/molecules/theme-toggle"
 import { useCloseMobileNavOnNavigate } from "@/hooks/use-close-mobile-nav-on-navigate"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { GARP_LOGO_COLOR, GARP_LOGO_KNOCKOUT } from "@/config/navigation/garp-logos"
@@ -95,25 +96,28 @@ function MobileNavBar() {
 						alt="GARP logo"
 						className="box-border inline-block w-[200px] max-w-[60%] shrink-0 p-5"
 					/>
-					<button
-						type="button"
-						className={cn(
-							"mr-6 flex size-11 items-center justify-center rounded-[10px] border-0 bg-transparent",
-							isOpen ? "text-foreground hover:bg-muted" : "text-toolbar-foreground hover:bg-white/10"
-						)}
-						aria-label={isOpen ? "Close menu" : "Open menu"}
-						aria-expanded={isOpen}
-						onClick={() => (isOpen ? closeMobileNav() : openMobileNav())}
-					>
-						<animated.span
-							className="inline-flex"
-							style={{
-								transform: menuIconSpring.rotate.to((rotate) => `rotate(${rotate}deg)`),
-							}}
+					<div className="mr-3 flex shrink-0 items-center gap-0.5">
+						<ThemeToggle variant={isOpen ? "sheet" : "toolbar"} />
+						<button
+							type="button"
+							className={cn(
+								"mr-3 flex size-11 items-center justify-center rounded-[10px] border-0 bg-transparent",
+								isOpen ? "text-foreground hover:bg-muted" : "text-toolbar-foreground hover:bg-white/10"
+							)}
+							aria-label={isOpen ? "Close menu" : "Open menu"}
+							aria-expanded={isOpen}
+							onClick={() => (isOpen ? closeMobileNav() : openMobileNav())}
 						>
-							{isOpen ? <X className="size-6" strokeWidth={2.25} /> : <Menu className="size-6" strokeWidth={2.25} />}
-						</animated.span>
-					</button>
+							<animated.span
+								className="inline-flex"
+								style={{
+									transform: menuIconSpring.rotate.to((rotate) => `rotate(${rotate}deg)`),
+								}}
+							>
+								{isOpen ? <X className="size-6" strokeWidth={2.25} /> : <Menu className="size-6" strokeWidth={2.25} />}
+							</animated.span>
+						</button>
+					</div>
 				</div>
 			</header>
 
@@ -167,7 +171,7 @@ function MobileNavBar() {
 														className="flex items-center gap-4 border-b border-border px-6 py-3.5 text-base text-foreground last:border-b-0 active:bg-accent/60"
 													>
 														<Icon
-															className="size-[22px] shrink-0 text-dark-blue-gray"
+															className="size-[22px] shrink-0 text-muted-foreground"
 															aria-hidden
 														/>
 														{label}

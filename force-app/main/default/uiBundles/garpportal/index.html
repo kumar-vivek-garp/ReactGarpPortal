@@ -8,7 +8,9 @@
       content="GARP Member Portal — manage your FRM, SCR, RAI, and membership programs, study materials, events, and account."
     />
     <link rel="icon" href="/favicon.ico" type="image/x-icon" />
-    <!-- First-party brand assets (long-cache via Vite / public/). HubSpot only for program card art. -->
+    <!-- Pre-JS splash (public/) — before Vite CSS; keeps index.html free of style blocks. -->
+    <link rel="stylesheet" href="./boot.css" />
+    <!-- First-party brand assets (long-cache via Vite / public/). -->
     <link rel="preconnect" href="https://www.garp.org" crossorigin />
     <link rel="dns-prefetch" href="https://www.garp.org" />
     <link
@@ -17,69 +19,38 @@
       as="image"
       fetchpriority="high"
     />
-    <style>
-      html,
-      body {
-        margin: 0;
-        min-height: 100%;
-      }
-      /*
-       * Pre-JS boot splash — hidden until BOOT_SPLASH_DELAY_MS so fast networks
-       * never flash logo/bar; slow loads still get a shell inside #root.
-       * Do NOT paint html/body navy here — unlayered styles beat Tailwind @layer
-       * base and leak through the app main column.
-       */
-      #boot-splash {
-        box-sizing: border-box;
-        min-height: 100vh;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 1.5rem;
-        padding: 2rem 1rem;
-        background-color: #081a31;
-        background-image: url("./brand/bg-dark-gradient.jpg");
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-        font-family: system-ui, sans-serif;
-        color: #fff;
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-        transition: opacity 0.2s ease;
-      }
-      #boot-splash.boot-splash--visible {
-        opacity: 1;
-        visibility: visible;
-        pointer-events: auto;
-      }
-      #boot-splash img {
-        width: min(100%, 20rem);
-        height: auto;
-      }
-      #boot-splash .boot-bar {
-        width: min(100%, 12rem);
-        height: 3px;
-        overflow: hidden;
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.2);
-      }
-      #boot-splash .boot-bar > span {
-        display: block;
-        width: 40%;
-        height: 100%;
-        background: #fff;
-        animation: boot-slide 1.1s ease-in-out infinite;
-      }
-      @keyframes boot-slide {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(250%); }
-      }
-    </style>
+    <!-- FOUC: apply persisted theme before paint (same key as theme-store). -->
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem("garpportal-theme")
+          var mode = "system"
+          var palette = "default"
+          if (raw) {
+            var parsed = JSON.parse(raw)
+            var source = parsed && parsed.state ? parsed.state : parsed
+            if (source && (source.mode === "light" || source.mode === "dark" || source.mode === "system")) {
+              mode = source.mode
+            }
+            if (source && source.palette === "default") {
+              palette = source.palette
+            }
+          }
+          var preferDark =
+            window.matchMedia &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches
+          var resolved =
+            mode === "system" ? (preferDark ? "dark" : "light") : mode
+          var root = document.documentElement
+          root.classList.remove("light", "dark")
+          root.classList.add(resolved)
+          root.setAttribute("data-theme", palette)
+          root.style.colorScheme = resolved
+        } catch (_) {
+          /* ignore */
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="root">

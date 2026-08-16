@@ -6,7 +6,7 @@
 	}
 
 	body {
-		@apply antialiased bg-white font-sans;
+		@apply antialiased font-sans;
 	}
 
 	* {

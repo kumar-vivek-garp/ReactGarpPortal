@@ -45,7 +45,7 @@ function SidebarProfileLink({
 				/>
 				<AvatarFallback
 					className={cn(
-						isActive ? "bg-primary text-primary-foreground" : "bg-border text-dark-blue-gray"
+						isActive ? "bg-primary text-primary-foreground" : "bg-border text-muted-foreground"
 					)}
 				>
 					<CircleUser className="size-7" aria-hidden />

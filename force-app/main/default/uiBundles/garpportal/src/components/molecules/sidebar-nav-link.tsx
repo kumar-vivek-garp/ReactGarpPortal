@@ -25,7 +25,7 @@ function SidebarNavLink({ to, label, icon: Icon }: SidebarNavLinkProps) {
 			<span
 				className={cn(
 					"flex size-11 shrink-0 items-center justify-center rounded-full",
-					isActive ? "bg-primary text-primary-foreground" : "bg-border text-dark-blue-gray"
+					isActive ? "bg-primary text-primary-foreground" : "bg-border text-muted-foreground"
 				)}
 			>
 				<Icon className="size-[22px]" aria-hidden />

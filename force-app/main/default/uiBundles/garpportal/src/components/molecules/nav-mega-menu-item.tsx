@@ -65,17 +65,20 @@ function NavMegaMenuItem({ item }: { item: TopNavItem }) {
 				aria-haspopup="true"
 				className={cn(
 					// Padding matches live `.dropdown-container button` (extra right space = gap between items).
-					"inline-flex cursor-pointer items-center gap-0.5 whitespace-nowrap rounded-[10px] border-none bg-transparent py-2.5 pl-2.5 pr-[30px] text-nav font-bold leading-none text-inherit transition-[font-size,padding,background-color] duration-300 hover:bg-[#1e1e1e]",
+					"inline-flex cursor-pointer items-center gap-0.5 whitespace-nowrap rounded-[10px] border-none bg-transparent py-2.5 pl-2.5 pr-[30px] text-nav font-bold leading-none text-toolbar-foreground hover:bg-toolbar-foreground/10",
 					"max-[1200px]:py-2.5 max-[1200px]:pl-2 max-[1200px]:pr-5 max-[1200px]:text-body",
 					"max-[1100px]:pl-1.5 max-[1100px]:pr-[15px] max-[1100px]:text-[13px]",
 					"max-[1000px]:pl-[5px] max-[1000px]:pr-3 max-[1000px]:text-caption",
-					isActive && "bg-[#1e1e1e]"
+					isActive && "bg-toolbar-foreground/10",
 				)}
 				onClick={keepOpen}
 			>
 				<span className="leading-none">{item.title}</span>
 				<animated.span
-					className={cn("inline-flex shrink-0", isActive && "text-primary")}
+					className={cn(
+						"inline-flex shrink-0 text-toolbar-foreground",
+						isActive && "text-primary",
+					)}
 					style={{
 						transform: chevronSpring.rotate.to((rotate) => `rotate(${rotate}deg)`),
 					}}
@@ -102,16 +105,16 @@ function NavMegaMenuItem({ item }: { item: TopNavItem }) {
 						onMouseLeave={isActive ? scheduleCloseDesktopNav : undefined}
 					>
 						<animated.div
-							className="relative w-fit min-w-[350px] max-w-[calc(100vw-40px)] origin-top cursor-default rounded-[10px] border border-surface-gradient-end bg-[#f5f5f5] p-2.5 shadow-[0px_8px_16px_0px_rgba(0,0,0,0.2)]"
+							className="relative w-fit min-w-[350px] max-w-[calc(100vw-40px)] origin-top cursor-default rounded-[10px] border border-border bg-popover p-2.5 text-popover-foreground shadow-lg"
 							style={style}
 						>
-							{/* Caret tooltip — mirrors live `.dropdown::after` pointing at the trigger. */}
+							{/* Caret — fill matches popover surface so it tracks light/dark. */}
 							<span
 								aria-hidden="true"
 								className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 -translate-y-full"
 								style={{ left: arrowLeft }}
 							>
-								<span className="block size-0 border-x-[10px] border-b-[10px] border-x-transparent border-b-[#f5f5f5]" />
+								<span className="block size-0 border-x-[10px] border-b-[10px] border-x-transparent border-b-popover" />
 							</span>
 							<MegaMenuPanel item={item} variant="desktop" />
 						</animated.div>
