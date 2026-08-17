@@ -88,4 +88,15 @@ function TabsContent({
   )
 }
 
-export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants }
+/** Rounded pill triggers — active uses brand primary in light and dark. */
+const pillTabTriggerClassName = cn(
+	"h-auto flex-none shrink-0 cursor-pointer rounded-xl border-0 px-5 py-2 text-sm font-semibold shadow-none",
+	"bg-muted text-foreground hover:bg-muted/80 hover:text-foreground",
+	"data-[state=active]:bg-primary data-[state=active]:text-primary-foreground",
+	"data-[state=active]:hover:bg-primary data-[state=active]:hover:text-primary-foreground",
+	"dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground",
+	"dark:data-[state=active]:hover:bg-primary dark:data-[state=active]:hover:text-primary-foreground",
+	"after:hidden",
+)
+
+export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants, pillTabTriggerClassName }

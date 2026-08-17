@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 
+import { DashboardPending, PAGE_PENDING_MIN_MS, PAGE_PENDING_MS } from "@/components/molecules/page-pending"
 import { dashboardQueryOptions } from "@/api/dashboard"
 import { eventsQueryOptions } from "@/api/events"
 import { programsQueryOptions } from "@/api/programs"
@@ -24,6 +25,9 @@ export const Route = createFileRoute("/_appLayout/dashboard/")({
 			},
 		],
 	}),
+	pendingMs: PAGE_PENDING_MS,
+	pendingMinMs: PAGE_PENDING_MIN_MS,
+	pendingComponent: DashboardPending,
 	component: Dashboard,
 })
 

@@ -15,7 +15,7 @@
     <link rel="dns-prefetch" href="https://www.garp.org" />
     <link
       rel="preload"
-      href="./brand/garp-logo-short-knockout.png"
+      href="./brand/garp-logo-full-knockout.png"
       as="image"
       fetchpriority="high"
     />
@@ -53,33 +53,21 @@
     </script>
   </head>
   <body>
-    <div id="root">
-      <div
-        id="boot-splash"
-        role="status"
-        aria-busy="true"
-        aria-label="Loading GARP"
-        aria-hidden="true"
-      >
-        <img
-          src="./brand/garp-logo-full-knockout.png"
-          alt="GARP - Global Association of Risk Professionals"
-        />
-        <div class="boot-bar" aria-hidden="true"><span></span></div>
-      </div>
+    <!-- Outside #root so React mount does not destroy the cold-load shell. -->
+    <div
+      id="boot-splash"
+      role="status"
+      aria-busy="true"
+      aria-label="Loading GARP"
+      aria-hidden="false"
+    >
+      <img
+        src="./brand/garp-logo-full-knockout.png"
+        alt="GARP - Global Association of Risk Professionals"
+      />
+      <div class="boot-bar" aria-hidden="true"><span></span></div>
     </div>
-    <script>
-      (function () {
-        var BOOT_SPLASH_DELAY_MS = 200
-        var splash = document.getElementById("boot-splash")
-        if (!splash) return
-        window.setTimeout(function () {
-          if (!splash.isConnected) return
-          splash.classList.add("boot-splash--visible")
-          splash.setAttribute("aria-hidden", "false")
-        }, BOOT_SPLASH_DELAY_MS)
-      })()
-    </script>
+    <div id="root"></div>
     <script type="module" src="src/app.tsx"></script>
   </body>
 </html>

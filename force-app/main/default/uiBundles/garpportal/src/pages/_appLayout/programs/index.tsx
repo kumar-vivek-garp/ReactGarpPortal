@@ -3,6 +3,7 @@ import { preload } from "react-dom"
 
 import type { ProgramsView } from "@/api/programs"
 import { programsQueryOptions } from "@/api/programs"
+import { PAGE_PENDING_MIN_MS, PAGE_PENDING_MS, ProgramsPending } from "@/components/molecules/page-pending"
 import { ProgramsPanel } from "@/components/organisms/programs-panel"
 import { COMMON_PROGRAM_LOGO_URLS, localizeProgramLogoUrl } from "@/config/program-logos"
 import { programsSearchSchema } from "@/config/programs"
@@ -54,6 +55,9 @@ export const Route = createFileRoute("/_appLayout/programs/")({
 			})),
 		}
 	},
+	pendingMs: PAGE_PENDING_MS,
+	pendingMinMs: PAGE_PENDING_MIN_MS,
+	pendingComponent: ProgramsPending,
 	component: Programs,
 })
 

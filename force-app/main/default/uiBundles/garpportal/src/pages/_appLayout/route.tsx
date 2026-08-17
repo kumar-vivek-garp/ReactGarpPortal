@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { useEffect } from "react"
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 
 import type { CurrentUser } from "@/api/auth/current-user"
@@ -16,6 +17,7 @@ import { Navbar } from "@/components/organisms/navbar"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { LOGIN_PATH } from "@/auth/constants"
 import { getReturnPath } from "@/auth/return-path"
+import { dismissBootSplash } from "@/lib/boot-splash"
 
 function redirectToLogin(location: { href?: string; pathname: string; searchStr: string }) {
 	throw redirect({
@@ -86,6 +88,10 @@ function AppLayout() {
 	const { isPending, data: user } = useCurrentUser()
 	// Background refetch must not flash the bar once identity is known.
 	const showLoadingBar = isPending && !user
+
+	useEffect(() => {
+		dismissBootSplash()
+	}, [])
 
 	return (
 		<PageEnterFade>

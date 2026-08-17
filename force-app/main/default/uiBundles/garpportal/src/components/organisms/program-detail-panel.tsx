@@ -8,8 +8,8 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/atoms/card"
-import { Skeleton } from "@/components/atoms/skeleton"
 import { CardCta } from "@/components/molecules/card-cta"
+import { ProgramDetailSkeleton } from "@/components/molecules/page-pending"
 import { ProgramsSubpageHeader } from "@/components/molecules/programs-subpage-header"
 import { formatDateTime, formatLongDate } from "@/lib/account-format"
 import { programRegistrationHref } from "@/lib/program-card-links"
@@ -50,19 +50,6 @@ function humanizePartState(state: string | null | undefined): string | null {
 		.replace(/([a-z])([A-Z])/g, "$1 $2")
 		.replace(/_/g, " ")
 		.trim()
-}
-
-function ProgramDetailSkeleton() {
-	return (
-		<div className="space-y-6" aria-busy aria-label="Loading program details">
-			<div className="space-y-3">
-				<Skeleton className="h-4 w-28" />
-				<Skeleton className="h-9 w-2/3 max-w-md" />
-			</div>
-			<Skeleton className="h-40 w-full rounded-xl" />
-			<Skeleton className="h-40 w-full rounded-xl" />
-		</div>
-	)
 }
 
 function CompletedSection({

@@ -13,22 +13,14 @@ import type { LucideIcon } from "lucide-react"
 
 import type { MemberEvent } from "@/api/events"
 import { Button } from "@/components/atoms/button"
-import { Skeleton } from "@/components/atoms/skeleton"
-import { Tabs, TabsList, TabsTrigger } from "@/components/atoms/tabs"
+import { Tabs, TabsList, TabsTrigger, pillTabTriggerClassName } from "@/components/atoms/tabs"
 import { EventCard } from "@/components/molecules/event-card"
+import { EventsPendingShell } from "@/components/molecules/page-pending"
 import { StaggerReveal } from "@/components/molecules/stagger-reveal"
 import { SEE_ALL_EVENTS_URL, type EventsTab } from "@/config/events"
 import { useEvents } from "@/hooks/use-events"
 import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
 import { cn } from "@/lib/utils"
-
-const pillTriggerClassName = cn(
-	"h-auto flex-none shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border-0 px-5 py-2 text-sm font-semibold shadow-none",
-	"bg-muted text-foreground hover:bg-muted/80 hover:text-foreground",
-	"data-[state=active]:bg-deep-purple data-[state=active]:text-deep-purple-foreground",
-	"data-[state=active]:hover:bg-deep-purple data-[state=active]:hover:text-deep-purple-foreground",
-	"after:hidden",
-)
 
 const TAB_ITEMS: Array<{ value: EventsTab; label: string; icon: LucideIcon }> =
 	[
@@ -85,39 +77,6 @@ function EventsEmptyState({
 			</p>
 			<p className="mt-2 max-w-md text-sm text-muted-foreground">{message}</p>
 			<SeeAllEventsButton className="mt-5" />
-		</div>
-	)
-}
-
-function EventCardSkeleton() {
-	return (
-		<Skeleton className="flex h-full flex-col gap-4 overflow-hidden rounded-xl border border-border py-5">
-			<div className="flex gap-4 px-5">
-				<Skeleton className="size-16 shrink-0 rounded-xl" />
-				<div className="min-w-0 flex-1 space-y-2">
-					<Skeleton className="h-5 w-28 rounded-xl" />
-					<Skeleton className="h-5 w-4/5" />
-					<Skeleton className="h-5 w-3/5" />
-				</div>
-			</div>
-			<div className="mt-auto flex items-center justify-between gap-3 px-5">
-				<Skeleton className="h-4 w-28" />
-				<Skeleton className="h-8 w-36 rounded-xl" />
-			</div>
-		</Skeleton>
-	)
-}
-
-function EventsContentSkeleton() {
-	return (
-		<div
-			className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-			aria-busy
-			aria-label="Loading events"
-		>
-			{[0, 1, 2, 3, 4, 5].map((key) => (
-				<EventCardSkeleton key={key} />
-			))}
 		</div>
 	)
 }
@@ -299,6 +258,10 @@ function EventsPanel({ tab }: EventsPanelProps) {
 	const featured = data?.upcomingOtherEvents ?? []
 	const tabTransitions = useTransition(tab, TAB_PANEL_TRANSITION)
 
+	if (isLoading) {
+		return <EventsPendingShell tab={tab} />
+	}
+
 	return (
 		<Tabs
 			value={tab}
@@ -340,15 +303,13 @@ function EventsPanel({ tab }: EventsPanelProps) {
 								<TabsTrigger
 									key={item.value}
 									value={item.value}
-									className={pillTriggerClassName}
+									className={cn(pillTabTriggerClassName, "items-center gap-1.5")}
 								>
 									<Icon className="size-4" aria-hidden />
 									{item.label}
-									{!isLoading ? (
-										<span className="ml-0.5 font-normal text-inherit">
-											({count})
-										</span>
-									) : null}
+									<span className="ml-0.5 font-normal text-inherit">
+										({count})
+									</span>
 								</TabsTrigger>
 							)
 						})}
@@ -357,15 +318,13 @@ function EventsPanel({ tab }: EventsPanelProps) {
 			</header>
 
 			<div className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-				{isLoading ? <EventsContentSkeleton /> : null}
-
 				{isError ? (
 					<p className="text-sm text-muted-foreground">
 						We couldn&apos;t load your events. Please try again later.
 					</p>
 				) : null}
 
-				{!isLoading && !isError
+				{!isError
 					? tabTransitions((style, currentTab) => (
 							<animated.div
 								key={currentTab}

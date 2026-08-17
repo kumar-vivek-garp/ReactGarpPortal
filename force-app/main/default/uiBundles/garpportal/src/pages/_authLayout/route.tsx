@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router"
 
 import type { CurrentUser } from "@/api/auth/current-user"
@@ -6,6 +7,7 @@ import { PageEnterFade } from "@/components/molecules/page-enter-fade"
 import { AuthRoutePending } from "@/components/molecules/route-pending-fallback"
 import { DEFAULT_POST_LOGIN_PATH } from "@/auth/constants"
 import { getSafeStartUrl } from "@/auth/start-url"
+import { dismissBootSplash } from "@/lib/boot-splash"
 
 export const Route = createFileRoute("/_authLayout")({
 	beforeLoad: ({ context, location }) => {
@@ -35,6 +37,10 @@ export const Route = createFileRoute("/_authLayout")({
 })
 
 function AuthLayout() {
+	useEffect(() => {
+		dismissBootSplash()
+	}, [])
+
 	return (
 		<PageEnterFade className="min-h-screen">
 			<Outlet />

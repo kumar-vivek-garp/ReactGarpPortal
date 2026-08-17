@@ -2,7 +2,7 @@ import { animated, useTransition } from "@react-spring/web"
 import { useNavigate } from "@tanstack/react-router"
 
 import { accountContactToView } from "@/api/account/account-contact-map"
-import { Tabs, TabsList, TabsTrigger } from "@/components/atoms/tabs"
+import { Tabs, TabsList, TabsTrigger, pillTabTriggerClassName } from "@/components/atoms/tabs"
 import {
 	ProfileCompletenessMeter,
 	ProfileCompletenessMeterSkeleton,
@@ -29,14 +29,6 @@ const TAB_ITEMS: Array<{ value: MyAccountTab; label: string }> = [
 	{ value: "contact-preferences", label: "Contact Preferences" },
 	{ value: "order-history", label: "Order History" },
 ]
-
-const pillTriggerClassName = cn(
-	"h-auto flex-none shrink-0 cursor-pointer rounded-xl border-0 px-5 py-2 text-sm font-semibold shadow-none",
-	"bg-muted text-foreground hover:bg-muted/80 hover:text-foreground",
-	"data-[state=active]:bg-deep-purple data-[state=active]:text-deep-purple-foreground",
-	"data-[state=active]:hover:bg-deep-purple data-[state=active]:hover:text-deep-purple-foreground",
-	"after:hidden",
-)
 
 type MyAccountPanelProps = {
 	tab: MyAccountTab
@@ -126,7 +118,7 @@ function MyAccountPanel({ tab }: MyAccountPanelProps) {
 								<TabsTrigger
 									key={item.value}
 									value={item.value}
-									className={pillTriggerClassName}
+									className={pillTabTriggerClassName}
 								>
 									{item.label}
 								</TabsTrigger>
