@@ -2,6 +2,7 @@ import { useCallback, useState } from "react"
 
 import { DashboardCard } from "@/components/molecules/dashboard-card"
 import { DashboardPending } from "@/components/molecules/page-pending"
+import { PageEnterFade } from "@/components/molecules/page-enter-fade"
 import { StaggerReveal } from "@/components/molecules/stagger-reveal"
 import { useDashboardCards } from "@/hooks/use-dashboard-cards"
 import { useDismissDashboardCard } from "@/hooks/use-dismiss-dashboard-card"
@@ -46,8 +47,18 @@ function DashboardPanel({ className }: { className?: string }) {
 	const cards = composedCards.filter((card) => !dismissed.includes(card.key))
 
 	return (
-		<div className={cn("space-y-6", className)}>
-			<h1 className="sr-only">Dashboard</h1>
+		<PageEnterFade className={cn("space-y-6", className)}>
+			<header className="space-y-2">
+				<p className="text-xs font-semibold tracking-wider text-primary uppercase">
+					Member home
+				</p>
+				<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+					Dashboard
+				</h1>
+				<p className="max-w-2xl text-sm text-muted-foreground">
+					Your next steps, programs, and events — in one place.
+				</p>
+			</header>
 
 			{cards.length === 0 ? (
 				<div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
@@ -72,7 +83,7 @@ function DashboardPanel({ className }: { className?: string }) {
 					))}
 				</StaggerReveal>
 			)}
-		</div>
+		</PageEnterFade>
 	)
 }
 

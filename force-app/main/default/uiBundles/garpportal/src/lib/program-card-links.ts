@@ -1,4 +1,5 @@
 import { isLocalViteHost } from "@/auth/sfdc-env"
+import { resolvePortalAssetUrl } from "@/lib/resolve-portal-asset-url"
 
 /**
  * Listing-card href helpers — mirrors MyGarp garpApp2 ProgramCard CTAs.
@@ -22,6 +23,28 @@ function isSafeHttpUrl(url: string | null | undefined): url is string {
 	} catch {
 		return false
 	}
+}
+
+/**
+ * Portal / Experience relative paths (`/BenchPrepSSO`, `/PearsonVue_SSO`, …).
+ * Absolute http(s) URLs pass through. FileDownload uses `resolvePortalAssetUrl`.
+ * Other relative paths: Experience site origin on local Vite; site-root on Cloud.
+ */
+export function resolveExperienceHref(
+	url: string | null | undefined,
+): string | null {
+	const trimmed = url?.trim()
+	if (!trimmed) return null
+	if (/^https?:\/\//i.test(trimmed)) return trimmed
+
+	const path = trimmed.startsWith("/") ? trimmed : `/${trimmed}`
+	if (path.startsWith("/servlet/servlet.FileDownload")) {
+		return resolvePortalAssetUrl(path) ?? null
+	}
+	if (isLocalViteHost()) {
+		return `${LOCAL_MY_GARP_ORIGIN}${path}`
+	}
+	return path
 }
 
 /** Lowercase slug for routes and marketing paths (`RiskAI` → `riskai`). */
@@ -118,4 +141,22 @@ export function programRegistrationHref(
 	const cleaned = path.replace(/^\/+/, "")
 	if (!cleaned) return null
 	return myGarpSfdcAppHref(`registration/${cleaned}`)
+}
+
+/**
+ * MyGarp exam-setup wizard (`garpApp2` path `programs/exam-setup/:program`).
+ * Phase C will replace this with an in-app wizard once write APIs land.
+ */
+export function programExamSetupHref(programType: string): string | null {
+	const slug = programTypeSlug(programType)
+	if (!slug) return null
+	const routeSlug = slug === "rai" ? "riskai" : slug
+	return myGarpSfdcAppHref(`programs/exam-setup/${routeSlug}`)
+}
+
+/** MyGarp order detail (`/sfdcApp#!/order/{id}`) for unpaid registration orders. */
+export function programOrderHref(orderId: string | null | undefined): string | null {
+	const id = orderId?.trim()
+	if (!id) return null
+	return myGarpSfdcAppHref(`order/${id}`)
 }

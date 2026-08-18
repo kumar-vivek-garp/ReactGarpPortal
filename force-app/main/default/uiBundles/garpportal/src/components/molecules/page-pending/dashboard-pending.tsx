@@ -64,14 +64,17 @@ function DashboardCardSkeleton({
 /** Matches dashboard panel React Query loading UI. */
 function DashboardPending() {
 	return (
-		<div
-			className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
-			aria-busy
-			aria-label="Loading dashboard"
-		>
-			<DashboardCardSkeleton body="lines" />
-			<DashboardCardSkeleton body="lines" />
-			<DashboardCardSkeleton body="search" />
+		<div className="space-y-6" aria-busy aria-label="Loading dashboard">
+			<div className="space-y-2">
+				<Skeleton className="h-3 w-24" />
+				<Skeleton className="h-9 w-48 max-w-full" />
+				<Skeleton className="h-4 w-80 max-w-full" />
+			</div>
+			<div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+				<DashboardCardSkeleton body="lines" />
+				<DashboardCardSkeleton body="lines" />
+				<DashboardCardSkeleton body="search" />
+			</div>
 		</div>
 	)
 }

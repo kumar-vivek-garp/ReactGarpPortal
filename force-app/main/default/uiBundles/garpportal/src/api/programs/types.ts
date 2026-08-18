@@ -70,9 +70,21 @@ export type ProgramDetailState =
 	| "ExamAttempt"
 	| string
 
+/** Apex `examPartState` values on `ExamPartInfo` (plus unknown for resilience). */
+export type ExamPartState =
+	| "Unpaid"
+	| "Deferred"
+	| "AwaitingSchedulingToOpen"
+	| "SchedulingOpen"
+	| "SchedulingClosedNeverScheduled"
+	| "SchedulingClosedAwaitingToTakeExam"
+	| "SchedulingClosedAwaitingResults"
+	| "SchedulingClosedResultsAvailable"
+	| string
+
 /** One exam part card (`GARP_Portal_ProgramDetailService.ExamPartInfo`). */
 export type ExamPartInfo = {
-	examPartState: string | null
+	examPartState: ExamPartState | null
 	examAttemptAdminName: string | null
 	examAttemptId: string | null
 	lastDateforADA: string | null
@@ -101,6 +113,37 @@ export type ExamPartInfo = {
 	badgePageURL: string | null
 }
 
+/** Deadline rail row (`GARP_Portal_ProgramDetailService.ExamDeadline`). */
+export type ExamDeadline = {
+	examMonth: string | null
+	examYear: string | null
+	ADADeadline: string | null
+	/** Apex typo — keep as returned. */
+	deferalDeadline: string | null
+	schedulingDeadline: string | null
+}
+
+/**
+ * Exam resources rail (`GARP_Portal_ProgramDetailService.ExamResources`).
+ * eBook / BenchPrep / ADA URLs may be null until study-materials Apex is ported.
+ */
+export type ExamResources = {
+	eBookItems: unknown[] | null
+	eBookExpireDate: string | null
+	eBookProviderName: string | null
+	eLearningPlatformAccessURL: string | null
+	eLearningPlatformName: string | null
+	ADAFormAccessURL: string | null
+	IsOptedIntoEPP: boolean | null
+}
+
+/** Notification row nested on detail (same shape as notifications action). */
+export type ProgramExamNotification = {
+	notificationTitle: string | null
+	notificationDetails: string | null
+	notificationDate: string | null
+}
+
 /** `GET /memberportal/programDetail` inner payload. */
 export type ProgramDetail = {
 	statusMessage: string | null
@@ -124,6 +167,26 @@ export type ProgramDetail = {
 	currentRegistrationCanRegPartI: boolean | null
 	currentRegistrationCanAddPartII: boolean | null
 	cvStatus: string | null
+	examResources: ExamResources | null
+	IDName: string | null
+	IDType: string | null
+	IDNumber: string | null
+	IDLocation: string | null
+	IDExpireDate: string | null
+	phoneCode: string | null
+	phoneNumber: string | null
+	isOSTACandidate: boolean | null
+	OSTANameInChinese: string | null
+	OSTADateOfBirth: string | null
+	OSTAGender: string | null
+	OSTAPhoneNumber: string | null
+	OSTAWorkingStatus: string | null
+	OSTACompany: string | null
+	OSTAEducationalStatus: string | null
+	OSTAEducationalSchool: string | null
+	OSTAEducationalProgram: string | null
+	examDeadlines: ExamDeadline[] | null
+	examNotifications: ProgramExamNotification[] | null
 }
 
 /** `GET /memberportal/programDetail` view (`DetailView`). */

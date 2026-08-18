@@ -39,8 +39,8 @@ function CardCta({
 	)
 
 	const styles = cn(
-		"inline-flex items-center gap-2 text-sm font-semibold text-foreground hover:text-primary",
-		disabled && "pointer-events-none opacity-50 hover:text-foreground",
+		"inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary/80",
+		disabled && "pointer-events-none opacity-50 hover:text-primary",
 		className,
 	)
 

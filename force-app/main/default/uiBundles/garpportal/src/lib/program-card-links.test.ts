@@ -2,15 +2,23 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 vi.mock("@/auth/sfdc-env", () => ({
 	isLocalViteHost: vi.fn(),
+	getSfdcEnv: vi.fn(() => undefined),
+}))
+
+vi.mock("@/lib/resolve-portal-asset-url", () => ({
+	resolvePortalAssetUrl: vi.fn((url: string) => `resolved:${url}`),
 }))
 
 import { isLocalViteHost } from "@/auth/sfdc-env"
 import {
 	programDetailsHref,
 	programDetailsPath,
+	programExamSetupHref,
 	programLearnMoreUrl,
+	programOrderHref,
 	programRegistrationHref,
 	programTypeSlug,
+	resolveExperienceHref,
 	supportsInAppProgramDetail,
 } from "./program-card-links"
 
@@ -124,5 +132,67 @@ describe("programRegistrationHref", () => {
 	it("returns null when nothing usable", () => {
 		mockedLocal.mockReturnValue(false)
 		expect(programRegistrationHref(null, "  ")).toBeNull()
+	})
+})
+
+describe("programExamSetupHref", () => {
+	it("maps rai alias to riskai route slug", () => {
+		mockedLocal.mockReturnValue(false)
+		expect(programExamSetupHref("RAI")).toBe(
+			"/sfdcApp#!/programs/exam-setup/riskai",
+		)
+		expect(programExamSetupHref("scr")).toBe(
+			"/sfdcApp#!/programs/exam-setup/scr",
+		)
+	})
+
+	it("prefixes sandbox host on local Vite", () => {
+		mockedLocal.mockReturnValue(true)
+		expect(programExamSetupHref("RiskAI")).toBe(
+			"https://garp--devjuly25a.sandbox.my.site.com/sfdcApp#!/programs/exam-setup/riskai",
+		)
+	})
+})
+
+describe("programOrderHref", () => {
+	it("builds MyGarp order hash", () => {
+		mockedLocal.mockReturnValue(false)
+		expect(programOrderHref("a1aXXX")).toBe("/sfdcApp#!/order/a1aXXX")
+	})
+
+	it("returns null for blank id", () => {
+		expect(programOrderHref("  ")).toBeNull()
+		expect(programOrderHref(null)).toBeNull()
+	})
+})
+
+describe("resolveExperienceHref", () => {
+	it("passes through absolute https URLs", () => {
+		expect(resolveExperienceHref("https://www.garp.org/scr")).toBe(
+			"https://www.garp.org/scr",
+		)
+	})
+
+	it("prefixes Experience origin for SSO paths on local Vite", () => {
+		mockedLocal.mockReturnValue(true)
+		expect(resolveExperienceHref("/BenchPrepSSO?prog=SCR")).toBe(
+			"https://garp--devjuly25a.sandbox.my.site.com/BenchPrepSSO?prog=SCR",
+		)
+	})
+
+	it("keeps site-root relative paths on Experience", () => {
+		mockedLocal.mockReturnValue(false)
+		expect(resolveExperienceHref("/PearsonVue_SSO?id=abc")).toBe(
+			"/PearsonVue_SSO?id=abc",
+		)
+	})
+
+	it("delegates FileDownload to resolvePortalAssetUrl", () => {
+		mockedLocal.mockReturnValue(false)
+		expect(
+			resolveExperienceHref(
+				"/servlet/servlet.FileDownload?file=015xxx",
+			),
+		).toBe("resolved:/servlet/servlet.FileDownload?file=015xxx")
 	})
 })

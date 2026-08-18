@@ -28,12 +28,16 @@ function AccountSectionCard({
 }: AccountSectionCardProps) {
 	return (
 		<Card className={cn("h-full gap-4 bg-muted/40 py-5 shadow-none", className)}>
+			{/*
+			 * Title / description / action must be direct CardHeader children so the
+			 * shadcn grid places Edit in column 2 (not beside the subtitle).
+			 */}
 			<CardHeader className="gap-1.5">
-				<div className="flex items-start justify-between gap-3">
-					<CardTitle className="min-w-0 font-heading text-lg tracking-wide">{title}</CardTitle>
-					{action ? <CardAction className="static justify-self-auto">{action}</CardAction> : null}
-				</div>
+				<CardTitle className="min-w-0 font-heading text-lg tracking-wide">
+					{title}
+				</CardTitle>
 				{subtitle ? <CardDescription>{subtitle}</CardDescription> : null}
+				{action ? <CardAction>{action}</CardAction> : null}
 			</CardHeader>
 			<CardContent className="flex flex-1 flex-col gap-2.5">{children}</CardContent>
 		</Card>

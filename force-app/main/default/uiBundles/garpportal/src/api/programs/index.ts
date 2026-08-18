@@ -1,13 +1,17 @@
 export type {
 	CompletedProgram,
 	EnrolledProgram,
+	ExamDeadline,
 	ExamPartInfo,
+	ExamPartState,
+	ExamResources,
 	MemberPortalEnvelope,
 	MicroCourseConfig,
 	OtherProgram,
 	ProgramDetail,
 	ProgramDetailState,
 	ProgramDetailView,
+	ProgramExamNotification,
 	ProgramInformation,
 	ProgramsView,
 } from "@/api/programs/types"

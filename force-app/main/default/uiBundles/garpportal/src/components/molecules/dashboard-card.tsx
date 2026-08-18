@@ -27,6 +27,35 @@ type DashboardCardProps = {
 	className?: string
 }
 
+function ProviderIcon({
+	provider,
+}: {
+	provider: PortalCard["provider"]
+}) {
+	const className = "size-5"
+	switch (provider) {
+		case DASHBOARD_PROVIDER.profile:
+			return <CircleUser className={className} aria-hidden />
+		case DASHBOARD_PROVIDER.directory:
+			return <Users className={className} aria-hidden />
+		case DASHBOARD_PROVIDER.enrolled:
+			return <BookOpen className={className} aria-hidden />
+		case DASHBOARD_PROVIDER.events:
+			return <CalendarDays className={className} aria-hidden />
+		default:
+			return null
+	}
+}
+
+function hasProviderIcon(provider: PortalCard["provider"]): boolean {
+	return (
+		provider === DASHBOARD_PROVIDER.profile ||
+		provider === DASHBOARD_PROVIDER.directory ||
+		provider === DASHBOARD_PROVIDER.enrolled ||
+		provider === DASHBOARD_PROVIDER.events
+	)
+}
+
 /**
  * One dashboard card. Provider chooses widgets; copy/CTA/order come from
  * Apex or client composition (`composeDashboardCards`).
@@ -43,6 +72,7 @@ function DashboardCard({ card, onDismiss, className }: DashboardCardProps) {
 		typeof meta.percentComplete === "number"
 			? meta.percentComplete
 			: undefined
+	const showProviderIcon = !imageUrl && hasProviderIcon(card.provider)
 
 	return (
 		<Card
@@ -52,38 +82,39 @@ function DashboardCard({ card, onDismiss, className }: DashboardCardProps) {
 			)}
 		>
 			{imageUrl ? (
-				<img
-					src={imageUrl}
-					alt=""
-					className="h-40 w-full object-cover"
-					onError={(event) => {
-						event.currentTarget.style.display = "none"
-					}}
-				/>
+				<div className="relative aspect-[16/9] overflow-hidden bg-muted">
+					<img
+						src={imageUrl}
+						alt=""
+						className="absolute inset-0 size-full object-cover"
+						onError={(event) => {
+							event.currentTarget.style.display = "none"
+						}}
+					/>
+					<div
+						className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/50 via-transparent to-transparent"
+						aria-hidden
+					/>
+				</div>
 			) : null}
 
-			<CardHeader className="px-5 pt-5 pb-2">
-				<CardTitle className="flex items-start gap-2 font-heading text-lg tracking-wide text-foreground">
-					{isProfile ? (
-						<CircleUser className="mt-0.5 size-5 shrink-0" aria-hidden />
+			<CardHeader className="gap-3 px-5 pt-5 pb-2">
+				<div className="flex items-start gap-3">
+					{showProviderIcon ? (
+						<span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
+							<ProviderIcon provider={card.provider} />
+						</span>
 					) : null}
-					{isDirectory ? (
-						<Users className="mt-0.5 size-5 shrink-0" aria-hidden />
-					) : null}
-					{isEnrolled ? (
-						<BookOpen className="mt-0.5 size-5 shrink-0" aria-hidden />
-					) : null}
-					{isEvents ? (
-						<CalendarDays className="mt-0.5 size-5 shrink-0" aria-hidden />
-					) : null}
-					<span className="min-w-0 flex-1">
+					<div className="min-w-0 flex-1">
 						{card.eyebrow ? (
-							<span className="mb-1 block font-sans text-sm font-normal text-primary">
+							<p className="mb-1 text-xs font-semibold tracking-wider text-primary uppercase">
 								{card.eyebrow}
-							</span>
+							</p>
 						) : null}
-						{card.title}
-					</span>
+						<CardTitle className="font-heading text-lg tracking-wide text-foreground">
+							{card.title}
+						</CardTitle>
+					</div>
 					{card.dismissible && onDismiss ? (
 						<Button
 							type="button"
@@ -96,12 +127,17 @@ function DashboardCard({ card, onDismiss, className }: DashboardCardProps) {
 							<X className="size-4" />
 						</Button>
 					) : null}
-				</CardTitle>
+				</div>
 			</CardHeader>
 
 			<CardContent className="flex-1 space-y-3 px-5 pb-4">
 				{isProfile && percent != null ? (
-					<ProfileCompletenessMeter percent={percent} missing={meta.missing} />
+					<div className="rounded-xl border border-border/60 bg-background/50 p-3">
+						<ProfileCompletenessMeter
+							percent={percent}
+							missing={meta.missing}
+						/>
+					</div>
 				) : null}
 
 				{card.body ? (
@@ -128,7 +164,9 @@ function DashboardCard({ card, onDismiss, className }: DashboardCardProps) {
 
 				{isEvents ? (
 					(meta.upcomingEvents ?? []).length > 0 ? (
-						<DashboardEventsList events={meta.upcomingEvents ?? []} />
+						<div className="rounded-xl border border-border/60 bg-background/50 p-3">
+							<DashboardEventsList events={meta.upcomingEvents ?? []} />
+						</div>
 					) : (
 						<p className="text-sm text-muted-foreground">
 							Events you register for will show up here.
@@ -137,7 +175,9 @@ function DashboardCard({ card, onDismiss, className }: DashboardCardProps) {
 				) : null}
 
 				{isDirectory && meta.searchEnabled ? (
-					<DirectorySearch className="min-h-40" />
+					<div className="rounded-xl border border-border/60 bg-background/50 p-3">
+						<DirectorySearch className="min-h-40" />
+					</div>
 				) : null}
 			</CardContent>
 
