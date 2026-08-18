@@ -1,11 +1,15 @@
 import * as React from "react"
+import { animated } from "@react-spring/web"
 import { cva, type VariantProps } from "class-variance-authority"
 import { Slot } from "radix-ui"
 
+import { useSpringPress } from "@/hooks/use-spring-press"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl text-sm font-extrabold whitespace-nowrap transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  // `transition` deliberately excludes `transform`: the press spring owns it, and a
+  // CSS transition on the same property fights every frame react-spring writes.
+  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl text-sm font-extrabold whitespace-nowrap transition-[color,background-color,border-color,box-shadow,opacity] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
@@ -38,24 +42,62 @@ const buttonVariants = cva(
   }
 )
 
+/**
+ * Animated wrappers, created once at module scope — `animated()` memoises per
+ * component, so building them inside render would remount on every pass.
+ */
+const AnimatedButton = animated("button")
+const AnimatedSlot = animated(Slot.Root)
+
+/**
+ * Deliberate drift from generated shadcn output: press motion lives here so that
+ * *every* button in the app inherits it from one place rather than each call site
+ * re-implementing a spring. `link` opts out — scaling inline text looks wrong.
+ *
+ * See `useSpringPress` for the physics; reduced motion is handled globally in
+ * `pages/__root.tsx`.
+ */
 function Button({
   className,
   variant = "default",
   size = "default",
   asChild = false,
+  style,
+  disabled,
+  onPointerDown,
+  onPointerUp,
+  onPointerLeave,
+  onPointerCancel,
+  onKeyDown,
+  onKeyUp,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
   }) {
-  const Comp = asChild ? Slot.Root : "button"
+  const animates = variant !== "link"
+
+  const { bind, style: pressStyle } = useSpringPress<HTMLButtonElement>({
+    disabled: disabled || !animates,
+    onPointerDown,
+    onPointerUp,
+    onPointerLeave,
+    onPointerCancel,
+    onKeyDown,
+    onKeyUp,
+  })
+
+  const Comp = asChild ? AnimatedSlot : AnimatedButton
 
   return (
     <Comp
       data-slot="button"
       data-variant={variant}
       data-size={size}
+      disabled={disabled}
       className={cn(buttonVariants({ variant, size, className }))}
+      style={animates ? { ...style, scale: pressStyle.scale } : style}
+      {...bind}
       {...props}
     />
   )

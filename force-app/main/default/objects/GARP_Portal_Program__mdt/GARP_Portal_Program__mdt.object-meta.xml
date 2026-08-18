@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <description>Declarative definition of every program and product family the member portal knows about: the catalogue text a page renders, the Contract record type and exam values that decide enrolment, and the per-program links. GARP_Portal_ProgramCatalog reads these rows, so adding a program is a metadata row rather than an Apex change.</description>
+    <label>GARP Portal Program</label>
+    <pluralLabel>GARP Portal Programs</pluralLabel>
+    <visibility>Public</visibility>
+</CustomObject>

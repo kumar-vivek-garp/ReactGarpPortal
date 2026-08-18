@@ -62,8 +62,8 @@ export const Route = createFileRoute("/_appLayout/programs/")({
 })
 
 function Programs() {
-	const { tab } = Route.useSearch()
+	const { tab, view } = Route.useSearch()
 	const programs = Route.useLoaderData()
 	preloadProgramLogos(programs)
-	return <ProgramsPanel tab={tab} />
+	return <ProgramsPanel tab={tab} view={view} />
 }

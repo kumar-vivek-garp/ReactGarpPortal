@@ -6,7 +6,8 @@ import type { MembershipView } from "@/api/membership/types"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar"
 import { Button } from "@/components/atoms/button"
 import { Card, CardContent } from "@/components/atoms/card"
-import { Tabs, TabsList, TabsTrigger, pillTabTriggerClassName } from "@/components/atoms/tabs"
+import { PillTabs } from "@/components/atoms/pill-tabs"
+import { Tabs } from "@/components/atoms/tabs"
 import { BenefitCard } from "@/components/molecules/benefit-card"
 import { DirectorySearch } from "@/components/molecules/directory-search"
 import {
@@ -15,17 +16,12 @@ import {
 	MembershipPendingShell,
 } from "@/components/molecules/page-pending"
 import { StaggerReveal } from "@/components/molecules/stagger-reveal"
-import type { MembershipTab } from "@/config/membership"
+import { MEMBERSHIP_TAB_ITEMS, type MembershipTab } from "@/config/membership"
 import { useMembership } from "@/hooks/use-membership"
 import { formatLongDate } from "@/lib/account-format"
 import { resolvePortalAssetUrl } from "@/lib/resolve-portal-asset-url"
 import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
 import { cn } from "@/lib/utils"
-
-const TAB_ITEMS: Array<{ value: MembershipTab; label: string }> = [
-	{ value: "benefits", label: "Member Benefits" },
-	{ value: "directory", label: "Member Directory" },
-]
 
 type MembershipPanelProps = {
 	tab: MembershipTab
@@ -204,19 +200,7 @@ function MembershipPanel({ tab }: MembershipPanelProps) {
 					Membership Benefits
 				</h1>
 
-				<div className="overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-					<TabsList className="h-auto w-max gap-3 bg-transparent p-0">
-						{TAB_ITEMS.map((item) => (
-							<TabsTrigger
-								key={item.value}
-								value={item.value}
-								className={pillTabTriggerClassName}
-							>
-								{item.label}
-							</TabsTrigger>
-						))}
-					</TabsList>
-				</div>
+				<PillTabs items={MEMBERSHIP_TAB_ITEMS} value={tab} />
 			</header>
 
 			<div className="mt-6 flex min-h-0 flex-1 flex-col overflow-hidden">

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>RAI</label>
+    <protected>false</protected>
+    <values>
+        <field>Config__c</field>
+        <value xsi:type="xsd:string">{
+  &quot;code&quot;: &quot;rai&quot;,
+  &quot;aliases&quot;: [&quot;riskai&quot;],
+  &quot;sortOrder&quot;: 50,
+  &quot;active&quot;: true,
+  &quot;contractRecordType&quot;: &quot;Risk_AI_Program&quot;,
+  &quot;examProgramValue&quot;: &quot;RiskAI&quot;,
+  &quot;examTypeKey&quot;: &quot;RiskAIFull&quot;,
+  &quot;advertised&quot;: true,
+  &quot;sittingModel&quot;: &quot;Single&quot;,
+  &quot;suppressedByContract&quot;: &quot;RAIJ_Program&quot;,
+  &quot;countsTowardCpd&quot;: true,
+  &quot;hasExamResults&quot;: true,
+  &quot;hasRegistrationWindow&quot;: true,
+  &quot;catalogue&quot;: {
+    &quot;abbrevName&quot;: &quot;RAI&quot;,
+    &quot;formalName&quot;: &quot;Risk and AI (RAI&lt;sup&gt;&amp;trade;&lt;/sup&gt;)&quot;,
+    &quot;informalName&quot;: &quot;Risk AI Program&quot;,
+    &quot;policyURL&quot;: &quot;https://www.garp.org/rai/exam-policies&quot;,
+    &quot;regLogoURL&quot;: &quot;https://www.garp.org/hubfs/Website/Logos/RAI-short-knockout.png&quot;,
+    &quot;myProgramsLogoURL&quot;: &quot;https://www.garp.org/hubfs/Portal/My%20Programs/RAI.webp&quot;,
+    &quot;description&quot;: &quot;Your gateway to mastering AI-driven risks. Our new Risk and AI (RAI)™ Certificate offers the knowledge you need to harness the transformative power of AI and machine learning (ML) and ensure AI is deployed responsibly within your organization.&quot;,
+    &quot;registrationPath&quot;: &quot;rai&quot;
+  }
+}</value>
+    </values>
+</CustomMetadata>

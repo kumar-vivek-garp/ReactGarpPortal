@@ -1,18 +1,12 @@
 import { getRouteApi } from "@tanstack/react-router"
 
 import { Skeleton } from "@/components/atoms/skeleton"
-import { Tabs, TabsList, TabsTrigger, pillTabTriggerClassName } from "@/components/atoms/tabs"
+import { PillTabs } from "@/components/atoms/pill-tabs"
+import { Tabs } from "@/components/atoms/tabs"
 import type { EventsTab } from "@/config/events"
-import { DEFAULT_EVENTS_TAB } from "@/config/events"
+import { DEFAULT_EVENTS_TAB, EVENT_TAB_ITEMS } from "@/config/events"
 
 const routeApi = getRouteApi("/_appLayout/events/")
-
-const TAB_ITEMS: Array<{ value: EventsTab; label: string }> = [
-	{ value: "all", label: "All" },
-	{ value: "attending", label: "Attending" },
-	{ value: "chapter-meetings", label: "Chapter Meetings" },
-	{ value: "featured", label: "Featured Events" },
-]
 
 function EventCardSkeleton() {
 	return (
@@ -73,19 +67,7 @@ function EventsPendingShell({ tab = DEFAULT_EVENTS_TAB }: EventsPendingProps) {
 						<Skeleton className="h-8 w-32 rounded-md" />
 					</div>
 				</div>
-				<div className="overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-					<TabsList className="h-auto w-max gap-3 bg-transparent p-0">
-						{TAB_ITEMS.map((item) => (
-							<TabsTrigger
-								key={item.value}
-								value={item.value}
-								className={pillTabTriggerClassName}
-							>
-								{item.label}
-							</TabsTrigger>
-						))}
-					</TabsList>
-				</div>
+				<PillTabs items={EVENT_TAB_ITEMS} value={tab} />
 			</header>
 			<div className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 				<EventsContentSkeleton />

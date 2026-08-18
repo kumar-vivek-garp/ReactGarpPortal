@@ -2,7 +2,8 @@ import { animated, useTransition } from "@react-spring/web"
 import { useNavigate } from "@tanstack/react-router"
 
 import { accountContactToView } from "@/api/account/account-contact-map"
-import { Tabs, TabsList, TabsTrigger, pillTabTriggerClassName } from "@/components/atoms/tabs"
+import { PillTabs } from "@/components/atoms/pill-tabs"
+import { Tabs } from "@/components/atoms/tabs"
 import {
 	ProfileCompletenessMeter,
 	ProfileCompletenessMeterSkeleton,
@@ -20,15 +21,9 @@ import { OrderHistoryPanel } from "@/components/organisms/order-history-panel"
 import { useAccount } from "@/hooks/use-account"
 import { useAccountContact } from "@/hooks/use-account-contact"
 import { useCurrentUser } from "@/hooks/use-current-user"
-import type { MyAccountTab } from "@/config/my-account"
+import { MY_ACCOUNT_TAB_ITEMS, type MyAccountTab } from "@/config/my-account"
 import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
 import { cn } from "@/lib/utils"
-
-const TAB_ITEMS: Array<{ value: MyAccountTab; label: string }> = [
-	{ value: "account-information", label: "Account Information" },
-	{ value: "contact-preferences", label: "Contact Preferences" },
-	{ value: "order-history", label: "Order History" },
-]
 
 type MyAccountPanelProps = {
 	tab: MyAccountTab
@@ -112,19 +107,7 @@ function MyAccountPanel({ tab }: MyAccountPanelProps) {
 						</div>
 					) : null}
 
-					<div className="overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-						<TabsList className="h-auto w-max gap-3 bg-transparent p-0">
-							{TAB_ITEMS.map((item) => (
-								<TabsTrigger
-									key={item.value}
-									value={item.value}
-									className={pillTabTriggerClassName}
-								>
-									{item.label}
-								</TabsTrigger>
-							))}
-						</TabsList>
-					</div>
+					<PillTabs items={MY_ACCOUNT_TAB_ITEMS} value={tab} />
 				</div>
 			</header>
 

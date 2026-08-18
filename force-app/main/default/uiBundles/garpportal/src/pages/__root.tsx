@@ -1,5 +1,6 @@
 import { createRootRouteWithContext, HeadContent, Outlet } from "@tanstack/react-router"
 import type { QueryClient } from "@tanstack/react-query"
+import { useReducedMotion } from "@react-spring/web"
 import { lazy, Suspense } from "react"
 import { preconnect, preload } from "react-dom"
 
@@ -67,6 +68,13 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 })
 
 function RootComponent() {
+	/**
+	 * Sets react-spring's `Globals.skipAnimation` when the OS prefers reduced
+	 * motion — every spring in the app then jumps straight to its goal value.
+	 * Called once here so individual components never re-implement the check.
+	 */
+	useReducedMotion()
+
 	preconnect(GARP_HUB_ORIGIN, { crossOrigin: "anonymous" })
 	for (const { href, type } of CRITICAL_FONT_PRELOADS) {
 		preload(href, {

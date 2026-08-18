@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>SCR</label>
+    <protected>false</protected>
+    <values>
+        <field>Config__c</field>
+        <value xsi:type="xsd:string">{
+  &quot;code&quot;: &quot;scr&quot;,
+  &quot;sortOrder&quot;: 30,
+  &quot;active&quot;: true,
+  &quot;contractRecordType&quot;: &quot;SCR_Program&quot;,
+  &quot;examProgramValue&quot;: &quot;SCR&quot;,
+  &quot;examTypeKey&quot;: &quot;SCRFull&quot;,
+  &quot;advertised&quot;: true,
+  &quot;sittingModel&quot;: &quot;Single&quot;,
+  &quot;countsTowardCpd&quot;: true,
+  &quot;hasExamResults&quot;: true,
+  &quot;hasRegistrationWindow&quot;: true,
+  &quot;catalogue&quot;: {
+    &quot;abbrevName&quot;: &quot;SCR&quot;,
+    &quot;formalName&quot;: &quot;Sustainability and Climate Risk (SCR&lt;sup&gt;&amp;reg;&lt;/sup&gt;)&quot;,
+    &quot;informalName&quot;: &quot;SCR Program&quot;,
+    &quot;policyURL&quot;: &quot;https://www.garp.org/scr/exam-policies&quot;,
+    &quot;regLogoURL&quot;: &quot;https://www.garp.org/hubfs/Website/Logos/GARP%20SCR%20Logo%20-%20Knockout.png&quot;,
+    &quot;myProgramsLogoURL&quot;: &quot;https://www.garp.org/hubfs/Portal/My%20Programs/SCR.webp&quot;,
+    &quot;description&quot;: &quot;From entry-level to executive, across industries such as banking, fintech, hospitality, and more, SCR Certificate Holders are leading their companies with solutions to today’s top issues in climate change and sustainability.&quot;,
+    &quot;registrationPath&quot;: &quot;scr&quot;
+  }
+}</value>
+    </values>
+</CustomMetadata>

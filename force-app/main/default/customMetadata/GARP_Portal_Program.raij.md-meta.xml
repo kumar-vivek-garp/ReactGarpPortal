@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>RAIJ</label>
+    <protected>false</protected>
+    <values>
+        <field>Config__c</field>
+        <value xsi:type="xsd:string">{
+  &quot;code&quot;: &quot;raij&quot;,
+  &quot;sortOrder&quot;: 40,
+  &quot;active&quot;: true,
+  &quot;contractRecordType&quot;: &quot;RAIJ_Program&quot;,
+  &quot;examProgramValue&quot;: &quot;RAIJ&quot;,
+  &quot;examTypeKey&quot;: &quot;RAIJFull&quot;,
+  &quot;advertised&quot;: true,
+  &quot;sittingModel&quot;: &quot;Single&quot;,
+  &quot;countsTowardCpd&quot;: true,
+  &quot;hasExamResults&quot;: true,
+  &quot;hasRegistrationWindow&quot;: true,
+  &quot;catalogue&quot;: {
+    &quot;abbrevName&quot;: &quot;RAIJ&quot;,
+    &quot;formalName&quot;: &quot;Risk and AI in Japanese (RAI&lt;sup&gt;&amp;trade;&lt;/sup&gt;)&quot;,
+    &quot;informalName&quot;: &quot;RAIJ Program&quot;,
+    &quot;policyURL&quot;: &quot;https://www.garp.org/raij/exam-policies&quot;,
+    &quot;regLogoURL&quot;: &quot;https://www.garp.org/hubfs/Website/Logos/RAI-short-knockout.png&quot;,
+    &quot;myProgramsLogoURL&quot;: &quot;https://www.garp.org/hubfs/Portal/My%20Programs/RAI.webp&quot;,
+    &quot;description&quot;: &quot;Risk and AI in Japanese (RAI) program.&quot;,
+    &quot;registrationPath&quot;: &quot;raij&quot;
+  }
+}</value>
+    </values>
+</CustomMetadata>

@@ -1,16 +1,12 @@
 import { getRouteApi } from "@tanstack/react-router"
 
 import { Skeleton } from "@/components/atoms/skeleton"
-import { Tabs, TabsList, TabsTrigger, pillTabTriggerClassName } from "@/components/atoms/tabs"
+import { PillTabs } from "@/components/atoms/pill-tabs"
+import { Tabs } from "@/components/atoms/tabs"
 import type { MembershipTab } from "@/config/membership"
-import { DEFAULT_MEMBERSHIP_TAB } from "@/config/membership"
+import { DEFAULT_MEMBERSHIP_TAB, MEMBERSHIP_TAB_ITEMS } from "@/config/membership"
 
 const routeApi = getRouteApi("/_appLayout/membership/")
-
-const TAB_ITEMS: Array<{ value: MembershipTab; label: string }> = [
-	{ value: "benefits", label: "Member Benefits" },
-	{ value: "directory", label: "Member Directory" },
-]
 
 function MembershipHeroSkeleton() {
 	return (
@@ -114,19 +110,7 @@ function MembershipPendingShell({
 				<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
 					Membership Benefits
 				</h1>
-				<div className="overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-					<TabsList className="h-auto w-max gap-3 bg-transparent p-0">
-						{TAB_ITEMS.map((item) => (
-							<TabsTrigger
-								key={item.value}
-								value={item.value}
-								className={pillTabTriggerClassName}
-							>
-								{item.label}
-							</TabsTrigger>
-						))}
-					</TabsList>
-				</div>
+				<PillTabs items={MEMBERSHIP_TAB_ITEMS} value={tab} />
 			</header>
 			<div className="mt-6 flex min-h-0 flex-1 flex-col overflow-hidden pb-2">
 				{tab === "directory" ? (

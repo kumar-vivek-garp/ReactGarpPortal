@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>FFR</label>
+    <protected>false</protected>
+    <values>
+        <field>Config__c</field>
+        <value xsi:type="xsd:string">{
+  &quot;code&quot;: &quot;ffr&quot;,
+  &quot;sortOrder&quot;: 80,
+  &quot;active&quot;: true,
+  &quot;contractRecordType&quot;: &quot;FBR_Program&quot;,
+  &quot;examProgramValue&quot;: &quot;FFR&quot;,
+  &quot;requiresAttemptForEnrolment&quot;: false,
+  &quot;advertised&quot;: true,
+  &quot;sittingModel&quot;: &quot;Course&quot;,
+  &quot;countsTowardCpd&quot;: false,
+  &quot;hasExamResults&quot;: false,
+  &quot;hasRegistrationWindow&quot;: false,
+  &quot;catalogue&quot;: {
+    &quot;abbrevName&quot;: &quot;FFR&quot;,
+    &quot;formalName&quot;: &quot;Foundations of Financial Risk (FFR)&quot;,
+    &quot;informalName&quot;: &quot;FFR Program&quot;,
+    &quot;policyURL&quot;: &quot;https://www.garp.org/ffr/exam-policies&quot;,
+    &quot;regLogoURL&quot;: &quot;https://www.garp.org/hubfs/Website/Logos/GARP-Courses-Knockout.png&quot;,
+    &quot;myProgramsLogoURL&quot;: &quot;https://www.garp.org/hubfs/GARP%20Member%20Portal%202.0/Development/Assets/my-programs-list-assets/FFR.jpg&quot;,
+    &quot;description&quot;: &quot;Learn the most essential risk topics with this comprehensive course designed for professionals who are new to the profession. The course gives a broad overview of key topics including credit, market, operational risk, insurance risk, and the Basel Accords.&quot;,
+    &quot;registrationPath&quot;: &quot;ffr&quot;
+  }
+}</value>
+    </values>
+</CustomMetadata>

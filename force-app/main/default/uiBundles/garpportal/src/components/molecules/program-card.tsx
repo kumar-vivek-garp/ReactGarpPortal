@@ -1,9 +1,3 @@
-import type {
-	CompletedProgram,
-	EnrolledProgram,
-	OtherProgram,
-	ProgramInformation,
-} from "@/api/programs"
 import {
 	Card,
 	CardContent,
@@ -12,106 +6,61 @@ import {
 	CardTitle,
 } from "@/components/atoms/card"
 import { CardCta } from "@/components/molecules/card-cta"
+import { ProgramMetaLines } from "@/components/molecules/program-meta-lines"
+import { ProgramStatusBadge } from "@/components/molecules/program-status-badge"
+import { programBrandSurface } from "@/config/program-brand"
 import { localizeProgramLogoUrl } from "@/config/program-logos"
-import { formatLongDate } from "@/lib/account-format"
 import {
-	programDetailsHref,
-	programDetailsPath,
-	programLearnMoreUrl,
-	programRegistrationHref,
-	supportsInAppProgramDetail,
-} from "@/lib/program-card-links"
-import { stripProgramFormalName } from "@/lib/program-formal-name"
+	buildProgramListingPresentation,
+	type ProgramCardVariant,
+	type ProgramListingProgram,
+} from "@/lib/program-listing-presentation"
 import { resolvePortalAssetUrl } from "@/lib/resolve-portal-asset-url"
 import { cn } from "@/lib/utils"
 
-type ProgramCardVariant = "inProgress" | "completed" | "other"
-
 type ProgramCardProps = {
 	variant: ProgramCardVariant
-	program: EnrolledProgram | CompletedProgram | OtherProgram
+	program: ProgramListingProgram
 	/** Mark above-the-fold logos as LCP candidates. */
 	priority?: boolean
 	className?: string
 }
 
-function displayName(info: ProgramInformation | null | undefined): string {
-	return (
-		stripProgramFormalName(info?.formalName) ||
-		info?.informalName?.trim() ||
-		info?.abbrevName?.trim() ||
-		"Program"
-	)
-}
-
-function adminLines(program: EnrolledProgram | CompletedProgram | OtherProgram) {
-	if (!("adminPartIName" in program)) return []
-	return [program.adminPartIName, program.adminPartIIName].filter(
-		(line): line is string => Boolean(line?.trim()),
-	)
-}
-
-function nextOpenCopy(program: OtherProgram): string | null {
-	if (program.isRegistrationOpen) return null
-	const date =
-		formatLongDate(program.nextRegistrationOpenDate?.slice(0, 10)) ?? null
-	const admin = program.nextRegistrationOpenAdminName?.trim()
-	if (admin && date) return `${admin} registration will open on ${date}`
-	if (date) return `Registration will open on ${date}`
-	if (admin) return `${admin} registration is not open yet.`
-	return null
-}
-
+/**
+ * Grid card for one program. Content comes from
+ * `buildProgramListingPresentation` so the list row renders the same facts.
+ *
+ * Deliberately not clickable as a whole — the CTA is the only hit target, so
+ * there is no card-level hover state to imply otherwise.
+ */
 function ProgramCard({
 	variant,
 	program,
 	priority = false,
 	className,
 }: ProgramCardProps) {
+	const presentation = buildProgramListingPresentation(variant, program)
+	const brand = programBrandSurface(program.programType)
 	const info = program.programInformation
-	const name = displayName(info)
 	const logoUrl = localizeProgramLogoUrl(
 		resolvePortalAssetUrl(info?.myProgramsLogoURL) ??
 			info?.myProgramsLogoURL ??
 			undefined,
 	)
-	const admins = variant === "inProgress" ? adminLines(program) : []
-	const description =
-		variant === "other" ? info?.description?.trim() || null : null
-	const closedLine =
-		variant === "other" && "isRegistrationOpen" in program
-			? nextOpenCopy(program)
-			: null
 
-	const showDetails =
-		variant === "inProgress" || variant === "completed"
-	const inAppDetails = showDetails
-		? programDetailsPath(program.programType)
-		: null
-	const externalDetails =
-		showDetails && !supportsInAppProgramDetail(program.programType)
-			? programDetailsHref(program.programType)
-			: null
-	const detailsUrl = inAppDetails ?? externalDetails
-	const detailsIsExternal = !inAppDetails && Boolean(externalDetails)
-	const learnMoreUrl = programLearnMoreUrl(
-		program.programType,
-		info?.policyURL,
-	)
-	const isOther = variant === "other" && "isRegistrationOpen" in program
-	const registrationUrl =
-		isOther && program.isRegistrationOpen
-			? programRegistrationHref(
-					info?.registrationPath,
-					program.programType,
-					program.isMicroCourse,
-				)
-			: null
+	const {
+		codeLabel,
+		displayName,
+		statusLabel,
+		statusTone,
+		description,
+		metaLines,
+		detailsLink,
+		registrationLink,
+		learnMoreLink,
+	} = presentation
 
-	const showFooter =
-		Boolean(detailsUrl) ||
-		Boolean(registrationUrl) ||
-		Boolean(learnMoreUrl && variant === "other")
+	const showFooter = Boolean(detailsLink || registrationLink || learnMoreLink)
 
 	return (
 		<Card
@@ -120,11 +69,16 @@ function ProgramCard({
 				className,
 			)}
 		>
-			<div className="flex h-44 items-center justify-center bg-muted/40 p-4">
+			<div
+				className={cn(
+					"flex h-36 items-center justify-center p-4",
+					brand.surface,
+				)}
+			>
 				{logoUrl ? (
 					<img
 						src={logoUrl}
-						alt={`${name} program logo`}
+						alt=""
 						width={280}
 						height={160}
 						decoding="async"
@@ -138,56 +92,56 @@ function ProgramCard({
 				) : null}
 			</div>
 
-			<CardHeader className="px-5 pt-1">
+			<CardHeader className="gap-2 px-5 pt-1">
+				<div className="flex flex-wrap items-center gap-2">
+					<span
+						className={cn(
+							"inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold tracking-wider",
+							brand.chip,
+						)}
+					>
+						{codeLabel}
+					</span>
+					<ProgramStatusBadge label={statusLabel} tone={statusTone} />
+				</div>
 				<CardTitle className="font-heading text-lg leading-snug tracking-wide text-foreground">
-					{name}
+					{displayName}
 				</CardTitle>
 			</CardHeader>
 
-			<CardContent className="flex-1 space-y-2 px-5">
-				{variant === "completed" ? (
-					<p className="text-sm text-muted-foreground">
-						Congratulations! You have completed the {name} Program.
-					</p>
-				) : null}
-
-				{admins.map((line) => (
-					<p key={line} className="text-sm text-muted-foreground">
-						{line}
-					</p>
-				))}
-
+			<CardContent className="flex-1 space-y-3 px-5">
 				{description ? (
-					<p className="text-sm text-muted-foreground">{description}</p>
+					<p className="line-clamp-2 text-sm text-muted-foreground">
+						{description}
+					</p>
 				) : null}
 
-				{closedLine ? (
-					<p className="text-sm text-muted-foreground">{closedLine}</p>
-				) : null}
+				<ProgramMetaLines lines={metaLines} />
 			</CardContent>
 
 			{showFooter ? (
 				<CardFooter className="mt-auto flex flex-wrap items-center gap-x-6 gap-y-2 px-5 pb-5">
-					{detailsUrl ? (
+					{detailsLink ? (
 						<CardCta
-							label="View Details"
-							url={detailsUrl}
-							isExternal={detailsIsExternal}
+							label={detailsLink.label}
+							url={detailsLink.url}
+							isExternal={detailsLink.isExternal}
 						/>
 					) : null}
 
-					{registrationUrl ? (
+					{registrationLink ? (
 						<CardCta
-							label="Register Now"
-							url={registrationUrl}
+							label={registrationLink.label}
+							url={registrationLink.url}
 							isExternal
 						/>
 					) : null}
 
-					{variant === "other" && learnMoreUrl ? (
+					{learnMoreLink ? (
 						<CardCta
-							label={`Learn more about ${name}`}
-							url={learnMoreUrl}
+							label="Learn more"
+							ariaLabel={learnMoreLink.label}
+							url={learnMoreLink.url}
 							isExternal
 							newWindow
 						/>

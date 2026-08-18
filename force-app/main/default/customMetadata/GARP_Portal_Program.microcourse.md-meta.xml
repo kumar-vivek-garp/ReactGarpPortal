@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>Micro Courses</label>
+    <protected>false</protected>
+    <values>
+        <field>Config__c</field>
+        <value xsi:type="xsd:string">{
+  &quot;code&quot;: &quot;microcourse&quot;,
+  &quot;sortOrder&quot;: 75,
+  &quot;active&quot;: true,
+  &quot;sittingModel&quot;: &quot;Micro Course&quot;,
+  &quot;examGroupSwitch&quot;: &quot;MicroCourse&quot;,
+  &quot;switchGates&quot;: &quot;program&quot;,
+  &quot;advertised&quot;: false,
+  &quot;countsTowardCpd&quot;: false,
+  &quot;hasExamResults&quot;: false,
+  &quot;hasRegistrationWindow&quot;: false
+}</value>
+    </values>
+</CustomMetadata>

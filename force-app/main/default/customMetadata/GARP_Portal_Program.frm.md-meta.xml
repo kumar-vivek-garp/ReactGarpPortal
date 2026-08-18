@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>FRM</label>
+    <protected>false</protected>
+    <values>
+        <field>Config__c</field>
+        <value xsi:type="xsd:string">{
+  &quot;code&quot;: &quot;frm&quot;,
+  &quot;sortOrder&quot;: 10,
+  &quot;active&quot;: true,
+  &quot;contractRecordType&quot;: &quot;FRM_Program&quot;,
+  &quot;examProgramValue&quot;: &quot;FRM&quot;,
+  &quot;partKeys&quot;: [&quot;FRMI&quot;, &quot;FRMII&quot;],
+  &quot;completedAttemptKeys&quot;: [&quot;FRMFull&quot;, &quot;FRMI&quot;],
+  &quot;advertised&quot;: true,
+  &quot;sittingModel&quot;: &quot;Two Part&quot;,
+  &quot;countsTowardCpd&quot;: true,
+  &quot;hasExamResults&quot;: true,
+  &quot;hasRegistrationWindow&quot;: true,
+  &quot;catalogue&quot;: {
+    &quot;abbrevName&quot;: &quot;FRM&quot;,
+    &quot;formalName&quot;: &quot;Financial Risk Manager (FRM&lt;sup&gt;&amp;reg;&lt;/sup&gt;)&quot;,
+    &quot;informalName&quot;: &quot;FRM Program&quot;,
+    &quot;policyURL&quot;: &quot;https://www.garp.org/frm/exam-policies&quot;,
+    &quot;regLogoURL&quot;: &quot;https://www.garp.org/hubfs/Website/Logos/GARP%20FRM%20Logo%20-%20Knockout.png&quot;,
+    &quot;myProgramsLogoURL&quot;: &quot;https://www.garp.org/hubfs/Portal/My%20Programs/FRM.png&quot;,
+    &quot;description&quot;: &quot;The globally recognized standard for those who manage financial risk. Be part of an elite network of 90,000 FRM-Certified Professionals that includes employees at the world’s top banks, asset management firms, consulting firms, and regulators.&quot;,
+    &quot;registrationPath&quot;: &quot;frm&quot;
+  }
+}</value>
+    </values>
+</CustomMetadata>

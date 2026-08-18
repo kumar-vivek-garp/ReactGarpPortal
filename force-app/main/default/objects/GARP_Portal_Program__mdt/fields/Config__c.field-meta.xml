@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Config__c</fullName>
+    <description>The whole definition of one program, as JSON. One field rather than a column per attribute, so a new attribute is an edit here instead of a field deploy. GARP_Portal_ProgramCatalog parses it strictly into a typed class: an unknown or misspelled key throws rather than reading as null, and the record is reported on the response warnings instead of failing the page. Schema: code, aliases[], sortOrder, active, contractRecordType, examProgramValue, examTypeKey, partKeys[], sittingModel, examGroupSwitch, suppressedByContract, countsTowardCpd, hasExamResults, hasRegistrationWindow, and a catalogue object of abbrevName, formalName, informalName, policyURL, regLogoURL, myProgramsLogoURL, description, registrationPath. A catalogue key that is absent serialises as null; one set to &quot;&quot; serialises as an empty string, and the two are not interchangeable.</description>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>Config</label>
+    <length>32768</length>
+    <type>LongTextArea</type>
+    <visibleLines>25</visibleLines>
+</CustomField>

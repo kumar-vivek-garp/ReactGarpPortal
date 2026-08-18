@@ -2,26 +2,96 @@
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     <!-- Portal Apex only — avoid wildcard ApexClass (pulls deleted legacy names). -->
     <types>
-        <members>GARP_Portal_*</members>
+        <members>GARP_Portal_API</members>
+ 
+        <!-- Shared spine -->
+        <members>GARP_Portal_Core</members>
+        <members>GARP_Portal_Access</members>
+        <members>GARP_Portal_Util</members>
+        <members>GARP_Portal_Diagnostics</members>
+        <members>GARP_Portal_ProgramCatalog</members>
+ 
+        <!-- Identity and account -->
+        <members>GARP_Portal_MeService</members>
+        <members>GARP_Portal_AccountService</members>
+        <members>GARP_Portal_ProfileService</members>
+        <members>GARP_Portal_AddressService</members>
+        <members>GARP_Portal_OptionsService</members>
+        <members>GARP_Portal_PhotoService</members>
+        <members>GARP_Portal_ExpertiseService</members>
+        <members>GARP_Portal_DirectoryService</members>
+        <members>GARP_Portal_OstaService</members>
+        <members>GARP_Portal_MembershipService</members>
+ 
+        <!-- Dashboard and notices -->
+        <members>GARP_Portal_DashboardService</members>
+        <members>GARP_Portal_DismissCardService</members>
+        <members>GARP_Portal_AdService</members>
+        <members>GARP_Portal_AlertBarService</members>
+        <members>GARP_Portal_NotificationsService</members>
+ 
+        <!-- Programs, exams and courses -->
+        <members>GARP_Portal_ProgramsService</members>
+        <members>GARP_Portal_ProgramDetailService</members>
+        <members>GARP_Portal_CourseDetailService</members>
+        <members>GARP_Portal_ExamWindowService</members>
+        <members>GARP_Portal_ExamSetupService</members>
+        <members>GARP_Portal_ExamResultsService</members>
+        <members>GARP_Portal_EppOptInService</members>
+        <members>GARP_Portal_CvService</members>
+ 
+        <!-- Study materials and errata -->
+        <members>GARP_Portal_StudyMaterialsService</members>
+        <members>GARP_Portal_ErrataService</members>
+ 
+        <!-- CPD -->
+        <members>GARP_Portal_CpdService</members>
+        <members>GARP_Portal_CpdProgramService</members>
+        <members>GARP_Portal_CpdClaimService</members>
+        <members>GARP_Portal_CpdActivityService</members>
+ 
+        <!-- Orders, events and support -->
+        <members>GARP_Portal_OrdersService</members>
+        <members>GARP_Portal_EventsService</members>
+        <members>GARP_Portal_CasesService</members>
+        <members>GARP_Portal_SubmitCaseService</members>
+ 
         <name>ApexClass</name>
     </types>
-    <!--
+ 
+    <!-- ============ Program catalogue ============ -->
     <types>
-        <members>garpportal</members>
-        <name>CustomSite</name>
+        <members>GARP_Portal_Program__mdt</members>
+        <name>CustomObject</name>
     </types>
+ 
     <types>
-        <members>site/garpportal1</members>
-        <name>DigitalExperienceBundle</name>
+        <members>GARP_Portal_Program__mdt.Config__c</members>
+        <name>CustomField</name>
     </types>
+ 
     <types>
-        <members>garpportal1</members>
-        <name>DigitalExperienceConfig</name>
+        <members>GARP_Portal_Program.affiliate</members>
+        <members>GARP_Portal_Program.chaptermeeting</members>
+        <members>GARP_Portal_Program.erp</members>
+        <members>GARP_Portal_Program.event</members>
+        <members>GARP_Portal_Program.ffr</members>
+        <members>GARP_Portal_Program.frm</members>
+        <members>GARP_Portal_Program.frr</members>
+        <members>GARP_Portal_Program.frr25</members>
+        <members>GARP_Portal_Program.membership</members>
+        <members>GARP_Portal_Program.microcourse</members>
+        <members>GARP_Portal_Program.rai</members>
+        <members>GARP_Portal_Program.raij</members>
+        <members>GARP_Portal_Program.scr</members>
+        <members>GARP_Portal_Program.webcast</members>
+        <name>CustomMetadata</name>
     </types>
+ 
+    <!-- ============ Access ============ -->
     <types>
-        <members>garpportal</members>
-        <name>Network</name>
+        <members>GARP_Member_Portal_Access</members>
+        <name>PermissionSet</name>
     </types>
-    -->
     <version>67.0</version>
 </Package>

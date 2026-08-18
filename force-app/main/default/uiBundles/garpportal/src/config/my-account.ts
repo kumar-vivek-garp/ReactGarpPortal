@@ -15,3 +15,13 @@ export const myAccountSearchSchema = z.object({
 })
 
 export type MyAccountSearch = z.infer<typeof myAccountSearchSchema>
+
+/** Tab bar items — shared by the my-account panel and its pending shell. */
+export const MY_ACCOUNT_TAB_ITEMS: Array<{
+	value: MyAccountTab
+	label: string
+}> = [
+	{ value: "account-information", label: "Account Information" },
+	{ value: "contact-preferences", label: "Contact Preferences" },
+	{ value: "order-history", label: "Order History" },
+]

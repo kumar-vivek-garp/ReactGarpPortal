@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>ERP</label>
+    <protected>false</protected>
+    <values>
+        <field>Config__c</field>
+        <value xsi:type="xsd:string">{
+  &quot;code&quot;: &quot;erp&quot;,
+  &quot;sortOrder&quot;: 20,
+  &quot;active&quot;: true,
+  &quot;contractRecordType&quot;: &quot;ERP_Program&quot;,
+  &quot;examProgramValue&quot;: &quot;ERP&quot;,
+  &quot;partKeys&quot;: [&quot;ERPI&quot;, &quot;ERPII&quot;],
+  &quot;requiredCompletedExams&quot;: [&quot;ERP Part I&quot;, &quot;ERP Part II&quot;],
+  &quot;advertised&quot;: false,
+  &quot;sittingModel&quot;: &quot;Two Part&quot;,
+  &quot;countsTowardCpd&quot;: true,
+  &quot;hasExamResults&quot;: true,
+  &quot;hasRegistrationWindow&quot;: false,
+  &quot;catalogue&quot;: {
+    &quot;abbrevName&quot;: &quot;ERP&quot;,
+    &quot;formalName&quot;: &quot;Energy Risk Program (ERP&lt;sup&gt;&amp;reg;&lt;/sup&gt;)&quot;,
+    &quot;informalName&quot;: &quot;ERP Program&quot;,
+    &quot;policyURL&quot;: &quot;https://www.garp.org/erp/exam-policies&quot;,
+    &quot;regLogoURL&quot;: &quot;&quot;,
+    &quot;myProgramsLogoURL&quot;: &quot;https://www.garp.org/hubfs/Portal/My%20Programs/ERP.webp&quot;,
+    &quot;description&quot;: &quot;&quot;,
+    &quot;registrationPath&quot;: &quot;&quot;
+  }
+}</value>
+    </values>
+</CustomMetadata>

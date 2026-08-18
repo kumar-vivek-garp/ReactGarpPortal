@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/atoms/button"
 import { AccountFieldGrid } from "@/components/molecules/account-field-grid"
 import { formatLongDate } from "@/lib/account-format"
+import { daysUntil } from "@/lib/days-until"
 import {
 	programLearnMoreUrl,
 	programTypeSlug,
@@ -34,20 +35,6 @@ type DeadlineItem = {
 	date: string
 	labels: string[]
 	urgent: boolean
-}
-
-function parseIsoDate(value: string): Date | null {
-	const [year, month, day] = value.slice(0, 10).split("-").map(Number)
-	if (!year || !month || !day) return null
-	return new Date(year, month - 1, day)
-}
-
-function daysUntil(iso: string): number | null {
-	const date = parseIsoDate(iso)
-	if (!date) return null
-	const today = new Date()
-	today.setHours(0, 0, 0, 0)
-	return Math.ceil((date.getTime() - today.getTime()) / 86_400_000)
 }
 
 /** Flatten + sort deadlines soonest-first; merge labels sharing a date. */

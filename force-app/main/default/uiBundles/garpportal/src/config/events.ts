@@ -1,3 +1,5 @@
+import { CalendarCheck, CalendarDays, Sparkles, Users } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import { z } from "zod"
 
 export const EVENTS_TABS = [
@@ -16,6 +18,18 @@ export const eventsSearchSchema = z.object({
 })
 
 export type EventsSearch = z.infer<typeof eventsSearchSchema>
+
+/** Tab bar items — shared by the events panel and its pending shell. */
+export const EVENT_TAB_ITEMS: Array<{
+	value: EventsTab
+	label: string
+	icon: LucideIcon
+}> = [
+	{ value: "all", label: "All", icon: CalendarDays },
+	{ value: "attending", label: "Attending", icon: CalendarCheck },
+	{ value: "chapter-meetings", label: "Chapter Meetings", icon: Users },
+	{ value: "featured", label: "Featured Events", icon: Sparkles },
+]
 
 /** Public GARP catalogue — listing CTA, always a new tab. */
 export const SEE_ALL_EVENTS_URL = "https://www.garp.org/events/all"

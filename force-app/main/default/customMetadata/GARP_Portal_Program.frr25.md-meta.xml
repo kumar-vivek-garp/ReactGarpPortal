@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomMetadata xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <label>FRR Series</label>
+    <protected>false</protected>
+    <values>
+        <field>Config__c</field>
+        <value xsi:type="xsd:string">{
+  &quot;code&quot;: &quot;frr25&quot;,
+  &quot;sortOrder&quot;: 70,
+  &quot;active&quot;: true,
+  &quot;contractRecordType&quot;: &quot;FRR25_Program&quot;,
+  &quot;examProgramValue&quot;: &quot;FRR25&quot;,
+  &quot;examTypeKey&quot;: &quot;FRR25Full&quot;,
+  &quot;requiresAttemptForEnrolment&quot;: true,
+  &quot;switchGates&quot;: &quot;program&quot;,
+  &quot;advertised&quot;: true,
+  &quot;sittingModel&quot;: &quot;Course&quot;,
+  &quot;examGroupSwitch&quot;: &quot;FRR25&quot;,
+  &quot;countsTowardCpd&quot;: false,
+  &quot;hasExamResults&quot;: false,
+  &quot;hasRegistrationWindow&quot;: false,
+  &quot;catalogue&quot;: {
+    &quot;abbrevName&quot;: &quot;FRR Series&quot;,
+    &quot;formalName&quot;: &quot;Financial Risk and Regulation (FRR)&lt;sup&gt;&amp;reg;&lt;/sup&gt; Series&quot;,
+    &quot;informalName&quot;: &quot;FRR Series Program&quot;,
+    &quot;policyURL&quot;: &quot;https://www.garp.org/frr25/exam-policies&quot;,
+    &quot;regLogoURL&quot;: &quot;https://www.garp.org/hubfs/Website/Logos/GARP-Courses-Knockout.png&quot;,
+    &quot;myProgramsLogoURL&quot;: &quot;https://www.garp.org/hubfs/Portal/My%20Programs/FRR.webp&quot;,
+    &quot;description&quot;: &quot;Ideal for finance professionals in risk, auditing, accounting, consulting, compliance, IT, and insurance, the FRR Series illustrates how financial risk impacts assets, institutions and systems, and the global financial infrastructure.&quot;,
+    &quot;registrationPath&quot;: &quot;frr25&quot;
+  }
+}</value>
+    </values>
+</CustomMetadata>

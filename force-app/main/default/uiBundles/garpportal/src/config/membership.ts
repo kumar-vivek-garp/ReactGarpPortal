@@ -11,3 +11,12 @@ export const membershipSearchSchema = z.object({
 })
 
 export type MembershipSearch = z.infer<typeof membershipSearchSchema>
+
+/** Tab bar items — shared by the membership panel and its pending shell. */
+export const MEMBERSHIP_TAB_ITEMS: Array<{
+	value: MembershipTab
+	label: string
+}> = [
+	{ value: "benefits", label: "Member Benefits" },
+	{ value: "directory", label: "Member Directory" },
+]

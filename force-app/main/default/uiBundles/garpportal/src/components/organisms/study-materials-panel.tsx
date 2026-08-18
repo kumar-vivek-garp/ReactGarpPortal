@@ -18,7 +18,8 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/atoms/card"
-import { Tabs, TabsList, TabsTrigger, pillTabTriggerClassName } from "@/components/atoms/tabs"
+import { PillTabs } from "@/components/atoms/pill-tabs"
+import { Tabs } from "@/components/atoms/tabs"
 import { StudyMaterialsPending } from "@/components/molecules/page-pending"
 import { StaggerReveal } from "@/components/molecules/stagger-reveal"
 import { DEFAULT_STUDY_MATERIALS_TAB } from "@/config/study-materials"
@@ -259,25 +260,16 @@ function StudyMaterialsPanel({ tab }: StudyMaterialsPanelProps) {
 				</h1>
 
 				{showProgramTabs ? (
-					<div className="overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-						<TabsList className="h-auto w-max gap-3 bg-transparent p-0">
-							<TabsTrigger
-								value={DEFAULT_STUDY_MATERIALS_TAB}
-								className={pillTabTriggerClassName}
-							>
-								All
-							</TabsTrigger>
-							{programs.map((entry) => (
-								<TabsTrigger
-									key={entry.key}
-									value={entry.key}
-									className={pillTabTriggerClassName}
-								>
-									{entry.label}
-								</TabsTrigger>
-							))}
-						</TabsList>
-					</div>
+					<PillTabs
+						items={[
+							{ value: DEFAULT_STUDY_MATERIALS_TAB, label: "All" },
+							...programs.map((entry) => ({
+								value: entry.key,
+								label: entry.label,
+							})),
+						]}
+						value={tab}
+					/>
 				) : null}
 			</header>
 

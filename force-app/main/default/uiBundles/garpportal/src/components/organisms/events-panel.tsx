@@ -13,22 +13,14 @@ import type { LucideIcon } from "lucide-react"
 
 import type { MemberEvent } from "@/api/events"
 import { Button } from "@/components/atoms/button"
-import { Tabs, TabsList, TabsTrigger, pillTabTriggerClassName } from "@/components/atoms/tabs"
+import { PillTabs } from "@/components/atoms/pill-tabs"
+import { Tabs } from "@/components/atoms/tabs"
 import { EventCard } from "@/components/molecules/event-card"
 import { EventsPendingShell } from "@/components/molecules/page-pending"
 import { StaggerReveal } from "@/components/molecules/stagger-reveal"
-import { SEE_ALL_EVENTS_URL, type EventsTab } from "@/config/events"
+import { EVENT_TAB_ITEMS, SEE_ALL_EVENTS_URL, type EventsTab } from "@/config/events"
 import { useEvents } from "@/hooks/use-events"
 import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
-import { cn } from "@/lib/utils"
-
-const TAB_ITEMS: Array<{ value: EventsTab; label: string; icon: LucideIcon }> =
-	[
-		{ value: "all", label: "All", icon: CalendarDays },
-		{ value: "attending", label: "Attending", icon: CalendarCheck },
-		{ value: "chapter-meetings", label: "Chapter Meetings", icon: Users },
-		{ value: "featured", label: "Featured Events", icon: Sparkles },
-	]
 
 type EventsPanelProps = {
 	tab: EventsTab
@@ -289,32 +281,18 @@ function EventsPanel({ tab }: EventsPanelProps) {
 					</div>
 				</div>
 
-				<div className="overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-					<TabsList className="h-auto w-max gap-3 bg-transparent p-0">
-						{TAB_ITEMS.map((item) => {
-							const Icon = item.icon
-							const count = tabCount(
-								item.value,
-								attending.length,
-								chapterMeetings.length,
-								featured.length,
-							)
-							return (
-								<TabsTrigger
-									key={item.value}
-									value={item.value}
-									className={cn(pillTabTriggerClassName, "items-center gap-1.5")}
-								>
-									<Icon className="size-4" aria-hidden />
-									{item.label}
-									<span className="ml-0.5 font-normal text-inherit">
-										({count})
-									</span>
-								</TabsTrigger>
-							)
-						})}
-					</TabsList>
-				</div>
+				<PillTabs
+					items={EVENT_TAB_ITEMS.map((item) => ({
+						...item,
+						count: tabCount(
+							item.value,
+							attending.length,
+							chapterMeetings.length,
+							featured.length,
+						),
+					}))}
+					value={tab}
+				/>
 			</header>
 
 			<div className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
