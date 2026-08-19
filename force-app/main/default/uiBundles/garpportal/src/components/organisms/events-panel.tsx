@@ -1,15 +1,7 @@
 import type { ReactNode } from "react"
 import { animated, useTransition } from "@react-spring/web"
 import { Link, useNavigate } from "@tanstack/react-router"
-import {
-	CalendarCheck,
-	CalendarDays,
-	ExternalLink,
-	MapPin,
-	Sparkles,
-	Users,
-} from "lucide-react"
-import type { LucideIcon } from "lucide-react"
+import { ExternalLink, MapPin } from "lucide-react"
 
 import type { MemberEvent } from "@/api/events"
 import { Button } from "@/components/atoms/button"
@@ -18,7 +10,12 @@ import { Tabs } from "@/components/atoms/tabs"
 import { EventCard } from "@/components/molecules/event-card"
 import { EventsPendingShell } from "@/components/molecules/page-pending"
 import { StaggerReveal } from "@/components/molecules/stagger-reveal"
-import { EVENT_TAB_ITEMS, SEE_ALL_EVENTS_URL, type EventsTab } from "@/config/events"
+import {
+	EVENT_BUCKET_META,
+	EVENT_TAB_ITEMS,
+	SEE_ALL_EVENTS_URL,
+	type EventsTab,
+} from "@/config/events"
 import { useEvents } from "@/hooks/use-events"
 import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
 
@@ -52,22 +49,17 @@ function SetChapterButton() {
 	)
 }
 
-function EventsEmptyState({
-	icon: Icon,
-	title,
-	message,
-}: {
-	icon: LucideIcon
-	title: string
-	message: string
-}) {
+function EventsEmptyState({ tab }: { tab: EventsTab }) {
+	const { icon: Icon, emptyTitle, emptyMessage } = EVENT_BUCKET_META[tab]
 	return (
 		<div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-16 text-center">
 			<Icon className="size-10 text-muted-foreground" aria-hidden />
 			<p className="mt-4 font-heading text-lg font-semibold tracking-wide text-foreground">
-				{title}
+				{emptyTitle}
 			</p>
-			<p className="mt-2 max-w-md text-sm text-muted-foreground">{message}</p>
+			<p className="mt-2 max-w-md text-sm text-muted-foreground">
+				{emptyMessage}
+			</p>
 			<SeeAllEventsButton className="mt-5" />
 		</div>
 	)
@@ -84,29 +76,29 @@ function EventGrid({ children }: { children: ReactNode }) {
 	)
 }
 
-function emptyForTab(tab: Exclude<EventsTab, "all">) {
-	if (tab === "attending") {
-		return {
-			icon: CalendarCheck,
-			title: "You're not attending anything yet",
-			message:
-				"Events you register for will show up here so you can keep track of what's next.",
-		}
-	}
-	if (tab === "chapter-meetings") {
-		return {
-			icon: Users,
-			title: "No upcoming chapter meetings",
-			message:
-				"Meetings from your chapters will appear here when they are scheduled.",
-		}
-	}
-	return {
-		icon: Sparkles,
-		title: "No featured events right now",
-		message:
-			"Browse the full GARP calendar for conferences, webcasts, and more.",
-	}
+
+function EventsSection({
+	tab,
+	count,
+	children,
+}: {
+	tab: Exclude<EventsTab, "all">
+	count: number
+	children: ReactNode
+}) {
+	const { icon: Icon, heading } = EVENT_BUCKET_META[tab]
+	return (
+		<section className="space-y-4">
+			<h2 className="flex items-center gap-2 font-heading text-xl font-semibold tracking-wide text-foreground">
+				<Icon className="size-5 shrink-0 text-primary" aria-hidden />
+				{heading}
+				<span className="text-base font-normal text-muted-foreground">
+					({count})
+				</span>
+			</h2>
+			{children}
+		</section>
+	)
 }
 
 function EventsTabBody({
@@ -122,12 +114,12 @@ function EventsTabBody({
 }) {
 	if (tab === "attending") {
 		if (attending.length === 0) {
-			return <EventsEmptyState {...emptyForTab(tab)} />
+			return <EventsEmptyState tab={tab} />
 		}
 		return (
 			<EventGrid>
 				{attending.map((event) => (
-					<EventCard key={event.eventId} event={event} />
+					<EventCard key={event.eventId} event={event} isAttending />
 				))}
 			</EventGrid>
 		)
@@ -135,7 +127,7 @@ function EventsTabBody({
 
 	if (tab === "chapter-meetings") {
 		if (chapterMeetings.length === 0) {
-			return <EventsEmptyState {...emptyForTab(tab)} />
+			return <EventsEmptyState tab={tab} />
 		}
 		return (
 			<EventGrid>
@@ -148,7 +140,7 @@ function EventsTabBody({
 
 	if (tab === "featured") {
 		if (featured.length === 0) {
-			return <EventsEmptyState {...emptyForTab(tab)} />
+			return <EventsEmptyState tab={tab} />
 		}
 		return (
 			<EventGrid>
@@ -166,65 +158,40 @@ function EventsTabBody({
 
 	if (isEmpty) {
 		return (
-			<EventsEmptyState
-				icon={CalendarDays}
-				title="No events to show"
-				message="Your registrations and upcoming GARP events will appear here."
-			/>
+			<EventsEmptyState tab="all" />
 		)
 	}
 
 	return (
 		<div className="space-y-8">
 			{attending.length > 0 ? (
-				<section className="space-y-4">
-					<h2 className="flex items-center gap-2 font-heading text-xl font-semibold tracking-wide text-foreground">
-						<CalendarCheck className="size-5 text-muted-foreground" aria-hidden />
-						Attending
-						<span className="text-base font-normal text-muted-foreground">
-							({attending.length})
-						</span>
-					</h2>
+				<EventsSection tab="attending" count={attending.length}>
 					<EventGrid>
 						{attending.map((event) => (
-							<EventCard key={event.eventId} event={event} />
+							<EventCard key={event.eventId} event={event} isAttending />
 						))}
 					</EventGrid>
-				</section>
+				</EventsSection>
 			) : null}
 
 			{chapterMeetings.length > 0 ? (
-				<section className="space-y-4">
-					<h2 className="flex items-center gap-2 font-heading text-xl font-semibold tracking-wide text-foreground">
-						<Users className="size-5 text-muted-foreground" aria-hidden />
-						Upcoming Chapter Meetings
-						<span className="text-base font-normal text-muted-foreground">
-							({chapterMeetings.length})
-						</span>
-					</h2>
+				<EventsSection tab="chapter-meetings" count={chapterMeetings.length}>
 					<EventGrid>
 						{chapterMeetings.map((event) => (
 							<EventCard key={event.eventId} event={event} />
 						))}
 					</EventGrid>
-				</section>
+				</EventsSection>
 			) : null}
 
 			{featured.length > 0 ? (
-				<section className="space-y-4">
-					<h2 className="flex items-center gap-2 font-heading text-xl font-semibold tracking-wide text-foreground">
-						<Sparkles className="size-5 text-muted-foreground" aria-hidden />
-						Featured Events
-						<span className="text-base font-normal text-muted-foreground">
-							({featured.length})
-						</span>
-					</h2>
+				<EventsSection tab="featured" count={featured.length}>
 					<EventGrid>
 						{featured.map((event) => (
 							<EventCard key={event.eventId} event={event} />
 						))}
 					</EventGrid>
-				</section>
+				</EventsSection>
 			) : null}
 		</div>
 	)

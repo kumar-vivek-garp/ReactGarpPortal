@@ -1,5 +1,9 @@
 export { DashboardPending } from "./dashboard-pending"
-export { StudyMaterialsContentSkeleton, StudyMaterialsPending } from "./study-materials-pending"
+export {
+	StudyMaterialsContentSkeleton,
+	StudyMaterialsPending,
+	StudyMaterialsPendingShell,
+} from "./study-materials-pending"
 export {
 	ProgramsContentSkeleton,
 	ProgramsPending,
@@ -22,7 +26,11 @@ export {
 	ProgramDetailPending,
 	ProgramDetailSkeleton,
 } from "./program-detail-pending"
-export { HelpCenterPending } from "./help-center-pending"
+export {
+	HelpCenterPending,
+	HelpCenterPendingShell,
+	HelpCenterRequestsSkeleton,
+} from "./help-center-pending"
 
 /**
  * Delay before swapping to the page skeleton on in-app nav.

@@ -19,17 +19,65 @@ export const eventsSearchSchema = z.object({
 
 export type EventsSearch = z.infer<typeof eventsSearchSchema>
 
-/** Tab bar items — shared by the events panel and its pending shell. */
+
+export type EventBucketMeta = {
+	label: string
+	heading: string
+	icon: LucideIcon
+	emptyTitle: string
+	emptyMessage: string
+}
+
+/**
+ * One definition per bucket, shared by the tab pills, the "All" section
+ * headings and the empty states — the same pattern Programs and Study Materials
+ * use, so a bucket looks the same wherever it appears.
+ */
+export const EVENT_BUCKET_META: Record<EventsTab, EventBucketMeta> = {
+	all: {
+		label: "All",
+		heading: "All Events",
+		icon: CalendarDays,
+		emptyTitle: "No events to show",
+		emptyMessage:
+			"Your registrations and upcoming GARP events will appear here.",
+	},
+	attending: {
+		label: "Attending",
+		heading: "Attending",
+		icon: CalendarCheck,
+		emptyTitle: "You're not attending anything yet",
+		emptyMessage:
+			"Events you register for will show up here so you can keep track of what's next.",
+	},
+	"chapter-meetings": {
+		label: "Chapter Meetings",
+		heading: "Upcoming Chapter Meetings",
+		icon: Users,
+		emptyTitle: "No upcoming chapter meetings",
+		emptyMessage:
+			"Meetings from your chapters will appear here when they are scheduled.",
+	},
+	featured: {
+		label: "Featured Events",
+		heading: "Featured Events",
+		icon: Sparkles,
+		emptyTitle: "No featured events right now",
+		emptyMessage:
+			"Browse the full GARP calendar for conferences, webcasts, and more.",
+	},
+}
+
+/** Tab bar items — derived from the bucket meta so labels/icons cannot drift. */
 export const EVENT_TAB_ITEMS: Array<{
 	value: EventsTab
 	label: string
 	icon: LucideIcon
-}> = [
-	{ value: "all", label: "All", icon: CalendarDays },
-	{ value: "attending", label: "Attending", icon: CalendarCheck },
-	{ value: "chapter-meetings", label: "Chapter Meetings", icon: Users },
-	{ value: "featured", label: "Featured Events", icon: Sparkles },
-]
+}> = EVENTS_TABS.map((value) => ({
+	value,
+	label: EVENT_BUCKET_META[value].label,
+	icon: EVENT_BUCKET_META[value].icon,
+}))
 
 /** Public GARP catalogue — listing CTA, always a new tab. */
 export const SEE_ALL_EVENTS_URL = "https://www.garp.org/events/all"

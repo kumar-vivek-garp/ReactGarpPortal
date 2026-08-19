@@ -17,6 +17,6 @@ export const Route = createFileRoute("/_appLayout/study-materials/")({
 })
 
 function StudyMaterials() {
-	const { tab } = Route.useSearch()
-	return <StudyMaterialsPanel tab={tab} />
+	const { tab, view } = Route.useSearch()
+	return <StudyMaterialsPanel tab={tab} view={view} />
 }

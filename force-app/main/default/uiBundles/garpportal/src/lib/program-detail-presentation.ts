@@ -10,14 +10,8 @@ import {
 	resolveExperienceHref,
 } from "@/lib/program-card-links"
 import { stripProgramFormalName } from "@/lib/program-formal-name"
+import type { StatusTone } from "@/lib/status-tone"
 
-/** Semantic tone for badges / callouts — maps to theme token utilities in UI. */
-export type ProgramStatusTone =
-	| "neutral"
-	| "info"
-	| "success"
-	| "warning"
-	| "danger"
 
 export type ProgramActionKind =
 	| "schedule"
@@ -54,7 +48,7 @@ export type ProgramDetailPresentation = {
 	description: string | null
 	administration: string | null
 	statusLabel: string
-	statusTone: ProgramStatusTone
+	statusTone: StatusTone
 	statusSummary: string
 	nextStepTitle: string
 	nextStepBody: string
@@ -227,7 +221,7 @@ function completedActions(detail: ProgramDetail): ProgramAction[] {
 function partStatusSummary(
 	part: ExamPartInfo,
 	detail: ProgramDetail,
-): { label: string; tone: ProgramStatusTone; summary: string } {
+): { label: string; tone: StatusTone; summary: string } {
 	switch (part.examPartState) {
 		case "Unpaid":
 			return {

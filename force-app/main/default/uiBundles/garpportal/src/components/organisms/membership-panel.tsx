@@ -1,6 +1,6 @@
 import { animated, useTransition } from "@react-spring/web"
 import { Link, useNavigate } from "@tanstack/react-router"
-import { CircleUser } from "lucide-react"
+import { BadgeCheck, CircleUser } from "lucide-react"
 
 import type { MembershipView } from "@/api/membership/types"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar"
@@ -16,9 +16,14 @@ import {
 	MembershipPendingShell,
 } from "@/components/molecules/page-pending"
 import { StaggerReveal } from "@/components/molecules/stagger-reveal"
+import { StatusBadge } from "@/components/molecules/status-badge"
 import { MEMBERSHIP_TAB_ITEMS, type MembershipTab } from "@/config/membership"
 import { useMembership } from "@/hooks/use-membership"
-import { formatLongDate } from "@/lib/account-format"
+import {
+	buildMembershipHeroPresentation,
+	buildMembershipIdentityPresentation,
+	lockedBenefitsNotice,
+} from "@/lib/membership-presentation"
 import { resolvePortalAssetUrl } from "@/lib/resolve-portal-asset-url"
 import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
 import { cn } from "@/lib/utils"
@@ -29,8 +34,10 @@ type MembershipPanelProps = {
 
 function MembershipHero({ data }: { data: MembershipView }) {
 	const { identity, hero, lockedCount } = data
-	const expiry = formatLongDate(identity.membershipExpiration)
 	const photoUrl = resolvePortalAssetUrl(identity.photoUrl)
+	const heroContent = buildMembershipHeroPresentation(hero)
+	const me = buildMembershipIdentityPresentation(identity)
+	const lockedNotice = lockedBenefitsNotice(lockedCount)
 
 	return (
 		<Card className="border-border shadow-none">
@@ -58,33 +65,73 @@ function MembershipHero({ data }: { data: MembershipView }) {
 							<span className="font-semibold text-foreground">Member Type:</span>{" "}
 							{identity.membershipType ?? "—"}
 						</p>
-						<p className="text-muted-foreground">
-							<span className="font-semibold text-foreground">Member Status:</span>{" "}
-							{identity.membershipStatus ?? "—"}
-							{expiry ? ` (until ${expiry})` : null}
-						</p>
+						<div className="mt-2 flex flex-wrap items-center gap-2">
+							{me.statusLabel && me.statusTone ? (
+								<StatusBadge label={me.statusLabel} tone={me.statusTone} />
+							) : null}
+							{me.expiryLabel ? (
+								me.expiryTone ? (
+									<StatusBadge label={me.expiryLabel} tone={me.expiryTone} />
+								) : (
+									<span className="text-muted-foreground">{me.expiryLabel}</span>
+								)
+							) : null}
+						</div>
+						{me.memberSinceLabel || me.autoRenewLabel ? (
+							<p className="mt-1 text-xs text-muted-foreground">
+								{[me.memberSinceLabel, me.autoRenewLabel]
+									.filter(Boolean)
+									.join(" · ")}
+							</p>
+						) : null}
 					</div>
 				</div>
 
 				<div className="space-y-3">
-					{hero?.body ? (
-						<p className="text-sm text-muted-foreground">{hero.body}</p>
+					{heroContent.eyebrow || heroContent.badgeLabel ? (
+						<div className="flex flex-wrap items-center gap-2">
+							{heroContent.eyebrow ? (
+								<span className="text-xs font-bold tracking-wider uppercase text-muted-foreground">
+									{heroContent.eyebrow}
+								</span>
+							) : null}
+							{heroContent.badgeLabel ? (
+								<StatusBadge label={heroContent.badgeLabel} tone="info" />
+							) : null}
+						</div>
 					) : null}
-					{hero?.ctaLabel && hero.ctaUrl ? (
+
+					{heroContent.body ? (
+						<p className="text-sm text-muted-foreground">{heroContent.body}</p>
+					) : null}
+
+					{heroContent.bullets.length > 0 ? (
+						<ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+							{heroContent.bullets.map((bullet) => (
+								<li key={bullet}>{bullet}</li>
+							))}
+						</ul>
+					) : null}
+
+					{heroContent.cta ? (
 						<Button asChild>
-							{hero.ctaIsExternal ? (
-								<a href={hero.ctaUrl} target="_blank" rel="noreferrer noopener">
-									{hero.ctaLabel}
+							{heroContent.cta.isExternal ? (
+								<a
+									href={heroContent.cta.url}
+									{...(heroContent.cta.newWindow
+										? { target: "_blank", rel: "noreferrer noopener" }
+										: {})}
+								>
+									{heroContent.cta.label}
 								</a>
 							) : (
-								<Link to={hero.ctaUrl}>{hero.ctaLabel}</Link>
+								<Link to={heroContent.cta.url}>{heroContent.cta.label}</Link>
 							)}
 						</Button>
 					) : null}
-					{lockedCount > 0 ? (
-						<p className="text-xs text-muted-foreground">
-							{lockedCount} of the benefits below unlock with Individual Membership.
-						</p>
+
+					{lockedNotice ? (
+						<p className="text-xs text-muted-foreground">{lockedNotice}</p>
 					) : null}
 				</div>
 			</CardContent>
@@ -124,8 +171,18 @@ function BenefitsTabBody({
 			) : (
 				sections.map((section) => (
 					<section key={section.name} className="space-y-4">
-						<h2 className="font-heading text-xl font-semibold tracking-wide text-foreground">
+						{/*
+						 * Section names come from Apex and are dynamic, so one shared
+						 * icon rather than a per-name map — it carries the same visual
+						 * rhythm as the Programs / Study Materials / Events headings
+						 * without pretending to classify a name we have not seen.
+						 */}
+						<h2 className="flex items-center gap-2 font-heading text-xl font-semibold tracking-wide text-foreground">
+							<BadgeCheck className="size-5 shrink-0 text-primary" aria-hidden />
 							{section.name}
+							<span className="text-base font-normal text-muted-foreground">
+								({section.benefits.length})
+							</span>
 						</h2>
 						<StaggerReveal
 							className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"

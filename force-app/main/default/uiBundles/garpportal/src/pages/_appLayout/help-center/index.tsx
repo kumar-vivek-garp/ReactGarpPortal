@@ -2,9 +2,11 @@ import { createFileRoute } from "@tanstack/react-router"
 
 import { HelpCenterPending, PAGE_PENDING_MIN_MS, PAGE_PENDING_MS } from "@/components/molecules/page-pending"
 import { HelpCenterPanel } from "@/components/organisms/help-center-panel"
+import { helpCenterSearchSchema } from "@/config/help-center"
 import { pageTitle } from "@/lib/document-title"
 
 export const Route = createFileRoute("/_appLayout/help-center/")({
+	validateSearch: helpCenterSearchSchema,
 	head: () => ({
 		meta: [{ title: pageTitle("Help Center") }],
 	}),
@@ -15,5 +17,6 @@ export const Route = createFileRoute("/_appLayout/help-center/")({
 })
 
 function HelpCenter() {
-	return <HelpCenterPanel />
+	const { tab } = Route.useSearch()
+	return <HelpCenterPanel tab={tab} />
 }

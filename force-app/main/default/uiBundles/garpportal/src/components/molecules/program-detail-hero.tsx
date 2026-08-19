@@ -8,7 +8,7 @@ import {
 	CardHeader,
 } from "@/components/atoms/card"
 import { CardCta } from "@/components/molecules/card-cta"
-import { ProgramStatusBadge } from "@/components/molecules/program-status-badge"
+import { StatusBadge } from "@/components/molecules/status-badge"
 import { parseInternalAppHref } from "@/lib/parse-internal-app-href"
 import type { ProgramDetailPresentation } from "@/lib/program-detail-presentation"
 import { cn } from "@/lib/utils"
@@ -92,7 +92,7 @@ function ProgramDetailHero({
 
 					<div className="min-w-0 flex-1 space-y-3">
 						<div className="flex flex-wrap items-center gap-2">
-							<ProgramStatusBadge label={statusLabel} tone={statusTone} />
+							<StatusBadge label={statusLabel} tone={statusTone} />
 							{administration ? (
 								<span className="text-sm font-medium text-primary">
 									{administration}

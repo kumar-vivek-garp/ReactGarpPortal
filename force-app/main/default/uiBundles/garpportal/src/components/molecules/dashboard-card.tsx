@@ -13,11 +13,14 @@ import {
 	CardTitle,
 } from "@/components/atoms/card"
 import { CardCta } from "@/components/molecules/card-cta"
+import { MetaLines } from "@/components/molecules/meta-lines"
 import { DashboardEnrolledList } from "@/components/molecules/dashboard-enrolled-list"
 import { DashboardEventsList } from "@/components/molecules/dashboard-events-list"
 import { DirectorySearch } from "@/components/molecules/directory-search"
 import { ProfileCompletenessMeter } from "@/components/molecules/profile-completeness-meter"
+import { StatusBadge } from "@/components/molecules/status-badge"
 import { DASHBOARD_PROVIDER } from "@/lib/compose-dashboard-cards"
+import { buildDashboardCardPresentation } from "@/lib/dashboard-card-presentation"
 import { resolvePortalAssetUrl } from "@/lib/resolve-portal-asset-url"
 import { cn } from "@/lib/utils"
 
@@ -73,6 +76,7 @@ function DashboardCard({ card, onDismiss, className }: DashboardCardProps) {
 			? meta.percentComplete
 			: undefined
 	const showProviderIcon = !imageUrl && hasProviderIcon(card.provider)
+	const presentation = buildDashboardCardPresentation(card)
 
 	return (
 		<Card
@@ -111,9 +115,17 @@ function DashboardCard({ card, onDismiss, className }: DashboardCardProps) {
 								{card.eyebrow}
 							</p>
 						) : null}
-						<CardTitle className="font-heading text-lg tracking-wide text-foreground">
-							{card.title}
-						</CardTitle>
+						<div className="flex flex-wrap items-center gap-2">
+							<CardTitle className="font-heading text-lg tracking-wide text-foreground">
+								{card.title}
+							</CardTitle>
+							{presentation.badgeLabel && presentation.badgeTone ? (
+								<StatusBadge
+									label={presentation.badgeLabel}
+									tone={presentation.badgeTone}
+								/>
+							) : null}
+						</div>
 					</div>
 					{card.dismissible && onDismiss ? (
 						<Button
@@ -143,6 +155,8 @@ function DashboardCard({ card, onDismiss, className }: DashboardCardProps) {
 				{card.body ? (
 					<p className="text-sm text-muted-foreground">{card.body}</p>
 				) : null}
+
+				<MetaLines lines={presentation.metaLines} />
 
 				{card.bullets && card.bullets.length > 0 ? (
 					<ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">

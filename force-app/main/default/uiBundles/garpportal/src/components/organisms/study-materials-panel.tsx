@@ -1,242 +1,188 @@
-import { useEffect } from "react"
+import { useEffect, type ReactNode } from "react"
 import { animated, useTransition } from "@react-spring/web"
 import { useNavigate } from "@tanstack/react-router"
-import {
-	BookOpen,
-	Download,
-	ExternalLink,
-	Lock,
-	ShoppingCart,
-} from "lucide-react"
+import { LayoutGrid, List } from "lucide-react"
 
-import type { CatalogueItem, StudyMaterial } from "@/api/study-materials/types"
-import { Button } from "@/components/atoms/button"
-import {
-	Card,
-	CardContent,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-} from "@/components/atoms/card"
+import type { StudyMaterial, StudyProgram } from "@/api/study-materials/types"
 import { PillTabs } from "@/components/atoms/pill-tabs"
 import { Tabs } from "@/components/atoms/tabs"
+import { ToggleGroup, ToggleGroupItem } from "@/components/atoms/toggle-group"
 import { StudyMaterialsPending } from "@/components/molecules/page-pending"
 import { StaggerReveal } from "@/components/molecules/stagger-reveal"
-import { DEFAULT_STUDY_MATERIALS_TAB } from "@/config/study-materials"
+import { StudyMaterialCard } from "@/components/molecules/study-material-card"
+import { StudyMaterialRow } from "@/components/molecules/study-material-row"
+import type { ListView } from "@/config/list-view"
+import {
+	DEFAULT_STUDY_MATERIALS_TAB,
+	STUDY_MATERIALS_SECTIONS,
+	resolveStudyMaterialsView,
+	type StudyMaterialsSectionMeta,
+} from "@/config/study-materials"
 import { useStudyMaterials } from "@/hooks/use-study-materials"
-import { formatDateTime, formatLongDate } from "@/lib/account-format"
+import {
+	buildCatalogueItemPresentation,
+	buildOwnedItemPresentation,
+	type StudyItemPresentation,
+} from "@/lib/study-materials-presentation"
 import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
+import { useListViewStore } from "@/store/list-view-store"
 
 type StudyMaterialsPanelProps = {
 	tab: string
+	view: ListView | undefined
 }
 
-function CatalogueCard({ item }: { item: CatalogueItem }) {
+/** One bucket rendered in the active layout — card and row share a presentation. */
+function StudyItemCollection({
+	items,
+	view,
+}: {
+	items: StudyItemPresentation[]
+	view: ListView
+}) {
 	return (
-		<Card className="h-full gap-4 overflow-hidden border-border py-0 shadow-none">
-			{item.imageUrl ? (
-				<div className="flex h-44 items-center justify-center bg-muted/40 p-4">
-					<img
-						src={item.imageUrl}
-						alt=""
-						className="max-h-full max-w-full object-contain"
-						onError={(event) => {
-							event.currentTarget.style.display = "none"
-						}}
-					/>
-				</div>
-			) : null}
-
-			<CardHeader className="px-5 pt-5">
-				<CardTitle className="font-heading text-lg leading-snug tracking-wide text-foreground">
-					{item.title ?? "Study material"}
-				</CardTitle>
-				{item.costNote ? (
-					<p className="mt-1 text-sm font-semibold text-foreground">{item.costNote}</p>
-				) : null}
-			</CardHeader>
-
-			<CardContent className="flex-1 space-y-2 px-5">
-				{item.paragraphs.map((paragraph) => (
-					<p key={paragraph} className="text-sm text-muted-foreground">
-						{paragraph}
-					</p>
-				))}
-			</CardContent>
-
-			<CardFooter className="mt-auto justify-end px-5 pb-5">
-				{item.isDownload && item.downloadUrl ? (
-					<a
-						href={item.downloadUrl}
-						target="_blank"
-						rel="noreferrer noopener"
-						className="inline-flex items-center gap-2 text-sm font-semibold text-foreground hover:text-garp-cyan"
-					>
-						<Download className="size-4" />
-						Download Now
-					</a>
-				) : item.purchaseUrl ? (
-					<a
-						href={item.purchaseUrl}
-						target="_blank"
-						rel="noreferrer noopener"
-						className="inline-flex items-center gap-2 text-sm font-semibold text-foreground hover:text-garp-cyan"
-					>
-						<ShoppingCart className="size-4" />
-						Purchase
-					</a>
+		<StaggerReveal
+			// Remount on view change so the cascade replays; `useTrail` will not
+			// re-run on its own because the `to` values are unchanged.
+			key={view}
+			className={
+				view === "grid"
+					? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+					: "flex flex-col gap-3"
+			}
+			itemClassName={view === "grid" ? "h-full" : undefined}
+		>
+			{items.map((item, index) =>
+				view === "grid" ? (
+					<StudyMaterialCard key={item.id} item={item} priority={index < 3} />
 				) : (
-					<span className="text-sm text-muted-foreground">{item.materialType ?? ""}</span>
-				)}
-			</CardFooter>
-		</Card>
+					<StudyMaterialRow key={item.id} item={item} priority={index < 3} />
+				),
+			)}
+		</StaggerReveal>
 	)
 }
 
-function EntitlementCard({ material }: { material: StudyMaterial }) {
-	const accessUntil = formatLongDate(material.expirationDate)
-	const lastOpened = formatDateTime(material.lastAccessed)
-
+function StudySection({
+	meta,
+	count,
+	children,
+}: {
+	meta: StudyMaterialsSectionMeta
+	count: number
+	children: ReactNode
+}) {
+	const Icon = meta.icon
 	return (
-		<Card className="h-full gap-4 border-border py-5 shadow-none">
-			<CardHeader className="px-5">
-				<CardTitle className="flex items-start gap-2 font-heading text-base tracking-wide text-foreground">
-					{material.isAvailable ? (
-						<BookOpen className="mt-0.5 size-5 shrink-0" />
-					) : (
-						<Lock className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
-					)}
-					<span className="flex-1">{material.name ?? "Study material"}</span>
-				</CardTitle>
-			</CardHeader>
-
-			<CardContent className="flex-1 space-y-1.5 px-5 text-sm">
-				{material.status ? (
-					<p className="text-foreground">
-						<span className="text-muted-foreground">Status: </span>
-						{material.status}
-					</p>
-				) : null}
-				{accessUntil ? (
-					<p className="text-foreground">
-						<span className="text-muted-foreground">Access until: </span>
-						{accessUntil}
-					</p>
-				) : null}
-				{lastOpened ? (
-					<p className="text-xs text-muted-foreground">Last opened {lastOpened}</p>
-				) : null}
-				{!material.isAvailable && material.unavailableReason ? (
-					<p className="text-sm text-amber-700 dark:text-amber-400">
-						{material.unavailableReason}
-					</p>
-				) : null}
-			</CardContent>
-
-			<CardFooter className="mt-auto px-5">
-				{material.isAvailable && material.accessUrl ? (
-					<Button asChild variant="outline">
-						<a href={material.accessUrl} target="_blank" rel="noreferrer noopener">
-							Open eBook
-							<ExternalLink className="size-4" />
-						</a>
-					</Button>
-				) : (
-					<a
-						className="text-sm text-garp-cyan underline underline-offset-2"
-						href="mailto:memberservices@garp.com?Subject=Study%20material%20access"
-					>
-						Ask member services about access
-					</a>
-				)}
-			</CardFooter>
-		</Card>
+		<section className="space-y-4">
+			<h2 className="flex items-center gap-2 font-heading text-xl font-semibold tracking-wide text-foreground">
+				<Icon className="size-5 shrink-0 text-primary" aria-hidden />
+				{meta.heading}
+				<span className="text-base font-normal text-muted-foreground">
+					({count})
+				</span>
+			</h2>
+			{children}
+		</section>
 	)
 }
 
-function CatalogueGrid({
+function StudyMaterialsBody({
 	tab,
+	view,
 	programs,
 	entitlements,
 }: {
 	tab: string
-	programs: Array<{ key: string; label: string; materials: CatalogueItem[] }>
+	view: ListView
+	programs: StudyProgram[]
 	entitlements: StudyMaterial[]
 }) {
 	const visiblePrograms =
 		tab === DEFAULT_STUDY_MATERIALS_TAB
 			? programs
 			: programs.filter((entry) => entry.key === tab)
-	const items = visiblePrograms.flatMap((entry) =>
-		entry.materials.map((item) => ({ programKey: entry.key, item })),
-	)
-	const isEmpty = programs.length === 0 && entitlements.length === 0
 
-	if (isEmpty) {
+	// Owned materials follow the same program filter as the catalogue, so a
+	// program tab shows only that program's items in both sections.
+	const ownedItems = entitlements
+		.filter(
+			(material) =>
+				tab === DEFAULT_STUDY_MATERIALS_TAB || material.programKey === tab,
+		)
+		.map(buildOwnedItemPresentation)
+
+	const catalogueItems = visiblePrograms.flatMap((entry) =>
+		entry.materials.map(buildCatalogueItemPresentation),
+	)
+
+	if (programs.length === 0 && entitlements.length === 0) {
 		return (
 			<p className="text-sm text-muted-foreground">
-				No study materials published yet. Study materials appear here once they are
-				published for a program.
+				{STUDY_MATERIALS_SECTIONS.all.emptyMessage}
 			</p>
 		)
 	}
 
 	return (
 		<div className="space-y-8">
-			{entitlements.length > 0 ? (
-				<section className="space-y-4">
-					<h2 className="font-heading text-xl font-semibold tracking-wide text-foreground">
-						My Materials
-						<span className="ml-2 text-base font-normal text-muted-foreground">
-							({entitlements.length})
-						</span>
-					</h2>
-					<StaggerReveal
-						className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-						itemClassName="h-full"
-					>
-						{entitlements.map((material) => (
-							<EntitlementCard key={material.id} material={material} />
-						))}
-					</StaggerReveal>
-				</section>
+			{ownedItems.length > 0 ? (
+				<StudySection
+					meta={STUDY_MATERIALS_SECTIONS.entitlements}
+					count={ownedItems.length}
+				>
+					<StudyItemCollection items={ownedItems} view={view} />
+				</StudySection>
 			) : null}
 
-			{items.length === 0 ? (
+			{catalogueItems.length === 0 ? (
 				<p className="text-sm text-muted-foreground">
-					Nothing published for that program yet.
+					{STUDY_MATERIALS_SECTIONS.catalogue.emptyMessage}
 				</p>
 			) : (
-				<StaggerReveal
-					className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-					itemClassName="h-full"
+				<StudySection
+					meta={STUDY_MATERIALS_SECTIONS.catalogue}
+					count={catalogueItems.length}
 				>
-					{items.map(({ programKey, item }) => (
-						<CatalogueCard key={`${programKey}-${item.id}`} item={item} />
-					))}
-				</StaggerReveal>
+					<StudyItemCollection items={catalogueItems} view={view} />
+				</StudySection>
 			)}
 		</div>
 	)
 }
 
-function StudyMaterialsPanel({ tab }: StudyMaterialsPanelProps) {
+function StudyMaterialsPanel({ tab, view }: StudyMaterialsPanelProps) {
 	const navigate = useNavigate({ from: "/study-materials/" })
 	const { data, isLoading, isError } = useStudyMaterials()
 	const programs = data?.programs ?? []
 	const entitlements = data?.myEntitlements ?? []
 	const showProgramTabs = programs.length > 1
 
+	const preferredView = useListViewStore(
+		(state) => state.preferred["study-materials"],
+	)
+	const setPreferredView = useListViewStore((state) => state.setPreferred)
+	const activeView = resolveStudyMaterialsView(view, preferredView)
+
 	useEffect(() => {
 		if (!data || tab === DEFAULT_STUDY_MATERIALS_TAB) return
 		if (data.programs.some((entry) => entry.key === tab)) return
 		void navigate({
-			search: { tab: DEFAULT_STUDY_MATERIALS_TAB },
+			search: (prev) => ({ ...prev, tab: DEFAULT_STUDY_MATERIALS_TAB }),
 			replace: true,
 		})
 	}, [data, tab, navigate])
 
 	const tabTransitions = useTransition(tab, TAB_PANEL_TRANSITION)
+
+	const selectView = (next: ListView) => {
+		// Remembered so the choice survives leaving the page and coming back.
+		setPreferredView("study-materials", next)
+		void navigate({
+			search: (prev) => ({ ...prev, view: next }),
+			replace: true,
+		})
+	}
 
 	if (isLoading) {
 		return <StudyMaterialsPending />
@@ -247,7 +193,7 @@ function StudyMaterialsPanel({ tab }: StudyMaterialsPanelProps) {
 			value={tab}
 			onValueChange={(value) => {
 				void navigate({
-					search: { tab: value },
+					search: (prev) => ({ ...prev, tab: value }),
 					replace: true,
 				})
 			}}
@@ -255,9 +201,30 @@ function StudyMaterialsPanel({ tab }: StudyMaterialsPanelProps) {
 		>
 			{/* Fixed chrome: heading + program tabs — does not scroll. */}
 			<header className="shrink-0 space-y-4">
-				<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
-					Study Materials for Risk Professionals
-				</h1>
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+						Study Materials for Risk Professionals
+					</h1>
+
+					<ToggleGroup
+						variant="outline"
+						type="single"
+						value={activeView}
+						onValueChange={(value) => {
+							// Radix allows deselecting the active item; ignore that.
+							if (!value) return
+							selectView(value as ListView)
+						}}
+						aria-label="Study materials layout"
+					>
+						<ToggleGroupItem value="grid" aria-label="Grid view">
+							<LayoutGrid aria-hidden />
+						</ToggleGroupItem>
+						<ToggleGroupItem value="list" aria-label="List view">
+							<List aria-hidden />
+						</ToggleGroupItem>
+					</ToggleGroup>
+				</div>
 
 				{showProgramTabs ? (
 					<PillTabs
@@ -289,8 +256,9 @@ function StudyMaterialsPanel({ tab }: StudyMaterialsPanelProps) {
 								style={style}
 								className="pb-2"
 							>
-								<CatalogueGrid
+								<StudyMaterialsBody
 									tab={currentTab}
+									view={activeView}
 									programs={programs}
 									entitlements={entitlements}
 								/>

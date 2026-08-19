@@ -5,9 +5,10 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/atoms/card"
+import { Badge } from "@/components/atoms/badge"
 import { CardCta } from "@/components/molecules/card-cta"
-import { ProgramMetaLines } from "@/components/molecules/program-meta-lines"
-import { ProgramStatusBadge } from "@/components/molecules/program-status-badge"
+import { MetaLines } from "@/components/molecules/meta-lines"
+import { StatusBadge } from "@/components/molecules/status-badge"
 import { programBrandSurface } from "@/config/program-brand"
 import { localizeProgramLogoUrl } from "@/config/program-logos"
 import {
@@ -94,15 +95,10 @@ function ProgramCard({
 
 			<CardHeader className="gap-2 px-5 pt-1">
 				<div className="flex flex-wrap items-center gap-2">
-					<span
-						className={cn(
-							"inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold tracking-wider",
-							brand.chip,
-						)}
-					>
+					<Badge className={cn("rounded-md font-bold tracking-wider", brand.chip)}>
 						{codeLabel}
-					</span>
-					<ProgramStatusBadge label={statusLabel} tone={statusTone} />
+					</Badge>
+					<StatusBadge label={statusLabel} tone={statusTone} />
 				</div>
 				<CardTitle className="font-heading text-lg leading-snug tracking-wide text-foreground">
 					{displayName}
@@ -116,7 +112,7 @@ function ProgramCard({
 					</p>
 				) : null}
 
-				<ProgramMetaLines lines={metaLines} />
+				<MetaLines lines={metaLines} />
 			</CardContent>
 
 			{showFooter ? (

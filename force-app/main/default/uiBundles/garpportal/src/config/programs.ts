@@ -2,6 +2,8 @@ import { Award, Compass, GraduationCap, Hourglass } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { z } from "zod"
 
+import { LIST_VIEWS, type ListView } from "@/config/list-view"
+
 export const PROGRAMS_TABS = [
 	"all",
 	"in-progress",
@@ -11,14 +13,12 @@ export const PROGRAMS_TABS = [
 
 export type ProgramsTab = (typeof PROGRAMS_TABS)[number]
 
-export const PROGRAMS_VIEWS = ["grid", "list"] as const
+/** Programs uses the shared collection-layout vocabulary. */
+export const PROGRAMS_VIEWS = LIST_VIEWS
 
-export type ProgramsView = (typeof PROGRAMS_VIEWS)[number]
+export type ProgramsView = ListView
 
 export const DEFAULT_PROGRAMS_TAB: ProgramsTab = "all"
-
-/** localStorage key for the remembered grid/list choice. */
-export const PROGRAMS_VIEW_STORAGE_KEY = "garp-portal:programs-view"
 
 /**
  * `tab` / `view` are optional so an *absent* value stays distinguishable from an

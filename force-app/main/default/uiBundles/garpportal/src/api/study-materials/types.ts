@@ -7,6 +7,8 @@ import type { MemberPortalEnvelope } from "@/api/account/types"
 
 export type StudyMaterial = {
 	id: string
+	/** Owning program bucket (`frm` / `scr` / `rai` / …) — drives brand + code chip. */
+	programKey: string
 	name: string | null
 	type: string | null
 	accessUrl: string | null
@@ -22,6 +24,8 @@ export type StudyMaterial = {
 
 export type CatalogueItem = {
 	id: string
+	/** Owning program bucket (`frm` / `scr` / `rai` / …) — drives brand + code chip. */
+	programKey: string
 	title: string | null
 	paragraphs: string[]
 	imageUrl: string | null

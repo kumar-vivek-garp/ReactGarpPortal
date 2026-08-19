@@ -14,7 +14,8 @@ import {
 	supportsInAppProgramDetail,
 } from "@/lib/program-card-links"
 import { stripProgramFormalName } from "@/lib/program-formal-name"
-import type { ProgramStatusTone } from "@/lib/program-detail-presentation"
+import type { MetaLine } from "@/lib/meta-line"
+import type { StatusTone } from "@/lib/status-tone"
 
 /** Which bucket of the listing payload a card came from. */
 export type ProgramCardVariant = "inProgress" | "completed" | "other"
@@ -23,19 +24,6 @@ export type ProgramListingProgram =
 	| EnrolledProgram
 	| CompletedProgram
 	| OtherProgram
-
-/** One icon-prefixed metadata line. `icon` is a key the UI maps to a Lucide icon. */
-export type ProgramMetaIcon =
-	| "administration"
-	| "registrationOpen"
-	| "opensLater"
-	| "microCourse"
-	| "certified"
-
-export type ProgramMetaLine = {
-	icon: ProgramMetaIcon
-	text: string
-}
 
 export type ProgramListingLink = {
 	label: string
@@ -49,9 +37,9 @@ export type ProgramListingPresentation = {
 	codeLabel: string
 	displayName: string
 	statusLabel: string
-	statusTone: ProgramStatusTone
+	statusTone: StatusTone
 	description: string | null
-	metaLines: ProgramMetaLine[]
+	metaLines: MetaLine[]
 	detailsLink: ProgramListingLink | null
 	registrationLink: ProgramListingLink | null
 	learnMoreLink: ProgramListingLink | null
@@ -108,7 +96,7 @@ export function registrationOpensCopy(program: OtherProgram): string | null {
 	return null
 }
 
-function administrationLines(program: ProgramListingProgram): ProgramMetaLine[] {
+function administrationLines(program: ProgramListingProgram): MetaLine[] {
 	if (!("adminPartIName" in program)) return []
 	const parts: Array<[string, string | null]> = [
 		["Part I", program.adminPartIName],
@@ -126,7 +114,7 @@ function administrationLines(program: ProgramListingProgram): ProgramMetaLine[] 
 function statusFor(
 	variant: ProgramCardVariant,
 	program: ProgramListingProgram,
-): { statusLabel: string; statusTone: ProgramStatusTone } {
+): { statusLabel: string; statusTone: StatusTone } {
 	if (variant === "inProgress") {
 		return { statusLabel: "In progress", statusTone: "info" }
 	}
@@ -139,8 +127,8 @@ function statusFor(
 	return { statusLabel: "Registration closed", statusTone: "neutral" }
 }
 
-function otherMetaLines(program: OtherProgram): ProgramMetaLine[] {
-	const lines: ProgramMetaLine[] = []
+function otherMetaLines(program: OtherProgram): MetaLine[] {
+	const lines: MetaLine[] = []
 
 	if (program.isMicroCourse) {
 		lines.push({ icon: "microCourse", text: "Micro course" })

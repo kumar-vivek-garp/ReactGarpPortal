@@ -5,9 +5,11 @@ import type { PortalOrder } from "@/api/orders/types"
 import { Button } from "@/components/atoms/button"
 import { Input } from "@/components/atoms/input"
 import { OrderHistorySkeleton } from "@/components/molecules/page-pending"
+import { StatusBadge } from "@/components/molecules/status-badge"
 import { StaggerReveal } from "@/components/molecules/stagger-reveal"
 import { useOrders } from "@/hooks/use-orders"
 import { formatLongDate, formatMoney } from "@/lib/account-format"
+import { orderStatusPresentation } from "@/lib/order-status"
 import { cn } from "@/lib/utils"
 
 type OrderHistoryPanelProps = {
@@ -34,27 +36,9 @@ function orderMatches(order: PortalOrder, term: string): boolean {
 		.some((field) => String(field).toLowerCase().includes(needle))
 }
 
-function statusLabel(order: PortalOrder): string {
-	if (order.paymentStatus?.trim()) return order.paymentStatus.trim()
-	if (order.isPaid) return "Paid"
-	if (order.stage?.trim()) return order.stage.trim()
-	return order.canPay ? "Unpaid" : "—"
-}
-
 function OrderStatus({ order }: { order: PortalOrder }) {
-	const label = statusLabel(order)
-	return (
-		<span
-			className={cn(
-				"inline-flex max-w-full truncate rounded-full px-2.5 py-0.5 text-xs font-semibold",
-				order.isPaid
-					? "bg-emerald-600/10 text-emerald-800 dark:text-emerald-300"
-					: "bg-amber-500/15 text-amber-900 dark:text-amber-200",
-			)}
-		>
-			{label}
-		</span>
-	)
+	const { label, tone } = orderStatusPresentation(order)
+	return <StatusBadge label={label} tone={tone} className="max-w-full truncate" />
 }
 
 function OrderRow({ order, showPay }: { order: PortalOrder; showPay: boolean }) {

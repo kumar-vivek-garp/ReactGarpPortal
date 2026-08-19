@@ -1,0 +1,33 @@
+---
+description: Sibling repos and how to port legacy screens into garp_portal
+alwaysApply: true
+---
+
+# Legacy rewrite — sibling apps and implementation workflow
+
+This repo (`garp_portal`) is a **React rewrite** of an existing GARP member portal. Three local codebases serve the same product. Do not treat GarpAppv1 or MyGarp as this app’s source of truth for React/SDK patterns — they are **reference systems**.
+
+| Path | Role |
+|------|------|
+| `/Users/vivek.kumar/Documents/poc/garp_portal` | **This repo.** Salesforce UI Bundle (Vite + React). Implement here. |
+| `/Users/vivek.kumar/Documents/poc/MyGarp` | **Working legacy app.** Source of truth for screens, copy, fields, and user flows. |
+| `/Users/vivek.kumar/Documents/poc/GarpAppv1` | **Backend team test app** (close to legacy). Source of truth for **which REST APIs exist** and request/response shapes. |
+
+All three backends are REST-oriented historically. This rewrite talks to Salesforce through the **Data SDK** (`sdk.graphql` and `sdk.fetch`). See `salesforce-data-access` for transport rules.
+
+## How to implement a screen (e.g. `my-account?tab=account-information`)
+
+Work in this order. Do not invent endpoints or field lists from memory.
+
+1. **UX and data from MyGarp** — which fields, validation, tabs, and save/load behavior the user already has.
+2. **REST catalog from GarpAppv1** — which Apex REST (or other) endpoints the backend already exposes for that screen.
+3. **Choose GraphQL vs REST** — follow `salesforce-data-access` (single Salesforce object + no heavy client logic → GraphQL; otherwise Apex REST via `sdk.fetch`).
+4. **Implement in garp_portal** — `src/api/<domain>/`, hooks, pages. Normalize errors via `api/client`. Never `fetch()`/`axios` for org data.
+
+If MyGarp shows a flow but GarpAppv1 has no matching API, stop and tell the user — do not guess a GraphQL join to paper over a missing backend.
+
+## Do not
+
+- Copy GarpAppv1 or MyGarp UI stack (their fetch layer, routing, or styling) into this app.
+- Re-implement backend business rules in React when an Apex REST already returns the assembled payload.
+- Cross-query multiple Salesforce objects in GraphQL to recreate a REST aggregator on the client.

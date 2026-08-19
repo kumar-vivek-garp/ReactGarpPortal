@@ -26,7 +26,7 @@ import {
 import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
 import type { ProgramCardVariant } from "@/lib/program-listing-presentation"
 import { usePrograms } from "@/hooks/use-programs"
-import { useProgramsViewStore } from "@/store/programs-view-store"
+import { useListViewStore } from "@/store/list-view-store"
 
 type ProgramsPanelProps = {
 	tab: ProgramsTab | undefined
@@ -216,8 +216,8 @@ function ProgramsPanel({ tab, view }: ProgramsPanelProps) {
 	const completed = data?.completedPrograms ?? []
 	const other = data?.otherPrograms ?? []
 
-	const preferredView = useProgramsViewStore((state) => state.preferred)
-	const setPreferredView = useProgramsViewStore((state) => state.setPreferred)
+	const preferredView = useListViewStore((state) => state.preferred.programs)
+	const setPreferredView = useListViewStore((state) => state.setPreferred)
 
 	const activeTab = resolveProgramsTab(tab, enrolled.length)
 	const activeView = resolveProgramsView(view, activeTab, preferredView)
@@ -234,7 +234,7 @@ function ProgramsPanel({ tab, view }: ProgramsPanelProps) {
 	const selectView = (next: ProgramsView) => {
 		// Remember it so the choice survives a trip to a program detail page,
 		// where there is no `view` param to carry it.
-		setPreferredView(next)
+		setPreferredView("programs", next)
 		void navigate({
 			search: (prev) => ({ ...prev, view: next }),
 			replace: true,

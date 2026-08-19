@@ -10,7 +10,7 @@ import {
 	type ProgramsTab,
 	type ProgramsView,
 } from "@/config/programs"
-import { useProgramsViewStore } from "@/store/programs-view-store"
+import { useListViewStore } from "@/store/list-view-store"
 
 const routeApi = getRouteApi("/_appLayout/programs/")
 
@@ -122,7 +122,7 @@ type ProgramsPendingProps = {
  */
 function ProgramsPendingShell({ tab, view }: ProgramsPendingProps) {
 	// Same precedence as the panel, so the skeleton matches the layout that lands.
-	const preferredView = useProgramsViewStore((state) => state.preferred)
+	const preferredView = useListViewStore((state) => state.preferred.programs)
 	const resolvedView = resolveProgramsView(
 		view,
 		tab ?? DEFAULT_PROGRAMS_TAB,

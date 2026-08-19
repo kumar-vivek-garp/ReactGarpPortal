@@ -32,9 +32,10 @@ function MembershipHeroSkeleton() {
 	)
 }
 
+/** Mirrors `BenefitCard`: optional image, badge + title, clamped body, footer CTA. */
 function BenefitCardSkeleton({ withImage = true }: { withImage?: boolean }) {
 	return (
-		<Skeleton className="flex h-[28rem] flex-col overflow-hidden rounded-xl border border-border">
+		<Skeleton className="flex h-full min-h-72 flex-col overflow-hidden rounded-xl border border-border bg-card">
 			{withImage ? (
 				<Skeleton className="h-32 w-full shrink-0 rounded-none" />
 			) : null}

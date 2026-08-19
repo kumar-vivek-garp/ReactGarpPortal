@@ -1,6 +1,6 @@
 import type { MemberPortalEnvelope } from "@/api/account/types"
 
-/** Mirrors `GARP_MemberPortal_Programs.CaseSummary`. */
+/** Mirrors `GARP_Portal_CasesService.CaseSummary`. */
 export type CaseSummary = {
 	id: string | null
 	caseNumber: string | null

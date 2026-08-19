@@ -70,6 +70,7 @@ function toCatalogueItem(
 
 	return {
 		id: materialId(raw, programKey, index),
+		programKey,
 		title: raw.title?.trim() || null,
 		paragraphs,
 		imageUrl: raw.imageURL?.trim() || null,
@@ -108,6 +109,7 @@ function toEntitlement(
 
 	return {
 		id: materialId(raw, programKey, index),
+		programKey,
 		name: raw.title?.trim() || null,
 		type: raw.materialType?.trim() || null,
 		accessUrl,

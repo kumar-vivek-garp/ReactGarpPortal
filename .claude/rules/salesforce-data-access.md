@@ -18,7 +18,7 @@ This applies to: GraphQL queries/mutations, REST calls, SDK initialization, cust
 
 - **All data access uses the Data SDK** (`@salesforce/platform-sdk`) via `createDataSDK()`.
 - **Never** use `fetch()` or `axios` directly for Salesforce data.
-- **GraphQL is preferred** for record operations (`sdk.graphql`). Use `sdk.fetch` only when GraphQL cannot cover the case (UI API REST, Apex REST, Connect REST, Einstein LLM).
+- **GraphQL vs REST is a product rule, not “GraphQL whenever possible.”** Prefer GraphQL only when the call is a **simple, single-object** record read/write with **no heavy client logic**. Use `sdk.fetch` (Apex REST from GarpAppv1, UI API REST, Connect REST, Einstein LLM) when GraphQL would join objects or dump business rules into the UI. Details below.
 - Use optional chaining: `sdk.graphql?.()`, `sdk.fetch?.()`.
 - Apply the `@optional` directive to all record fields for field-level security resilience.
 - Verify field and object names via `scripts/graphql-search.sh` before writing queries.
@@ -36,6 +36,24 @@ This applies to: GraphQL queries/mutations, REST calls, SDK initialization, cust
 | Einstein LLM | `sdk.fetch` | `/services/data/v{ver}/einstein/llm/prompt/generations` |
 
 Any endpoint not listed above is not permitted.
+
+## When to use GraphQL vs Apex REST
+
+Team constraint: **do not encode multi-object or heavy business logic in the frontend.** GraphQL in this app is for thin record access, not for assembling screens that the backend already aggregates.
+
+Use **`sdk.graphql`** when all of these are true:
+
+- One Salesforce **object** (sObject) — Contact, User, a custom object, etc. Parent lookups on that same record (e.g. Contact’s User) are OK if they are a single hop and still a simple field map.
+- Mapping is **field → form field**. No combining records, no derived totals, no eligibility, no “if membership X then show Y” that the API should own.
+- No need to stitch several REST resources on the client to match MyGarp.
+
+Use **`sdk.fetch` + Apex REST** (path from GarpAppv1) when any of these are true:
+
+- The screen needs **more than one object** (Contact + Account + memberships + CPD, etc.).
+- The payload is already **assembled or validated** in Apex (legacy REST).
+- Implementing it in GraphQL would mean **joins, multiple queries, or business rules in React**.
+
+`my-account` may mix both: GraphQL for a single Contact/User patch; Apex REST when GarpAppv1 already returns a composed account payload.
 
 ## GraphQL non-negotiable rules
 
