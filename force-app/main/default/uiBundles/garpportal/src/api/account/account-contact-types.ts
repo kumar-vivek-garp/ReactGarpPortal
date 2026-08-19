@@ -26,18 +26,23 @@ export type AccountContact = {
 	memberSince: string | null
 	autoRenew: boolean
 	career: {
+		currentlyWorkingStatus: string | null
 		company: string | null
 		corporateTitle: string | null
 		jobFunction: string | null
+		areaOfConcentration: string | null
 		companyCity: string | null
 		companyCountry: string | null
 		industryWorkingYear: string | null
+		riskManagementWorkingYear: string | null
 	}
 	academic: {
 		highestDegree: string | null
 		schoolName: string | null
 		degreeProgramName: string | null
 		currentlyInSchool: boolean | null
+		expectedGraduationDate: string | null
+		expectedGraduationMonth: string | null
 	}
 	expertise: {
 		riskSpecialty: string | null

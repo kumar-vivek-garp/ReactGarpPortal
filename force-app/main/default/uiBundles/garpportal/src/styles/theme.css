@@ -60,6 +60,7 @@
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-toolbar: var(--toolbar);
 	--color-toolbar-foreground: var(--toolbar-foreground);
+	--color-overlay: var(--overlay);
 
 	--font-sans: 'Nunito Sans', sans-serif;
 	--font-heading: 'Klinic Slab', 'Nunito Sans', sans-serif;
@@ -169,6 +170,8 @@
 	--sidebar-ring: oklch(0.5836 0.2367 283.6);
 	--toolbar: oklch(0 0 0); /* live-verified: solid black mat-toolbar */
 	--toolbar-foreground: oklch(1 0 0); /* live-verified */
+	/* shadcn Base UI dialog overlay: bg-black/10 + supports-backdrop-filter:backdrop-blur-xs */
+	--overlay: oklch(0 0 0 / 0.1);
 }
 
 .dark {
@@ -209,6 +212,7 @@
 	--sidebar-ring: oklch(0.5836 0.2367 283.6);
 	--toolbar: oklch(0 0 0); /* mode-invariant brand hue */
 	--toolbar-foreground: oklch(1 0 0);
+	--overlay: oklch(0 0 0 / 0.1);
 	/* Chrome gradients — darker stops so sidebar/footer don’t stay pastel. */
 	--surface-gradient-start: oklch(0.22 0.03 291.7);
 	--surface-gradient-end: oklch(0.2 0.02 197);

@@ -43,6 +43,58 @@ export type PortalAddress = {
 	isEmpty: boolean
 }
 
+export type AccountDesignations = {
+	ACCA: boolean | null
+	CA: boolean | null
+	CAIA: boolean | null
+	CFA: boolean | null
+	CFP: boolean | null
+	CIA: boolean | null
+	CMA: boolean | null
+	CMT: boolean | null
+	CPA: boolean | null
+	CQF: boolean | null
+	PMP: boolean | null
+	Other: boolean | null
+	otherQualifications: string | null
+}
+
+export type AccountCareer = {
+	currentlyWorkingStatus: string | null
+	company: string | null
+	corporateTitle: string | null
+	jobFunction: string | null
+	areaOfConcentration: string | null
+	companyCity: string | null
+	companyCountry: string | null
+	industryWorkingYear: string | null
+	riskManagementWorkingYear: string | null
+}
+
+export type AccountAcademic = {
+	highestDegree: string | null
+	schoolName: string | null
+	degreeProgramName: string | null
+	currentlyInSchool: boolean | null
+	expectedGraduationDate: string | null
+	expectedGraduationMonth: string | null
+}
+
+export type PicklistOption = {
+	label: string
+	value: string
+}
+
+export type AccountOptionsView = {
+	picklists: Record<string, PicklistOption[]>
+}
+
+export type SaveAccountProfileResult = {
+	applied: string[]
+	rejected: string[]
+	completeness: Completeness
+}
+
 export type AccountView = {
 	identity: Identity
 	completeness: Completeness
@@ -53,20 +105,9 @@ export type AccountView = {
 		phone: string | null
 		photoUrl: string | null
 	}
-	career: {
-		company: string | null
-		corporateTitle: string | null
-		jobFunction: string | null
-		companyCity: string | null
-		companyCountry: string | null
-		industryWorkingYear: string | null
-	}
-	academic: {
-		highestDegree: string | null
-		schoolName: string | null
-		degreeProgramName: string | null
-		currentlyInSchool: boolean | null
-	}
+	designations: AccountDesignations
+	career: AccountCareer
+	academic: AccountAcademic
 	expertise: {
 		riskSpecialty: string | null
 		topicsOrExpertise: string | null

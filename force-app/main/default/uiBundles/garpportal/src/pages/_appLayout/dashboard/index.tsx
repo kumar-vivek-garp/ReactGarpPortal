@@ -9,7 +9,7 @@ import { pageTitle } from "@/lib/document-title"
 
 export const Route = createFileRoute("/_appLayout/dashboard/")({
 	// Prefetch only — awaiting here delays first paint and hurts LCP (text
-	// can't paint until memberportal APIs return). Layout already warms these.
+	// can't paint until memberportal APIs return). Dashboard composes programs + events.
 	loader: ({ context }) => {
 		void context.queryClient.prefetchQuery(dashboardQueryOptions)
 		void context.queryClient.prefetchQuery(programsQueryOptions)

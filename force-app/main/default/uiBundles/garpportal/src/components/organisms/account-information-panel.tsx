@@ -9,8 +9,12 @@ import { AccountFieldGrid } from "@/components/molecules/account-field-grid"
 import { AccountFieldList } from "@/components/molecules/account-field-list"
 import { AccountSectionCard } from "@/components/molecules/account-section-card"
 import { StaggerReveal } from "@/components/molecules/stagger-reveal"
+import {
+	CareerInformationEditForm,
+	DESIGNATION_CODES,
+} from "@/components/organisms/career-information-edit-form"
 import { PersonalInfoEditForm } from "@/components/organisms/personal-info-edit-form"
-import type { AccountView } from "@/api/account/types"
+import type { AccountDesignations, AccountView } from "@/api/account/types"
 import { addressLines, formatLongDate } from "@/lib/account-format"
 import { resolvePortalAssetUrl } from "@/lib/resolve-portal-asset-url"
 
@@ -82,10 +86,25 @@ function AccountInformationError() {
 	)
 }
 
+function heldDesignationsLabel(designations: AccountDesignations): string | null {
+	const held: string[] = DESIGNATION_CODES.filter(
+		(code) => designations[code] === true,
+	)
+	if (designations.Other === true) {
+		held.push(
+			designations.otherQualifications
+				? `Other (${designations.otherQualifications})`
+				: "Other",
+		)
+	}
+	return held.length > 0 ? held.join(", ") : null
+}
+
 function AccountInformationPanel({ account }: AccountInformationPanelProps) {
 	const {
 		identity,
 		personal,
+		designations,
 		career,
 		academic,
 		expertise,
@@ -97,6 +116,7 @@ function AccountInformationPanel({ account }: AccountInformationPanelProps) {
 	} = account
 
 	const [personalEditOpen, setPersonalEditOpen] = useState(false)
+	const [careerEditOpen, setCareerEditOpen] = useState(false)
 	const expiry = formatLongDate(identity.membershipExpiration)
 	const mailingLines = addressLines(mailingAddress)
 	const billingLines = addressLines(billingAddress)
@@ -199,16 +219,44 @@ function AccountInformationPanel({ account }: AccountInformationPanelProps) {
 				) : null}
 			</AccountSectionCard>
 
-			<AccountSectionCard title="Career Information">
-				<p className="font-heading text-sm font-semibold text-foreground">Employment Information</p>
+			<AccountSectionCard
+				title="Career Information"
+				action={
+					<AccountEditDialog
+						title="Edit Career Information"
+						description="Update your job, designations, and academic information."
+						open={careerEditOpen}
+						onOpenChange={setCareerEditOpen}
+					>
+						<CareerInformationEditForm
+							key={careerEditOpen ? "open" : "closed"}
+							account={account}
+							onSaved={() => setCareerEditOpen(false)}
+						/>
+					</AccountEditDialog>
+				}
+			>
+				<p className="font-heading text-sm font-semibold text-foreground">
+					Employment Information
+				</p>
 				<AccountFieldList
 					rows={[
+						{ label: "Work status", value: career.currentlyWorkingStatus },
+						{ label: "Industry", value: career.areaOfConcentration },
+						{ label: "In the industry since", value: career.industryWorkingYear },
 						{ label: "Current/Last Company", value: career.company },
 						{ label: "Professional Level", value: career.corporateTitle },
 						{ label: "Job Function", value: career.jobFunction },
+						{
+							label: "In risk management since",
+							value: career.riskManagementWorkingYear,
+						},
 						{ label: "Company City", value: career.companyCity },
 						{ label: "Company Country", value: career.companyCountry },
-						{ label: "In the industry since", value: career.industryWorkingYear },
+						{
+							label: "Professional designations",
+							value: heldDesignationsLabel(designations),
+						},
 					]}
 					emptyMessage="Add your employment details so we can tailor recommendations."
 				/>
@@ -218,9 +266,14 @@ function AccountInformationPanel({ account }: AccountInformationPanelProps) {
 				</p>
 				<AccountFieldList
 					rows={[
-						{ label: "Highest Degree", value: academic.highestDegree },
 						{ label: "School", value: academic.schoolName },
-						{ label: "Degree Program", value: academic.degreeProgramName },
+						{ label: "Degree Program", value: academic.highestDegree },
+						{ label: "Degree program name", value: academic.degreeProgramName },
+						{ label: "Year of graduation", value: academic.expectedGraduationDate },
+						{
+							label: "Month of graduation",
+							value: academic.expectedGraduationMonth,
+						},
 					]}
 					emptyMessage="No academic information added yet."
 				/>

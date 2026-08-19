@@ -315,12 +315,15 @@ export async function fetchAccountContact(
 		memberSince: trimOrNull(node.KPI_Membership_Since__c?.value),
 		autoRenew: node.MPS_Membership_Autorenew_On__c?.value === true,
 		career: {
+			currentlyWorkingStatus: null,
 			company: trimOrNull(node.Company__c?.value),
 			corporateTitle: trimOrNull(node.Corporate_Title__c?.value),
 			jobFunction: trimOrNull(node.Job_Function__c?.value),
+			areaOfConcentration: null,
 			companyCity: trimOrNull(node.Company_City__c?.value),
 			companyCountry: trimOrNull(node.Company_Country__c?.value),
 			industryWorkingYear: trimOrNull(node.Industry_Working_Year__c?.value),
+			riskManagementWorkingYear: null,
 		},
 		academic: {
 			highestDegree: trimOrNull(node.Highest_Degree__c?.value),
@@ -330,6 +333,8 @@ export async function fetchAccountContact(
 				typeof node.Currently_in_School__c?.value === "boolean"
 					? node.Currently_in_School__c.value
 					: null,
+			expectedGraduationDate: null,
+			expectedGraduationMonth: null,
 		},
 		expertise: {
 			riskSpecialty: trimOrNull(node.Risk_Specialty__c?.value),

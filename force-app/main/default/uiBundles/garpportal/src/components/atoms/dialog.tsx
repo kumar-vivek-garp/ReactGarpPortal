@@ -1,16 +1,43 @@
 "use client"
 
 import * as React from "react"
+import { animated, useTransition } from "@react-spring/web"
 import { XIcon } from "lucide-react"
 import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/atoms/button"
 
+const DialogOpenContext = React.createContext(false)
+
+/** Quiet, slightly heavy — no bounce, reads as a professional overlay. */
+const DIALOG_SPRING = { mass: 0.85, tension: 340, friction: 30 } as const
+
+const overlayClassName =
+  "fixed inset-0 z-50 bg-overlay supports-backdrop-filter:backdrop-blur-xs"
+
 function Dialog({
+  open: openProp,
+  defaultOpen = false,
+  onOpenChange,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen)
+  const open = openProp ?? uncontrolledOpen
+
+  return (
+    <DialogOpenContext.Provider value={open}>
+      <DialogPrimitive.Root
+        data-slot="dialog"
+        {...props}
+        open={open}
+        onOpenChange={(next) => {
+          if (openProp === undefined) setUncontrolledOpen(next)
+          onOpenChange?.(next)
+        }}
+      />
+    </DialogOpenContext.Provider>
+  )
 }
 
 function DialogTrigger({
@@ -38,10 +65,7 @@ function DialogOverlay({
   return (
     <DialogPrimitive.Overlay
       data-slot="dialog-overlay"
-      className={cn(
-        "fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
-        className
-      )}
+      className={cn(overlayClassName, className)}
       {...props}
     />
   )
@@ -55,29 +79,52 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
-  return (
-    <DialogPortal data-slot="dialog-portal">
-      <DialogOverlay />
-      <DialogPrimitive.Content
-        data-slot="dialog-content"
-        className={cn(
-          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
-          className
-        )}
-        {...props}
-      >
-        {children}
-        {showCloseButton && (
-          <DialogPrimitive.Close
-            data-slot="dialog-close"
-            className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+  const open = React.useContext(DialogOpenContext)
+  const transitions = useTransition(open, {
+    from: { overlayOpacity: 0, opacity: 0, scale: 0.97 },
+    enter: { overlayOpacity: 1, opacity: 1, scale: 1 },
+    leave: { overlayOpacity: 0, opacity: 0, scale: 0.985 },
+    config: DIALOG_SPRING,
+  })
+
+  return transitions((spring, show) =>
+    show ? (
+      <DialogPortal forceMount data-slot="dialog-portal">
+        <DialogPrimitive.Overlay asChild forceMount>
+          <animated.div
+            data-slot="dialog-overlay"
+            className={overlayClassName}
+            style={{ opacity: spring.overlayOpacity }}
+          />
+        </DialogPrimitive.Overlay>
+        <DialogPrimitive.Content asChild forceMount {...props}>
+          <animated.div
+            data-slot="dialog-content"
+            className={cn(
+              "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] origin-center gap-4 overflow-hidden rounded-2xl border bg-background p-6 shadow-lg outline-none will-change-transform sm:max-w-lg",
+              className
+            )}
+            style={{
+              opacity: spring.opacity,
+              transform: spring.scale.to(
+                (scale) => `translate(-50%, -50%) scale(${scale})`
+              ),
+            }}
           >
-            <XIcon />
-            <span className="sr-only">Close</span>
-          </DialogPrimitive.Close>
-        )}
-      </DialogPrimitive.Content>
-    </DialogPortal>
+            {children}
+            {showCloseButton ? (
+              <DialogPrimitive.Close
+                data-slot="dialog-close"
+                className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+              >
+                <XIcon />
+                <span className="sr-only">Close</span>
+              </DialogPrimitive.Close>
+            ) : null}
+          </animated.div>
+        </DialogPrimitive.Content>
+      </DialogPortal>
+    ) : null
   )
 }
 

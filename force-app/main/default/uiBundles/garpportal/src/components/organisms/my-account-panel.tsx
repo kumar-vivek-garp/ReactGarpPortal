@@ -1,7 +1,6 @@
 import { animated, useTransition } from "@react-spring/web"
 import { useNavigate } from "@tanstack/react-router"
 
-import { accountContactToView } from "@/api/account/account-contact-map"
 import { PillTabs } from "@/components/atoms/pill-tabs"
 import { Tabs } from "@/components/atoms/tabs"
 import {
@@ -19,7 +18,6 @@ import {
 } from "@/components/organisms/contact-preferences-panel"
 import { OrderHistoryPanel } from "@/components/organisms/order-history-panel"
 import { useAccount } from "@/hooks/use-account"
-import { useAccountContact } from "@/hooks/use-account-contact"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { MY_ACCOUNT_TAB_ITEMS, type MyAccountTab } from "@/config/my-account"
 import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
@@ -32,35 +30,23 @@ type MyAccountPanelProps = {
 function MyAccountPanel({ tab }: MyAccountPanelProps) {
 	const navigate = useNavigate({ from: "/my-account/" })
 	const { data: user } = useCurrentUser()
-	/** REST: completeness scoring only (+ contactId bootstrap if session Contact is blank). */
+	/** REST: completeness + Account Information panel. */
 	const accountQuery = useAccount()
 	const contactId =
 		user?.contactId?.trim() ||
 		accountQuery.data?.identity.contactId?.trim() ||
 		""
 
-	/** GraphQL: Account Information panel fields. */
-	const contactQuery = useAccountContact(
-		contactId,
-		tab === "account-information" && Boolean(contactId),
-	)
-
 	const completeness = accountQuery.data?.completeness
 	const showMeter = Boolean(completeness && !completeness.isComplete)
 	const reserveMeterSlot = accountQuery.isPending || showMeter
 
-	const panelPending =
-		tab === "account-information" &&
-		((!contactId && accountQuery.isPending) ||
-			(Boolean(contactId) && contactQuery.isPending))
+	const panelPending = tab === "account-information" && accountQuery.isPending
 	const panelError =
 		tab === "account-information" &&
 		!panelPending &&
-		(accountQuery.isError ||
-			(Boolean(contactId) && contactQuery.isError) ||
-			!contactId)
-	const panelAccount =
-		contactQuery.data != null ? accountContactToView(contactQuery.data) : null
+		(accountQuery.isError || !accountQuery.data)
+	const panelAccount = accountQuery.data ?? null
 
 	const prefsPending =
 		tab === "contact-preferences" && !contactId && accountQuery.isPending
