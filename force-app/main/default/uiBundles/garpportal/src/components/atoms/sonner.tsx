@@ -34,9 +34,15 @@ function Toaster({ ...props }: ToasterProps) {
 					"--normal-bg": "var(--popover)",
 					"--normal-text": "var(--popover-foreground)",
 					"--normal-border": "var(--border)",
-					"--border-radius": "var(--radius)",
+					"--border-radius": "var(--radius-xl)",
+					"--width": "28rem",
 				} as CSSProperties
 			}
+			toastOptions={{
+				classNames: {
+					description: "line-clamp-3",
+				},
+			}}
 			{...props}
 		/>
 	)
