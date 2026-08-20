@@ -18,6 +18,11 @@ type AccountEditDialogProps = {
 	/** Form body (scroll + sticky footer live inside the child). */
 	children?: ReactNode
 	triggerLabel?: string
+	/**
+	 * Pass `null` to render no trigger — for dialogs opened from elsewhere
+	 * (the identity hero, a completeness chip) via the controlled `open` prop.
+	 */
+	trigger?: ReactNode | null
 	/** Controlled open state (optional). */
 	open?: boolean
 	onOpenChange?: (open: boolean) => void
@@ -34,23 +39,28 @@ function AccountEditDialog({
 	description,
 	children,
 	triggerLabel = "Edit",
+	trigger,
 	open,
 	onOpenChange,
 	contentClassName,
 }: AccountEditDialogProps) {
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogTrigger asChild>
-				<Button
-					type="button"
-					variant="outline"
-					size="sm"
-					className="h-8 shrink-0 gap-1.5 border-border bg-background px-2.5 text-foreground shadow-xs hover:bg-accent hover:text-accent-foreground"
-				>
-					<Pencil className="size-3.5" aria-hidden />
-					{triggerLabel}
-				</Button>
-			</DialogTrigger>
+			{trigger === null ? null : (
+				<DialogTrigger asChild>
+					{trigger ?? (
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							className="h-8 shrink-0 gap-1.5 border-border bg-background px-2.5 text-foreground shadow-xs hover:bg-accent hover:text-accent-foreground"
+						>
+							<Pencil className="size-3.5" aria-hidden />
+							{triggerLabel}
+						</Button>
+					)}
+				</DialogTrigger>
+			)}
 			<DialogContent
 				className={cn(
 					// Fixed height from open → loaded (no layout jump).

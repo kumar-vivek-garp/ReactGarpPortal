@@ -148,7 +148,7 @@ function partActions(
 			kind: "viewOrder",
 			label: "View Order",
 			url: orderUrl,
-			isExternal: true,
+			isExternal: false,
 			primary: actions.length === 0,
 		})
 	}

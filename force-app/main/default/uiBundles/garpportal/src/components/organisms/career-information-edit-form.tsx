@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react"
+import { useEffect, useId, type ReactNode } from "react"
 import {
 	Controller,
 	useForm,
@@ -23,6 +23,7 @@ import {
 import { Skeleton } from "@/components/atoms/skeleton"
 import { useAccountOptions } from "@/hooks/use-account-options"
 import { useSaveAccountProfile } from "@/hooks/use-save-account-profile"
+import type { CareerFocusField } from "@/lib/account-presentation"
 import { cn } from "@/lib/utils"
 
 const WESTERN_CHARACTERS = /^[a-zA-Z0-9().,&\-\s]*$/
@@ -66,6 +67,12 @@ type CareerInformationFormValues = {
 type CareerInformationEditFormProps = {
 	account: AccountView
 	onSaved?: () => void
+	/**
+	 * Name of the control to focus once the form is interactive — set when the
+	 * dialog is opened from a profile-completeness chip, so the user lands on
+	 * the field they were told was missing.
+	 */
+	focusField?: CareerFocusField
 }
 
 function FieldError({ message }: { message?: string }) {
@@ -211,6 +218,7 @@ function optionsFor(
 function CareerInformationEditForm({
 	account,
 	onSaved,
+	focusField,
 }: CareerInformationEditFormProps) {
 	const formId = useId()
 	const optionsQuery = useAccountOptions(true)
@@ -236,6 +244,16 @@ function CareerInformationEditForm({
 	const isLoading = optionsQuery.isLoading
 	const loadFailed = optionsQuery.isError
 	const picklists = optionsQuery.data?.picklists
+
+	useEffect(() => {
+		if (!focusField || isLoading || loadFailed) return
+		// Focus by DOM id rather than RHF's `setFocus`: most of these controls are
+		// Radix Selects behind a `Controller`, which registers no input ref.
+		const node = document.getElementById(`${formId}-${focusField}`)
+		if (!node) return
+		node.scrollIntoView({ block: "center" })
+		node.focus()
+	}, [focusField, formId, isLoading, loadFailed])
 
 	const onSubmit: SubmitHandler<CareerInformationFormValues> = async (values) => {
 		const payload: AccountProfileValues = {

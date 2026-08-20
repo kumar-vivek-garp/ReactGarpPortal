@@ -1,10 +1,8 @@
 import type { ReactNode } from "react"
 import { animated, useTransition } from "@react-spring/web"
-import { Link, useNavigate } from "@tanstack/react-router"
-import { ExternalLink, MapPin } from "lucide-react"
+import { useNavigate } from "@tanstack/react-router"
 
 import type { MemberEvent } from "@/api/events"
-import { Button } from "@/components/atoms/button"
 import { PillTabs } from "@/components/atoms/pill-tabs"
 import { Tabs } from "@/components/atoms/tabs"
 import { EventCard } from "@/components/molecules/event-card"
@@ -13,7 +11,6 @@ import { StaggerReveal } from "@/components/molecules/stagger-reveal"
 import {
 	EVENT_BUCKET_META,
 	EVENT_TAB_ITEMS,
-	SEE_ALL_EVENTS_URL,
 	type EventsTab,
 } from "@/config/events"
 import { useEvents } from "@/hooks/use-events"
@@ -21,32 +18,6 @@ import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
 
 type EventsPanelProps = {
 	tab: EventsTab
-}
-
-function SeeAllEventsButton({ className }: { className?: string }) {
-	return (
-		<Button asChild size="sm" className={className}>
-			<a
-				href={SEE_ALL_EVENTS_URL}
-				target="_blank"
-				rel="noreferrer noopener"
-			>
-				See all events
-				<ExternalLink />
-			</a>
-		</Button>
-	)
-}
-
-function SetChapterButton() {
-	return (
-		<Button asChild size="sm" variant="outline">
-			<Link to="/my-account" search={{ tab: "account-information" }}>
-				<MapPin />
-				Set/Change My Chapter
-			</Link>
-		</Button>
-	)
 }
 
 function EventsEmptyState({ tab }: { tab: EventsTab }) {
@@ -60,7 +31,6 @@ function EventsEmptyState({ tab }: { tab: EventsTab }) {
 			<p className="mt-2 max-w-md text-sm text-muted-foreground">
 				{emptyMessage}
 			</p>
-			<SeeAllEventsButton className="mt-5" />
 		</div>
 	)
 }
@@ -68,7 +38,7 @@ function EventsEmptyState({ tab }: { tab: EventsTab }) {
 function EventGrid({ children }: { children: ReactNode }) {
 	return (
 		<StaggerReveal
-			className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+			className="grid gap-6 sm:grid-cols-2"
 			itemClassName="h-full"
 		>
 			{children}
@@ -233,19 +203,13 @@ function EventsPanel({ tab }: EventsPanelProps) {
 			className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
 		>
 			<header className="shrink-0 space-y-4">
-				<div className="space-y-3">
-					<div>
-						<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
-							My Events
-						</h1>
-						<p className="mt-1 text-sm text-muted-foreground">
-							Your registrations, chapter meetings, and featured GARP events.
-						</p>
-					</div>
-					<div className="flex flex-wrap items-center gap-3">
-						<SetChapterButton />
-						<SeeAllEventsButton />
-					</div>
+				<div>
+					<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+						My Events
+					</h1>
+					<p className="mt-1 text-sm text-muted-foreground">
+						Your registrations, chapter meetings, and featured GARP events.
+					</p>
 				</div>
 
 				<PillTabs

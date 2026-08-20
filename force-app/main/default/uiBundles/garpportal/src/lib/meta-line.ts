@@ -23,6 +23,14 @@ export type MetaIcon =
 	| "unavailable"
 	| "price"
 	| "materialType"
+	// my account identity
+	| "email"
+	| "phone"
+	| "memberSince"
+	| "renews"
+	// order history
+	| "invoice"
+	| "paymentMethod"
 
 export type MetaLine = {
 	icon: MetaIcon

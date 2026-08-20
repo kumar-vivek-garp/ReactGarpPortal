@@ -10,22 +10,20 @@ const routeApi = getRouteApi("/_appLayout/membership/")
 
 function MembershipHeroSkeleton() {
 	return (
-		<Skeleton className="rounded-xl border border-border px-6 py-6">
-			<div className="grid gap-6 md:grid-cols-[minmax(0,18rem)_1fr]">
-				<div className="flex items-start gap-3">
+		<Skeleton className="rounded-xl border border-border bg-muted/40 px-6 py-5">
+			<div className="grid items-center gap-6 md:grid-cols-2">
+				<div className="flex items-start gap-4">
 					<Skeleton className="size-14 shrink-0 rounded-full" />
 					<div className="min-w-0 flex-1 space-y-2">
 						<Skeleton className="h-4 w-40" />
 						<Skeleton className="h-3.5 w-36" />
 						<Skeleton className="h-3.5 w-44" />
-						<Skeleton className="h-3.5 w-48" />
+						<Skeleton className="mt-1 h-6 w-20 rounded-full" />
+						<Skeleton className="h-3 w-52" />
 					</div>
 				</div>
-				<div className="space-y-3">
-					<Skeleton className="h-3.5 w-full" />
-					<Skeleton className="h-3.5 w-5/6" />
-					<Skeleton className="h-3.5 w-4/5" />
-					<Skeleton className="h-9 w-44 rounded-xl" />
+				<div className="space-y-2 md:justify-self-end md:text-right">
+					<Skeleton className="ml-auto h-3.5 w-72 max-w-full" />
 				</div>
 			</div>
 		</Skeleton>

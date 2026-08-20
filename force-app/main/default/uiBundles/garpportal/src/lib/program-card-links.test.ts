@@ -155,9 +155,8 @@ describe("programExamSetupHref", () => {
 })
 
 describe("programOrderHref", () => {
-	it("builds MyGarp order hash", () => {
-		mockedLocal.mockReturnValue(false)
-		expect(programOrderHref("a1aXXX")).toBe("/sfdcApp#!/order/a1aXXX")
+	it("builds in-app order detail path", () => {
+		expect(programOrderHref("a1aXXX")).toBe("/my-account/orders/a1aXXX")
 	})
 
 	it("returns null for blank id", () => {

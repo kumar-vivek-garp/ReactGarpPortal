@@ -1,4 +1,5 @@
 import { isLocalViteHost } from "@/auth/sfdc-env"
+import { orderDetailsPath } from "@/lib/order-paths"
 import { resolvePortalAssetUrl } from "@/lib/resolve-portal-asset-url"
 
 /**
@@ -154,9 +155,12 @@ export function programExamSetupHref(programType: string): string | null {
 	return myGarpSfdcAppHref(`programs/exam-setup/${routeSlug}`)
 }
 
-/** MyGarp order detail (`/sfdcApp#!/order/{id}`) for unpaid registration orders. */
-export function programOrderHref(orderId: string | null | undefined): string | null {
-	const id = orderId?.trim()
-	if (!id) return null
-	return myGarpSfdcAppHref(`order/${id}`)
+/**
+ * In-app order detail for unpaid registration orders
+ * (`/my-account/orders/:orderNumber` — Opportunity Id or invoice #).
+ */
+export function programOrderHref(
+	orderId: string | null | undefined,
+): string | null {
+	return orderDetailsPath(orderId)
 }

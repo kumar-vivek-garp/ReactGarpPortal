@@ -42,7 +42,7 @@ function EventCard({ event, isAttending = false, className }: EventCardProps) {
 
 	return (
 		<Card
-			className={cn("h-full gap-4 border-border py-5 shadow-none", className)}
+			className={cn("h-full gap-4 py-5 shadow-none", className)}
 		>
 			<CardHeader className="gap-3 px-5">
 				<div className="flex items-start gap-4">

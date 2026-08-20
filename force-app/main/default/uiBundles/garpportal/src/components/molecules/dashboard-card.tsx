@@ -81,7 +81,7 @@ function DashboardCard({ card, onDismiss, className }: DashboardCardProps) {
 	return (
 		<Card
 			className={cn(
-				"h-full gap-0 overflow-hidden border-border bg-muted/40 py-0 shadow-none",
+				"h-full gap-0 overflow-hidden bg-muted/40 py-0 shadow-none",
 				className,
 			)}
 		>

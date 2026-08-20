@@ -23,6 +23,10 @@ export {
 export { MyAccountPending } from "./my-account-pending"
 export { OrderHistorySkeleton } from "./order-history-skeleton"
 export {
+	OrderDetailPending,
+	OrderDetailSkeleton,
+} from "./order-detail-pending"
+export {
 	ProgramDetailPending,
 	ProgramDetailSkeleton,
 } from "./program-detail-pending"

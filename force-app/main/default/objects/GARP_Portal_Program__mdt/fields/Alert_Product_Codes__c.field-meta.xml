@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Alert_Product_Codes__c</fullName>
+    <description>The registration SKUs whose unpaid order raises &quot;Exam Unpaid&quot; on the alert bar, as a JSON array: [&quot;FRM1E&quot;, &quot;FRM2E&quot;, &quot;FRM1S&quot;, &quot;FRM2S&quot;]. These change every exam season and are the value most likely to be edited by somebody who is not a developer — updating them here is a record edit, no deploy. A populated value REPLACES the service&apos;s hard-coded list wholesale (unlike most catalogue reads, which add): a season&apos;s SKU list is swapped, not extended, and last season&apos;s codes staying alive would raise &quot;Exam Unpaid&quot; against orders that are not exam orders. Leave blank to use GARP_Portal_AlertBarService&apos;s hard-coded fallback. Parsed independently of Config__c: a broken value degrades only this alert, with a named warning on the response.</description>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>Alert Product Codes</label>
+    <length>4096</length>
+    <type>LongTextArea</type>
+    <visibleLines>3</visibleLines>
+</CustomField>

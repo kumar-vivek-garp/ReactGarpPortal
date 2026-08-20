@@ -85,8 +85,15 @@ export type PicklistOption = {
 	value: string
 }
 
+export type ChapterOption = {
+	id: string
+	name: string
+	region: string | null
+}
+
 export type AccountOptionsView = {
 	picklists: Record<string, PicklistOption[]>
+	chapters: ChapterOption[]
 }
 
 export type SaveAccountProfileResult = {
@@ -95,9 +102,44 @@ export type SaveAccountProfileResult = {
 	completeness: Completeness
 }
 
+/**
+ * Contract-derived membership block from `GARP_Portal_Core.Standing`.
+ * Null when the account has no Membership contract.
+ */
+export type AccountStanding = {
+	garpId: string | null
+	memberType: string | null
+	/** Verbatim contract status, e.g. "Activated ( Auto-Renew )". */
+	memberStatus: string | null
+	/** Active when status contains Activated; otherwise Lapsed. */
+	statusLabel: string | null
+	dateJoined: string | null
+	expirationDate: string | null
+	isAutoRenewEnabled: boolean
+	isCertHolder: boolean
+	pendingOrderId: string | null
+	pendingOrderNumber: string | null
+	pendingOrderAmount: number | null
+}
+
+export type AutoRenewOffResult = {
+	statusMessage: string | null
+	statusCode: number | null
+}
+
+export type AutoRenewOnResult = {
+	statusMessage: string | null
+	statusCode: number | null
+	needPaymentInfo: boolean
+	/** Opportunity Id for Stripe setup; may be absent on the payload. */
+	orderId?: string | null
+}
+
 export type AccountView = {
 	identity: Identity
 	completeness: Completeness
+	/** Null / omitted when there is no Membership contract. */
+	standing?: AccountStanding | null
 	personal: {
 		firstName: string | null
 		lastName: string | null

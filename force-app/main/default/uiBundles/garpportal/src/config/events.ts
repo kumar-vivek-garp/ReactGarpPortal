@@ -79,12 +79,6 @@ export const EVENT_TAB_ITEMS: Array<{
 	icon: EVENT_BUCKET_META[value].icon,
 }))
 
-/** Public GARP catalogue — listing CTA, always a new tab. */
-export const SEE_ALL_EVENTS_URL = "https://www.garp.org/events/all"
-
-/** In-app account page where preferred chapters are shown. */
-export const SET_CHAPTER_HREF = "/my-account?tab=account-information"
-
 /**
  * Legacy Experience Cloud attendance tool (same path MyGarp used).
  * Only render when Apex set `canManageAttendance`.

@@ -26,7 +26,7 @@ function BenefitCard({ benefit, className }: BenefitCardProps) {
 			className={cn(
 				// Natural height with clamped copy — see `buildBenefitPresentation`
 				// for why this replaced a fixed height plus a hidden scroll area.
-				"relative h-full gap-0 overflow-hidden border-border py-0 shadow-none",
+				"relative h-full gap-0 overflow-hidden py-0 shadow-none",
 				className,
 			)}
 		>

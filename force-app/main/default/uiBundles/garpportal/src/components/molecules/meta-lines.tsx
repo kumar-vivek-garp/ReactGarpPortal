@@ -2,13 +2,19 @@ import {
 	Award,
 	BookOpen,
 	CalendarClock,
+	CalendarSync,
 	CircleCheck,
 	Clock,
+	CreditCard,
+	Hash,
 	History,
+	Mail,
 	MapPin,
+	Phone,
 	Sparkles,
 	Tag,
 	TriangleAlert,
+	UserRoundCheck,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
@@ -32,6 +38,12 @@ const META_ICON: Record<MetaIcon, LucideIcon> = {
 	unavailable: TriangleAlert,
 	price: Tag,
 	materialType: BookOpen,
+	email: Mail,
+	phone: Phone,
+	memberSince: UserRoundCheck,
+	renews: CalendarSync,
+	invoice: Hash,
+	paymentMethod: CreditCard,
 }
 
 /** Icons that should read as a warning rather than neutral information. */

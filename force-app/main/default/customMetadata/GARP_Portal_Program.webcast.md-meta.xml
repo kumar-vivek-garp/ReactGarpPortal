@@ -3,6 +3,14 @@
     <label>Webcast</label>
     <protected>false</protected>
     <values>
+        <field>Alert_Product_Codes__c</field>
+        <value xsi:nil="true"/>
+    </values>
+    <values>
+        <field>Capabilities__c</field>
+        <value xsi:nil="true"/>
+    </values>
+    <values>
         <field>Config__c</field>
         <value xsi:type="xsd:string">{
   &quot;code&quot;: &quot;webcast&quot;,
@@ -21,5 +29,17 @@
     &quot;registrationPath&quot;: &quot;webcast&quot;
   }
 }</value>
+    </values>
+    <values>
+        <field>Credentials__c</field>
+        <value xsi:nil="true"/>
+    </values>
+    <values>
+        <field>Errata_Book_Label__c</field>
+        <value xsi:nil="true"/>
+    </values>
+    <values>
+        <field>Results_Sections__c</field>
+        <value xsi:nil="true"/>
     </values>
 </CustomMetadata>

@@ -4,10 +4,6 @@ import { useNavigate } from "@tanstack/react-router"
 import { PillTabs } from "@/components/atoms/pill-tabs"
 import { Tabs } from "@/components/atoms/tabs"
 import {
-	ProfileCompletenessMeter,
-	ProfileCompletenessMeterSkeleton,
-} from "@/components/molecules/profile-completeness-meter"
-import {
 	AccountInformationError,
 	AccountInformationPanel,
 	AccountInformationSkeleton,
@@ -19,15 +15,22 @@ import {
 import { OrderHistoryPanel } from "@/components/organisms/order-history-panel"
 import { useAccount } from "@/hooks/use-account"
 import { useCurrentUser } from "@/hooks/use-current-user"
-import { MY_ACCOUNT_TAB_ITEMS, type MyAccountTab } from "@/config/my-account"
+import {
+	AUTO_RENEW_SETUP_COMPLETE_STATUS,
+	MY_ACCOUNT_TAB_ITEMS,
+	type MyAccountTab,
+} from "@/config/my-account"
+import type { OrderFilter } from "@/config/order-history"
 import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
-import { cn } from "@/lib/utils"
 
 type MyAccountPanelProps = {
 	tab: MyAccountTab
+	status?: string
+	/** Order History bucket filter, forwarded from `?orders=`. */
+	orders?: OrderFilter
 }
 
-function MyAccountPanel({ tab }: MyAccountPanelProps) {
+function MyAccountPanel({ tab, status, orders }: MyAccountPanelProps) {
 	const navigate = useNavigate({ from: "/my-account/" })
 	const { data: user } = useCurrentUser()
 	/** REST: completeness + Account Information panel. */
@@ -36,10 +39,6 @@ function MyAccountPanel({ tab }: MyAccountPanelProps) {
 		user?.contactId?.trim() ||
 		accountQuery.data?.identity.contactId?.trim() ||
 		""
-
-	const completeness = accountQuery.data?.completeness
-	const showMeter = Boolean(completeness && !completeness.isComplete)
-	const reserveMeterSlot = accountQuery.isPending || showMeter
 
 	const panelPending = tab === "account-information" && accountQuery.isPending
 	const panelError =
@@ -62,36 +61,23 @@ function MyAccountPanel({ tab }: MyAccountPanelProps) {
 			value={tab}
 			onValueChange={(value) => {
 				void navigate({
-					search: { tab: value as MyAccountTab },
+					search: (prev) => ({
+						...prev,
+						tab: value as MyAccountTab,
+					}),
 					replace: true,
 				})
 			}}
 			className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
 		>
-			{/* Fixed chrome: heading + progress/tabs — does not scroll. */}
-			<header className="shrink-0 space-y-4">
-				<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
-					My Account
-				</h1>
-
-				<div
-					className={cn(
-						"flex flex-col gap-4",
-						reserveMeterSlot && "sm:flex-row sm:items-center sm:justify-between sm:gap-6",
-					)}
-				>
-					{reserveMeterSlot ? (
-						<div className="w-full max-w-md sm:min-w-0 sm:flex-1">
-							{accountQuery.isPending ? (
-								<ProfileCompletenessMeterSkeleton />
-							) : showMeter && completeness ? (
-								<ProfileCompletenessMeter
-									percent={completeness.percentComplete}
-									missing={completeness.missing}
-								/>
-							) : null}
-						</div>
-					) : null}
+			{/* Fixed chrome: heading + tabs — does not scroll. Completeness now
+			    lives in the Account Information hero, next to the identity it
+			    describes, rather than as a bare rail above every tab. */}
+			<header className="shrink-0">
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+						My Account
+					</h1>
 
 					<PillTabs items={MY_ACCOUNT_TAB_ITEMS} value={tab} />
 				</div>
@@ -111,7 +97,12 @@ function MyAccountPanel({ tab }: MyAccountPanelProps) {
 								{panelPending ? <AccountInformationSkeleton /> : null}
 								{!panelPending && panelError ? <AccountInformationError /> : null}
 								{!panelPending && panelAccount ? (
-									<AccountInformationPanel account={panelAccount} />
+									<AccountInformationPanel
+										account={panelAccount}
+										autoRenewSetupComplete={
+											status === AUTO_RENEW_SETUP_COMPLETE_STATUS
+										}
+									/>
 								) : null}
 							</>
 						) : null}
@@ -133,7 +124,10 @@ function MyAccountPanel({ tab }: MyAccountPanelProps) {
 							</>
 						) : null}
 						{currentTab === "order-history" ? (
-							<OrderHistoryPanel enabled={tab === "order-history"} />
+							<OrderHistoryPanel
+								enabled={tab === "order-history"}
+								filter={orders}
+							/>
 						) : null}
 					</animated.div>
 				))}

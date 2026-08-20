@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Results_Sections__c</fullName>
+    <description>The Exam_Attempt__c.Section__c values this program&apos;s results are filed under, as a JSON array: [&quot;FRM Part 1&quot;, &quot;FRM Part 2&quot;, &quot;FRM Full Program&quot;]. Names, not rules — one program can use several. GARP_Portal_ExamResultsService UNIONS these with its hard-coded list rather than replacing it, deliberately: that list is a SOQL filter, so a row missing a name would make a member&apos;s results disappear from the page with no error anywhere. A value here can only ever ADD a section; removing one is still a code edit, where a reviewer will see it. Parsed independently of Config__c: a broken value degrades only this addition, with a named warning on the response.</description>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>Results Sections</label>
+    <length>4096</length>
+    <type>LongTextArea</type>
+    <visibleLines>3</visibleLines>
+</CustomField>

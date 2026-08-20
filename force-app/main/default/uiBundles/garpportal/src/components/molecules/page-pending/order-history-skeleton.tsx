@@ -1,57 +1,61 @@
 import { Skeleton } from "@/components/atoms/skeleton"
-import { cn } from "@/lib/utils"
 
-function OrderRowSkeleton({ showPay = false }: { showPay?: boolean }) {
+/** Mirrors `OrderRow` — icon tile, title + meta run, trailing amount/badge/action. */
+function OrderRowSkeleton() {
 	return (
-		<Skeleton
-			className={cn(
-				"grid grid-cols-1 gap-3 rounded-xl border border-border bg-muted/40 px-5 py-4",
-				"sm:grid-cols-[minmax(0,9rem)_minmax(0,8rem)_minmax(0,1fr)_minmax(0,7rem)_auto] sm:items-center sm:gap-4",
-				showPay &&
-					"sm:grid-cols-[minmax(0,9rem)_minmax(0,8rem)_minmax(0,1fr)_minmax(0,7rem)_auto_auto]",
-			)}
-		>
-			<Skeleton className="h-4 w-24" />
-			<Skeleton className="h-4 w-20" />
-			<Skeleton className="h-4 w-full max-w-xs" />
-			<Skeleton className="h-4 w-16 sm:justify-self-end" />
-			<Skeleton className="h-6 w-16 rounded-full" />
-			{showPay ? (
-				<Skeleton className="h-8 w-20 rounded-xl sm:justify-self-end" />
-			) : null}
+		<Skeleton className="flex flex-col gap-4 rounded-xl border border-primary/20 bg-card p-4 sm:flex-row sm:items-center">
+			<Skeleton className="size-11 shrink-0 rounded-lg" />
+
+			<div className="min-w-0 flex-1 space-y-1.5">
+				<Skeleton className="h-5 w-3/5 max-w-xs rounded-sm" />
+				<div className="flex flex-wrap gap-x-4 gap-y-1">
+					<Skeleton className="h-3.5 w-24 rounded-sm" />
+					<Skeleton className="h-3.5 w-28 rounded-sm" />
+					<Skeleton className="h-3.5 w-20 rounded-sm" />
+				</div>
+			</div>
+
+			<div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-2 sm:flex-col sm:items-end">
+				<Skeleton className="h-5 w-20 rounded-sm" />
+				<Skeleton className="h-6 w-16 rounded-full" />
+				<Skeleton className="h-8 w-20 rounded-xl" />
+			</div>
 		</Skeleton>
 	)
 }
 
 function OrderHistorySkeleton() {
 	return (
-		<div className="space-y-8" aria-busy aria-label="Loading orders">
-			<Skeleton className="h-11 w-full max-w-md rounded-lg" />
-			{[
-				{ title: "w-48", showPay: true as const },
-				{ title: "w-40", showPay: false as const },
-			].map((section, sectionIndex) => (
-				<section key={sectionIndex} className="space-y-3">
-					<Skeleton className={cn("h-6", section.title)} />
+		<div className="space-y-6" aria-busy aria-label="Loading orders">
+			{/* Summary bar — three stat columns. */}
+			<Skeleton className="grid gap-5 rounded-xl border border-primary/20 bg-card p-5 sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-border">
+				{[0, 1, 2].map((column) => (
 					<div
-						className={cn(
-							"hidden gap-4 px-5 sm:grid",
-							section.showPay
-								? "sm:grid-cols-[minmax(0,9rem)_minmax(0,8rem)_minmax(0,1fr)_minmax(0,7rem)_auto_auto]"
-								: "sm:grid-cols-[minmax(0,9rem)_minmax(0,8rem)_minmax(0,1fr)_minmax(0,7rem)_auto]",
-						)}
-						aria-hidden
+						key={column}
+						className="space-y-1.5 sm:first:pr-5 sm:[&:nth-child(2)]:px-5 sm:last:pl-5"
 					>
-						{[0, 1, 2, 3, 4].map((col) => (
-							<Skeleton key={col} className="h-2.5 w-12" />
-						))}
-						{section.showPay ? (
-							<Skeleton className="h-2.5 w-12 justify-self-end" />
-						) : null}
+						<Skeleton className="h-3 w-24 rounded-sm" />
+						<Skeleton className="h-8 w-28 rounded-sm" />
+						{column === 0 ? <Skeleton className="h-8 w-20 rounded-xl" /> : null}
 					</div>
-					{[0, 1, 2].map((row) => (
-						<OrderRowSkeleton key={row} showPay={section.showPay} />
-					))}
+				))}
+			</Skeleton>
+
+			{/* Toolbar — search + filter toggle. */}
+			<div className="flex flex-wrap items-center justify-between gap-3">
+				<Skeleton className="h-10 w-full rounded-lg sm:max-w-md" />
+				<Skeleton className="h-9 w-56 rounded-xl" />
+			</div>
+
+			{/* Both sections render while the filter is unknown. */}
+			{[0, 1].map((section) => (
+				<section key={section} className="space-y-4">
+					<Skeleton className="h-6 w-52 rounded-sm" />
+					<div className="flex flex-col gap-3">
+						{[0, 1, 2].map((row) => (
+							<OrderRowSkeleton key={row} />
+						))}
+					</div>
 				</section>
 			))}
 		</div>

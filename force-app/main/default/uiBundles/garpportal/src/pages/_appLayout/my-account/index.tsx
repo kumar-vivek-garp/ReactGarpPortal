@@ -17,6 +17,6 @@ export const Route = createFileRoute("/_appLayout/my-account/")({
 })
 
 function MyAccount() {
-	const { tab } = Route.useSearch()
-	return <MyAccountPanel tab={tab} />
+	const { tab, status, orders } = Route.useSearch()
+	return <MyAccountPanel tab={tab} status={status} orders={orders} />
 }

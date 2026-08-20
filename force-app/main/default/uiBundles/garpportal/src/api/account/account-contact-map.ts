@@ -60,6 +60,7 @@ export function accountContactToView(contact: AccountContact): AccountView {
 			missing: [],
 			missingBySection: {},
 		},
+		standing: null,
 		personal: {
 			firstName: contact.firstName,
 			lastName: contact.lastName,

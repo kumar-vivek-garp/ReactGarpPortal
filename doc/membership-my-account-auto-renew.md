@@ -33,7 +33,7 @@ These are **client** branches on top of standing + one write API. Stripe Checkou
 
 **Stripe page** (not React): `…/stripe_checkout?mode=setup&id={opportunityId}` — SetupIntent / save payment method. “Return to My Account” is on that VF/LWC page.
 
-If `orderId` is missing, the URL becomes `id=undefined`. That is a **payload gap**, not a missing Stripe page. Apex `AutoRenewOnResult` must copy `orderId` off `GARP_BC_Membership.returnEnableAutoRenew`.
+If `orderId` is missing, the URL becomes `id=undefined` (same as legacy JS string concat). Frontend does not invent an Opportunity Id.
 
 ### 1.3 After Stripe save — `?status=autorenewsetupcomplete`
 

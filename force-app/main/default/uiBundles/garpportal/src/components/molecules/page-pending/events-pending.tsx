@@ -46,11 +46,11 @@ function EventCardSkeleton() {
 function EventsContentSkeleton() {
 	return (
 		<div
-			className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+			className="grid gap-6 sm:grid-cols-2"
 			aria-busy
 			aria-label="Loading events"
 		>
-			{[0, 1, 2, 3, 4, 5].map((key) => (
+			{[0, 1, 2, 3].map((key) => (
 				<EventCardSkeleton key={key} />
 			))}
 		</div>
@@ -69,19 +69,13 @@ function EventsPendingShell({ tab = DEFAULT_EVENTS_TAB }: EventsPendingProps) {
 			className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
 		>
 			<header className="shrink-0 space-y-4">
-				<div className="space-y-3">
-					<div>
-						<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
-							My Events
-						</h1>
-						<p className="mt-1 text-sm text-muted-foreground">
-							Your registrations, chapter meetings, and featured GARP events.
-						</p>
-					</div>
-					<div className="flex flex-wrap items-center gap-3">
-						<Skeleton className="h-8 w-44 rounded-md" />
-						<Skeleton className="h-8 w-32 rounded-md" />
-					</div>
+				<div>
+					<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+						My Events
+					</h1>
+					<p className="mt-1 text-sm text-muted-foreground">
+						Your registrations, chapter meetings, and featured GARP events.
+					</p>
 				</div>
 				<PillTabs items={EVENT_TAB_ITEMS} value={tab} />
 			</header>

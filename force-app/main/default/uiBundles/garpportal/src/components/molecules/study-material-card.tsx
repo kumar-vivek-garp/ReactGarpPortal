@@ -38,7 +38,7 @@ function StudyMaterialCard({
 	return (
 		<Card
 			className={cn(
-				"h-full gap-4 overflow-hidden border-border py-0 shadow-none",
+				"h-full gap-4 overflow-hidden py-0 shadow-none",
 				className,
 			)}
 		>

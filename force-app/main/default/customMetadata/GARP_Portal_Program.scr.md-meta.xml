@@ -3,6 +3,14 @@
     <label>SCR</label>
     <protected>false</protected>
     <values>
+        <field>Alert_Product_Codes__c</field>
+        <value xsi:type="xsd:string">[&quot;SCRNME&quot;, &quot;SCRNMS&quot;, &quot;SCRME&quot;, &quot;SCRMS&quot;, &quot;SCRCME&quot;, &quot;SCRCMS&quot;, &quot;SCR2A&quot;]</value>
+    </values>
+    <values>
+        <field>Capabilities__c</field>
+        <value xsi:type="xsd:string">{ &quot;certification&quot;: true }</value>
+    </values>
+    <values>
         <field>Config__c</field>
         <value xsi:type="xsd:string">{
   &quot;code&quot;: &quot;scr&quot;,
@@ -27,5 +35,20 @@
     &quot;registrationPath&quot;: &quot;scr&quot;
   }
 }</value>
+    </values>
+    <values>
+        <field>Credentials__c</field>
+        <value xsi:type="xsd:string">{
+  &quot;digitalBadgePageUrl&quot;: &quot;https://my.garp.org/DigitalBadgeSCR&quot;,
+  &quot;certificateDownloadPath&quot;: &quot;/SCRCertificate&quot;
+}</value>
+    </values>
+    <values>
+        <field>Errata_Book_Label__c</field>
+        <value xsi:nil="true"/>
+    </values>
+    <values>
+        <field>Results_Sections__c</field>
+        <value xsi:type="xsd:string">[&quot;SCR&quot;]</value>
     </values>
 </CustomMetadata>

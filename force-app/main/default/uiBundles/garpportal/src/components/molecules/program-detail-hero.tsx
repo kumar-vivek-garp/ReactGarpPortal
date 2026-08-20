@@ -75,7 +75,7 @@ function ProgramDetailHero({
 
 	return (
 		<section className={cn("space-y-5", className)}>
-			<Card className="gap-0 overflow-hidden border-border py-0 shadow-none">
+			<Card className="gap-0 overflow-hidden py-0 shadow-none">
 				<div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-start">
 					{logoUrl ? (
 						<div className="flex h-28 w-full shrink-0 items-center justify-center rounded-xl bg-muted/40 p-3 sm:h-32 sm:w-40">
@@ -114,7 +114,7 @@ function ProgramDetailHero({
 
 			<Card
 				className={cn(
-					"gap-4 border-border py-5 shadow-none",
+					"gap-4 py-5 shadow-none",
 					statusTone === "warning" || statusTone === "danger"
 						? "bg-muted/40"
 						: "bg-accent/40",

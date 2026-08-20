@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Errata_Book_Label__c</fullName>
+    <description>The word this program&apos;s books are labelled with on the errata form&apos;s Section picklist, when it is not the program code itself. RAIJ&apos;s books are labelled &quot;Japanese&quot; and RAI&apos;s &quot;RAI Exam&quot;; every other program matches on its own name and leaves this blank. Plain text, no JSON. Read by GARP_Portal_ErrataService, which falls back to its hard-coded overrides when this is blank.</description>
+    <externalId>false</externalId>
+    <fieldManageability>DeveloperControlled</fieldManageability>
+    <label>Errata Book Label</label>
+    <length>100</length>
+    <required>false</required>
+    <type>Text</type>
+    <unique>false</unique>
+</CustomField>

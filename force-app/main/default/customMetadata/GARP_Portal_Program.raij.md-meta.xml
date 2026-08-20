@@ -3,6 +3,14 @@
     <label>RAIJ</label>
     <protected>false</protected>
     <values>
+        <field>Alert_Product_Codes__c</field>
+        <value xsi:type="xsd:string">[&quot;RAIJNME&quot;, &quot;RAIJNMS&quot;, &quot;RAIJME&quot;, &quot;RAIJMS&quot;, &quot;RAIJCME&quot;, &quot;RAIJCMS&quot;, &quot;RAIJ2A&quot;]</value>
+    </values>
+    <values>
+        <field>Capabilities__c</field>
+        <value xsi:type="xsd:string">{ &quot;certification&quot;: true }</value>
+    </values>
+    <values>
         <field>Config__c</field>
         <value xsi:type="xsd:string">{
   &quot;code&quot;: &quot;raij&quot;,
@@ -27,5 +35,20 @@
     &quot;registrationPath&quot;: &quot;raij&quot;
   }
 }</value>
+    </values>
+    <values>
+        <field>Credentials__c</field>
+        <value xsi:type="xsd:string">{
+  &quot;digitalBadgePageUrl&quot;: &quot;https://my.garp.org/DigitalBadgeRAIJ&quot;,
+  &quot;certificateDownloadPath&quot;: &quot;/RAIJCertificate&quot;
+}</value>
+    </values>
+    <values>
+        <field>Errata_Book_Label__c</field>
+        <value xsi:type="xsd:string">Japanese</value>
+    </values>
+    <values>
+        <field>Results_Sections__c</field>
+        <value xsi:type="xsd:string">[&quot;RAIJ&quot;]</value>
     </values>
 </CustomMetadata>

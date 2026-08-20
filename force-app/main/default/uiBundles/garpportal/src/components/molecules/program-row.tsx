@@ -1,4 +1,5 @@
 import { Badge } from "@/components/atoms/badge"
+import { Card } from "@/components/atoms/card"
 import { CardCta } from "@/components/molecules/card-cta"
 import { MetaLines } from "@/components/molecules/meta-lines"
 import { StatusBadge } from "@/components/molecules/status-badge"
@@ -55,9 +56,12 @@ function ProgramRow({
 	} = presentation
 
 	return (
-		<div
+		<Card
 			className={cn(
-				"flex flex-col gap-4 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center",
+				// Same flat, bordered treatment as the grid card this row shares
+				// presentation with — Card's own border/bg/radius apply as-is,
+				// only the row's flex layout is added on top.
+				"gap-4 p-4 shadow-none sm:flex-row sm:items-center",
 				className,
 			)}
 		>
@@ -132,7 +136,7 @@ function ProgramRow({
 					/>
 				) : null}
 			</div>
-		</div>
+		</Card>
 	)
 }
 

@@ -3,6 +3,14 @@
     <label>FRM</label>
     <protected>false</protected>
     <values>
+        <field>Alert_Product_Codes__c</field>
+        <value xsi:type="xsd:string">[&quot;FRM1E&quot;, &quot;FRM2E&quot;, &quot;FRM1S&quot;, &quot;FRM2S&quot;]</value>
+    </values>
+    <values>
+        <field>Capabilities__c</field>
+        <value xsi:type="xsd:string">{ &quot;certification&quot;: true }</value>
+    </values>
+    <values>
         <field>Config__c</field>
         <value xsi:type="xsd:string">{
   &quot;code&quot;: &quot;frm&quot;,
@@ -28,5 +36,29 @@
     &quot;registrationPath&quot;: &quot;frm&quot;
   }
 }</value>
+    </values>
+    <values>
+        <field>Credentials__c</field>
+        <value xsi:type="xsd:string">{
+  &quot;digitalBadgePageUrl&quot;: &quot;https://my.garp.org/DigitalBadgeFRM&quot;,
+  &quot;partBadges&quot;: {
+    &quot;I&quot;: {
+      &quot;imageUrl&quot;: &quot;https://www.garp.org/hubfs/Portal/Certificates/FRM1%20Badge.png&quot;,
+      &quot;pageUrl&quot;: &quot;https://my.garp.org/DigitalBadgeFRMI&quot;
+    },
+    &quot;II&quot;: {
+      &quot;imageUrl&quot;: &quot;https://www.garp.org/hubfs/Portal/Certificates/FRM2%20Badge.png&quot;,
+      &quot;pageUrl&quot;: &quot;https://my.garp.org/DigitalBadgeFRMII&quot;
+    }
+  }
+}</value>
+    </values>
+    <values>
+        <field>Errata_Book_Label__c</field>
+        <value xsi:nil="true"/>
+    </values>
+    <values>
+        <field>Results_Sections__c</field>
+        <value xsi:type="xsd:string">[&quot;FRM Part 1&quot;, &quot;FRM Part 2&quot;, &quot;FRM Full Program&quot;]</value>
     </values>
 </CustomMetadata>

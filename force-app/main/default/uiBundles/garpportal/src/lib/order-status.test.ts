@@ -28,27 +28,65 @@ describe("orderStatusPresentation", () => {
 		).toEqual({ label: "Partially Paid", tone: "warning" })
 	})
 
-	it("tones a paid order as success", () => {
+	it("tones paid statuses as success", () => {
 		expect(orderStatusPresentation(order({ isPaid: true }))).toEqual({
 			label: "Paid",
 			tone: "success",
 		})
-		// An explicit status still wins the label, but paid keeps the success tone.
 		expect(
 			orderStatusPresentation(order({ isPaid: true, paymentStatus: "Settled" })),
 		).toEqual({ label: "Settled", tone: "success" })
 	})
 
+	it("tones unpaid / awaiting as warning", () => {
+		expect(orderStatusPresentation(order({ canPay: true }))).toEqual({
+			label: "Unpaid",
+			tone: "warning",
+		})
+		expect(
+			orderStatusPresentation(order({ paymentStatus: "Unpaid", canPay: true })),
+		).toEqual({ label: "Unpaid", tone: "warning" })
+	})
+
+	it("tones Recurring as info (active auto-renew)", () => {
+		expect(
+			orderStatusPresentation(
+				order({
+					paymentStatus: "Recurring",
+					isPaid: false,
+					canPay: false,
+					isClosed: false,
+				}),
+			),
+		).toEqual({ label: "Recurring", tone: "info" })
+		expect(
+			orderStatusPresentation(order({ stage: "Recurring Intent", canPay: false })),
+		).toEqual({ label: "Recurring Intent", tone: "info" })
+	})
+
+	it("tones Stopped / cancelled / void as danger", () => {
+		expect(
+			orderStatusPresentation(
+				order({
+					paymentStatus: "Stopped",
+					canPay: false,
+					isClosed: true,
+				}),
+			),
+		).toEqual({ label: "Stopped", tone: "danger" })
+		expect(
+			orderStatusPresentation(
+				order({ stage: "Closed Lost", canPay: false, isClosed: true }),
+			),
+		).toEqual({ label: "Closed Lost", tone: "danger" })
+		expect(
+			orderStatusPresentation(order({ paymentStatus: "Void", canPay: false })),
+		).toEqual({ label: "Void", tone: "danger" })
+	})
+
 	it("falls back to the stage before inventing a label", () => {
 		expect(orderStatusPresentation(order({ stage: "Draft" }))).toEqual({
 			label: "Draft",
-			tone: "warning",
-		})
-	})
-
-	it("reports Unpaid only when the order can actually be paid", () => {
-		expect(orderStatusPresentation(order({ canPay: true }))).toEqual({
-			label: "Unpaid",
 			tone: "warning",
 		})
 	})
@@ -64,5 +102,22 @@ describe("orderStatusPresentation", () => {
 		expect(
 			orderStatusPresentation(order({ paymentStatus: "   ", stage: "   " })),
 		).toEqual({ label: "Unpaid", tone: "warning" })
+	})
+
+	it("uses flag fallbacks for unknown Apex strings", () => {
+		expect(
+			orderStatusPresentation(
+				order({ paymentStatus: "Wire Transfer Pending", isPaid: true }),
+			),
+		).toEqual({ label: "Wire Transfer Pending", tone: "success" })
+		expect(
+			orderStatusPresentation(
+				order({
+					paymentStatus: "Employer Invoice",
+					canPay: true,
+					isPaid: false,
+				}),
+			),
+		).toEqual({ label: "Employer Invoice", tone: "warning" })
 	})
 })

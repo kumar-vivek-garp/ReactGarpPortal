@@ -118,11 +118,19 @@ function ProgramExamOverview({
 			: examWhen
 	const message = partMessage(part)
 
-	const secondary: Array<{ label: string; url: string; newWindow?: boolean }> =
-		[]
+	const secondary: Array<{
+		label: string
+		url: string
+		newWindow?: boolean
+		isExternal?: boolean
+	}> = []
 	const orderUrl = programOrderHref(part.unpaidOrderId)
 	if (part.examPartState === "Unpaid" && orderUrl) {
-		secondary.push({ label: "View Order", url: orderUrl })
+		secondary.push({
+			label: "View Order",
+			url: orderUrl,
+			isExternal: false,
+		})
 	}
 	if (
 		part.examPartState === "SchedulingClosedNeverScheduled" &&
@@ -202,7 +210,7 @@ function ProgramExamOverview({
 							key={item.label}
 							label={item.label}
 							url={item.url}
-							isExternal
+							isExternal={item.isExternal ?? true}
 							newWindow={item.newWindow}
 						/>
 					))}

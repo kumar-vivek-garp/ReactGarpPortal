@@ -25,4 +25,15 @@ export type OrdersView = {
 	paidOrders: PortalOrder[]
 }
 
+/** Inner result for orderDetail / payOrder / cancelOrder (statusCode lives here too). */
+export type PortalResult = {
+	statusMessage: string | null
+	statusCode: number
+}
+
+/** `GET orderDetail` payload — same summary shape as list rows. */
+export type OrderDetailView = PortalResult & {
+	order: PortalOrder | null
+}
+
 export type { MemberPortalEnvelope }

@@ -38,23 +38,37 @@ function MembershipHero({ data }: { data: MembershipView }) {
 	const heroContent = buildMembershipHeroPresentation(hero)
 	const me = buildMembershipIdentityPresentation(identity)
 	const lockedNotice = lockedBenefitsNotice(lockedCount)
+	const hasHeroCopy =
+		Boolean(heroContent.eyebrow) ||
+		Boolean(heroContent.badgeLabel) ||
+		Boolean(heroContent.body) ||
+		heroContent.bullets.length > 0 ||
+		Boolean(heroContent.cta)
+	const memberMeta = [me.memberSinceLabel, me.autoRenewLabel]
+		.filter(Boolean)
+		.join(" - ")
 
 	return (
-		<Card className="border-border shadow-none">
-			<CardContent className="grid gap-6 py-2 md:grid-cols-[minmax(0,18rem)_1fr]">
-				<div className="flex items-start gap-3">
-					<Avatar className="size-14 shrink-0 self-start overflow-hidden rounded-full">
+		<Card className="gap-0 bg-muted/40 py-5 shadow-none">
+			<CardContent className="grid items-center gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+				<div className="flex items-start gap-4">
+					<Avatar className="size-14 shrink-0 overflow-hidden rounded-full">
 						<AvatarImage
 							src={photoUrl}
 							alt={identity.fullName ?? ""}
 							className="size-full object-cover"
 						/>
-						<AvatarFallback className="bg-muted text-muted-foreground">
-							<CircleUser className="size-8" aria-hidden />
+						<AvatarFallback className="bg-transparent p-0 text-muted-foreground">
+							<CircleUser
+								className="size-14"
+								strokeWidth={1.25}
+								absoluteStrokeWidth
+								aria-hidden
+							/>
 						</AvatarFallback>
 					</Avatar>
-					<div className="text-sm">
-						<p className="font-semibold uppercase text-foreground">
+					<div className="min-w-0 text-sm">
+						<p className="font-heading text-base font-semibold tracking-wide text-foreground">
 							{identity.fullName ?? "—"}
 						</p>
 						<p className="mt-1 text-muted-foreground">
@@ -77,63 +91,75 @@ function MembershipHero({ data }: { data: MembershipView }) {
 								)
 							) : null}
 						</div>
-						{me.memberSinceLabel || me.autoRenewLabel ? (
-							<p className="mt-1 text-xs text-muted-foreground">
-								{[me.memberSinceLabel, me.autoRenewLabel]
-									.filter(Boolean)
-									.join(" · ")}
-							</p>
+						{memberMeta ? (
+							<p className="mt-1 text-xs text-muted-foreground">{memberMeta}</p>
 						) : null}
 					</div>
 				</div>
 
-				<div className="space-y-3">
-					{heroContent.eyebrow || heroContent.badgeLabel ? (
-						<div className="flex flex-wrap items-center gap-2">
-							{heroContent.eyebrow ? (
-								<span className="text-xs font-bold tracking-wider uppercase text-muted-foreground">
-									{heroContent.eyebrow}
-								</span>
-							) : null}
-							{heroContent.badgeLabel ? (
-								<StatusBadge label={heroContent.badgeLabel} tone="info" />
-							) : null}
-						</div>
-					) : null}
+				{hasHeroCopy || lockedNotice ? (
+					<div className="space-y-3 md:justify-self-end md:text-right">
+						{hasHeroCopy ? (
+							<>
+								{heroContent.eyebrow || heroContent.badgeLabel ? (
+									<div className="flex flex-wrap items-center gap-2 md:justify-end">
+										{heroContent.eyebrow ? (
+											<span className="text-xs font-bold tracking-wider uppercase text-muted-foreground">
+												{heroContent.eyebrow}
+											</span>
+										) : null}
+										{heroContent.badgeLabel ? (
+											<StatusBadge
+												label={heroContent.badgeLabel}
+												tone="info"
+											/>
+										) : null}
+									</div>
+								) : null}
 
-					{heroContent.body ? (
-						<p className="text-sm text-muted-foreground">{heroContent.body}</p>
-					) : null}
+								{heroContent.body ? (
+									<p className="text-sm text-muted-foreground">
+										{heroContent.body}
+									</p>
+								) : null}
 
-					{heroContent.bullets.length > 0 ? (
-						<ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-							{heroContent.bullets.map((bullet) => (
-								<li key={bullet}>{bullet}</li>
-							))}
-						</ul>
-					) : null}
+								{heroContent.bullets.length > 0 ? (
+									<ul className="list-disc space-y-1 pl-5 text-left text-sm text-muted-foreground md:ml-auto md:inline-block">
+										{heroContent.bullets.map((bullet) => (
+											<li key={bullet}>{bullet}</li>
+										))}
+									</ul>
+								) : null}
 
-					{heroContent.cta ? (
-						<Button asChild>
-							{heroContent.cta.isExternal ? (
-								<a
-									href={heroContent.cta.url}
-									{...(heroContent.cta.newWindow
-										? { target: "_blank", rel: "noreferrer noopener" }
-										: {})}
-								>
-									{heroContent.cta.label}
-								</a>
-							) : (
-								<Link to={heroContent.cta.url}>{heroContent.cta.label}</Link>
-							)}
-						</Button>
-					) : null}
+								{heroContent.cta ? (
+									<Button asChild className="md:ml-auto">
+										{heroContent.cta.isExternal ? (
+											<a
+												href={heroContent.cta.url}
+												{...(heroContent.cta.newWindow
+													? {
+															target: "_blank",
+															rel: "noreferrer noopener",
+														}
+													: {})}
+											>
+												{heroContent.cta.label}
+											</a>
+										) : (
+											<Link to={heroContent.cta.url}>
+												{heroContent.cta.label}
+											</Link>
+										)}
+									</Button>
+								) : null}
+							</>
+						) : null}
 
-					{lockedNotice ? (
-						<p className="text-xs text-muted-foreground">{lockedNotice}</p>
-					) : null}
-				</div>
+						{lockedNotice ? (
+							<p className="text-sm text-muted-foreground">{lockedNotice}</p>
+						) : null}
+					</div>
+				) : null}
 			</CardContent>
 		</Card>
 	)
