@@ -12,6 +12,7 @@ import { StaggerReveal } from "@/components/molecules/stagger-reveal"
 import { StudyMaterialCard } from "@/components/molecules/study-material-card"
 import { StudyMaterialRow } from "@/components/molecules/study-material-row"
 import type { ListView } from "@/config/list-view"
+import { programBrandSurface } from "@/config/program-brand"
 import {
 	DEFAULT_STUDY_MATERIALS_TAB,
 	STUDY_MATERIALS_SECTIONS,
@@ -22,6 +23,7 @@ import { useStudyMaterials } from "@/hooks/use-study-materials"
 import {
 	buildCatalogueItemPresentation,
 	buildOwnedItemPresentation,
+	studyCodeLabel,
 	type StudyItemPresentation,
 } from "@/lib/study-materials-presentation"
 import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
@@ -233,6 +235,8 @@ function StudyMaterialsPanel({ tab, view }: StudyMaterialsPanelProps) {
 							...programs.map((entry) => ({
 								value: entry.key,
 								label: entry.label,
+								badge: studyCodeLabel(entry.key),
+								badgeClassName: programBrandSurface(entry.key).chip,
 							})),
 						]}
 						value={tab}

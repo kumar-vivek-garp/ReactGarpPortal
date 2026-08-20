@@ -31,6 +31,10 @@ export {
 	ProgramDetailSkeleton,
 } from "./program-detail-pending"
 export {
+	ExamResultsPending,
+	ExamResultsPendingSkeleton,
+} from "./exam-results-pending"
+export {
 	HelpCenterPending,
 	HelpCenterPendingShell,
 	HelpCenterRequestsSkeleton,

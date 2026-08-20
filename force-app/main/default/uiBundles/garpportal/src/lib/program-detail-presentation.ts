@@ -7,6 +7,7 @@ import {
 	programExamSetupHref,
 	programOrderHref,
 	programRegistrationHref,
+	programResultsPath,
 	resolveExperienceHref,
 } from "@/lib/program-card-links"
 import { stripProgramFormalName } from "@/lib/program-formal-name"
@@ -18,6 +19,7 @@ export type ProgramActionKind =
 	| "setup"
 	| "takeExam"
 	| "viewOrder"
+	| "viewExamResults"
 	| "registerAgain"
 	| "digitalBadge"
 	| "downloadCertificate"
@@ -181,6 +183,23 @@ function partActions(
 		})
 	}
 
+	if (part.examPartState === "SchedulingClosedResultsAvailable") {
+		const resultsUrl = programResultsPath(detail.programType ?? "")
+		if (resultsUrl) {
+			actions.unshift({
+				kind: "viewExamResults",
+				label: "View Exam Results",
+				url: resultsUrl,
+				isExternal: false,
+				primary: true,
+			})
+			// Only one primary — demote anything else that claimed it.
+			for (const action of actions) {
+				if (action.kind !== "viewExamResults") action.primary = false
+			}
+		}
+	}
+
 	return actions
 }
 
@@ -215,6 +234,16 @@ function completedActions(detail: ProgramDetail): ProgramAction[] {
 		isExternal: false,
 		primary: actions.length === 0,
 	})
+	const resultsUrl = programResultsPath(detail.programType ?? "")
+	if (resultsUrl) {
+		actions.push({
+			kind: "viewExamResults",
+			label: "View Exam Results",
+			url: resultsUrl,
+			isExternal: false,
+			primary: false,
+		})
+	}
 	return actions
 }
 
@@ -651,7 +680,9 @@ export function buildProgramDetailPresentation(
 						? "Register again"
 						: primaryAction?.label === "View Order"
 							? "Complete your payment"
-							: "Your next step"
+							: primaryAction?.label === "View Exam Results"
+								? "Review your exam results"
+								: "Your next step"
 
 	const nextStepBody =
 		primaryAction?.kind === "schedule"
@@ -664,7 +695,9 @@ export function buildProgramDetailPresentation(
 						? "Registration is open — continue in MyGarp to enroll again."
 						: primaryAction?.kind === "viewOrder"
 							? "Review your unpaid order and complete payment to unlock setup."
-							: status.summary
+							: primaryAction?.kind === "viewExamResults"
+								? "See your official result, quartile rankings, and downloadable letters."
+								: status.summary
 
 	return {
 		displayName,

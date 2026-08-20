@@ -56,6 +56,10 @@ describe("normalizeStudyMaterialsPayload", () => {
 		const view = normalizeStudyMaterialsPayload(payload)
 
 		expect(view.programs.map((p) => p.key)).toEqual(["scr", "rai"])
+		expect(view.programs.map((p) => p.label)).toEqual([
+			"Sustainability & Climate Risk",
+			"Risk & AI",
+		])
 		expect(view.programs[0]?.materials).toHaveLength(2)
 		expect(view.programs[0]?.materials[0]?.title).toBe("2026 SCR Book")
 		expect(view.programs[0]?.materials[0]?.costNote).toBe("$100")

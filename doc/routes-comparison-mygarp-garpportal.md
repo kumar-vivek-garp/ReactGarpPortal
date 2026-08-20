@@ -32,15 +32,15 @@ Route inventories in this doc were extracted from ground truth, not inferred:
 | | Count |
 |---|---|
 | garpApp2 routes (incl. redirects and wildcard) | **46** |
-| garp_portal routes | **12** (8 feature screens + `/`, `/Login`, program-detail param, nested order detail, and legacy `/order-details` redirect) |
-| Legacy screens **fully rebuilt** | 9 |
+| garp_portal routes | **13** (feature screens + `/`, `/Login`, program-detail, nested program exam results, nested order detail, and legacy `/order-details` redirect) |
+| Legacy screens **fully rebuilt** | 10 |
 | Legacy screens **rebuilt as a tab** on another route | 4 |
 | Legacy screens **intentionally deep-linked back** to MyGarp | 4 |
-| Legacy screens with **no equivalent at all** | **9** |
+| Legacy screens with **no equivalent at all** | **8** |
 
 **Sidebar parity is exact.** garpApp2's `side-nav.component.html` links to `/dashboard`, `/programs`, `/study-materials`, `/membership`, `/events`, `/help-center`, plus a profile row to `/my-account`. `SIDE_NAV_ITEMS` in [side-nav-items.ts](force-app/main/default/uiBundles/garpportal/src/config/navigation/side-nav-items.ts) is the same six, same order, same labels. **Every primary-navigation destination is built.**
 
-**The gap is entirely below the sidebar** — routes legacy reached from dashboard cards, in-page CTAs, and secondary tabs. The three material clusters are **CPD** (4 routes), **Work Experience** (4 routes), and the **registration/checkout wizard** (19 routes, deliberately still legacy). Two smaller ones: **Exam Results** and **Study Materials Archive**. Order History + Order Detail are rebuilt (list folded into My Account; detail nested under `/my-account/orders/…`).
+**The gap is entirely below the sidebar** — routes legacy reached from dashboard cards, in-page CTAs, and secondary tabs. The three material clusters are **CPD** (4 routes), **Work Experience** (4 routes), and the **registration/checkout wizard** (19 routes, deliberately still legacy). Smaller remaining gaps: **Study Materials Archive**, plus low-effort **Errata** link fix and **directory search URL**. Order History + Order Detail are rebuilt (list folded into My Account; detail nested under `/my-account/orders/…`). **Exam Results** is rebuilt under `/programs/$programType/results` (program-scoped, not legacy’s flat `/exam-results`).
 
 ---
 
@@ -68,7 +68,7 @@ Status key: **✅ Done** · **🔀 Folded into a tab** · **↗️ Deep-links to
 | 14 | `purchase-history` | Purchase history | `/my-account?tab=order-history`, `?orders=all\|unpaid\|paid` | 🔀 Folded — legacy's own `my-account` tab row navigated here |
 | 15 | `order-details/:orderNumber` | Order detail | [`/my-account/orders/$orderNumber`](force-app/main/default/uiBundles/garpportal/src/pages/_appLayout/my-account/orders/$orderNumber/index.tsx) — legacy `/order-details/$orderNumber` redirects here | ✅ Done |
 | 16 | `programs/exam-setup/:program` | Exam setup wizard | `programExamSetupHref()` | ↗️ Deep-link — **but see §5.1, the URL looks wrong** |
-| 17 | `exam-results` | Exam results listing | — | ❌ Missing (see §4.3) |
+| 17 | `exam-results` | Exam results listing | [`/programs/$programType/results`](force-app/main/default/uiBundles/garpportal/src/pages/_appLayout/programs/$programType/results/index.tsx) — program-scoped; listing card + program-detail CTA | ✅ Done (see §4.3) |
 | 18 | `errata/:programType` | Errata submission | Program detail rail links to `garp.org/{program}` marketing instead | ❌ Missing (see §4.7) |
 | 19 | `study-materials-archive` | Archived eBooks | — | ❌ Missing (see §4.4) |
 | 20 | `cpd` | CPD home | — | ❌ Missing (see §4.1) |
@@ -100,6 +100,7 @@ All 19 are `RegistrationFormComponent` + a per-program child form, plus a shared
 | [`/Login`](force-app/main/default/uiBundles/garpportal/src/pages/_authLayout/Login/index.tsx) (`?startUrl=`) | Legacy auth is the Visualforce `Login.page` + Experience Cloud, outside the Angular router. Correct that this is new. |
 | [`/my-account/orders/$orderNumber`](force-app/main/default/uiBundles/garpportal/src/pages/_appLayout/my-account/orders/$orderNumber/index.tsx) | Rewrite IA — legacy used a top-level `order-details/:orderNumber`. Nested under My Account to match folded purchase history. |
 | [`/order-details/$orderNumber`](force-app/main/default/uiBundles/garpportal/src/pages/_appLayout/order-details/$orderNumber/index.tsx) | Replace-redirect → `/my-account/orders/$orderNumber` for bookmarks / older links. |
+| [`/programs/$programType/results`](force-app/main/default/uiBundles/garpportal/src/pages/_appLayout/programs/$programType/results/index.tsx) | Rewrite IA — legacy used a top-level `exam-results` that every Part I / Part II / “See All” link hit. Nested under the program so FRM vs SCR land on different pages; payload filtered client-side from member-wide `examResults`. |
 | `_appLayout` / `_authLayout` | Pathless layout routes (auth guard + shell). Structural, not user-facing. |
 
 ### 3.4 sfdcApp (older AngularJS app) — context only
@@ -128,11 +129,21 @@ Sections marked ✅ were gaps at first inventory and have since been rebuilt; ke
 
 **Why it matters:** File upload + multi-step submission with a review gate. Blocking for FRM candidates completing certification.
 
-### 4.3 Exam Results — 1 route 🟡
+### 4.3 Exam Results — 1 route ✅ done
 
-**Legacy:** `exam-results` → `ExamResultsListingComponent`, with `exam-result-card` and a `quartile-chart` per attempt.
+**Legacy:** Top-level `exam-results` → flat list of all attempts. Dashboard / programs “Exam Results” card linked Part I, Part II, and “See All” to that **same** page.
 
-**garp_portal:** No route. `examResult` appears only as a field in `api/programs/types.ts`, so **some result data already arrives** with program detail. A listing page is likely a presentation-layer task rather than a new backend integration — worth confirming against the Apex payload.
+**garp_portal:** Program-scoped [`/programs/$programType/results`](force-app/main/default/uiBundles/garpportal/src/pages/_appLayout/programs/$programType/results/index.tsx) (chrome matches program detail: back to `/programs/$programType`, brand hero, summary counts, rich result cards). Intentionally **not** a 1:1 clone of legacy’s sparse list UI.
+
+| Concern | Implementation |
+|---------|----------------|
+| Load | `GET …/memberportal/examResults` via `sdk.fetch` (`api/exam-results/`) |
+| Filter | Client-side by program slug (`frm` / `scr` / `riskai` / …) from the member-wide Apex list |
+| Mark viewed | Silent `POST …/examResultViewed` once released rows are shown |
+| Card content | Outcome `StatusBadge`, message, expected release date, quartile bars, results letter + performance PDF (`resolveExperienceHref`), member-services mailto when needed |
+| Entry points | Programs listing preview when `hasExamResults`; program detail “View Exam Results” (`programResultsPath` / `viewExamResults` action); completed programs get it as a secondary CTA |
+
+**Known limits vs legacy (accepted):** no top-level `/exam-results` bookmark redirect yet (§5.3 catch-all still covers unknown paths poorly); staff `?loadKey=` preview is not exposed in the UI.
 
 ### 4.4 Study Materials Archive — 1 route 🟡
 
@@ -199,13 +210,13 @@ garpApp2 sends `**` → `/dashboard`. garp_portal defines no `notFoundComponent`
 | Priority | Item | Rationale |
 |----------|------|-----------|
 | **P0** | Fix §5.1 exam-setup deep-link URL | Still a live CTA on program detail that points at a non-existent sfdcApp route. |
-| **P0** | Add catch-all → `/dashboard` (§5.3) | One route. Makes every unbuilt legacy bookmark degrade gracefully. |
+| **P0** | Add catch-all → `/dashboard` (§5.3) | One route. Makes every unbuilt legacy bookmark degrade gracefully (incl. stale `/exam-results`). |
 | **P1** | Point "Submit Errata" at the real errata flow (§4.7) | The link currently lands on marketing copy, which reads as working but isn't. |
-| **P1** | Exam Results listing (§4.3) | `examResult` data already flows through `api/programs`; likely presentation-only. Confirm the payload first. |
 | **P2** | Study Materials Archive (§4.4) | Self-contained, one route, one list. |
 | **P2** | Directory search in the URL (§4.6) | Add `q` to `membershipSearchSchema`; makes results shareable. |
 | **P3** | Work Experience (§4.2) | 4 routes, file upload, multi-step review. Needs write + upload APIs — scope with backend first. |
 | **P3** | CPD (§4.1) | 4 routes, full CRUD, certificate generation. Largest area; needs its own API scoping pass. |
+| **✅** | Exam Results (§4.3) | Nested `/programs/$programType/results`; `examResults` + `examResultViewed`; listing preview + detail CTA. |
 | **✅** | Order Details (§4.5) + `programOrderHref` (§5.2) | Nested `/my-account/orders/$orderNumber`; pay / cancel / invoice wired; unpaid program CTAs go in-app. |
 | **—** | Registration / checkout (§3.2) | Stays in legacy until a registration write API exists. Per `legacy-rewrite.md`, do not synthesize this on the client. |
 

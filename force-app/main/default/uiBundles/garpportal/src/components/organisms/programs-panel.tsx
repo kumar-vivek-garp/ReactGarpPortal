@@ -13,6 +13,7 @@ import { Tabs } from "@/components/atoms/tabs"
 import { ToggleGroup, ToggleGroupItem } from "@/components/atoms/toggle-group"
 import { ProgramCard } from "@/components/molecules/program-card"
 import { ProgramRow } from "@/components/molecules/program-row"
+import { ExamResultsSummaryCard } from "@/components/molecules/exam-results-summary-card"
 import { ProgramsPendingShell } from "@/components/molecules/page-pending"
 import { StaggerReveal } from "@/components/molecules/stagger-reveal"
 import {
@@ -296,6 +297,12 @@ function ProgramsPanel({ tab, view }: ProgramsPanelProps) {
 					<p className="text-sm text-muted-foreground">
 						We couldn&apos;t load your programs. Please try again later.
 					</p>
+				) : null}
+
+				{!isError && data?.hasExamResults ? (
+					<div className="mb-6">
+						<ExamResultsSummaryCard />
+					</div>
 				) : null}
 
 				{!isError

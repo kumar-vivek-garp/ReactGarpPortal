@@ -10,6 +10,13 @@ export type PillTabItem<T extends string = string> = {
 	value: T
 	label: string
 	icon?: LucideIcon
+	/**
+	 * Compact code chip before the label (e.g. `FRM` next to the full program
+	 * name). Prefer a short uppercase string — not a decorative Lucide icon.
+	 */
+	badge?: string
+	/** Extra classes for the badge (brand tint, etc.). */
+	badgeClassName?: string
 	/** Rendered as a dimmed suffix, e.g. "In Progress (2)". */
 	count?: number
 }
@@ -46,7 +53,7 @@ function PillTabTrigger({
 			// z-10 keeps the label above the sliding indicator; the active
 			// background is transparent because the indicator supplies the colour.
 			className={cn(
-				"relative z-10 h-auto flex-none shrink-0 cursor-pointer gap-1.5 rounded-lg border-0 px-4 py-2 text-sm font-semibold shadow-none",
+				"group relative z-10 h-auto flex-none shrink-0 cursor-pointer gap-1.5 rounded-lg border-0 px-4 py-2 text-sm font-semibold shadow-none",
 				"text-foreground/70 hover:text-foreground",
 				"data-[state=active]:bg-transparent data-[state=active]:text-primary-foreground",
 				"dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-transparent dark:data-[state=active]:text-primary-foreground",
@@ -60,6 +67,21 @@ function PillTabTrigger({
 				style={{ scale: style.scale }}
 			>
 				{Icon ? <Icon className="size-4 shrink-0" aria-hidden /> : null}
+				{item.badge ? (
+					<span
+						className={cn(
+							"rounded-md px-1.5 py-0.5 text-[0.65rem] font-bold tracking-wider",
+							// Brand tint when idle; invert against the primary
+							// sliding indicator when this tab is active (`!`
+							// so brand chip classes cannot win on the cascade).
+							item.badgeClassName ?? "bg-muted text-foreground",
+							"group-data-[state=active]:!bg-primary-foreground/20 group-data-[state=active]:!text-primary-foreground",
+						)}
+						aria-hidden
+					>
+						{item.badge}
+					</span>
+				) : null}
 				{item.label}
 				{item.count !== undefined ? (
 					<span className="font-normal text-inherit opacity-80">

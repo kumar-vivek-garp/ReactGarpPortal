@@ -270,7 +270,11 @@ describe("buildProgramDetailPresentation", () => {
 			}),
 		)
 		expect(view.statusTone).toBe("success")
-		expect(view.primaryAction?.kind).toBe("digitalBadge")
+		expect(view.primaryAction?.kind).toBe("viewExamResults")
+		expect(view.primaryAction?.url).toBe("/programs/riskai/results")
+		expect(view.secondaryActions.map((a) => a.kind)).toContain(
+			"digitalBadge",
+		)
 	})
 
 	it("Completed → certificate / badge / directory", () => {
@@ -288,6 +292,7 @@ describe("buildProgramDetailPresentation", () => {
 		expect(view.secondaryActions.map((a) => a.kind)).toEqual([
 			"digitalBadge",
 			"directory",
+			"viewExamResults",
 		])
 		expect(
 			view.milestones.every((m) => m.status === "complete"),

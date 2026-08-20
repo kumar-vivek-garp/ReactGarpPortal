@@ -23,6 +23,7 @@ import { Route as AuthLayoutLoginIndexRouteImport } from './pages/_authLayout/Lo
 import { Route as AppLayoutOrderDetailsOrderNumberIndexRouteImport } from './pages/_appLayout/order-details/$orderNumber/index'
 import { Route as AppLayoutProgramsProgramTypeIndexRouteImport } from './pages/_appLayout/programs/$programType/index'
 import { Route as AppLayoutMyAccountOrdersOrderNumberIndexRouteImport } from './pages/_appLayout/my-account/orders/$orderNumber/index'
+import { Route as AppLayoutProgramsProgramTypeResultsIndexRouteImport } from './pages/_appLayout/programs/$programType/results/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -98,6 +99,12 @@ const AppLayoutMyAccountOrdersOrderNumberIndexRoute =
     path: '/my-account/orders/$orderNumber/',
     getParentRoute: () => AppLayoutRouteRoute,
   } as any)
+const AppLayoutProgramsProgramTypeResultsIndexRoute =
+  AppLayoutProgramsProgramTypeResultsIndexRouteImport.update({
+    id: '/programs/$programType/results/',
+    path: '/programs/$programType/results/',
+    getParentRoute: () => AppLayoutRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/order-details/$orderNumber/': typeof AppLayoutOrderDetailsOrderNumberIndexRoute
   '/programs/$programType/': typeof AppLayoutProgramsProgramTypeIndexRoute
   '/my-account/orders/$orderNumber/': typeof AppLayoutMyAccountOrdersOrderNumberIndexRoute
+  '/programs/$programType/results/': typeof AppLayoutProgramsProgramTypeResultsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -126,6 +134,7 @@ export interface FileRoutesByTo {
   '/order-details/$orderNumber': typeof AppLayoutOrderDetailsOrderNumberIndexRoute
   '/programs/$programType': typeof AppLayoutProgramsProgramTypeIndexRoute
   '/my-account/orders/$orderNumber': typeof AppLayoutMyAccountOrdersOrderNumberIndexRoute
+  '/programs/$programType/results': typeof AppLayoutProgramsProgramTypeResultsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -143,6 +152,7 @@ export interface FileRoutesById {
   '/_appLayout/order-details/$orderNumber/': typeof AppLayoutOrderDetailsOrderNumberIndexRoute
   '/_appLayout/programs/$programType/': typeof AppLayoutProgramsProgramTypeIndexRoute
   '/_appLayout/my-account/orders/$orderNumber/': typeof AppLayoutMyAccountOrdersOrderNumberIndexRoute
+  '/_appLayout/programs/$programType/results/': typeof AppLayoutProgramsProgramTypeResultsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/order-details/$orderNumber/'
     | '/programs/$programType/'
     | '/my-account/orders/$orderNumber/'
+    | '/programs/$programType/results/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/order-details/$orderNumber'
     | '/programs/$programType'
     | '/my-account/orders/$orderNumber'
+    | '/programs/$programType/results'
   id:
     | '__root__'
     | '/'
@@ -189,6 +201,7 @@ export interface FileRouteTypes {
     | '/_appLayout/order-details/$orderNumber/'
     | '/_appLayout/programs/$programType/'
     | '/_appLayout/my-account/orders/$orderNumber/'
+    | '/_appLayout/programs/$programType/results/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -297,6 +310,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLayoutMyAccountOrdersOrderNumberIndexRouteImport
       parentRoute: typeof AppLayoutRouteRoute
     }
+    '/_appLayout/programs/$programType/results/': {
+      id: '/_appLayout/programs/$programType/results/'
+      path: '/programs/$programType/results'
+      fullPath: '/programs/$programType/results/'
+      preLoaderRoute: typeof AppLayoutProgramsProgramTypeResultsIndexRouteImport
+      parentRoute: typeof AppLayoutRouteRoute
+    }
   }
 }
 
@@ -311,6 +331,7 @@ interface AppLayoutRouteRouteChildren {
   AppLayoutOrderDetailsOrderNumberIndexRoute: typeof AppLayoutOrderDetailsOrderNumberIndexRoute
   AppLayoutProgramsProgramTypeIndexRoute: typeof AppLayoutProgramsProgramTypeIndexRoute
   AppLayoutMyAccountOrdersOrderNumberIndexRoute: typeof AppLayoutMyAccountOrdersOrderNumberIndexRoute
+  AppLayoutProgramsProgramTypeResultsIndexRoute: typeof AppLayoutProgramsProgramTypeResultsIndexRoute
 }
 
 const AppLayoutRouteRouteChildren: AppLayoutRouteRouteChildren = {
@@ -327,6 +348,8 @@ const AppLayoutRouteRouteChildren: AppLayoutRouteRouteChildren = {
     AppLayoutProgramsProgramTypeIndexRoute,
   AppLayoutMyAccountOrdersOrderNumberIndexRoute:
     AppLayoutMyAccountOrdersOrderNumberIndexRoute,
+  AppLayoutProgramsProgramTypeResultsIndexRoute:
+    AppLayoutProgramsProgramTypeResultsIndexRoute,
 }
 
 const AppLayoutRouteRouteWithChildren = AppLayoutRouteRoute._addFileChildren(

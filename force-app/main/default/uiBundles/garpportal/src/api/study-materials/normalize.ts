@@ -7,16 +7,32 @@ import type {
 	StudyProgram,
 } from "@/api/study-materials/types"
 
+/**
+ * Program filter pills — labels match MyGarp study-materials
+ * `programFilterOptions` (full names). Keys stay the Apex bucket codes.
+ */
 const PROGRAM_BUCKETS: Array<{
 	key: string
 	label: string
 	field: keyof NonNullable<ApexStudyMaterialsPayload["studyMaterialsInfo"]>
 }> = [
-	{ key: "frm", label: "FRM", field: "frmStudyMaterials" },
-	{ key: "scr", label: "SCR", field: "scrStudyMaterials" },
-	{ key: "rai", label: "RAI", field: "raiStudyMaterials" },
-	{ key: "raij", label: "RAIJ", field: "raijStudyMaterials" },
-	{ key: "frr", label: "FRR", field: "frrStudyMaterials" },
+	{ key: "frm", label: "Financial Risk Manager", field: "frmStudyMaterials" },
+	{
+		key: "scr",
+		label: "Sustainability & Climate Risk",
+		field: "scrStudyMaterials",
+	},
+	{ key: "rai", label: "Risk & AI", field: "raiStudyMaterials" },
+	{
+		key: "raij",
+		label: "Risk and AI (Japanese)",
+		field: "raijStudyMaterials",
+	},
+	{
+		key: "frr",
+		label: "Financial Risk and Regulation",
+		field: "frrStudyMaterials",
+	},
 ]
 
 function asList(value: ApexStudyMaterial[] | null | undefined): ApexStudyMaterial[] {

@@ -83,6 +83,15 @@ export function programDetailsPath(programType: string): string | null {
 }
 
 /**
+ * In-app exam results for a program (`/programs/{slug}/results`).
+ * Same type gate as program detail.
+ */
+export function programResultsPath(programType: string): string | null {
+	const detail = programDetailsPath(programType)
+	return detail ? `${detail}/results` : null
+}
+
+/**
  * Absolute on local Vite; same-origin relative on Experience (MyGarp + portal
  * share `*.my.site.com`).
  */
