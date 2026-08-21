@@ -59,6 +59,8 @@ Real Sign In / Sign Out / shared session with other apps: still test on
 | `SF_TARGET_ORG` | `devjuly25a` | CLI alias |
 | `LOCAL_SF_PORT` | `8787` | Gateway port |
 
-## No Apex / Setup required
+## No Apex required for basic Continue
 
-This path uses existing REST/GraphQL with the CLI Bearer token. No Connected App and no Apex changes for the basic flow.
+Basic **Continue with Salesforce CLI** uses the org `DEV_FALLBACK_CONTACT` without headers.
+
+Contact picker + `X-GARP-Dev-Contact` override: see [local-dev-contact-picker.md](./local-dev-contact-picker.md) (deploy Apex change to the sandbox for Phase 2).

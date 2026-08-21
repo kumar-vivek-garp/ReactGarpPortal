@@ -1,6 +1,7 @@
-import { lazy, Suspense } from "react"
+import { useState } from "react"
 import { useForm, type SubmitHandler } from "react-hook-form"
 import { useSearch } from "@tanstack/react-router"
+import { Eye, EyeOff } from "lucide-react"
 
 import { Button } from "@/components/atoms/button"
 import {
@@ -10,10 +11,15 @@ import {
 	CardTitle,
 } from "@/components/atoms/card"
 import { Input } from "@/components/atoms/input"
+import {
+	InputGroup,
+	InputGroupAddon,
+	InputGroupButton,
+	InputGroupInput,
+} from "@/components/atoms/input-group"
 import { Label } from "@/components/atoms/label"
 import { useLogin } from "@/hooks/use-login"
 import { AUTH_REDIRECT_PARAM } from "@/auth/constants"
-import { isLocalCliAuthEnabled } from "@/auth/local-cli-auth"
 import { getSafeStartUrl } from "@/auth/start-url"
 
 type LoginFormValues = {
@@ -23,19 +29,15 @@ type LoginFormValues = {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-const LocalCliContinue = lazy(() =>
-	import("@/components/molecules/local-cli-continue").then((m) => ({
-		default: m.LocalCliContinue,
-	})),
-)
-
 function LoginForm() {
 	const search = useSearch({ from: "/_authLayout/Login/" })
 	const startUrl = getSafeStartUrl(
-		typeof search[AUTH_REDIRECT_PARAM] === "string" ? search[AUTH_REDIRECT_PARAM] : undefined,
+		typeof search[AUTH_REDIRECT_PARAM] === "string"
+			? search[AUTH_REDIRECT_PARAM]
+			: undefined,
 	)
 	const loginMutation = useLogin()
-	const showLocalCli = isLocalCliAuthEnabled()
+	const [showPassword, setShowPassword] = useState(false)
 
 	const {
 		register,
@@ -67,7 +69,9 @@ function LoginForm() {
 	return (
 		<Card className="w-full max-w-auth bg-secondary">
 			<CardHeader>
-				<CardTitle className="font-sans text-center text-title font-medium">Sign In</CardTitle>
+				<CardTitle className="font-sans text-center text-title font-medium">
+					Sign In
+				</CardTitle>
 			</CardHeader>
 			<CardContent>
 				<form
@@ -107,17 +111,33 @@ function LoginForm() {
 						<Label htmlFor="password" className="font-bold">
 							Password
 						</Label>
-						<Input
-							id="password"
-							type="password"
-							autoComplete="current-password"
-							disabled={isPending}
-							aria-invalid={errors.password ? true : undefined}
-							className="h-10 rounded-xl bg-background"
-							{...register("password", {
-								required: "Password is required",
-							})}
-						/>
+						<InputGroup className="h-10 bg-background">
+							<InputGroupInput
+								id="password"
+								type={showPassword ? "text" : "password"}
+								autoComplete="current-password"
+								disabled={isPending}
+								aria-invalid={errors.password ? true : undefined}
+								{...register("password", {
+									required: "Password is required",
+								})}
+							/>
+							<InputGroupAddon align="inline-end">
+								<InputGroupButton
+									size="icon-xs"
+									aria-label={
+										showPassword ? "Hide password" : "Show password"
+									}
+									aria-pressed={showPassword}
+									disabled={isPending}
+									onClick={() => {
+										setShowPassword((visible) => !visible)
+									}}
+								>
+									{showPassword ? <EyeOff /> : <Eye />}
+								</InputGroupButton>
+							</InputGroupAddon>
+						</InputGroup>
 						{errors.password ? (
 							<p className="text-caption text-destructive" role="alert">
 								{errors.password.message}
@@ -130,21 +150,21 @@ function LoginForm() {
 					</Button>
 
 					<div className="flex items-center justify-center gap-2 text-body">
-						<a href="/registration" className="font-semibold text-primary hover:underline">
+						<a
+							href="/registration"
+							className="font-semibold text-primary hover:underline"
+						>
 							Create Account
 						</a>
 						<span className="text-muted-foreground">|</span>
-						<a href="/forgot-password" className="font-semibold text-primary hover:underline">
+						<a
+							href="/forgot-password"
+							className="font-semibold text-primary hover:underline"
+						>
 							Reset Password
 						</a>
 					</div>
 				</form>
-
-				{showLocalCli ? (
-					<Suspense fallback={null}>
-						<LocalCliContinue />
-					</Suspense>
-				) : null}
 			</CardContent>
 		</Card>
 	)

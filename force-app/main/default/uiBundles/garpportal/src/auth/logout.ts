@@ -1,5 +1,6 @@
 import { authQueryKeys } from "@/api/auth/query-options"
 import { LOGIN_PATH, LOGOUT_URL } from "@/auth/constants"
+import { clearLocalDevContactId } from "@/auth/local-dev-contacts"
 import { markLocallyLoggedOut } from "@/auth/local-session"
 import { getSfdcEnv, isLocalViteHost } from "@/auth/sfdc-env"
 import { queryClient } from "@/api/client"
@@ -52,6 +53,7 @@ export function logoutToSalesforce(returnUrl?: string) {
 	queryClient.removeQueries({ queryKey: authQueryKeys.all })
 
 	if (isLocalViteHost()) {
+		clearLocalDevContactId()
 		markLocallyLoggedOut()
 		window.location.replace(LOGIN_PATH)
 		return

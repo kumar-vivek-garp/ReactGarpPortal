@@ -4,6 +4,7 @@ import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 
 import { queryClient } from "@/api/client"
+import { installLocalDevContactFetchPatch } from "@/auth/local-dev-contacts"
 import {
 	bootstrapThemeFromStore,
 	subscribeSystemColorScheme,
@@ -32,6 +33,7 @@ declare module "@tanstack/react-router" {
 
 bootstrapThemeFromStore()
 subscribeSystemColorScheme()
+installLocalDevContactFetchPatch()
 
 createRoot(document.getElementById("root")!).render(
 	<StrictMode>

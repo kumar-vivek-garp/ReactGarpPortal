@@ -3,6 +3,10 @@
  *
  * Binds 127.0.0.1 only. Never deploy this to Experience / production.
  * Usage: npm run local-sf  (from repo root)
+ *
+ * Forwards browser header `X-GARP-Dev-Contact` (Contact Id) to Salesforce so
+ * GARP_Portal_Core.currentContact() can override DEV_FALLBACK_CONTACT for
+ * Standard (internal) sessions. See doc/local-dev-contact-picker.md.
  */
 import { spawnSync } from "node:child_process"
 import http from "node:http"

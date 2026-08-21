@@ -55,6 +55,7 @@ export async function checkLocalSfHealth(): Promise<LocalSfHealth> {
 
 /**
  * Fetch against the local CLI gateway. `path` must start with `/services/`.
+ * Attaches `X-GARP-Dev-Contact` when a local Contact is selected (Phase 2).
  */
 export async function localSfFetch(
 	path: string,
@@ -64,7 +65,17 @@ export async function localSfFetch(
 	if (!normalized.startsWith("/services/")) {
 		throw new Error("localSfFetch only supports /services/* paths")
 	}
-	return fetch(`${LOCAL_SF_PREFIX}${normalized}`, init)
+
+	const { localDevContactHeaders } = await import("@/auth/local-dev-contacts")
+	const headers = new Headers(init?.headers)
+	for (const [key, value] of Object.entries(localDevContactHeaders())) {
+		headers.set(key, value)
+	}
+
+	return fetch(`${LOCAL_SF_PREFIX}${normalized}`, {
+		...init,
+		headers,
+	})
 }
 
 type CurrentUserQueryResult = {
