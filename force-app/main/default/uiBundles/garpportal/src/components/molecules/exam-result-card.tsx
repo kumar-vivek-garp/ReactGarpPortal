@@ -1,3 +1,6 @@
+import { Link } from "@tanstack/react-router"
+
+import { DEFAULT_HELP_CENTER_TAB } from "@/config/help-center"
 import type { ExamResultCardPresentation } from "@/lib/exam-results-presentation"
 import { StatusBadge } from "@/components/molecules/status-badge"
 import { cn } from "@/lib/utils"
@@ -133,13 +136,20 @@ function ExamResultCard({ result, className }: ExamResultCardProps) {
 							Performance analysis
 						</a>
 					) : null}
+					{/*
+					 * In-app, not a mailto. The legacy routes this to the help
+					 * centre, which is where a case actually gets raised — a
+					 * mailto drops the member out of the portal into whatever
+					 * mail client the device happens to have, if any.
+					 */}
 					{result.contactMemberServices ? (
-						<a
-							href="mailto:memberservices@garp.com?Subject=Exam%20result%20query"
+						<Link
+							to="/help-center"
+							search={{ tab: DEFAULT_HELP_CENTER_TAB }}
 							className="text-sm font-semibold text-primary hover:text-primary/80"
 						>
 							Contact member services
-						</a>
+						</Link>
 					) : null}
 				</footer>
 			)}
