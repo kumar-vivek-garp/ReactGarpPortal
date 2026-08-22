@@ -2,6 +2,7 @@ import { Badge } from "@/components/atoms/badge"
 import { Card } from "@/components/atoms/card"
 import { CardCta } from "@/components/molecules/card-cta"
 import { MetaLines } from "@/components/molecules/meta-lines"
+import { ProgramResultsChip } from "@/components/molecules/program-results-chip"
 import { StatusBadge } from "@/components/molecules/status-badge"
 import { programBrandSurface } from "@/config/program-brand"
 import { localizeProgramLogoUrl } from "@/config/program-logos"
@@ -18,6 +19,8 @@ type ProgramRowProps = {
 	program: ProgramListingProgram
 	/** Mark above-the-fold logos as LCP candidates. */
 	priority?: boolean
+	/** The member has exam results for this program. */
+	hasResults?: boolean
 	className?: string
 }
 
@@ -32,6 +35,7 @@ function ProgramRow({
 	variant,
 	program,
 	priority = false,
+	hasResults = false,
 	className,
 }: ProgramRowProps) {
 	const presentation = buildProgramListingPresentation(variant, program)
@@ -94,6 +98,9 @@ function ProgramRow({
 						{codeLabel}
 					</Badge>
 					<StatusBadge label={statusLabel} tone={statusTone} />
+					{hasResults ? (
+						<ProgramResultsChip programType={program.programType} />
+					) : null}
 				</div>
 
 				<h3 className="font-heading text-base leading-snug tracking-wide text-foreground">

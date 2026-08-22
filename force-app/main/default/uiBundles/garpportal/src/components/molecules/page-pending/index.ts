@@ -35,6 +35,16 @@ export {
 	ExamResultsPendingSkeleton,
 } from "./exam-results-pending"
 export {
+	CpdActivitiesContentSkeleton,
+	CpdActivitiesPending,
+	CpdActivitiesPendingShell,
+} from "./cpd-activities-pending"
+export {
+	CpdContentSkeleton,
+	CpdPending,
+	CpdPendingShell,
+} from "./cpd-pending"
+export {
 	HelpCenterPending,
 	HelpCenterPendingShell,
 	HelpCenterRequestsSkeleton,

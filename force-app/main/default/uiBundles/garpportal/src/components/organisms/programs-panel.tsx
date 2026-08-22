@@ -1,3 +1,4 @@
+import { useMemo } from "react"
 import type { ReactNode } from "react"
 import { animated, useTransition } from "@react-spring/web"
 import { useNavigate } from "@tanstack/react-router"
@@ -13,7 +14,6 @@ import { Tabs } from "@/components/atoms/tabs"
 import { ToggleGroup, ToggleGroupItem } from "@/components/atoms/toggle-group"
 import { ProgramCard } from "@/components/molecules/program-card"
 import { ProgramRow } from "@/components/molecules/program-row"
-import { ExamResultsSummaryCard } from "@/components/molecules/exam-results-summary-card"
 import { ProgramsPendingShell } from "@/components/molecules/page-pending"
 import { StaggerReveal } from "@/components/molecules/stagger-reveal"
 import {
@@ -24,8 +24,13 @@ import {
 	type ProgramsTab,
 	type ProgramsView,
 } from "@/config/programs"
+import {
+	examResultProgramSlugs,
+	examResultsRouteSlug,
+} from "@/lib/exam-results-presentation"
 import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
 import type { ProgramCardVariant } from "@/lib/program-listing-presentation"
+import { useExamResults } from "@/hooks/use-exam-results"
 import { usePrograms } from "@/hooks/use-programs"
 import { useListViewStore } from "@/store/list-view-store"
 
@@ -60,10 +65,13 @@ function ProgramCollection({
 	programs,
 	variant,
 	view,
+	resultSlugs,
 }: {
 	programs: BucketProgram[]
 	variant: ProgramCardVariant
 	view: ProgramsView
+	/** Route slugs the member has exam results for. */
+	resultSlugs: ReadonlySet<string>
 }) {
 	return (
 		<StaggerReveal
@@ -85,6 +93,9 @@ function ProgramCollection({
 						variant={variant}
 						program={program}
 						priority={index < 3}
+						hasResults={resultSlugs.has(
+							examResultsRouteSlug(program.programType),
+						)}
 					/>
 				) : (
 					<ProgramRow
@@ -92,6 +103,9 @@ function ProgramCollection({
 						variant={variant}
 						program={program}
 						priority={index < 3}
+						hasResults={resultSlugs.has(
+							examResultsRouteSlug(program.programType),
+						)}
 					/>
 				),
 			)}
@@ -131,12 +145,14 @@ function ProgramsTabBody({
 	enrolled,
 	completed,
 	other,
+	resultSlugs,
 }: {
 	tab: ProgramsTab
 	view: ProgramsView
 	enrolled: EnrolledProgram[]
 	completed: CompletedProgram[]
 	other: OtherProgram[]
+	resultSlugs: ReadonlySet<string>
 }) {
 	if (tab !== "all") {
 		const programs: BucketProgram[] =
@@ -155,6 +171,7 @@ function ProgramsTabBody({
 				programs={programs}
 				variant={variant}
 				view={view}
+				resultSlugs={resultSlugs}
 			/>
 		)
 	}
@@ -171,6 +188,7 @@ function ProgramsTabBody({
 						programs={enrolled}
 						variant="inProgress"
 						view={view}
+						resultSlugs={resultSlugs}
 					/>
 				</ProgramsSection>
 			) : null}
@@ -181,6 +199,7 @@ function ProgramsTabBody({
 						programs={completed}
 						variant="completed"
 						view={view}
+						resultSlugs={resultSlugs}
 					/>
 				</ProgramsSection>
 			) : null}
@@ -191,6 +210,7 @@ function ProgramsTabBody({
 						programs={other}
 						variant="other"
 						view={view}
+						resultSlugs={resultSlugs}
 					/>
 				</ProgramsSection>
 			) : null}
@@ -219,6 +239,17 @@ function ProgramsPanel({ tab, view }: ProgramsPanelProps) {
 
 	const preferredView = useListViewStore((state) => state.preferred.programs)
 	const setPreferredView = useListViewStore((state) => state.setPreferred)
+
+	/*
+	 * Only fetched when the programs payload says there is something to find,
+	 * so a member with no attempts costs no request. The result decides which
+	 * cards earn a "Results" chip.
+	 */
+	const examResults = useExamResults(data?.hasExamResults === true)
+	const resultSlugs = useMemo(
+		() => examResultProgramSlugs(examResults.data),
+		[examResults.data],
+	)
 
 	const activeTab = resolveProgramsTab(tab, enrolled.length)
 	const activeView = resolveProgramsView(view, activeTab, preferredView)
@@ -299,12 +330,6 @@ function ProgramsPanel({ tab, view }: ProgramsPanelProps) {
 					</p>
 				) : null}
 
-				{!isError && data?.hasExamResults ? (
-					<div className="mb-6">
-						<ExamResultsSummaryCard />
-					</div>
-				) : null}
-
 				{!isError
 					? tabTransitions((style, currentTab) => (
 							<animated.div
@@ -319,6 +344,7 @@ function ProgramsPanel({ tab, view }: ProgramsPanelProps) {
 									enrolled={enrolled}
 									completed={completed}
 									other={other}
+									resultSlugs={resultSlugs}
 								/>
 							</animated.div>
 						))

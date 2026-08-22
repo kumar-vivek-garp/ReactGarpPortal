@@ -50,18 +50,27 @@ export async function normalizeHttpResponse<T>(
 	if (!response.ok) {
 		const fromBody = body?.errors?.filter(Boolean)
 		if (fromBody?.length) {
-			return apiFail(new AppError({ messages: fromBody, status }), status)
+			return apiFail(new AppError({ messages: fromBody, status }), status, body)
 		}
 		if (body?.message) {
-			return apiFail(new AppError({ messages: [body.message], status }), status)
+			return apiFail(
+				new AppError({ messages: [body.message], status }),
+				status,
+				body,
+			)
 		}
 		if (body?.error) {
-			return apiFail(new AppError({ messages: [body.error], status }), status)
+			return apiFail(
+				new AppError({ messages: [body.error], status }),
+				status,
+				body,
+			)
 		}
 		if (body?.errorMessage) {
 			return apiFail(
 				new AppError({ messages: [body.errorMessage], status }),
 				status,
+				body,
 			)
 		}
 		return apiFail(
@@ -73,6 +82,7 @@ export async function normalizeHttpResponse<T>(
 				status,
 			}),
 			status,
+			body,
 		)
 	}
 

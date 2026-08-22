@@ -85,6 +85,8 @@
 	--color-garp-cyan-foreground: var(--garp-cyan-foreground);
 	--color-success-green: var(--success-green);
 	--color-success-green-foreground: var(--success-green-foreground);
+	--color-erp-green: var(--erp-green);
+	--color-erp-green-foreground: var(--erp-green-foreground);
 	--color-red: var(--red);
 	--color-red-foreground: var(--red-foreground);
 	--color-light-yellow: var(--light-yellow);
@@ -123,6 +125,8 @@
 	--garp-cyan-foreground: oklch(0 0 0);
 	--success-green: oklch(0.6731 0.1624 144.2); /* from garpApp source: #4CAF50 */
 	--success-green-foreground: oklch(0 0 0);
+	--erp-green: oklch(0.7956 0.1696 119.5); /* from garpApp source: #b0cb36, ERP CPD credit bar */
+	--erp-green-foreground: oklch(0 0 0); /* black passes at 11.44:1, white fails at 1.84:1 */
 	--red: oklch(0.5806 0.2223 27.8); /* from garpApp source: #E02020 */
 	--red-foreground: oklch(1 0 0);
 	--light-yellow: oklch(0.9817 0.0257 92.4); /* from garpApp source: #FFF9E6 */

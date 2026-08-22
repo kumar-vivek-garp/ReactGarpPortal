@@ -4,8 +4,14 @@ import type {
 	DashboardEventPreview,
 	PortalCard,
 } from "@/api/dashboard"
+import type { CpdView } from "@/api/cpd"
 import type { MemberEvent } from "@/api/events"
 import type { EnrolledProgram } from "@/api/programs"
+import {
+	cpdCardTitle,
+	cpdRemainingLabel,
+	dashboardCreditRows,
+} from "@/lib/cpd-presentation"
 import { stripProgramFormalName } from "@/lib/program-formal-name"
 
 /** TEMP — flip to true to preview every card regardless of mute / enroll. */
@@ -17,10 +23,12 @@ export const DASHBOARD_PROVIDER = {
 	directory: "MemberDirectory",
 	enrolled: "EnrolledPrograms",
 	events: "Events",
+	cpd: "CPDCredits",
 } as const
 
 /** Same ranks as legacy `GARP_BC_MemberPortal.getDashboardInfo`. */
 const ENROLLED_RANK = 1
+const CPD_RANK = 10
 const EVENTS_RANK = 20
 const PREVIEW_LIMIT = 2
 
@@ -28,6 +36,8 @@ type ComposeDashboardCardsInput = {
 	serverCards: PortalCard[]
 	enrolledPrograms: EnrolledProgram[]
 	registeredEvents: MemberEvent[]
+	/** `null` when the member has no CPD program. */
+	cpd?: CpdView | null
 	completeness?: Completeness | null
 	/** Defaults to `FORCE_SHOW_ALL_DASHBOARD_CARDS`. Tests pass false. */
 	showAll?: boolean
@@ -153,6 +163,7 @@ export function composeDashboardCards({
 	serverCards,
 	enrolledPrograms,
 	registeredEvents,
+	cpd,
 	completeness,
 	showAll = FORCE_SHOW_ALL_DASHBOARD_CARDS,
 }: ComposeDashboardCardsInput): PortalCard[] {
@@ -177,6 +188,27 @@ export function composeDashboardCards({
 		!cards.some((card) => card.provider === DASHBOARD_PROVIDER.profile)
 	) {
 		cards.push(profileCard(completeness))
+	}
+
+	/*
+	 * Gated on there being a bar to draw, which covers both empty cases: a
+	 * member with no CPE contract (401 → null upstream) and one with a contract
+	 * but no completed certification, who comes back 200 with every number
+	 * null. The legacy rendered a blank chart for both.
+	 */
+	const cpdRows = dashboardCreditRows(cpd)
+	if (cpdRows.length > 0) {
+		cards.push(
+			composedCard({
+				key: "Dashboard_CPD",
+				provider: DASHBOARD_PROVIDER.cpd,
+				rank: CPD_RANK,
+				title: cpdCardTitle(cpd),
+				ctaLabel: "Manage Credits",
+				ctaUrl: "/cpd",
+				meta: { cpdRows, cpdRemaining: cpdRemainingLabel(cpd) },
+			}),
+		)
 	}
 
 	if (showAll || enrolled.length > 0) {

@@ -1,6 +1,7 @@
 export type AppRoute =
 	| "/dashboard"
 	| "/programs"
+	| "/cpd"
 	| "/study-materials"
 	| "/membership"
 	| "/events"

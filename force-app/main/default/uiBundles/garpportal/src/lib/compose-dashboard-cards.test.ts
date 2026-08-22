@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import type { CpdView } from "@/api/cpd"
 import type { PortalCard } from "@/api/dashboard"
 import type { MemberEvent } from "@/api/events"
 import type { EnrolledProgram } from "@/api/programs"
@@ -161,5 +162,116 @@ describe("composeDashboardCards", () => {
 			DASHBOARD_PROVIDER.events,
 			DASHBOARD_PROVIDER.directory,
 		])
+	})
+})
+
+function cpdView(overrides: Partial<CpdView> = {}): CpdView {
+	return {
+		statusMessage: "Success",
+		statusCode: 200,
+		cpdCycle: "2023/2025",
+		frmTotalNeeded: null,
+		frmCompleted: null,
+		erpTotalNeeded: null,
+		erpCompleted: null,
+		scrTotalNeeded: null,
+		scrCompleted: null,
+		raiTotalNeeded: null,
+		raiCompleted: null,
+		creditsRemaining: null,
+		...overrides,
+	}
+}
+
+describe("CPD card", () => {
+	it("is absent when the member has no CPD program", () => {
+		const cards = composeDashboardCards({
+			serverCards: [],
+			enrolledPrograms: [],
+			registeredEvents: [],
+			cpd: null,
+			showAll: false,
+		})
+		expect(
+			cards.some((card) => card.provider === DASHBOARD_PROVIDER.cpd),
+		).toBe(false)
+	})
+
+	/**
+	 * The service sets 501 for "no completed certification" and overwrites it
+	 * with 200 two lines later, so this arrives as a success with every number
+	 * null. The legacy rendered a blank chart for it.
+	 */
+	it("is absent for a 200 response with every designation null", () => {
+		const cards = composeDashboardCards({
+			serverCards: [],
+			enrolledPrograms: [],
+			registeredEvents: [],
+			cpd: cpdView(),
+			showAll: false,
+		})
+		expect(
+			cards.some((card) => card.provider === DASHBOARD_PROVIDER.cpd),
+		).toBe(false)
+	})
+
+	it("renders bars and a Manage Credits CTA once a designation reports credits", () => {
+		const cards = composeDashboardCards({
+			serverCards: [],
+			enrolledPrograms: [],
+			registeredEvents: [],
+			cpd: cpdView({
+				frmTotalNeeded: 40,
+				frmCompleted: 12,
+				creditsRemaining: 28,
+			}),
+			showAll: false,
+		})
+		const card = cards.find(
+			(entry) => entry.provider === DASHBOARD_PROVIDER.cpd,
+		)
+		expect(card?.title).toBe("2023/2025 CPD Credits")
+		expect(card?.ctaLabel).toBe("Manage Credits")
+		expect(card?.ctaUrl).toBe("/cpd")
+		expect(card?.meta).toEqual({
+			cpdRows: [{ designation: "FRM", approved: 12, required: 40 }],
+			cpdRemaining: "28 credits remaining this cycle",
+		})
+	})
+
+	it("uses the dashboard's own RAI requirement of 10, not the CPD page's 20", () => {
+		const cards = composeDashboardCards({
+			serverCards: [],
+			enrolledPrograms: [],
+			registeredEvents: [],
+			cpd: cpdView({ raiTotalNeeded: 10, raiCompleted: 4 }),
+			showAll: false,
+		})
+		const card = cards.find(
+			(entry) => entry.provider === DASHBOARD_PROVIDER.cpd,
+		)
+		expect(card?.meta).toEqual({
+			cpdRows: [{ designation: "RAI", approved: 4, required: 10 }],
+			// creditsRemaining is null on this fixture, so no line is offered.
+			cpdRemaining: null,
+		})
+	})
+
+	it("sits between Enrolled Programs and My Events", () => {
+		const cards = composeDashboardCards({
+			serverCards: [],
+			enrolledPrograms: [enrolled("FRM", "Financial Risk Manager")],
+			registeredEvents: [],
+			cpd: cpdView({ scrTotalNeeded: 20, scrCompleted: 5 }),
+			showAll: true,
+		})
+		const ranked = [...cards].sort((a, b) => a.rank - b.rank)
+		const providers = ranked.map((card) => card.provider)
+		expect(providers.indexOf(DASHBOARD_PROVIDER.cpd)).toBeGreaterThan(
+			providers.indexOf(DASHBOARD_PROVIDER.enrolled),
+		)
+		expect(providers.indexOf(DASHBOARD_PROVIDER.cpd)).toBeLessThan(
+			providers.indexOf(DASHBOARD_PROVIDER.events),
+		)
 	})
 })

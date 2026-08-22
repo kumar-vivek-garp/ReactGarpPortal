@@ -6,6 +6,7 @@ export {
 export {
 	assertMemberPortalEnvelopeOk,
 	isMemberPortalEnvelopeOk,
+	memberPortalRefusalPayload,
 	unwrapMemberPortalEnvelope,
 } from "@/api/client/member-portal-envelope"
 export { notifyError, notifySuccess, notifyWarning } from "@/api/client/notify"

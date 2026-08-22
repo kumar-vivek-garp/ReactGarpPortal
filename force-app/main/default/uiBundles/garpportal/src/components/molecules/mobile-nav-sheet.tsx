@@ -10,8 +10,9 @@ import { SignOutButton } from "@/components/molecules/sign-out-button"
 import { ThemeToggle } from "@/components/molecules/theme-toggle"
 import { useCloseMobileNavOnNavigate } from "@/hooks/use-close-mobile-nav-on-navigate"
 import { useCurrentUser } from "@/hooks/use-current-user"
+import { useHasCpdProgram } from "@/hooks/use-has-cpd-program"
 import { GARP_LOGO_COLOR, GARP_LOGO_KNOCKOUT } from "@/config/navigation/garp-logos"
-import { SIDE_NAV_ITEMS } from "@/config/navigation/side-nav-items"
+import { sideNavItems } from "@/config/navigation/side-nav-items"
 import { TOP_NAV_ITEMS } from "@/config/navigation/top-nav-items"
 import { cn } from "@/lib/utils"
 import { useNavigationStore } from "@/store/navigation-store"
@@ -23,6 +24,7 @@ function MobileNavBar() {
 	const { data: user, isPending } = useCurrentUser()
 	const showProfileSkeleton = isPending && !user
 	const displayName = user?.name?.trim() || "GARP Member"
+	const navItems = sideNavItems({ includeCpd: useHasCpdProgram() })
 	const isOpen = useNavigationStore((state) => state.isMobileNavOpen)
 	const selectedItem = useNavigationStore((state) => state.mobileSelectedNavItem)
 	const openMobileNav = useNavigationStore((state) => state.openMobileNav)
@@ -164,7 +166,7 @@ function MobileNavBar() {
 														/>
 													)}
 												</div>
-												{SIDE_NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+												{navItems.map(({ to, label, icon: Icon }) => (
 													<Link
 														key={to}
 														to={to}

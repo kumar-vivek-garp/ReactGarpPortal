@@ -1,4 +1,4 @@
-import { BookOpen, CalendarDays, CircleUser, Users, X } from "lucide-react"
+import { BookOpen, CalendarDays, CircleUser, ScrollText, Users, X } from "lucide-react"
 
 import {
 	asDashboardCardMeta,
@@ -13,6 +13,7 @@ import {
 	CardTitle,
 } from "@/components/atoms/card"
 import { CardCta } from "@/components/molecules/card-cta"
+import { CpdCreditBars } from "@/components/molecules/cpd-credit-bars"
 import { MetaLines } from "@/components/molecules/meta-lines"
 import { DashboardEnrolledList } from "@/components/molecules/dashboard-enrolled-list"
 import { DashboardEventsList } from "@/components/molecules/dashboard-events-list"
@@ -45,6 +46,8 @@ function ProviderIcon({
 			return <BookOpen className={className} aria-hidden />
 		case DASHBOARD_PROVIDER.events:
 			return <CalendarDays className={className} aria-hidden />
+		case DASHBOARD_PROVIDER.cpd:
+			return <ScrollText className={className} aria-hidden />
 		default:
 			return null
 	}
@@ -55,7 +58,8 @@ function hasProviderIcon(provider: PortalCard["provider"]): boolean {
 		provider === DASHBOARD_PROVIDER.profile ||
 		provider === DASHBOARD_PROVIDER.directory ||
 		provider === DASHBOARD_PROVIDER.enrolled ||
-		provider === DASHBOARD_PROVIDER.events
+		provider === DASHBOARD_PROVIDER.events ||
+		provider === DASHBOARD_PROVIDER.cpd
 	)
 }
 
@@ -69,6 +73,7 @@ function DashboardCard({ card, onDismiss, className }: DashboardCardProps) {
 	const isDirectory = card.provider === DASHBOARD_PROVIDER.directory
 	const isEnrolled = card.provider === DASHBOARD_PROVIDER.enrolled
 	const isEvents = card.provider === DASHBOARD_PROVIDER.events
+	const isCpd = card.provider === DASHBOARD_PROVIDER.cpd
 	const meta = asDashboardCardMeta(card.meta)
 	const imageUrl = resolvePortalAssetUrl(card.imageUrl) ?? card.imageUrl
 	const percent =
@@ -186,6 +191,17 @@ function DashboardCard({ card, onDismiss, className }: DashboardCardProps) {
 							Events you register for will show up here.
 						</p>
 					)
+				) : null}
+
+				{isCpd && (meta.cpdRows ?? []).length > 0 ? (
+					<div className="space-y-2 rounded-xl border border-border/60 bg-background/50 p-3">
+						<CpdCreditBars rows={meta.cpdRows ?? []} />
+						{meta.cpdRemaining ? (
+							<p className="text-xs text-muted-foreground">
+								{meta.cpdRemaining}
+							</p>
+						) : null}
+					</div>
 				) : null}
 
 				{isDirectory && meta.searchEnabled ? (

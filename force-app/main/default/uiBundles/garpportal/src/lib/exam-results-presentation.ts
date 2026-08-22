@@ -168,25 +168,44 @@ export function buildExamResultsPagePresentation(
 }
 
 /**
+ * Route slugs of every program the member has a result for.
+ *
+ * Drives the "Results" chip on the programme listing: a card shows one only
+ * when this set contains its slug. Programs the results route cannot serve
+ * (`programResultsPath` returns null) are dropped, so a chip is never rendered
+ * pointing at a route that does not exist.
+ */
+export function examResultProgramSlugs(
+	results: ExamResult[] | null | undefined,
+): Set<string> {
+	const slugs = new Set<string>()
+	for (const result of results ?? []) {
+		const programType = result.programType ?? result.examType ?? ""
+		if (!programResultsPath(programType)) continue
+		const slug = examResultsRouteSlug(programType)
+		if (slug) slugs.add(slug)
+	}
+	return slugs
+}
+
+/** One row of the programs-listing exam-results preview. */
+export type ExamResultsPreviewRow = {
+	id: string
+	title: string
+	administration: string | null
+	programSlug: string | null
+}
+
+/**
  * Unique program+part preview rows for the programs listing card
  * (newest administrations first — API order).
  */
 export function buildExamResultsPreviewRows(
 	results: ExamResult[],
 	limit = 2,
-): Array<{
-	id: string
-	title: string
-	administration: string | null
-	programSlug: string | null
-}> {
+): ExamResultsPreviewRow[] {
 	const seen = new Set<string>()
-	const rows: Array<{
-		id: string
-		title: string
-		administration: string | null
-		programSlug: string | null
-	}> = []
+	const rows: ExamResultsPreviewRow[] = []
 
 	for (const result of results) {
 		const programKey = (result.programType ?? result.examType ?? "")

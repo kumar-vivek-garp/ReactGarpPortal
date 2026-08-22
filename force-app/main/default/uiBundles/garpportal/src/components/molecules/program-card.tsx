@@ -8,6 +8,7 @@ import {
 import { Badge } from "@/components/atoms/badge"
 import { CardCta } from "@/components/molecules/card-cta"
 import { MetaLines } from "@/components/molecules/meta-lines"
+import { ProgramResultsChip } from "@/components/molecules/program-results-chip"
 import { StatusBadge } from "@/components/molecules/status-badge"
 import { programBrandSurface } from "@/config/program-brand"
 import { localizeProgramLogoUrl } from "@/config/program-logos"
@@ -24,6 +25,8 @@ type ProgramCardProps = {
 	program: ProgramListingProgram
 	/** Mark above-the-fold logos as LCP candidates. */
 	priority?: boolean
+	/** The member has exam results for this program. */
+	hasResults?: boolean
 	className?: string
 }
 
@@ -38,6 +41,7 @@ function ProgramCard({
 	variant,
 	program,
 	priority = false,
+	hasResults = false,
 	className,
 }: ProgramCardProps) {
 	const presentation = buildProgramListingPresentation(variant, program)
@@ -99,6 +103,9 @@ function ProgramCard({
 						{codeLabel}
 					</Badge>
 					<StatusBadge label={statusLabel} tone={statusTone} />
+					{hasResults ? (
+						<ProgramResultsChip programType={program.programType} />
+					) : null}
 				</div>
 				<CardTitle className="font-heading text-lg leading-snug tracking-wide text-foreground">
 					{displayName}

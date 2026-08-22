@@ -4,6 +4,7 @@ import type { ExamResult } from "@/api/exam-results"
 import {
 	buildExamResultsPagePresentation,
 	buildExamResultsPreviewRows,
+	examResultProgramSlugs,
 	examResultMatchesProgramSlug,
 	examResultsRouteSlug,
 	outcomePresentation,
@@ -130,5 +131,33 @@ describe("buildExamResultsPreviewRows", () => {
 		expect(rows).toHaveLength(2)
 		expect(rows[0].programSlug).toBe("frm")
 		expect(rows[1].title).toBe("FRM Exam Part II")
+	})
+})
+
+describe("examResultProgramSlugs", () => {
+	it("collects one slug per program the member has a result for", () => {
+		const slugs = examResultProgramSlugs([
+			sample({ id: "1", programType: "FRM", examPart: "I" }),
+			sample({ id: "2", programType: "FRM", examPart: "II" }),
+			sample({ id: "3", programType: "SCR", examPart: "FULL" }),
+		])
+		expect([...slugs].sort()).toEqual(["frm", "scr"])
+	})
+
+	/**
+	 * A chip must never point at a route that cannot serve it — the listing
+	 * uses this set as its only gate.
+	 */
+	it("drops programs the results route cannot serve", () => {
+		const slugs = examResultProgramSlugs([
+			sample({ id: "1", programType: "FRM" }),
+			sample({ id: "2", programType: "NotAProgram" }),
+		])
+		expect([...slugs]).toEqual(["frm"])
+	})
+
+	it("is empty for no results", () => {
+		expect(examResultProgramSlugs([]).size).toBe(0)
+		expect(examResultProgramSlugs(null).size).toBe(0)
 	})
 })

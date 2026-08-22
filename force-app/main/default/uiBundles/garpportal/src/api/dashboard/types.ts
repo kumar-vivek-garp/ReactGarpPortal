@@ -1,5 +1,6 @@
 import type { Completeness, Identity, MemberPortalEnvelope } from "@/api/account/types"
 import type { PortalCard } from "@/api/membership/types"
+import type { CpdCreditBarRow } from "@/lib/cpd-presentation"
 
 /** Preview row for the Enrolled Programs dashboard card. */
 export type DashboardEnrolledPreview = {
@@ -32,6 +33,8 @@ export type DashboardCardMeta = {
 	optedIn?: boolean
 	enrolledPrograms?: DashboardEnrolledPreview[]
 	upcomingEvents?: DashboardEventPreview[]
+	cpdRows?: CpdCreditBarRow[]
+	cpdRemaining?: string | null
 }
 
 export type DashboardView = {

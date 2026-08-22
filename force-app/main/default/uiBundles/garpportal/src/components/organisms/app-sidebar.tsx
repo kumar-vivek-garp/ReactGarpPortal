@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { animated } from "@react-spring/web"
 import { useLocation } from "@tanstack/react-router"
 
@@ -6,17 +6,12 @@ import { SidebarNavLink } from "@/components/molecules/sidebar-nav-link"
 import { SidebarProfileLink } from "@/components/molecules/sidebar-profile-link"
 import { SidebarProfileSkeleton } from "@/components/molecules/sidebar-profile-skeleton"
 import { useCurrentUser } from "@/hooks/use-current-user"
+import { useHasCpdProgram } from "@/hooks/use-has-cpd-program"
 import { useSlidingIndicator } from "@/hooks/use-sliding-indicator"
-import { SIDE_NAV_ITEMS } from "@/config/navigation/side-nav-items"
-import { activeRouteKey } from "@/lib/route-active"
+import { sideNavItems } from "@/config/navigation/side-nav-items"
+import { activeRouteKey, isRouteActive } from "@/lib/route-active"
 
 const PROFILE_ROUTE = "/my-account" as const
-
-/** Rows the rail can land on, in visual order. */
-const RAIL_ROUTES = [
-	PROFILE_ROUTE,
-	...SIDE_NAV_ITEMS.map((item) => item.to),
-] as const
 
 type PendingSelection = { key: string; from: string }
 
@@ -25,6 +20,24 @@ function AppSidebar({ forceSkeleton = false }: { forceSkeleton?: boolean }) {
 	const { pathname } = useLocation()
 	const showSkeleton = forceSkeleton || (isPending && !user)
 	const displayName = user?.name?.trim() || "GARP Member"
+
+	/*
+	 * Also shown while actually on /cpd, so a cold deep-link does not render a
+	 * rail with no active row until `programs` lands. Covers /cpd/* too —
+	 * `isRouteActive` matches on segment boundaries.
+	 */
+	const hasCpd = useHasCpdProgram()
+	const showCpd = hasCpd || isRouteActive(pathname, "/cpd")
+
+	const navItems = useMemo(
+		() => sideNavItems({ includeCpd: showCpd }),
+		[showCpd],
+	)
+	/** Rows the rail can land on, in visual order. */
+	const railRoutes = useMemo(
+		() => [PROFILE_ROUTE, ...navItems.map((item) => item.to)],
+		[navItems],
+	)
 
 	/**
 	 * Rendering a new route blocks the main thread for tens of milliseconds, which
@@ -37,7 +50,7 @@ function AppSidebar({ forceSkeleton = false }: { forceSkeleton?: boolean }) {
 	 * overridden by a stale claim.
 	 */
 	const [pending, setPending] = useState<PendingSelection | null>(null)
-	const activeRoute = activeRouteKey(pathname, RAIL_ROUTES)
+	const activeRoute = activeRouteKey(pathname, railRoutes)
 	const claimed = pending?.from === pathname ? pending.key : null
 	const railValue = claimed ?? activeRoute
 
@@ -49,7 +62,9 @@ function AppSidebar({ forceSkeleton = false }: { forceSkeleton?: boolean }) {
 			technique: "scale",
 			// The profile row is absent while the user loads, so nothing to land on.
 			value: showSkeleton && railValue === PROFILE_ROUTE ? null : railValue,
-			itemsKey: RAIL_ROUTES.join("|"),
+			// Changing this re-measures every row, which is exactly what has to
+			// happen when the CPD row appears or disappears mid-session.
+			itemsKey: railRoutes.join("|"),
 		})
 
 	const claim = (key: string) => setPending({ key, from: pathname })
@@ -82,7 +97,7 @@ function AppSidebar({ forceSkeleton = false }: { forceSkeleton?: boolean }) {
 				)}
 
 				<nav className="flex flex-col gap-1">
-					{SIDE_NAV_ITEMS.map(({ to, label, icon }) => (
+					{navItems.map(({ to, label, icon }) => (
 						<SidebarNavLink
 							key={to}
 							to={to}
