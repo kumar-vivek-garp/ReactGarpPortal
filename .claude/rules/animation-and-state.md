@@ -12,6 +12,7 @@ paths:
 - Prefer **physics configs** (`mass`, `tension`, `friction`) over duration/easing CSS animations.
 - Use `useSpring`, `useTransition`, and `animated.*` from `@react-spring/web`.
 - **Do not** add Framer Motion, GSAP, or other animation libraries.
+- **Gestures:** `@use-gesture/react` (pmndrs' own companion to react-spring) is the sanctioned pointer/drag layer — it produces gesture *state*, never animation, and every value it yields is still driven through a spring. It does not loosen the rule above: react-spring remains the only animation library.
 - **Do not** use CSS `@keyframes` / `transition-*` as the primary mechanism for UI chrome motion (mega-menus, mobile nav, overlays). Tailwind transitions for trivial hover color/opacity on static controls are fine.
 - Before writing spring code, fetch current docs via Context7 for `@react-spring/web`.
 

@@ -56,3 +56,6 @@ $RECYCLE.BIN/
 # Note: already-tracked files still show as modified until you leave them unstaged
 # (gitignore does not untrack existing files). Do not `git add` this folder.
 force-app/main/default/classes/
+
+# Org retrieve scratch (sf project retrieve --target-metadata-dir)
+.sandbox-sync/
