@@ -54,6 +54,11 @@ export {
 	HelpCenterPendingShell,
 	HelpCenterRequestsSkeleton,
 } from "./help-center-pending"
+export {
+	ExamSetupContentSkeleton,
+	ExamSetupPending,
+	ExamSetupPendingShell,
+} from "./exam-setup-pending"
 
 /**
  * Delay before swapping to the page skeleton on in-app nav.

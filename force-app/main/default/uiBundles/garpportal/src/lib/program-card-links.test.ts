@@ -14,6 +14,7 @@ import {
 	programDetailsHref,
 	programDetailsPath,
 	programExamSetupHref,
+	programExamSetupMyGarpHref,
 	programLearnMoreUrl,
 	programOrderHref,
 	programRegistrationHref,
@@ -136,19 +137,37 @@ describe("programRegistrationHref", () => {
 })
 
 describe("programExamSetupHref", () => {
-	it("maps rai alias to riskai route slug", () => {
+	it("builds the in-app wizard path, mapping rai to the riskai slug", () => {
+		expect(programExamSetupHref("RAI")).toBe("/programs/riskai/exam-setup")
+		expect(programExamSetupHref("scr")).toBe("/programs/scr/exam-setup")
+		expect(programExamSetupHref("RiskAI")).toBe("/programs/riskai/exam-setup")
+	})
+
+	it("refuses a type Apex examSetup would not accept", () => {
+		expect(programExamSetupHref("frr")).toBeNull()
+		expect(programExamSetupHref("")).toBeNull()
+	})
+
+	it("does not depend on the host — it is a route, not a hand-off", () => {
+		mockedLocal.mockReturnValue(true)
+		expect(programExamSetupHref("scr")).toBe("/programs/scr/exam-setup")
+	})
+})
+
+describe("programExamSetupMyGarpHref", () => {
+	it("still points at the legacy wizard for the fee hand-off", () => {
 		mockedLocal.mockReturnValue(false)
-		expect(programExamSetupHref("RAI")).toBe(
+		expect(programExamSetupMyGarpHref("RAI")).toBe(
 			"/sfdcApp#!/programs/exam-setup/riskai",
 		)
-		expect(programExamSetupHref("scr")).toBe(
+		expect(programExamSetupMyGarpHref("scr")).toBe(
 			"/sfdcApp#!/programs/exam-setup/scr",
 		)
 	})
 
 	it("prefixes sandbox host on local Vite", () => {
 		mockedLocal.mockReturnValue(true)
-		expect(programExamSetupHref("RiskAI")).toBe(
+		expect(programExamSetupMyGarpHref("RiskAI")).toBe(
 			"https://garp--devjuly25a.sandbox.my.site.com/sfdcApp#!/programs/exam-setup/riskai",
 		)
 	})

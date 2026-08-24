@@ -10,8 +10,9 @@ Nothing here has been changed by us.
 **Status key:** 🔴 blocks a feature · 🟠 blocks verification only · ⚪ informational · ✅ resolved
 
 **Last checked against `backend-artifact-2.md` (22 Aug 2026) and the resynced
-GarpAppv1 source on 2026-08-24.** Resolved items are kept rather than deleted so
-the history is readable; see the summary at the bottom.
+GarpAppv1 source on 2026-08-24.** A8–A12 were added the same day, from building
+the exam-setup wizard against the live sandbox. Resolved items are kept rather
+than deleted so the history is readable; see the summary at the bottom.
 
 ---
 
@@ -184,6 +185,133 @@ Worth either renaming the field or documenting it, since it is easy to miss.
 search across the resynced GarpAppv1 source. It fetches several reader links in
 one request; the archive page currently mints them one at a time. Either wire it
 up or drop it.
+
+---
+
+## A8. 🔴 Exam setup has no way to raise the fee order — the paid path is unreachable
+
+**Found while building the in-app exam-setup wizard (2026-08-24).** The free
+path is shipped and working; anything that costs money cannot be completed.
+
+`examSetupId` raises an `Exam_Registration_Modification__c` and answers
+`nextScreen: 'Pay Fees'`. `examSetupFees` then prices it — correctly, and with
+the full line items:
+
+```json
+{ "fees": [ { "productCode": "FRM1", "glCode": "4040", "amount": 250, … } ],
+  "deferralSubType": "Deferral Standard", "transactionType": "…" }
+```
+
+But it returns **no `orderId` and no checkout URL**, and `examSetupAuthorize`
+skips any attempt whose `Opportunity__r.StageName != 'Closed'` — it requires the
+order to be **already paid**. Nothing between the two creates that Opportunity.
+`GARP_Portal_ExamSetupService` says so itself:
+
+> A change with fees stays Pending until checkout, where the Opportunity trigger
+> picks it up.
+
+…but "checkout" is not an endpoint we have. `payOrder` / `orderCheckout` both
+need an `orderId` nobody hands us.
+
+**Where it went.** The legacy did this with a remoting call the port did not
+carry over — `createExamRescheduleFeesOrder(examRegId, adminI, adminII, siteI,
+siteII)`, which raised the Opportunity and line items and then handed them to
+the **registration app's shared cart** (`garpRegistrationService.initializeCart`,
+`sfdcapp/modules/exam-setup/components/exam-setup-card.component.js:490-600`).
+`getExamSetupFeesCheckoutInfo` and `examSetupAuthorizeRegistrations` were both
+ported; the order creation between them was not.
+
+**Question:** is that method intended to land as a portal action, or is the
+order meant to be raised elsewhere and polled for? Either answer unblocks us —
+we just need to know which.
+
+**Meanwhile:** we gate a fee-incurring selection **client-side, before calling
+`examSetupId`**, and hand the member to the MyGarp wizard. Nothing is written on
+our side, so no orphan Pending modification is left to collide with the one
+MyGarp raises.
+
+---
+
+## A9. 🟠 `Is_OSTA_Information_Required__c` is not on the exam-site payload
+
+`examSetup` returns each site as `{ id, name, isSelected }`. Apex decides both
+the OSTA fee and the OSTA form block from
+`Exam_Site__r.Site__r.Is_OSTA_Information_Required__c`, which the client never
+sees. Two consequences, both real:
+
+1. **We cannot forecast the OSTA fees** (40/part, plus the one-off 10). The
+   deferral fee we can — it keys off the administration, which IS on the wire —
+   but a member moving into or out of a mainland-China centre can still come
+   back `Pay Fees` after the write. We handle that, but it is a catch after the
+   fact rather than a clean stop, and by then the modification exists.
+2. **`isOSTA` describes where the member sits today, not what they just
+   picked.** So someone moving INTO a China centre is not asked for the
+   Chinese-name / DOB / gender / working-status block until they come back to
+   the page. `writeIdFields` accepts that save silently (it writes the block
+   only `if (i.ostaIDLocation != null)`), and today the provider step is a
+   MyGarp hand-off which collects those fields anyway — so it is currently
+   harmless. **It stops being harmless the moment `examSetupAuthorize` is
+   turned on for us.**
+
+**Ask:** add the flag to each `ExamSite` in the `examSetup` payload. One boolean
+resolves both. Guessing from `name` is not viable — it is a site label, not a
+country.
+
+---
+
+## A10. ⚪ `examSetupId` treats an empty string as a value, so a blank overwrites
+
+Not a defect in anything shipped — recording it because it is the same shape as
+D1 and the next client to touch this endpoint will hit it.
+
+`writeIdFields` guards every column with `if (i.field != null)`. An empty string
+is not null, so a client that posts `""` for a field the member never touched
+overwrites the Contact with blank. We reproduced it: our first test save wiped
+`Mobile_Phone_Code__c` on a real Contact (restored since).
+
+The masked read compounds it. `ID_Number__c` holds only the last five characters
+in the clear — the whole number lives in `OSTA_Full_ID__c` — so echoing the read
+value back on the next save writes those five characters over a real ID.
+
+**Our fix, client-side:** empty fields are omitted from the body entirely rather
+than sent blank, and the ID number is never seeded (blank means "keep what you
+have"). Verified at database level — `OSTA_Full_ID__c` survives a save with the
+box empty.
+
+**Suggestion, if it is cheap:** treat blank as absent server-side
+(`String.isNotBlank`) so this cannot bite a future caller. No action needed for
+us.
+
+---
+
+## A11. 🟠 Is `examSetupAuthorize` safe to call from the sandbox?
+
+`GARP_Portal_ExamSetupService.authorize` pushes through
+`ExamRegistrationsStatusCls.updateRegistration`, which is an outbound
+integration to Pearson / PSI / ATA. Calling it from `devjuly25a` appears to
+reach the real vendor.
+
+We have built the screen and the retry loop but keep every call behind
+`EXAM_SETUP_AUTHORIZE_ENABLED = false`; with it off the outcome hands the member
+to MyGarp. Flipping one constant ships it.
+
+**Question:** is there a sandbox-safe mode, or should we mock it? This is the
+last thing standing between the wizard and a member finishing scheduling
+in-app.
+
+---
+
+## A12. ⚪ Two notes on `examSetup`, no action needed
+
+- **The class docblock is stale.** `GARP_Portal_ExamSetupService`'s header still
+  says the write half is *"Still unported — setExamSetupIDInfo,
+  getExamSetupFeesCheckoutInfo and examSetupAuthorizeRegistrations"*. All three
+  exist. Worth a line's edit — it is the first thing anyone reads.
+- **Both FRM parts return the same `Exam_Administration__c` Id** with different
+  per-part names (`November 14-20, 2026` / `November 21-25, 2026`). That is what
+  makes the legacy's same-day travel warning fire for every FRM candidate. We
+  render the warning on the same condition, so behaviour matches — flagging only
+  in case the shared Id is not intended.
 
 ---
 
@@ -398,6 +526,22 @@ twice.
 
 **The two that matter most are both still open:** A1 blocks errata entirely, and
 D1 is live data loss on real Contact records.
+
+## What building exam setup added (2026-08-24)
+
+The wizard is built and verified live; these came out of doing it. A8 is the one
+that blocks a feature.
+
+| Item | Status | Effect |
+|---|---|---|
+| A8 no endpoint raises the fee order | 🔴 | **The paid half of exam setup cannot be completed.** Free changes ship; anything costing money is gated and handed to MyGarp. |
+| A9 OSTA flag missing from the site payload | 🟠 | We cannot forecast OSTA fees, and a member moving into a China centre is not prompted for the OSTA block. Currently masked by the MyGarp hand-off. |
+| A11 `examSetupAuthorize` sandbox safety | 🟠 | Scheduling stays behind a flag until confirmed. One constant to flip. |
+| A10 blank-overwrites-value on `examSetupId` | ⚪ | Handled client-side. Recorded because it is D1's shape and will catch the next caller. |
+| A12 stale docblock, shared FRM admin Id | ⚪ | No action. |
+
+**Defer needed no backend work** — it turned out to be the same wizard, priced
+by `GARP_Portal_ExamSetupFees`. There is nothing to ask for there.
 
 ## New things artifact 2 surfaced that we do not have
 

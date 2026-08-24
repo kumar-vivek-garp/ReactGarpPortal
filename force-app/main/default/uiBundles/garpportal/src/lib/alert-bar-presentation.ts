@@ -93,9 +93,10 @@ function actionFor(view: AlertBarView): AlertBarAction | null {
 			return href ? { label, href, isExternal: false } : null
 		}
 		case "Exam Scheduling": {
-			// Still MyGarp — the in-app wizard is not built yet.
+			// In-app since the exam-setup wizard landed. This is the alert the
+			// legacy shows most — "You have not booked a seat for your exam yet."
 			const href = programExamSetupHref(programType)
-			return href ? { label, href, isExternal: true } : null
+			return href ? { label, href, isExternal: false } : null
 		}
 		case "Exam Registration": {
 			// The payload carries no registrationPath, so this derives from type.

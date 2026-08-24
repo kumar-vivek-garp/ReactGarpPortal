@@ -5,6 +5,8 @@ import {
 	SquarePen,
 } from "lucide-react"
 
+import { Link } from "@tanstack/react-router"
+
 import type { ExamPartInfo, ProgramDetail } from "@/api/programs"
 import { AccountSectionCard } from "@/components/molecules/account-section-card"
 import { CardCta } from "@/components/molecules/card-cta"
@@ -162,13 +164,15 @@ function ProgramExamOverview({
 			className={className}
 			action={
 				canEdit && setupHref ? (
-					<a
-						href={setupHref}
+					// A route now, so `Link` — a raw anchor would full-page reload
+					// the bundle to reach a page we already have mounted.
+					<Link
+						to={setupHref}
 						className="inline-flex items-center gap-1.5 text-sm font-semibold leading-none text-primary hover:text-primary/80"
 					>
 						Edit
 						<SquarePen className="size-3.5 shrink-0" aria-hidden />
-					</a>
+					</Link>
 				) : undefined
 			}
 		>

@@ -202,10 +202,28 @@ export function programRegistrationHref(
 }
 
 /**
- * MyGarp exam-setup wizard (`garpApp2` path `programs/exam-setup/:program`).
- * Phase C will replace this with an in-app wizard once write APIs land.
+ * In-app exam setup for a program (`/programs/{slug}/exam-setup`).
+ *
+ * Same type gate as program detail, because Apex `examSetup` accepts exactly
+ * the set `programDetail` does. This is also the deferral route — moving to a
+ * different exam administration IS the deferral, and the wizard prices it.
  */
 export function programExamSetupHref(programType: string): string | null {
+	const detail = programDetailsPath(programType)
+	return detail ? `${detail}/exam-setup` : null
+}
+
+/**
+ * The legacy sfdcApp wizard, still needed for the half we cannot finish here.
+ *
+ * Two hand-offs use it: a change that carries a fee (no endpoint raises the
+ * order that fee would be billed against) and the provider push while
+ * `EXAM_SETUP_AUTHORIZE_ENABLED` is off. Neither is a route in this app, so
+ * this stays a full-page navigation and must never be given to `<Link>`.
+ */
+export function programExamSetupMyGarpHref(
+	programType: string,
+): string | null {
 	const slug = programTypeSlug(programType)
 	if (!slug) return null
 	const routeSlug = slug === "rai" ? "riskai" : slug

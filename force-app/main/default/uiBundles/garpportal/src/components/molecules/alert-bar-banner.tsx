@@ -80,7 +80,7 @@ function AlertBarBanner({
 							onClick={onExpand}
 							aria-label={ALERT_BAR_EXPAND_LABEL}
 							className={cn(
-								"inline-flex items-center gap-2 rounded-full border bg-card px-3.5 py-2",
+								"inline-flex cursor-pointer items-center gap-2 rounded-full border bg-card px-3.5 py-2",
 								"text-sm font-semibold shadow-lg",
 								"hover:bg-accent hover:text-accent-foreground",
 								"focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
@@ -98,7 +98,7 @@ function AlertBarBanner({
 							// The atom hardcodes role="alert". That is right for an
 							// urgent rung and too interrupting for a soft nudge.
 							role={urgent ? "alert" : "status"}
-							className="gap-y-1 py-2.5 pr-10 shadow-lg"
+							className="gap-y-1 rounded-xl py-2.5 pr-10 shadow-lg"
 						>
 							<Icon aria-hidden />
 							{/* Programme and deadline share the title line: two short
@@ -133,7 +133,7 @@ function AlertBarBanner({
 								onClick={onCollapse}
 								aria-label={ALERT_BAR_COLLAPSE_LABEL}
 								className={cn(
-									"absolute top-2 right-2 rounded-sm p-1 opacity-70",
+									"absolute top-2 right-2 cursor-pointer rounded-sm p-1 opacity-70",
 									"hover:bg-accent hover:text-accent-foreground hover:opacity-100",
 									"focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
 								)}

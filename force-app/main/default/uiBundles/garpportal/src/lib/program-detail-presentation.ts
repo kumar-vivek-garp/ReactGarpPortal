@@ -157,7 +157,9 @@ function partActions(
 			kind: part.schedulingIsComplete ? "setup" : "schedule",
 			label: part.schedulingIsComplete ? "Exam Setup" : "Schedule Exam",
 			url: setupHref,
-			isExternal: true,
+			// In-app since the wizard landed — `programExamSetupHref` returns a
+			// route now, not a MyGarp hand-off.
+			isExternal: false,
 			primary: true,
 		})
 	}

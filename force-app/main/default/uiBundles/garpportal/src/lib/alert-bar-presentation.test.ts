@@ -145,14 +145,15 @@ describe("toAlertBarModel — routes resolve through the shared helpers", () => 
 		expect(model?.action?.href).toBe("/programs/riskai/results")
 	})
 
-	/** Both of these still leave the portal — neither page is built yet. */
-	it("sends Exam Scheduling out to the MyGarp wizard", () => {
+	it("keeps Exam Scheduling in-app now the wizard is built", () => {
 		const model = toAlertBarModel(
 			view({ examType: "RAI", examPart: "Full", route: "Exam Scheduling" }),
 		)
-		expect(model?.action?.href).toContain("/sfdcApp#!/programs/exam-setup/riskai")
-		expect(model?.action?.isExternal).toBe(true)
+		expect(model?.action?.href).toBe("/programs/riskai/exam-setup")
+		expect(model?.action?.isExternal).toBe(false)
 	})
+
+	/** Registration is still parked, so this one still leaves the portal. */
 
 	it("sends Exam Registration out to MyGarp registration", () => {
 		const model = toAlertBarModel(
