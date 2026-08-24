@@ -224,13 +224,41 @@ describe("buildProgramListingPresentation — in progress", () => {
 		expect(result.metaLines).toEqual([])
 	})
 
-	it("routes unsupported types to MyGarp instead of in-app", () => {
+	/**
+	 * This used to assert the opposite — that FFR left the app for MyGarp —
+	 * because `programDetail` does not serve courses and nothing else did
+	 * either. `courseDetail` has been live all along and now has a page, so a
+	 * course is in-app like everything else.
+	 */
+	it("routes courses to the in-app course page, not MyGarp", () => {
+		for (const programType of ["FFR", "FRR", "FRR25"]) {
+			const result = buildProgramListingPresentation(
+				"inProgress",
+				enrolled({ programType }),
+			)
+			expect(result.detailsLink?.isExternal).toBe(false)
+			expect(result.detailsLink?.url).toBe(
+				`/courses/${programType.toLowerCase()}`,
+			)
+		}
+	})
+
+	/** A micro course code is passed through — Apex resolves it, we cannot. */
+	it("routes a micro course code to the same page", () => {
 		const result = buildProgramListingPresentation(
 			"inProgress",
-			enrolled({ programType: "FFR" }),
+			enrolled({ programType: "ARPM" }),
 		)
-		expect(result.detailsLink?.isExternal).toBe(true)
-		expect(result.detailsLink?.url).toContain("myprograms/ffr")
+		expect(result.detailsLink?.url).toBe("/courses/arpm")
+	})
+
+	/** The two-part exam programmes are unaffected. */
+	it("still routes exam programmes to program detail", () => {
+		const result = buildProgramListingPresentation(
+			"inProgress",
+			enrolled({ programType: "FRM" }),
+		)
+		expect(result.detailsLink?.url).toBe("/programs/frm")
 	})
 })
 

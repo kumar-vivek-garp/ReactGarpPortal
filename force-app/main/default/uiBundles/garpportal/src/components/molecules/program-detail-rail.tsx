@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { Link } from "@tanstack/react-router"
 import {
 	Bell,
@@ -5,6 +6,7 @@ import {
 	CalendarClock,
 	ExternalLink,
 	IdCard,
+	Pencil,
 } from "lucide-react"
 
 import type {
@@ -13,6 +15,7 @@ import type {
 	ProgramDetail,
 	ProgramExamNotification,
 } from "@/api/programs"
+import { OstaIdDialog } from "@/components/molecules/osta-id-dialog"
 import {
 	Accordion,
 	AccordionContent,
@@ -24,8 +27,7 @@ import { AccountFieldGrid } from "@/components/molecules/account-field-grid"
 import { formatLongDate } from "@/lib/account-format"
 import { daysUntil } from "@/lib/days-until"
 import {
-	programLearnMoreUrl,
-	programTypeSlug,
+	programErrataPath,
 	resolveExperienceHref,
 } from "@/lib/program-card-links"
 import { cn } from "@/lib/utils"
@@ -205,12 +207,15 @@ function ResourcesBlock({
 	resources: ExamResources | null | undefined
 	programType: string
 }) {
-	const slug = programTypeSlug(programType)
-	const marketing = slug === "riskai" ? "rai" : slug
 	const glpUrl = resolveExperienceHref(resources?.eLearningPlatformAccessURL)
 	const adaUrl = resolveExperienceHref(resources?.ADAFormAccessURL)
-	const errataUrl =
-		programLearnMoreUrl(marketing) ?? `https://www.garp.org/${marketing}`
+	/*
+	 * The real errata page, not the marketing site. This row promises "Report
+	 * an error or discrepancy in the curriculum" and pointed at
+	 * `garp.org/{programme}` — a brochure — for every member who clicked it.
+	 * Null for a programme with no published curriculum to report against.
+	 */
+	const errataPath = programErrataPath(programType)
 	const via = resources?.eLearningPlatformName?.trim()
 		? `via ${resources.eLearningPlatformName.trim()}`
 		: undefined
@@ -235,9 +240,11 @@ function ResourcesBlock({
 				<ResourceLinkRow to="/study-materials" label="Study Materials">
 					Official documents to help you prepare for your Exam
 				</ResourceLinkRow>
-				<ResourceLinkRow href={errataUrl} label="Submit Errata" external>
-					Report an error or discrepancy in the curriculum.
-				</ResourceLinkRow>
+				{errataPath ? (
+					<ResourceLinkRow to={errataPath} label="Submit Errata">
+						Report an error or discrepancy in the curriculum.
+					</ResourceLinkRow>
+				) : null}
 				{adaUrl ? (
 					<div className="rounded-xl border border-primary/25 bg-accent/50 p-4">
 						<p className="text-sm font-semibold text-foreground">
@@ -272,6 +279,7 @@ function ResourcesBlock({
 }
 
 function MemberDetailsBlock({ detail }: { detail: ProgramDetail }) {
+	const [isIdOpen, setIdOpen] = useState(false)
 	const phone = [detail.phoneCode, detail.phoneNumber]
 		.filter(Boolean)
 		.join(" ")
@@ -316,7 +324,14 @@ function MemberDetailsBlock({ detail }: { detail: ProgramDetail }) {
 
 	const hasId = idRows.some((r) => r.value)
 	const hasOsta = ostaRows.some((r) => r.value)
-	if (!hasId && !hasOsta) return null
+	/*
+	 * An OSTA candidate must supply government ID before they can be
+	 * scheduled, so the control is offered whether or not anything is on file
+	 * yet — a candidate with nothing recorded is exactly who needs it, and
+	 * gating on `hasId` would hide it from them.
+	 */
+	const canEditId = detail.isOSTACandidate === true
+	if (!hasId && !hasOsta && !canEditId) return null
 
 	return (
 		<section className="rounded-xl border border-border bg-muted/40 p-5">
@@ -324,12 +339,24 @@ function MemberDetailsBlock({ detail }: { detail: ProgramDetail }) {
 				<IdCard className="size-5 shrink-0 text-primary" aria-hidden />
 				Member details
 			</h2>
-			{hasId ? (
+			{hasId || canEditId ? (
 				<div className="mt-4">
 					<p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
 						ID information
 					</p>
 					<AccountFieldGrid rows={idRows} emptyMessage="No ID on file." />
+					{canEditId ? (
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							className="mt-3"
+							onClick={() => setIdOpen(true)}
+						>
+							<Pencil className="size-3.5" aria-hidden />
+							{hasId ? "Update ID" : "Add your ID"}
+						</Button>
+					) : null}
 				</div>
 			) : null}
 			{hasOsta ? (
@@ -339,6 +366,9 @@ function MemberDetailsBlock({ detail }: { detail: ProgramDetail }) {
 					</p>
 					<AccountFieldGrid rows={ostaRows} />
 				</div>
+			) : null}
+			{canEditId ? (
+				<OstaIdDialog open={isIdOpen} onOpenChange={setIdOpen} />
 			) : null}
 		</section>
 	)

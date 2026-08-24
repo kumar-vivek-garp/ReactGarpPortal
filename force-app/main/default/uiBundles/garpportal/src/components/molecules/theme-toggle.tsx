@@ -45,7 +45,7 @@ function ThemeToggle({ className, variant = "toolbar" }: ThemeToggleProps) {
 			className={cn(
 				"relative size-9 shrink-0 cursor-pointer overflow-hidden",
 				variant === "toolbar" &&
-					"text-toolbar-foreground hover:bg-white/10 hover:text-toolbar-foreground",
+					"text-toolbar-foreground hover:bg-toolbar-foreground/10 hover:text-toolbar-foreground",
 				variant === "sheet" && "text-foreground hover:bg-accent",
 				className,
 			)}

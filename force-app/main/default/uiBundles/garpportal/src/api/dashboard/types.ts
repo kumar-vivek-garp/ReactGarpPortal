@@ -1,5 +1,6 @@
 import type { Completeness, Identity, MemberPortalEnvelope } from "@/api/account/types"
 import type { PortalCard } from "@/api/membership/types"
+import type { ProgramExamNotification } from "@/api/programs/types"
 import type { CpdCreditBarRow } from "@/lib/cpd-presentation"
 
 /** Preview row for the Enrolled Programs dashboard card. */
@@ -35,16 +36,67 @@ export type DashboardCardMeta = {
 	upcomingEvents?: DashboardEventPreview[]
 	cpdRows?: CpdCreditBarRow[]
 	cpdRemaining?: string | null
+	notifications?: ProgramExamNotification[]
+}
+
+/**
+ * One entry in the server's card manifest.
+ *
+ * The dashboard payload does NOT carry finished cards — it carries which cards
+ * to draw and in what order, and each card fetches its own content from the
+ * endpoint that owns it. `name` is matched exactly against
+ * `DASHBOARD_COMPONENT` and a name the client does not know renders nothing.
+ */
+export type DashboardComponent = {
+	name: string
+	rankOrder: number
 }
 
 export type DashboardView = {
 	identity: Identity
 	completeness: Completeness
-	cards: PortalCard[]
+	/**
+	 * The card manifest.
+	 *
+	 * NOTE the name. This was previously typed `cards: PortalCard[]`, which no
+	 * response has ever contained, so the manifest was silently discarded and
+	 * every card had to be invented client-side — which is why Member Directory,
+	 * GBI, EPP and BenchPrep never appeared for anyone.
+	 */
+	dashboardComponents: DashboardComponent[]
+	/** Which programme the Advertisement card should sell; null when none. */
+	adType: string | null
 }
 
-export type DismissCardResult = {
-	dismissed: string
+/**
+ * `GET ad` — the dashboard cross-sell.
+ *
+ * `adType` is `FRM`, `SCR` or `RAI` — or **null**, which is a success meaning
+ * "nothing to advertise": the member either sits every programme already or has
+ * a result still pending. The programme is drawn at random from the eligible
+ * ones on each request, so it varies between visits by design.
+ */
+export type AdInfo = {
+	statusMessage: string | null
+	statusCode: number
+	adType: string | null
+	/** The administration being advertised; null when no window was found. */
+	adminName: string | null
+	isRegistrationOpen: boolean | null
+	/** Only set when registration is NOT yet open. */
+	nextAdminRegistrationOpenDate: string | null
+}
+
+/**
+ * `dismissCard` / `restoreCard` both return the key they acted on, under a
+ * different name — `{ dismissed, muted: true }` or `{ restored, muted: false }`
+ * (see `GARP_Portal_DismissCardService.setMuted`). Both keys are optional here
+ * so one type covers both directions.
+ */
+export type CardVisibilityResult = {
+	dismissed?: string
+	restored?: string
+	muted?: boolean
 }
 
 export function asDashboardCardMeta(

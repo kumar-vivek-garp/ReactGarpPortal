@@ -1,4 +1,5 @@
-import { GARP_AUTH_BG, GARP_LOGO_FULL } from "@/config/navigation/garp-logos"
+import { GarpLogoFull } from "@/components/atoms/garp-logo-full"
+import { GARP_AUTH_BG } from "@/config/navigation/garp-logos"
 
 /**
  * Same branded wait as the HTML `#boot-splash` (logo + sliding bar).
@@ -14,13 +15,9 @@ function BootSplashScreen() {
 			aria-busy="true"
 			aria-label="Loading GARP"
 		>
-			<img
-				src={GARP_LOGO_FULL}
-				alt="GARP - Global Association of Risk Professionals"
-				className="h-auto w-full max-w-80"
-				decoding="async"
-				fetchPriority="high"
-			/>
+			{/* Always on the dark backdrop image, so it is pinned to the knockout
+			    colour rather than following the theme. */}
+			<GarpLogoFull className="h-auto w-full max-w-80 text-toolbar-foreground" />
 			<div className="boot-bar" aria-hidden="true">
 				<span />
 			</div>

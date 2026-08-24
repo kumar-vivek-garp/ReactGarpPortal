@@ -8,6 +8,7 @@ import { MainLoadingBar } from "@/components/molecules/main-loading-bar"
 import { PageContainer } from "@/components/molecules/page-container"
 import { PageEnterFade } from "@/components/molecules/page-enter-fade"
 import { AppRoutePending } from "@/components/molecules/route-pending-fallback"
+import { AlertBar } from "@/components/organisms/alert-bar"
 import { AppSidebar } from "@/components/organisms/app-sidebar"
 import { Footer } from "@/components/organisms/footer"
 import { Navbar } from "@/components/organisms/navbar"
@@ -69,6 +70,9 @@ function AppLayoutShell({
 					<Footer />
 				</div>
 			</div>
+			{/* Chrome, not page content: it floats over the layout and is mounted
+			    once, so the query is shared and navigating never refetches it. */}
+			<AlertBar />
 		</div>
 	)
 }

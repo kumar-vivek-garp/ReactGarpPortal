@@ -13,6 +13,33 @@ export function notifyWarning(message: string, description?: string) {
 }
 
 /**
+ * How long an undo stays offered.
+ *
+ * The toast IS the undo window — once it closes the action is only reversible
+ * by whatever slower route the app provides, if any. Sonner's 4s default is
+ * tuned for "read this and move on"; it is not long enough to notice a button,
+ * decide, and reach it, so undoable actions get double.
+ */
+const UNDO_TOAST_MS = 8000
+
+/**
+ * Toast a completed action alongside the one control that reverses it.
+ *
+ * For reversible, low-stakes actions only. Anything the member would go looking
+ * for later needs a real affordance on the page, not a toast that expires.
+ */
+export function notifyWithUndo(
+	message: string,
+	onUndo: () => void,
+	undoLabel = "Undo",
+) {
+	toast(message, {
+		duration: UNDO_TOAST_MS,
+		action: { label: undoLabel, onClick: () => onUndo() },
+	})
+}
+
+/**
  * Map any thrown value to an error toast.
  * Prefer the server / AppError messages — never hide them behind a generic title.
  */

@@ -31,6 +31,14 @@ export function accountContactToView(contact: AccountContact): AccountView {
 	const isIndividualMember = membershipType === "Individual"
 	const isAffiliateMember = membershipType === "Affiliate"
 	const isMember = Boolean(membershipType)
+	/*
+	 * This mapper builds an Identity from a Contact read, which carries the
+	 * membership TYPE but not its standing — Apex derives that from the
+	 * Membership contract. Reported false rather than guessed: letting a lapsed
+	 * member through a paywall is the wrong way to be wrong, and every screen
+	 * that actually gates on it reads the Apex payload instead.
+	 */
+	const isMemberInGoodStanding = false
 
 	return {
 		identity: {
@@ -46,6 +54,7 @@ export function accountContactToView(contact: AccountContact): AccountView {
 			memberSince: contact.memberSince,
 			autoRenew: contact.autoRenew,
 			isMember,
+			isMemberInGoodStanding,
 			isIndividualMember,
 			isAffiliateMember,
 			audience: audienceFromMembershipType(membershipType),

@@ -1,3 +1,5 @@
+import type { LucideIcon } from "lucide-react"
+
 export type AppRoute =
 	| "/dashboard"
 	| "/programs"
@@ -20,6 +22,19 @@ export type MegaMenuColumn = {
 	links: ExternalNavLink[]
 }
 
+/**
+ * Brand token a mega-menu is tinted with on the mobile Browse grid. Each name
+ * has a matching `--color-<name>-foreground` in `styles/theme.css` — always use
+ * the declared pair rather than assuming white or black reads on the swatch.
+ */
+export type NavAccentToken =
+	| "garp-cyan"
+	| "garp-saffron"
+	| "rai-orange"
+	| "deep-purple"
+	| "bright-purple"
+	| "dark-blue-gray"
+
 export type MegaMenuHeading = {
 	prefix: string
 	highlight: string
@@ -31,6 +46,10 @@ export type MegaMenuHeading = {
 export type TopNavItem = {
 	title: string
 	heading?: MegaMenuHeading
+	/** Tile tint on the mobile Browse grid. */
+	accentToken: NavAccentToken
+	/** Tile glyph on the mobile Browse grid. */
+	icon: LucideIcon
 	column1: MegaMenuColumn
 	column2: MegaMenuColumn
 	column3?: MegaMenuColumn

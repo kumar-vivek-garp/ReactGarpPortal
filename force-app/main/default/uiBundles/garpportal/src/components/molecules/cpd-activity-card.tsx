@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { animated, useSpring } from "@react-spring/web"
-import { ChevronDown, ExternalLink } from "lucide-react"
+import { Link } from "@tanstack/react-router"
+import { ChevronDown, ExternalLink, Link as LinkIcon } from "lucide-react"
 
 import type { CpdActivity } from "@/api/cpd"
 import { Button } from "@/components/atoms/button"
@@ -13,6 +14,8 @@ const DETAIL_SPRING = { mass: 0.9, tension: 320, friction: 30 }
 type CpdActivityCardProps = {
 	activity: CpdActivity
 	onSubmitCredits: (activity: CpdActivity) => void
+	/** False when the page is already scoped to this activity. */
+	showPermalink?: boolean
 	className?: string
 }
 
@@ -20,6 +23,7 @@ type CpdActivityCardProps = {
 function CpdActivityCard({
 	activity,
 	onSubmitCredits,
+	showPermalink = true,
 	className,
 }: CpdActivityCardProps) {
 	const [open, setOpen] = useState(false)
@@ -104,7 +108,19 @@ function CpdActivityCard({
 				</>
 			) : null}
 
-			<div className="flex justify-end pt-1">
+			<div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+				{/*
+				 * A shareable link to this one activity. Hidden when the page is
+				 * already scoped to it — the row would link to itself.
+				 */}
+				{showPermalink && activity.id ? (
+					<Button asChild variant="ghost" size="sm">
+						<Link to="/cpd/activities" search={{ activityId: activity.id }}>
+							<LinkIcon className="size-4" aria-hidden />
+							Open
+						</Link>
+					</Button>
+				) : null}
 				<Button type="button" size="sm" onClick={() => onSubmitCredits(activity)}>
 					Submit Credits
 				</Button>

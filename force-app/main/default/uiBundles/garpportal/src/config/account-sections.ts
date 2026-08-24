@@ -8,6 +8,8 @@ import {
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
+import type { BentoScope } from "@/config/bento"
+
 /**
  * One record per Account Information card — the my-account analogue of
  * `PROGRAM_BUCKET_META`. Card headers, DOM anchors and the completeness
@@ -42,41 +44,42 @@ export const DIRECTORY_BLURB =
 export const EXPERTISE_BLURB =
 	"Please complete the form below if you have experience as a Subject Matter Expert in one or more areas of financial risk management and would like to collaborate with GARP on delivering risk intelligence."
 
-export const ACCOUNT_SECTION_META: Record<AccountSection, AccountSectionMeta> = {
-	personal: {
-		domId: "account-section-personal",
-		label: "Personal Information",
-		icon: UserRound,
-	},
-	career: {
-		domId: "account-section-career",
-		label: "Career Information",
-		icon: Briefcase,
-	},
-	membership: {
-		domId: "account-section-membership",
-		label: "Membership",
-		icon: ShieldCheck,
-	},
-	chapters: {
-		domId: "account-section-chapters",
-		label: "Preferred Chapters",
-		icon: MapPin,
-		blurb: CHAPTERS_BLURB,
-	},
-	directory: {
-		domId: "account-section-directory",
-		label: "Directory Settings",
-		icon: BookUser,
-		blurb: DIRECTORY_BLURB,
-	},
-	expertise: {
-		domId: "account-section-expertise",
-		label: "Expertise",
-		icon: Lightbulb,
-		blurb: EXPERTISE_BLURB,
-	},
-}
+export const ACCOUNT_SECTION_META: Record<AccountSection, AccountSectionMeta> =
+	{
+		personal: {
+			domId: "account-section-personal",
+			label: "Personal Information",
+			icon: UserRound,
+		},
+		career: {
+			domId: "account-section-career",
+			label: "Career Information",
+			icon: Briefcase,
+		},
+		membership: {
+			domId: "account-section-membership",
+			label: "Membership",
+			icon: ShieldCheck,
+		},
+		chapters: {
+			domId: "account-section-chapters",
+			label: "Preferred Chapters",
+			icon: MapPin,
+			blurb: CHAPTERS_BLURB,
+		},
+		directory: {
+			domId: "account-section-directory",
+			label: "Directory Settings",
+			icon: BookUser,
+			blurb: DIRECTORY_BLURB,
+		},
+		expertise: {
+			domId: "account-section-expertise",
+			label: "Expertise",
+			icon: Lightbulb,
+			blurb: EXPERTISE_BLURB,
+		},
+	}
 
 /**
  * Bento order. Also the single-column stack order below `xl`, so the most
@@ -92,21 +95,5 @@ export const ACCOUNT_CARD_ORDER: readonly AccountSection[] = [
 	"directory",
 ]
 
-/**
- * Column spans at `xl`. Auto-placement then yields three clean rows:
- * [personal personal][membership] / [career career][chapters] /
- * [expertise expertise][directory].
- *
- * Written out in full — Tailwind's scanner cannot see composed class names.
- */
-export const ACCOUNT_CARD_SPAN: Record<AccountSection, string> = {
-	personal: "xl:col-span-2",
-	membership: "",
-	career: "xl:col-span-2",
-	chapters: "",
-	expertise: "xl:col-span-2",
-	directory: "",
-}
-
-/** Grid geometry — shared verbatim with the pending shell so they cannot drift. */
-export const ACCOUNT_CARD_GRID = "grid items-start gap-6 xl:grid-cols-3"
+/** Persistence bucket for this page's remembered card arrangement. */
+export const ACCOUNT_BENTO_SCOPE: BentoScope = "account-information"

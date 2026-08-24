@@ -2,74 +2,53 @@ import { create } from "zustand"
 
 import type { TopNavItem } from "@/config/navigation/types"
 
-/** Grace period so the cursor can cross the toolbar → panel gap without closing. */
-const DESKTOP_NAV_CLOSE_DELAY_MS = 300
-
-let desktopNavCloseTimer: ReturnType<typeof setTimeout> | null = null
-
-function clearDesktopNavCloseTimer() {
-	if (desktopNavCloseTimer !== null) {
-		clearTimeout(desktopNavCloseTimer)
-		desktopNavCloseTimer = null
-	}
-}
-
 type NavigationState = {
 	isMobileNavOpen: boolean
 	/** Drill-down mega-menu item while the mobile panel is open; null = Account / Browse root. */
 	mobileSelectedNavItem: TopNavItem | null
-	/** Desktop mega-menu currently open (hover); null = all closed. */
+	/** Desktop mega-menu currently open (click); null = all closed. */
 	openDesktopNavTitle: string | null
+	/**
+	 * Menu drilled into from the desktop "More" overflow panel; null = the
+	 * overflow list itself. Only meaningful while `openDesktopNavTitle` is the
+	 * overflow trigger.
+	 */
+	desktopMoreDrillTitle: string | null
 	openMobileNav: () => void
 	closeMobileNav: () => void
 	toggleMobileNav: () => void
 	openMobileNavItem: (item: TopNavItem) => void
 	backToMobileRoot: () => void
-	/** Open (or switch) a desktop mega-menu and cancel any pending close. */
+	/** Open (or switch to) a desktop mega-menu. */
 	openDesktopNav: (title: string) => void
-	/** Close after a short delay — cancelled if the cursor re-enters the menu. */
-	scheduleCloseDesktopNav: () => void
-	cancelCloseDesktopNav: () => void
-	/** Immediate close (Escape, overlay click). */
+	/** Same title closes, a different one switches — the click-trigger contract. */
+	toggleDesktopNav: (title: string) => void
 	closeDesktopNav: () => void
-	/** @deprecated Prefer openDesktopNav / closeDesktopNav */
-	setOpenDesktopNavTitle: (title: string | null) => void
+	openDesktopMoreDrill: (title: string) => void
+	backToDesktopMoreRoot: () => void
 }
 
 export const useNavigationStore = create<NavigationState>((set) => ({
 	isMobileNavOpen: false,
 	mobileSelectedNavItem: null,
 	openDesktopNavTitle: null,
+	desktopMoreDrillTitle: null,
 	openMobileNav: () => set({ isMobileNavOpen: true, mobileSelectedNavItem: null }),
 	closeMobileNav: () => set({ isMobileNavOpen: false, mobileSelectedNavItem: null }),
 	toggleMobileNav: () =>
-		set((state) =>
-			state.isMobileNavOpen
-				? { isMobileNavOpen: false, mobileSelectedNavItem: null }
-				: { isMobileNavOpen: true, mobileSelectedNavItem: null }
-		),
+		set((state) => ({
+			isMobileNavOpen: !state.isMobileNavOpen,
+			mobileSelectedNavItem: null,
+		})),
 	openMobileNavItem: (item) => set({ mobileSelectedNavItem: item }),
 	backToMobileRoot: () => set({ mobileSelectedNavItem: null }),
-	openDesktopNav: (title) => {
-		clearDesktopNavCloseTimer()
-		set({ openDesktopNavTitle: title })
-	},
-	scheduleCloseDesktopNav: () => {
-		clearDesktopNavCloseTimer()
-		desktopNavCloseTimer = setTimeout(() => {
-			set({ openDesktopNavTitle: null })
-			desktopNavCloseTimer = null
-		}, DESKTOP_NAV_CLOSE_DELAY_MS)
-	},
-	cancelCloseDesktopNav: () => {
-		clearDesktopNavCloseTimer()
-	},
-	closeDesktopNav: () => {
-		clearDesktopNavCloseTimer()
-		set({ openDesktopNavTitle: null })
-	},
-	setOpenDesktopNavTitle: (title) => {
-		clearDesktopNavCloseTimer()
-		set({ openDesktopNavTitle: title })
-	},
+	openDesktopNav: (title) => set({ openDesktopNavTitle: title, desktopMoreDrillTitle: null }),
+	toggleDesktopNav: (title) =>
+		set((state) => ({
+			openDesktopNavTitle: state.openDesktopNavTitle === title ? null : title,
+			desktopMoreDrillTitle: null,
+		})),
+	closeDesktopNav: () => set({ openDesktopNavTitle: null, desktopMoreDrillTitle: null }),
+	openDesktopMoreDrill: (title) => set({ desktopMoreDrillTitle: title }),
+	backToDesktopMoreRoot: () => set({ desktopMoreDrillTitle: null }),
 }))

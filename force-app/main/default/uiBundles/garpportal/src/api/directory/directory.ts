@@ -1,121 +1,136 @@
-import { createDataSDK, gql } from "@salesforce/platform-sdk"
+import { createDataSDK } from "@salesforce/platform-sdk"
 
-import { AppError } from "@/api/client"
-import type { DirectoryMember } from "@/api/directory/types"
+import {
+	AppError,
+	normalizeHttpResponse,
+	unwrapApiResult,
+	unwrapMemberPortalEnvelope,
+} from "@/api/client"
+import type {
+	DirectoryMessageInput,
+	DirectoryMessageResult,
+	DirectorySearchParams,
+	DirectorySearchResults,
+	DirectoryView,
+	MemberPortalEnvelope,
+} from "@/api/directory/types"
 
-type DirectoryQueryResult = {
-	uiapi?: {
-		query?: {
-			Contact?: {
-				edges?: Array<{
-					node?: {
-						Id?: string
-						Name?: { value?: string | null } | null
-						Company__c?: { value?: string | null } | null
-						MailingCountry?: { value?: string | null } | null
-						Corporate_Title__c?: { value?: string | null } | null
-						Job_Function__c?: { value?: string | null } | null
-					} | null
-				}> | null
-			} | null
-		} | null
-	} | null
-}
+const DIRECTORY_PATH = "/services/apexrest/memberportal/directory"
+const DIRECTORY_SEARCH_PATH = "/services/apexrest/memberportal/directorySearch"
+const DIRECTORY_MESSAGE_PATH = "/services/apexrest/memberportal/directoryMessage"
 
-/**
- * Opted-in directory contacts matching name / company / mailing country.
- * Field names align with GarpAppv1 SearchMemberDirectory (Contact UI API).
- * `@optional` keeps rows when FLS hides a field.
- */
-const DIRECTORY_SEARCH_QUERY = gql`
-	query SearchMemberDirectory($term: String!, $first: Int!) {
-		uiapi {
-			query {
-				Contact(
-					where: {
-						and: [
-							{ GARP_Directory_Opt_In__c: { eq: true } }
-							{
-								or: [
-									{ Name: { like: $term } }
-									{ Company__c: { like: $term } }
-									{ MailingCountry: { like: $term } }
-								]
-							}
-						]
-					}
-					orderBy: { Name: { order: ASC } }
-					first: $first
-				) {
-					edges {
-						node {
-							Id
-							Name @optional {
-								value
-							}
-							Company__c @optional {
-								value
-							}
-							MailingCountry @optional {
-								value
-							}
-							Corporate_Title__c @optional {
-								value
-							}
-							Job_Function__c @optional {
-								value
-							}
-						}
-					}
-					pageInfo {
-						hasNextPage
-						endCursor
-					}
-				}
-			}
-		}
-	}
-`
-
-/**
- * Searches members who opted into the GARP Directory via GraphQL `uiapi.Contact`.
- * Returns up to `first` rows (default 25). Empty term → `[]` (no network call).
- */
-export async function searchDirectory(
-	term: string,
-	first = 25,
-): Promise<DirectoryMember[]> {
-	const trimmed = term.trim()
-	if (!trimmed) return []
-
+async function directoryRequest<T extends { statusCode: number; statusMessage: string | null }>(
+	path: string,
+	init: RequestInit,
+	fallback: string,
+): Promise<T> {
 	const sdk = await createDataSDK()
-	const result = await sdk.graphql?.query<
-		DirectoryQueryResult,
-		{ term: string; first: number }
-	>({
-		query: DIRECTORY_SEARCH_QUERY,
-		variables: { term: `%${trimmed}%`, first },
+	const response = await sdk.fetch?.(path, init)
+
+	const result = await normalizeHttpResponse<MemberPortalEnvelope<T>>(response, {
+		unreachableMessage: "Unable to reach the member directory.",
+		fallbackErrorMessage: fallback,
 	})
 
-	if (result?.errors?.length) {
+	const data = unwrapMemberPortalEnvelope(unwrapApiResult(result), {
+		fallbackErrorMessage: fallback,
+		missingDataMessage: "No directory data was returned.",
+		status: result.status,
+	})
+
+	if (data.statusCode !== 200) {
 		throw new AppError({
-			messages: result.errors.map((error) => error.message),
+			messages: [data.statusMessage?.trim() || fallback],
+			status: data.statusCode,
 		})
 	}
 
-	const edges = result?.data?.uiapi?.query?.Contact?.edges ?? []
-	return edges.flatMap((edge) => {
-		const node = edge?.node
-		if (!node?.Id) return []
-		return [
-			{
-				id: node.Id,
-				name: node.Name?.value ?? null,
-				company: node.Company__c?.value ?? null,
-				country: node.MailingCountry?.value ?? null,
-				corporateTitle: node.Corporate_Title__c?.value ?? null,
-				jobFunction: node.Job_Function__c?.value ?? null,
+	return data
+}
+
+/** What the viewer may do in the directory (`GET directory`). */
+export async function fetchDirectory(): Promise<DirectoryView> {
+	return directoryRequest<DirectoryView>(
+		DIRECTORY_PATH,
+		{ method: "GET", headers: { Accept: "application/json" } },
+		"Unable to load the member directory.",
+	)
+}
+
+/**
+ * Runs a directory search (`POST directorySearch`).
+ *
+ * The whole `SearchParams` shape is the body. Every value is bound
+ * server-side, `sortField` is whitelisted and `pageSize` is clamped to 50, so
+ * there is nothing to sanitise here — but equally nothing to gain from sending
+ * a larger page.
+ *
+ * An empty `searchText` is a valid search, not a no-op: it becomes `%%` and
+ * lists everyone the viewer is entitled to see, which is how the filter-only
+ * case works.
+ */
+export async function searchDirectory(
+	params: DirectorySearchParams,
+): Promise<DirectorySearchResults> {
+	const data = await directoryRequest<DirectorySearchResults>(
+		DIRECTORY_SEARCH_PATH,
+		{
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Accept: "application/json",
 			},
-		]
-	})
+			body: JSON.stringify(params),
+		},
+		"The directory search could not be run.",
+	)
+
+	return {
+		...data,
+		members: Array.isArray(data.members) ? data.members : [],
+		pages: data.pages ?? 0,
+		total: data.total ?? 0,
+	}
+}
+
+/**
+ * Sends a directory message or connection invite (`POST directoryMessage`).
+ *
+ * `messageType` must be one of the two literals Apex accepts. The legacy sent
+ * the wrong type for Send Message and dropped the text the member had typed;
+ * both are supplied properly here, and the recipient's own `canSendMessage` /
+ * `canInvite` decide whether the action is offered at all.
+ */
+export async function sendDirectoryMessage(
+	input: DirectoryMessageInput,
+): Promise<DirectoryMessageResult> {
+	if (!input.recipientContactId?.trim()) {
+		throw new AppError({
+			messages: ["A recipient is required."],
+			status: 400,
+		})
+	}
+	if (!input.message?.trim()) {
+		throw new AppError({
+			messages: ["Please write a message before sending."],
+			status: 400,
+		})
+	}
+
+	return directoryRequest<DirectoryMessageResult>(
+		DIRECTORY_MESSAGE_PATH,
+		{
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Accept: "application/json",
+			},
+			body: JSON.stringify({
+				recipientContactId: input.recipientContactId.trim(),
+				messageType: input.messageType,
+				message: input.message.trim(),
+			}),
+		},
+		"Your message could not be sent.",
+	)
 }

@@ -1,36 +1,19 @@
-import { useCallback, useState } from "react"
-
 import { DashboardCard } from "@/components/molecules/dashboard-card"
 import { DashboardPending } from "@/components/molecules/page-pending"
 import { PageEnterFade } from "@/components/molecules/page-enter-fade"
 import { StaggerReveal } from "@/components/molecules/stagger-reveal"
 import { useDashboardCards } from "@/hooks/use-dashboard-cards"
-import { useDismissDashboardCard } from "@/hooks/use-dismiss-dashboard-card"
+import { useDashboardCardVisibility } from "@/hooks/use-dashboard-card-visibility"
 import { cn } from "@/lib/utils"
 
 /**
  * Member home dashboard — Apex cards plus enrolled/events composed with
- * the legacy visibility rules. Dismiss is optimistic; Apex persists via
- * `dismissCard`.
+ * the legacy visibility rules. Hiding a card and taking it back both live in
+ * `useDashboardCardVisibility`; this component only filters on the result.
  */
 function DashboardPanel({ className }: { className?: string }) {
 	const { cards: composedCards, isLoading, isError } = useDashboardCards()
-	const dismissMutation = useDismissDashboardCard()
-	const [dismissed, setDismissed] = useState<string[]>([])
-
-	const handleDismiss = useCallback(
-		(key: string) => {
-			setDismissed((current) =>
-				current.includes(key) ? current : [...current, key],
-			)
-			dismissMutation.mutate(key, {
-				onError: () => {
-					setDismissed((current) => current.filter((k) => k !== key))
-				},
-			})
-		},
-		[dismissMutation],
-	)
+	const { hiddenKeys, dismiss } = useDashboardCardVisibility()
 
 	if (isLoading) {
 		return <DashboardPending />
@@ -44,7 +27,7 @@ function DashboardPanel({ className }: { className?: string }) {
 		)
 	}
 
-	const cards = composedCards.filter((card) => !dismissed.includes(card.key))
+	const cards = composedCards.filter((card) => !hiddenKeys.includes(card.key))
 
 	return (
 		<PageEnterFade className={cn("space-y-6", className)}>
@@ -78,7 +61,7 @@ function DashboardPanel({ className }: { className?: string }) {
 						<DashboardCard
 							key={card.key}
 							card={card}
-							onDismiss={handleDismiss}
+							onDismiss={dismiss}
 						/>
 					))}
 				</StaggerReveal>

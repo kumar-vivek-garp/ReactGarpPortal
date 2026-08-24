@@ -4,7 +4,10 @@ import { Link } from "@tanstack/react-router"
 import type { AccountView } from "@/api/account/types"
 import { Button } from "@/components/atoms/button"
 import { AccountFieldList } from "@/components/molecules/account-field-list"
-import { AccountSectionCard } from "@/components/molecules/account-section-card"
+import {
+	AccountSectionCard,
+	type AccountCardSlotProps,
+} from "@/components/molecules/account-section-card"
 import { StatusBadge } from "@/components/molecules/status-badge"
 import { MEMBERSHIP_REGISTRATION_URL } from "@/config/membership-account"
 import {
@@ -14,7 +17,7 @@ import {
 import { buildMembershipPresentation } from "@/lib/account-presentation"
 import { cn } from "@/lib/utils"
 
-type MembershipAccountCardProps = {
+type MembershipAccountCardProps = AccountCardSlotProps & {
 	account: AccountView
 	autoRenewSetupComplete: boolean
 }
@@ -47,16 +50,24 @@ function Callout({
 function MembershipAccountCard({
 	account,
 	autoRenewSetupComplete,
+	handle,
 }: MembershipAccountCardProps) {
 	const contactId = account.identity.contactId
 	const turnOff = useTurnOffMembershipAutoRenew(contactId)
 	const turnOn = useTurnOnMembershipAutoRenew(contactId)
 	const busy = turnOff.isPending || turnOn.isPending
 
-	const membership = buildMembershipPresentation(account, autoRenewSetupComplete)
+	const membership = buildMembershipPresentation(
+		account,
+		autoRenewSetupComplete,
+	)
 
 	return (
-		<AccountSectionCard section="membership" subtitle={membership.intro}>
+		<AccountSectionCard
+			section="membership"
+			subtitle={membership.intro}
+			handle={handle}
+		>
 			{membership.statusText ? (
 				<div className="flex flex-wrap items-center gap-2">
 					<StatusBadge

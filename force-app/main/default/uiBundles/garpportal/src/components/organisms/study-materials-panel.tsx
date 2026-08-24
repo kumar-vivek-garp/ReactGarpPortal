@@ -1,9 +1,10 @@
 import { useEffect, type ReactNode } from "react"
 import { animated, useTransition } from "@react-spring/web"
-import { useNavigate } from "@tanstack/react-router"
-import { LayoutGrid, List } from "lucide-react"
+import { Link, useNavigate } from "@tanstack/react-router"
+import { LayoutGrid, Library, List } from "lucide-react"
 
 import type { StudyMaterial, StudyProgram } from "@/api/study-materials/types"
+import { Button } from "@/components/atoms/button"
 import { PillTabs } from "@/components/atoms/pill-tabs"
 import { Tabs } from "@/components/atoms/tabs"
 import { ToggleGroup, ToggleGroupItem } from "@/components/atoms/toggle-group"
@@ -134,6 +135,17 @@ function StudyMaterialsBody({
 					count={ownedItems.length}
 				>
 					<StudyItemCollection items={ownedItems} view={view} />
+					{/*
+					 * The archive lists eBook *keys* by edition year, which this
+					 * catalogue view does not — a member with several years of
+					 * purchases has no other way to reach the older ones.
+					 */}
+					<Button asChild variant="outline" size="sm" className="mt-4">
+						<Link to="/study-materials/archive">
+							<Library className="size-4" aria-hidden />
+							My Access Links
+						</Link>
+					</Button>
 				</StudySection>
 			) : null}
 

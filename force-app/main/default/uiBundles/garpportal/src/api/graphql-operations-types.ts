@@ -158,14 +158,6 @@ export type UpdateSmsPreferencesMutationVariables = Exact<{
 
 export type UpdateSmsPreferencesMutation = { uiapi: { ContactUpdate?: { success?: boolean | null, Record?: { SMS_Promotional_Updates__c?: { value?: boolean | null } | null, SMS_Registration_Updates__c?: { value?: boolean | null } | null } | null } | null } };
 
-export type SearchMemberDirectoryQueryVariables = Exact<{
-  term: Scalars['String']['input'];
-  first: Scalars['Int']['input'];
-}>;
-
-
-export type SearchMemberDirectoryQuery = { uiapi: { query: { Contact?: { edges?: Array<{ node?: { Id: string, Name?: { value?: string | null } | null, Company__c?: { value?: string | null } | null, MailingCountry?: { value?: string | null } | null, Corporate_Title__c?: { value?: string | null } | null, Job_Function__c?: { value?: string | null } | null } | null } | null> | null, pageInfo: { hasNextPage: boolean, endCursor?: string | null } } | null } } };
-
 export type PersonalInfoCountriesQueryVariables = Exact<{
   first: Scalars['Int']['input'];
 }>;

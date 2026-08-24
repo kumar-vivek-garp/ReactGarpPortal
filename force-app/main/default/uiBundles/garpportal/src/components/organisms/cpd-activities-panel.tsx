@@ -10,6 +10,7 @@ import {
 } from "@/components/molecules/cpd-activity-filters"
 import { CpdClaimDialog } from "@/components/molecules/cpd-claim-dialog"
 import { CpdPagination } from "@/components/molecules/cpd-pagination"
+import { Button } from "@/components/atoms/button"
 import { SpringNudge } from "@/components/atoms/spring-nudge"
 import { CpdActivitiesContentSkeleton } from "@/components/molecules/page-pending"
 import { PageEnterFade } from "@/components/molecules/page-enter-fade"
@@ -75,6 +76,36 @@ function ActivitiesEmptyState() {
 	)
 }
 
+/**
+ * A scoped id that matched nothing.
+ *
+ * Apex answers an unknown id with an empty list at 200, not an error, so this
+ * is a genuine state rather than a failure — a stale bookmark, or an activity
+ * that has since been deactivated.
+ */
+function ActivityNotFound({ onViewAll }: { onViewAll: () => void }) {
+	const Icon = CPD_ACTIVITIES_ZERO_STATE.icon
+	return (
+		<div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
+			<Icon className="size-10 text-muted-foreground" aria-hidden />
+			<p className="mt-4 font-heading text-lg font-semibold tracking-wide text-foreground">
+				This activity is no longer listed
+			</p>
+			<p className="mt-2 max-w-md text-sm text-muted-foreground">
+				It may have been withdrawn, or the link may be out of date.
+			</p>
+			<Button
+				type="button"
+				variant="outline"
+				className="mt-5"
+				onClick={onViewAll}
+			>
+				Browse all activities
+			</Button>
+		</div>
+	)
+}
+
 type CpdActivitiesPanelProps = CpdActivitiesSearch & { className?: string }
 
 /**
@@ -85,6 +116,7 @@ type CpdActivitiesPanelProps = CpdActivitiesSearch & { className?: string }
  * key, which makes revisiting a page a cache hit rather than a refetch.
  */
 function CpdActivitiesPanel({
+	activityId,
 	type,
 	area,
 	provider,
@@ -94,6 +126,7 @@ function CpdActivitiesPanel({
 }: CpdActivitiesPanelProps) {
 	const navigate = useNavigate({ from: "/cpd/activities/" })
 	const [seed, setSeed] = useState<CpdActivity | null>(null)
+	const singleId = activityId?.trim() || undefined
 
 	const selected: CpdFacetValues = {
 		type: type ?? [],
@@ -103,14 +136,28 @@ function CpdActivitiesPanel({
 	const activeSort: CpdSortOption = sort ?? DEFAULT_CPD_SORT
 	const activePage = page ?? 1
 
-	const { data, isLoading, isError, isFetching } = useCpdActivities({
-		activityTypes: selected.type,
-		areasOfStudy: selected.area,
-		providers: selected.provider,
-		sortOrder: activeSort,
-		pageSize: CPD_ACTIVITIES_PAGE_SIZE,
-		pageCurrent: activePage,
-	})
+	/*
+	 * With an id, the facets and paging are not sent at all — Apex ignores them
+	 * — so the sidebar and paginator are hidden rather than left showing
+	 * controls that would do nothing.
+	 */
+	const { data, isLoading, isError, isFetching } = useCpdActivities(
+		singleId
+			? { activityId: singleId }
+			: {
+					activityTypes: selected.type,
+					areasOfStudy: selected.area,
+					providers: selected.provider,
+					sortOrder: activeSort,
+					pageSize: CPD_ACTIVITIES_PAGE_SIZE,
+					pageCurrent: activePage,
+				},
+	)
+
+	/** Drops the scope AND the URL with it — the legacy left the address stale. */
+	const viewAllActivities = () => {
+		void navigate({ search: (prev) => ({ ...prev, activityId: undefined }) })
+	}
 
 	const activities = data?.cpdActivities ?? []
 	const totalPages = pageCount(data?.totalCount ?? 0, CPD_ACTIVITIES_PAGE_SIZE)
@@ -143,10 +190,31 @@ function CpdActivitiesPanel({
 			) : null}
 
 			{!isLoading && !isError ? (
-				<div className="grid items-start gap-6 app:grid-cols-[minmax(0,1fr)_18rem]">
+				<div
+					className={cn(
+						"grid items-start gap-6",
+						singleId ? null : "app:grid-cols-[minmax(0,1fr)_18rem]",
+					)}
+				>
 					<div className="min-w-0 space-y-4">
+						{singleId ? (
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={viewAllActivities}
+							>
+								<ArrowLeft className="size-4" aria-hidden />
+								View all activities
+							</Button>
+						) : null}
+
 						{activities.length === 0 ? (
-							<ActivitiesEmptyState />
+							singleId ? (
+								<ActivityNotFound onViewAll={viewAllActivities} />
+							) : (
+								<ActivitiesEmptyState />
+							)
 						) : (
 							<>
 								<StaggerReveal className="flex flex-col gap-4">
@@ -155,9 +223,11 @@ function CpdActivitiesPanel({
 											key={activity.id}
 											activity={activity}
 											onSubmitCredits={setSeed}
+											showPermalink={!singleId}
 										/>
 									))}
 								</StaggerReveal>
+								{singleId ? null : (
 								<CpdPagination
 									page={activePage}
 									pageSize={CPD_ACTIVITIES_PAGE_SIZE}
@@ -173,10 +243,12 @@ function CpdActivitiesPanel({
 										})
 									}}
 								/>
+								)}
 							</>
 						)}
 					</div>
 
+					{singleId ? null : (
 					<CpdActivityFilters
 						options={{
 							type: data?.activityTypes ?? [],
@@ -209,6 +281,7 @@ function CpdActivitiesPanel({
 							})
 						}}
 					/>
+					)}
 				</div>
 			) : null}
 

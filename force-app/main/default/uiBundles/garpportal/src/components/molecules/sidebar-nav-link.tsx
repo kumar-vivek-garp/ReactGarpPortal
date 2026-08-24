@@ -9,6 +9,8 @@ type SidebarNavLinkProps = {
 	to: AppRoute
 	label: string
 	icon: LucideIcon
+	/** Desktop sidebar uppercases; the mobile panel matches live title case. */
+	uppercase?: boolean
 	/** Registers the row so the active rail can measure it. */
 	registerRef?: (node: HTMLAnchorElement | null) => void
 	/** Starts the rail moving on press, before the route work begins. */
@@ -24,6 +26,7 @@ function SidebarNavLink({
 	to,
 	label,
 	icon: Icon,
+	uppercase = true,
 	registerRef,
 	onSelect,
 }: SidebarNavLinkProps) {
@@ -36,7 +39,8 @@ function SidebarNavLink({
 			to={to}
 			onPointerDown={onSelect}
 			className={cn(
-				"flex items-center gap-4 rounded-xl px-3 py-3 text-sm font-bold tracking-wide uppercase transition-colors",
+				"flex items-center gap-4 rounded-xl px-3 py-3 text-sm font-bold tracking-wide transition-colors",
+				uppercase && "uppercase",
 				isActive
 					? "bg-accent text-accent-foreground"
 					: "text-foreground hover:bg-background/60",

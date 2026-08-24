@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/atoms/card"
 import { PillTabs } from "@/components/atoms/pill-tabs"
 import { Tabs } from "@/components/atoms/tabs"
 import { BenefitCard } from "@/components/molecules/benefit-card"
-import { DirectorySearch } from "@/components/molecules/directory-search"
+import { MemberDirectoryPanel } from "@/components/organisms/member-directory-panel"
 import {
 	MembershipBenefitsSkeleton,
 	MembershipDirectorySkeleton,
@@ -239,8 +239,15 @@ function DirectoryTabBody({
 	const identity = data?.identity
 	const showAccessNote = Boolean(identity && !identity.isIndividualMember)
 
+	/*
+	 * The real directory, not a box that bounces to it. This tab used to hold a
+	 * search field whose only job was to navigate away — a dead end that also
+	 * left two implementations of one search in the app. The standalone
+	 * `/member-directory` route still exists for the dashboard card and for
+	 * links from outside; both mount this same panel.
+	 */
 	return (
-		<div className="flex min-h-0 flex-1 flex-col gap-3">
+		<div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
 			<p className="shrink-0 text-sm text-muted-foreground">
 				Find and connect with opted-in members of the global risk community.
 			</p>
@@ -252,7 +259,7 @@ function DirectoryTabBody({
 				</p>
 			) : null}
 
-			<DirectorySearch />
+			<MemberDirectoryPanel showHeading={false} />
 		</div>
 	)
 }

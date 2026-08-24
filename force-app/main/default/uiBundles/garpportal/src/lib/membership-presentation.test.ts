@@ -133,6 +133,7 @@ function identity(overrides: Partial<Identity> = {}): Identity {
 		memberSince: "2026-08-10",
 		autoRenew: true,
 		isMember: true,
+		isMemberInGoodStanding: true,
 		isIndividualMember: true,
 		isAffiliateMember: false,
 		audience: "Individual" as Identity["audience"],

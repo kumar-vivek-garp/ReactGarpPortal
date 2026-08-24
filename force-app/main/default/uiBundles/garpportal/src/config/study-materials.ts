@@ -1,3 +1,4 @@
+import { BookMarked } from "lucide-react"
 import { BookOpen, GraduationCap, Library } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { z } from "zod"
@@ -66,3 +67,12 @@ export const STUDY_MATERIALS_SECTIONS = {
 			"No study materials published yet. Study materials appear here once they are published for a program.",
 	},
 } as const satisfies Record<string, StudyMaterialsSectionMeta>
+
+/** The purchased-materials archive (`/study-materials/archive`). */
+export const EBOOK_ARCHIVE = {
+	icon: BookMarked,
+	title: "Purchased Study Materials",
+	emptyTitle: "No purchased materials yet",
+	emptyMessage:
+		"eBooks you buy appear here, grouped by edition. Nothing has been purchased on this account.",
+} as const

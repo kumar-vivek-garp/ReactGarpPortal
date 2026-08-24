@@ -299,17 +299,130 @@ describe("buildProgramDetailPresentation", () => {
 		).toBe(true)
 	})
 
-	it("CVSubmission has no fabricated CTA", () => {
+	/**
+	 * This used to assert there was no CTA at all, because the destination did
+	 * not exist yet and inventing one would have been a dead end. Now
+	 * `/programs/frm/work-experience` is real, so the CTA leads it.
+	 */
+	it("CVSubmission leads with the work-experience CTA", () => {
 		const view = buildProgramDetailPresentation(
 			baseDetail({
+				programType: "FRM",
 				programState: "CVSubmission",
 				cvStatus: "Pending Review",
 				examPart1Info: null,
 			}),
 		)
-		expect(view.primaryAction).toBeNull()
 		expect(view.statusLabel).toBe("Work experience")
-		expect(view.nextStepBody).toContain("Pending Review")
+		expect(view.primaryAction).toMatchObject({
+			kind: "workExperience",
+			url: "/programs/frm/work-experience",
+			isExternal: false,
+		})
+	})
+
+	/** `cvStatus` is a raw requirement status — never member-facing copy. */
+	it("never prints the raw cvStatus at the member", () => {
+		for (const status of ["Initial", "Pending Review", "Ready For Review"]) {
+			const view = buildProgramDetailPresentation(
+				baseDetail({
+					programType: "FRM",
+					programState: "CVSubmission",
+					cvStatus: status,
+				}),
+			)
+			expect(view.nextStepBody ?? "").not.toContain(status)
+		}
+	})
+
+	/**
+	 * The gate both reference apps enforce. Every FRM/ERP enrollment is given a
+	 * Job_Experience requirement at signup, so a has-a-CV test showed the CTA
+	 * to members who had passed neither exam part — which is how this was found.
+	 */
+	it("offers nothing before both exam parts are passed, even with a CV", () => {
+		for (const programState of ["ExamAttempt", "EnrollmentExpired", "Completed"]) {
+			const view = buildProgramDetailPresentation(
+				baseDetail({
+					programType: "FRM",
+					programState,
+					cvStatus: "Initial",
+				}),
+			)
+			expect(
+				[view.primaryAction, ...view.secondaryActions].some(
+					(action) => action?.kind === "workExperience",
+				),
+			).toBe(false)
+		}
+	})
+
+	/** Awaiting review: readable, but not a resubmit prompt. */
+	it("demotes the CTA to a read link once the CV is under review", () => {
+		const view = buildProgramDetailPresentation(
+			baseDetail({
+				programType: "FRM",
+				programState: "CVSubmission",
+				cvStatus: "Ready For Review",
+			}),
+		)
+		expect(view.primaryAction?.kind).not.toBe("workExperience")
+		expect(
+			view.secondaryActions.find((a) => a.kind === "workExperience"),
+		).toMatchObject({ label: "View work experience" })
+	})
+
+	it("invites a resubmit after a failed review", () => {
+		const view = buildProgramDetailPresentation(
+			baseDetail({
+				programType: "FRM",
+				programState: "CVSubmission",
+				cvStatus: "Failed Review",
+			}),
+		)
+		expect(view.primaryAction).toMatchObject({
+			kind: "workExperience",
+			label: "Resubmit work experience",
+		})
+	})
+
+	/**
+	 * Reaching CVSubmission means Apex found a non-empty requirement set and
+	 * both parts passed, so a blank `cvStatus` is a data gap, not a signal that
+	 * the member has no CV to file. Both reference apps show the CTA here; the
+	 * page itself handles an Apex refusal as an empty state. Hiding it instead
+	 * would strand the one member who most needs the page.
+	 */
+	it("still offers the CTA in CVSubmission when cvStatus is blank", () => {
+		const view = buildProgramDetailPresentation(
+			baseDetail({
+				programType: "FRM",
+				programState: "CVSubmission",
+				cvStatus: null,
+			}),
+		)
+		expect(view.primaryAction).toMatchObject({
+			kind: "workExperience",
+			label: "Submit work experience",
+		})
+	})
+
+	/**
+	 * Only FRM and ERP carry a certification CV. Apex maps anything that is not
+	 * FRM onto ERP, so an unguarded slug would show one programme's CV under
+	 * another's name.
+	 */
+	it("offers nothing for a programme with no CV, even with a cvStatus", () => {
+		for (const programType of ["SCR", "RiskAI", "RAIJ"]) {
+			const view = buildProgramDetailPresentation(
+				baseDetail({ programType, programState: "CVSubmission", cvStatus: "Initial" }),
+			)
+			expect(
+				[view.primaryAction, ...view.secondaryActions].some(
+					(action) => action?.kind === "workExperience",
+				),
+			).toBe(false)
+		}
 	})
 
 	it("EnrollmentExpired with open registration", () => {

@@ -1,7 +1,7 @@
 @layer components {
 	/* Main column content — fill sidenav content width; modest gutters only. */
 	.page-container {
-		@apply w-full px-4;
+		@apply w-full px-shell-gutter;
 	}
 
 	.footer-container {

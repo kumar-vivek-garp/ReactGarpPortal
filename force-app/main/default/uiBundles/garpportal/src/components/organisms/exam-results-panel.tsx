@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { animated, useSpring } from "@react-spring/web"
+import { animated } from "@react-spring/web"
 import { Link } from "@tanstack/react-router"
 
 import { ExamResultCard } from "@/components/molecules/exam-result-card"
@@ -7,6 +7,7 @@ import { ExamResultsPendingSkeleton } from "@/components/molecules/page-pending"
 import { ProgramsSubpageHeader } from "@/components/molecules/programs-subpage-header"
 import { StatusBadge } from "@/components/molecules/status-badge"
 import { programBrandSurface } from "@/config/program-brand"
+import { useSubpageTransition } from "@/hooks/use-subpage-transition"
 import { useExamResults } from "@/hooks/use-exam-results"
 import { useMarkExamResultViewed } from "@/hooks/use-mark-exam-result-viewed"
 import {
@@ -14,8 +15,6 @@ import {
 	examResultsRouteSlug,
 } from "@/lib/exam-results-presentation"
 import { cn } from "@/lib/utils"
-
-const ENTER_SPRING = { mass: 0.9, tension: 320, friction: 26 }
 
 type ExamResultsPanelProps = {
 	programType: string
@@ -75,18 +74,15 @@ function ExamResultsPanelView({ programType }: ExamResultsPanelProps) {
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
 	}, [data])
 
-	const enter = useSpring({
-		from: { opacity: 0, transform: "translateX(18px)" },
-		to: { opacity: 1, transform: "translateX(0px)" },
-		config: ENTER_SPRING,
-	})
+	const { style, exit } = useSubpageTransition()
 
 	return (
 		<animated.div
-			style={enter}
+			style={style}
 			className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
 		>
 			<ProgramsSubpageHeader
+				onNavigateBack={exit}
 				back={{
 					kind: "program",
 					programType: routeSlug,

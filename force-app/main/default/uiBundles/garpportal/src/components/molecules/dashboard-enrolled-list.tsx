@@ -5,6 +5,7 @@ import type { DashboardEnrolledPreview } from "@/api/dashboard"
 import { SpringNudge } from "@/components/atoms/spring-nudge"
 import { useSpringNudge } from "@/hooks/use-spring-nudge"
 import {
+	programCoursePath,
 	programTypeSlug,
 	supportsInAppProgramDetail,
 } from "@/lib/program-card-links"
@@ -19,9 +20,15 @@ function DashboardEnrolledItem({
 	program: DashboardEnrolledPreview
 }) {
 	const nudge = useSpringNudge({ direction: "forward" })
+	/*
+	 * Two in-app destinations now: `programDetail` serves the two-part exam
+	 * programmes and `courseDetail` serves the courses. Only something neither
+	 * knows about falls back to the listing.
+	 */
 	const inApp = supportsInAppProgramDetail(program.programType)
 	const slug = programTypeSlug(program.programType)
 	const routeSlug = inApp ? (slug === "rai" ? "riskai" : slug) : null
+	const coursePath = inApp ? null : programCoursePath(program.programType)
 
 	const label = (
 		<SpringNudge
@@ -43,6 +50,10 @@ function DashboardEnrolledItem({
 					className={LINK_CLASS}
 					{...nudge.bind}
 				>
+					{label}
+				</Link>
+			) : coursePath ? (
+				<Link to={coursePath} className={LINK_CLASS} {...nudge.bind}>
 					{label}
 				</Link>
 			) : (

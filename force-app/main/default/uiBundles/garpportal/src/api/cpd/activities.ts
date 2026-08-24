@@ -24,6 +24,19 @@ export function buildActivitySearchParams(
 	filters: CpdActivityFilters,
 ): URLSearchParams {
 	const params = new URLSearchParams()
+
+	/*
+	 * A single id is the whole query. Apex replaces the entire WHERE clause
+	 * with `Id = :singleId` and skips ORDER BY, LIMIT and OFFSET, so sending
+	 * facets alongside it would imply an intersection the server never
+	 * performs — and a stale `pageCurrent` would look like it had been honoured.
+	 */
+	const singleId = filters.activityId?.trim()
+	if (singleId) {
+		params.set("activityId", singleId)
+		return params
+	}
+
 	const entries: [string, string | null][] = [
 		["activityTypes", joinFacet(filters.activityTypes)],
 		["areasOfStudy", joinFacet(filters.areasOfStudy)],

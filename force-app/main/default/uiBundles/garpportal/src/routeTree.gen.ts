@@ -12,20 +12,29 @@ import { Route as rootRouteImport } from './pages/__root'
 import { Route as IndexRouteImport } from './pages/index'
 import { Route as AppLayoutRouteRouteImport } from './pages/_appLayout/route'
 import { Route as AuthLayoutRouteRouteImport } from './pages/_authLayout/route'
+import { Route as AppLayoutContentIndexRouteImport } from './pages/_appLayout/content/index'
 import { Route as AppLayoutCpdIndexRouteImport } from './pages/_appLayout/cpd/index'
 import { Route as AppLayoutDashboardIndexRouteImport } from './pages/_appLayout/dashboard/index'
 import { Route as AppLayoutEventsIndexRouteImport } from './pages/_appLayout/events/index'
 import { Route as AppLayoutHelpCenterIndexRouteImport } from './pages/_appLayout/help-center/index'
+import { Route as AppLayoutMemberDirectoryIndexRouteImport } from './pages/_appLayout/member-directory/index'
+import { Route as AppLayoutMemberResourcesIndexRouteImport } from './pages/_appLayout/member-resources/index'
 import { Route as AppLayoutMembershipIndexRouteImport } from './pages/_appLayout/membership/index'
 import { Route as AppLayoutMyAccountIndexRouteImport } from './pages/_appLayout/my-account/index'
 import { Route as AppLayoutProgramsIndexRouteImport } from './pages/_appLayout/programs/index'
 import { Route as AppLayoutStudyMaterialsIndexRouteImport } from './pages/_appLayout/study-materials/index'
 import { Route as AuthLayoutLoginIndexRouteImport } from './pages/_authLayout/Login/index'
+import { Route as AppLayoutCoursesCourseTypeIndexRouteImport } from './pages/_appLayout/courses/$courseType/index'
+import { Route as AppLayoutCpdActivitiesDetailActivityIdIndexRouteImport } from './pages/_appLayout/cpd-activities-detail/$activityId/index'
 import { Route as AppLayoutCpdActivitiesIndexRouteImport } from './pages/_appLayout/cpd/activities/index'
+import { Route as AppLayoutErrataProgramTypeIndexRouteImport } from './pages/_appLayout/errata/$programType/index'
 import { Route as AppLayoutOrderDetailsOrderNumberIndexRouteImport } from './pages/_appLayout/order-details/$orderNumber/index'
 import { Route as AppLayoutProgramsProgramTypeIndexRouteImport } from './pages/_appLayout/programs/$programType/index'
+import { Route as AppLayoutStudyMaterialsArchiveIndexRouteImport } from './pages/_appLayout/study-materials/archive/index'
 import { Route as AppLayoutMyAccountOrdersOrderNumberIndexRouteImport } from './pages/_appLayout/my-account/orders/$orderNumber/index'
+import { Route as AppLayoutProgramsProgramTypeErrataIndexRouteImport } from './pages/_appLayout/programs/$programType/errata/index'
 import { Route as AppLayoutProgramsProgramTypeResultsIndexRouteImport } from './pages/_appLayout/programs/$programType/results/index'
+import { Route as AppLayoutProgramsProgramTypeWorkExperienceIndexRouteImport } from './pages/_appLayout/programs/$programType/work-experience/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -39,6 +48,11 @@ const AppLayoutRouteRoute = AppLayoutRouteRouteImport.update({
 const AuthLayoutRouteRoute = AuthLayoutRouteRouteImport.update({
   id: '/_authLayout',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppLayoutContentIndexRoute = AppLayoutContentIndexRouteImport.update({
+  id: '/content/',
+  path: '/content/',
+  getParentRoute: () => AppLayoutRouteRoute,
 } as any)
 const AppLayoutCpdIndexRoute = AppLayoutCpdIndexRouteImport.update({
   id: '/cpd/',
@@ -59,6 +73,18 @@ const AppLayoutHelpCenterIndexRoute =
   AppLayoutHelpCenterIndexRouteImport.update({
     id: '/help-center/',
     path: '/help-center/',
+    getParentRoute: () => AppLayoutRouteRoute,
+  } as any)
+const AppLayoutMemberDirectoryIndexRoute =
+  AppLayoutMemberDirectoryIndexRouteImport.update({
+    id: '/member-directory/',
+    path: '/member-directory/',
+    getParentRoute: () => AppLayoutRouteRoute,
+  } as any)
+const AppLayoutMemberResourcesIndexRoute =
+  AppLayoutMemberResourcesIndexRouteImport.update({
+    id: '/member-resources/',
+    path: '/member-resources/',
     getParentRoute: () => AppLayoutRouteRoute,
   } as any)
 const AppLayoutMembershipIndexRoute =
@@ -88,10 +114,28 @@ const AuthLayoutLoginIndexRoute = AuthLayoutLoginIndexRouteImport.update({
   path: '/Login/',
   getParentRoute: () => AuthLayoutRouteRoute,
 } as any)
+const AppLayoutCoursesCourseTypeIndexRoute =
+  AppLayoutCoursesCourseTypeIndexRouteImport.update({
+    id: '/courses/$courseType/',
+    path: '/courses/$courseType/',
+    getParentRoute: () => AppLayoutRouteRoute,
+  } as any)
+const AppLayoutCpdActivitiesDetailActivityIdIndexRoute =
+  AppLayoutCpdActivitiesDetailActivityIdIndexRouteImport.update({
+    id: '/cpd-activities-detail/$activityId/',
+    path: '/cpd-activities-detail/$activityId/',
+    getParentRoute: () => AppLayoutRouteRoute,
+  } as any)
 const AppLayoutCpdActivitiesIndexRoute =
   AppLayoutCpdActivitiesIndexRouteImport.update({
     id: '/cpd/activities/',
     path: '/cpd/activities/',
+    getParentRoute: () => AppLayoutRouteRoute,
+  } as any)
+const AppLayoutErrataProgramTypeIndexRoute =
+  AppLayoutErrataProgramTypeIndexRouteImport.update({
+    id: '/errata/$programType/',
+    path: '/errata/$programType/',
     getParentRoute: () => AppLayoutRouteRoute,
   } as any)
 const AppLayoutOrderDetailsOrderNumberIndexRoute =
@@ -106,10 +150,22 @@ const AppLayoutProgramsProgramTypeIndexRoute =
     path: '/programs/$programType/',
     getParentRoute: () => AppLayoutRouteRoute,
   } as any)
+const AppLayoutStudyMaterialsArchiveIndexRoute =
+  AppLayoutStudyMaterialsArchiveIndexRouteImport.update({
+    id: '/study-materials/archive/',
+    path: '/study-materials/archive/',
+    getParentRoute: () => AppLayoutRouteRoute,
+  } as any)
 const AppLayoutMyAccountOrdersOrderNumberIndexRoute =
   AppLayoutMyAccountOrdersOrderNumberIndexRouteImport.update({
     id: '/my-account/orders/$orderNumber/',
     path: '/my-account/orders/$orderNumber/',
+    getParentRoute: () => AppLayoutRouteRoute,
+  } as any)
+const AppLayoutProgramsProgramTypeErrataIndexRoute =
+  AppLayoutProgramsProgramTypeErrataIndexRouteImport.update({
+    id: '/programs/$programType/errata/',
+    path: '/programs/$programType/errata/',
     getParentRoute: () => AppLayoutRouteRoute,
   } as any)
 const AppLayoutProgramsProgramTypeResultsIndexRoute =
@@ -118,115 +174,175 @@ const AppLayoutProgramsProgramTypeResultsIndexRoute =
     path: '/programs/$programType/results/',
     getParentRoute: () => AppLayoutRouteRoute,
   } as any)
+const AppLayoutProgramsProgramTypeWorkExperienceIndexRoute =
+  AppLayoutProgramsProgramTypeWorkExperienceIndexRouteImport.update({
+    id: '/programs/$programType/work-experience/',
+    path: '/programs/$programType/work-experience/',
+    getParentRoute: () => AppLayoutRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/content/': typeof AppLayoutContentIndexRoute
   '/cpd/': typeof AppLayoutCpdIndexRoute
   '/dashboard/': typeof AppLayoutDashboardIndexRoute
   '/events/': typeof AppLayoutEventsIndexRoute
   '/help-center/': typeof AppLayoutHelpCenterIndexRoute
+  '/member-directory/': typeof AppLayoutMemberDirectoryIndexRoute
+  '/member-resources/': typeof AppLayoutMemberResourcesIndexRoute
   '/membership/': typeof AppLayoutMembershipIndexRoute
   '/my-account/': typeof AppLayoutMyAccountIndexRoute
   '/programs/': typeof AppLayoutProgramsIndexRoute
   '/study-materials/': typeof AppLayoutStudyMaterialsIndexRoute
   '/Login/': typeof AuthLayoutLoginIndexRoute
+  '/courses/$courseType/': typeof AppLayoutCoursesCourseTypeIndexRoute
+  '/cpd-activities-detail/$activityId/': typeof AppLayoutCpdActivitiesDetailActivityIdIndexRoute
   '/cpd/activities/': typeof AppLayoutCpdActivitiesIndexRoute
+  '/errata/$programType/': typeof AppLayoutErrataProgramTypeIndexRoute
   '/order-details/$orderNumber/': typeof AppLayoutOrderDetailsOrderNumberIndexRoute
   '/programs/$programType/': typeof AppLayoutProgramsProgramTypeIndexRoute
+  '/study-materials/archive/': typeof AppLayoutStudyMaterialsArchiveIndexRoute
   '/my-account/orders/$orderNumber/': typeof AppLayoutMyAccountOrdersOrderNumberIndexRoute
+  '/programs/$programType/errata/': typeof AppLayoutProgramsProgramTypeErrataIndexRoute
   '/programs/$programType/results/': typeof AppLayoutProgramsProgramTypeResultsIndexRoute
+  '/programs/$programType/work-experience/': typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/content': typeof AppLayoutContentIndexRoute
   '/cpd': typeof AppLayoutCpdIndexRoute
   '/dashboard': typeof AppLayoutDashboardIndexRoute
   '/events': typeof AppLayoutEventsIndexRoute
   '/help-center': typeof AppLayoutHelpCenterIndexRoute
+  '/member-directory': typeof AppLayoutMemberDirectoryIndexRoute
+  '/member-resources': typeof AppLayoutMemberResourcesIndexRoute
   '/membership': typeof AppLayoutMembershipIndexRoute
   '/my-account': typeof AppLayoutMyAccountIndexRoute
   '/programs': typeof AppLayoutProgramsIndexRoute
   '/study-materials': typeof AppLayoutStudyMaterialsIndexRoute
   '/Login': typeof AuthLayoutLoginIndexRoute
+  '/courses/$courseType': typeof AppLayoutCoursesCourseTypeIndexRoute
+  '/cpd-activities-detail/$activityId': typeof AppLayoutCpdActivitiesDetailActivityIdIndexRoute
   '/cpd/activities': typeof AppLayoutCpdActivitiesIndexRoute
+  '/errata/$programType': typeof AppLayoutErrataProgramTypeIndexRoute
   '/order-details/$orderNumber': typeof AppLayoutOrderDetailsOrderNumberIndexRoute
   '/programs/$programType': typeof AppLayoutProgramsProgramTypeIndexRoute
+  '/study-materials/archive': typeof AppLayoutStudyMaterialsArchiveIndexRoute
   '/my-account/orders/$orderNumber': typeof AppLayoutMyAccountOrdersOrderNumberIndexRoute
+  '/programs/$programType/errata': typeof AppLayoutProgramsProgramTypeErrataIndexRoute
   '/programs/$programType/results': typeof AppLayoutProgramsProgramTypeResultsIndexRoute
+  '/programs/$programType/work-experience': typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_appLayout': typeof AppLayoutRouteRouteWithChildren
   '/_authLayout': typeof AuthLayoutRouteRouteWithChildren
+  '/_appLayout/content/': typeof AppLayoutContentIndexRoute
   '/_appLayout/cpd/': typeof AppLayoutCpdIndexRoute
   '/_appLayout/dashboard/': typeof AppLayoutDashboardIndexRoute
   '/_appLayout/events/': typeof AppLayoutEventsIndexRoute
   '/_appLayout/help-center/': typeof AppLayoutHelpCenterIndexRoute
+  '/_appLayout/member-directory/': typeof AppLayoutMemberDirectoryIndexRoute
+  '/_appLayout/member-resources/': typeof AppLayoutMemberResourcesIndexRoute
   '/_appLayout/membership/': typeof AppLayoutMembershipIndexRoute
   '/_appLayout/my-account/': typeof AppLayoutMyAccountIndexRoute
   '/_appLayout/programs/': typeof AppLayoutProgramsIndexRoute
   '/_appLayout/study-materials/': typeof AppLayoutStudyMaterialsIndexRoute
   '/_authLayout/Login/': typeof AuthLayoutLoginIndexRoute
+  '/_appLayout/courses/$courseType/': typeof AppLayoutCoursesCourseTypeIndexRoute
+  '/_appLayout/cpd-activities-detail/$activityId/': typeof AppLayoutCpdActivitiesDetailActivityIdIndexRoute
   '/_appLayout/cpd/activities/': typeof AppLayoutCpdActivitiesIndexRoute
+  '/_appLayout/errata/$programType/': typeof AppLayoutErrataProgramTypeIndexRoute
   '/_appLayout/order-details/$orderNumber/': typeof AppLayoutOrderDetailsOrderNumberIndexRoute
   '/_appLayout/programs/$programType/': typeof AppLayoutProgramsProgramTypeIndexRoute
+  '/_appLayout/study-materials/archive/': typeof AppLayoutStudyMaterialsArchiveIndexRoute
   '/_appLayout/my-account/orders/$orderNumber/': typeof AppLayoutMyAccountOrdersOrderNumberIndexRoute
+  '/_appLayout/programs/$programType/errata/': typeof AppLayoutProgramsProgramTypeErrataIndexRoute
   '/_appLayout/programs/$programType/results/': typeof AppLayoutProgramsProgramTypeResultsIndexRoute
+  '/_appLayout/programs/$programType/work-experience/': typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/content/'
     | '/cpd/'
     | '/dashboard/'
     | '/events/'
     | '/help-center/'
+    | '/member-directory/'
+    | '/member-resources/'
     | '/membership/'
     | '/my-account/'
     | '/programs/'
     | '/study-materials/'
     | '/Login/'
+    | '/courses/$courseType/'
+    | '/cpd-activities-detail/$activityId/'
     | '/cpd/activities/'
+    | '/errata/$programType/'
     | '/order-details/$orderNumber/'
     | '/programs/$programType/'
+    | '/study-materials/archive/'
     | '/my-account/orders/$orderNumber/'
+    | '/programs/$programType/errata/'
     | '/programs/$programType/results/'
+    | '/programs/$programType/work-experience/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/content'
     | '/cpd'
     | '/dashboard'
     | '/events'
     | '/help-center'
+    | '/member-directory'
+    | '/member-resources'
     | '/membership'
     | '/my-account'
     | '/programs'
     | '/study-materials'
     | '/Login'
+    | '/courses/$courseType'
+    | '/cpd-activities-detail/$activityId'
     | '/cpd/activities'
+    | '/errata/$programType'
     | '/order-details/$orderNumber'
     | '/programs/$programType'
+    | '/study-materials/archive'
     | '/my-account/orders/$orderNumber'
+    | '/programs/$programType/errata'
     | '/programs/$programType/results'
+    | '/programs/$programType/work-experience'
   id:
     | '__root__'
     | '/'
     | '/_appLayout'
     | '/_authLayout'
+    | '/_appLayout/content/'
     | '/_appLayout/cpd/'
     | '/_appLayout/dashboard/'
     | '/_appLayout/events/'
     | '/_appLayout/help-center/'
+    | '/_appLayout/member-directory/'
+    | '/_appLayout/member-resources/'
     | '/_appLayout/membership/'
     | '/_appLayout/my-account/'
     | '/_appLayout/programs/'
     | '/_appLayout/study-materials/'
     | '/_authLayout/Login/'
+    | '/_appLayout/courses/$courseType/'
+    | '/_appLayout/cpd-activities-detail/$activityId/'
     | '/_appLayout/cpd/activities/'
+    | '/_appLayout/errata/$programType/'
     | '/_appLayout/order-details/$orderNumber/'
     | '/_appLayout/programs/$programType/'
+    | '/_appLayout/study-materials/archive/'
     | '/_appLayout/my-account/orders/$orderNumber/'
+    | '/_appLayout/programs/$programType/errata/'
     | '/_appLayout/programs/$programType/results/'
+    | '/_appLayout/programs/$programType/work-experience/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -258,6 +374,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLayoutRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_appLayout/content/': {
+      id: '/_appLayout/content/'
+      path: '/content'
+      fullPath: '/content/'
+      preLoaderRoute: typeof AppLayoutContentIndexRouteImport
+      parentRoute: typeof AppLayoutRouteRoute
+    }
     '/_appLayout/cpd/': {
       id: '/_appLayout/cpd/'
       path: '/cpd'
@@ -284,6 +407,20 @@ declare module '@tanstack/react-router' {
       path: '/help-center'
       fullPath: '/help-center/'
       preLoaderRoute: typeof AppLayoutHelpCenterIndexRouteImport
+      parentRoute: typeof AppLayoutRouteRoute
+    }
+    '/_appLayout/member-directory/': {
+      id: '/_appLayout/member-directory/'
+      path: '/member-directory'
+      fullPath: '/member-directory/'
+      preLoaderRoute: typeof AppLayoutMemberDirectoryIndexRouteImport
+      parentRoute: typeof AppLayoutRouteRoute
+    }
+    '/_appLayout/member-resources/': {
+      id: '/_appLayout/member-resources/'
+      path: '/member-resources'
+      fullPath: '/member-resources/'
+      preLoaderRoute: typeof AppLayoutMemberResourcesIndexRouteImport
       parentRoute: typeof AppLayoutRouteRoute
     }
     '/_appLayout/membership/': {
@@ -321,11 +458,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLayoutLoginIndexRouteImport
       parentRoute: typeof AuthLayoutRouteRoute
     }
+    '/_appLayout/courses/$courseType/': {
+      id: '/_appLayout/courses/$courseType/'
+      path: '/courses/$courseType'
+      fullPath: '/courses/$courseType/'
+      preLoaderRoute: typeof AppLayoutCoursesCourseTypeIndexRouteImport
+      parentRoute: typeof AppLayoutRouteRoute
+    }
+    '/_appLayout/cpd-activities-detail/$activityId/': {
+      id: '/_appLayout/cpd-activities-detail/$activityId/'
+      path: '/cpd-activities-detail/$activityId'
+      fullPath: '/cpd-activities-detail/$activityId/'
+      preLoaderRoute: typeof AppLayoutCpdActivitiesDetailActivityIdIndexRouteImport
+      parentRoute: typeof AppLayoutRouteRoute
+    }
     '/_appLayout/cpd/activities/': {
       id: '/_appLayout/cpd/activities/'
       path: '/cpd/activities'
       fullPath: '/cpd/activities/'
       preLoaderRoute: typeof AppLayoutCpdActivitiesIndexRouteImport
+      parentRoute: typeof AppLayoutRouteRoute
+    }
+    '/_appLayout/errata/$programType/': {
+      id: '/_appLayout/errata/$programType/'
+      path: '/errata/$programType'
+      fullPath: '/errata/$programType/'
+      preLoaderRoute: typeof AppLayoutErrataProgramTypeIndexRouteImport
       parentRoute: typeof AppLayoutRouteRoute
     }
     '/_appLayout/order-details/$orderNumber/': {
@@ -342,11 +500,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLayoutProgramsProgramTypeIndexRouteImport
       parentRoute: typeof AppLayoutRouteRoute
     }
+    '/_appLayout/study-materials/archive/': {
+      id: '/_appLayout/study-materials/archive/'
+      path: '/study-materials/archive'
+      fullPath: '/study-materials/archive/'
+      preLoaderRoute: typeof AppLayoutStudyMaterialsArchiveIndexRouteImport
+      parentRoute: typeof AppLayoutRouteRoute
+    }
     '/_appLayout/my-account/orders/$orderNumber/': {
       id: '/_appLayout/my-account/orders/$orderNumber/'
       path: '/my-account/orders/$orderNumber'
       fullPath: '/my-account/orders/$orderNumber/'
       preLoaderRoute: typeof AppLayoutMyAccountOrdersOrderNumberIndexRouteImport
+      parentRoute: typeof AppLayoutRouteRoute
+    }
+    '/_appLayout/programs/$programType/errata/': {
+      id: '/_appLayout/programs/$programType/errata/'
+      path: '/programs/$programType/errata'
+      fullPath: '/programs/$programType/errata/'
+      preLoaderRoute: typeof AppLayoutProgramsProgramTypeErrataIndexRouteImport
       parentRoute: typeof AppLayoutRouteRoute
     }
     '/_appLayout/programs/$programType/results/': {
@@ -356,43 +528,72 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLayoutProgramsProgramTypeResultsIndexRouteImport
       parentRoute: typeof AppLayoutRouteRoute
     }
+    '/_appLayout/programs/$programType/work-experience/': {
+      id: '/_appLayout/programs/$programType/work-experience/'
+      path: '/programs/$programType/work-experience'
+      fullPath: '/programs/$programType/work-experience/'
+      preLoaderRoute: typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRouteImport
+      parentRoute: typeof AppLayoutRouteRoute
+    }
   }
 }
 
 interface AppLayoutRouteRouteChildren {
+  AppLayoutContentIndexRoute: typeof AppLayoutContentIndexRoute
   AppLayoutCpdIndexRoute: typeof AppLayoutCpdIndexRoute
   AppLayoutDashboardIndexRoute: typeof AppLayoutDashboardIndexRoute
   AppLayoutEventsIndexRoute: typeof AppLayoutEventsIndexRoute
   AppLayoutHelpCenterIndexRoute: typeof AppLayoutHelpCenterIndexRoute
+  AppLayoutMemberDirectoryIndexRoute: typeof AppLayoutMemberDirectoryIndexRoute
+  AppLayoutMemberResourcesIndexRoute: typeof AppLayoutMemberResourcesIndexRoute
   AppLayoutMembershipIndexRoute: typeof AppLayoutMembershipIndexRoute
   AppLayoutMyAccountIndexRoute: typeof AppLayoutMyAccountIndexRoute
   AppLayoutProgramsIndexRoute: typeof AppLayoutProgramsIndexRoute
   AppLayoutStudyMaterialsIndexRoute: typeof AppLayoutStudyMaterialsIndexRoute
+  AppLayoutCoursesCourseTypeIndexRoute: typeof AppLayoutCoursesCourseTypeIndexRoute
+  AppLayoutCpdActivitiesDetailActivityIdIndexRoute: typeof AppLayoutCpdActivitiesDetailActivityIdIndexRoute
   AppLayoutCpdActivitiesIndexRoute: typeof AppLayoutCpdActivitiesIndexRoute
+  AppLayoutErrataProgramTypeIndexRoute: typeof AppLayoutErrataProgramTypeIndexRoute
   AppLayoutOrderDetailsOrderNumberIndexRoute: typeof AppLayoutOrderDetailsOrderNumberIndexRoute
   AppLayoutProgramsProgramTypeIndexRoute: typeof AppLayoutProgramsProgramTypeIndexRoute
+  AppLayoutStudyMaterialsArchiveIndexRoute: typeof AppLayoutStudyMaterialsArchiveIndexRoute
   AppLayoutMyAccountOrdersOrderNumberIndexRoute: typeof AppLayoutMyAccountOrdersOrderNumberIndexRoute
+  AppLayoutProgramsProgramTypeErrataIndexRoute: typeof AppLayoutProgramsProgramTypeErrataIndexRoute
   AppLayoutProgramsProgramTypeResultsIndexRoute: typeof AppLayoutProgramsProgramTypeResultsIndexRoute
+  AppLayoutProgramsProgramTypeWorkExperienceIndexRoute: typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
 }
 
 const AppLayoutRouteRouteChildren: AppLayoutRouteRouteChildren = {
+  AppLayoutContentIndexRoute: AppLayoutContentIndexRoute,
   AppLayoutCpdIndexRoute: AppLayoutCpdIndexRoute,
   AppLayoutDashboardIndexRoute: AppLayoutDashboardIndexRoute,
   AppLayoutEventsIndexRoute: AppLayoutEventsIndexRoute,
   AppLayoutHelpCenterIndexRoute: AppLayoutHelpCenterIndexRoute,
+  AppLayoutMemberDirectoryIndexRoute: AppLayoutMemberDirectoryIndexRoute,
+  AppLayoutMemberResourcesIndexRoute: AppLayoutMemberResourcesIndexRoute,
   AppLayoutMembershipIndexRoute: AppLayoutMembershipIndexRoute,
   AppLayoutMyAccountIndexRoute: AppLayoutMyAccountIndexRoute,
   AppLayoutProgramsIndexRoute: AppLayoutProgramsIndexRoute,
   AppLayoutStudyMaterialsIndexRoute: AppLayoutStudyMaterialsIndexRoute,
+  AppLayoutCoursesCourseTypeIndexRoute: AppLayoutCoursesCourseTypeIndexRoute,
+  AppLayoutCpdActivitiesDetailActivityIdIndexRoute:
+    AppLayoutCpdActivitiesDetailActivityIdIndexRoute,
   AppLayoutCpdActivitiesIndexRoute: AppLayoutCpdActivitiesIndexRoute,
+  AppLayoutErrataProgramTypeIndexRoute: AppLayoutErrataProgramTypeIndexRoute,
   AppLayoutOrderDetailsOrderNumberIndexRoute:
     AppLayoutOrderDetailsOrderNumberIndexRoute,
   AppLayoutProgramsProgramTypeIndexRoute:
     AppLayoutProgramsProgramTypeIndexRoute,
+  AppLayoutStudyMaterialsArchiveIndexRoute:
+    AppLayoutStudyMaterialsArchiveIndexRoute,
   AppLayoutMyAccountOrdersOrderNumberIndexRoute:
     AppLayoutMyAccountOrdersOrderNumberIndexRoute,
+  AppLayoutProgramsProgramTypeErrataIndexRoute:
+    AppLayoutProgramsProgramTypeErrataIndexRoute,
   AppLayoutProgramsProgramTypeResultsIndexRoute:
     AppLayoutProgramsProgramTypeResultsIndexRoute,
+  AppLayoutProgramsProgramTypeWorkExperienceIndexRoute:
+    AppLayoutProgramsProgramTypeWorkExperienceIndexRoute,
 }
 
 const AppLayoutRouteRouteWithChildren = AppLayoutRouteRoute._addFileChildren(

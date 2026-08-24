@@ -9,7 +9,12 @@ export {
 	memberPortalRefusalPayload,
 	unwrapMemberPortalEnvelope,
 } from "@/api/client/member-portal-envelope"
-export { notifyError, notifySuccess, notifyWarning } from "@/api/client/notify"
+export {
+	notifyError,
+	notifySuccess,
+	notifyWarning,
+	notifyWithUndo,
+} from "@/api/client/notify"
 export { queryClient } from "@/api/client/query-client"
 export {
 	apiFail,

@@ -1,23 +1,13 @@
 import { useCallback, useEffect, useRef } from "react"
 import { useSpring } from "@react-spring/web"
 
+import { scrollParent } from "@/lib/scroll-parent"
+
 /** Matches the footer back-to-top glide. `clamp` stops any overshoot past the target. */
 const SCROLL_SPRING = { mass: 1, tension: 170, friction: 28, clamp: true }
 
 /** Breathing room above the target so it does not butt against the container edge. */
 const SCROLL_OFFSET_PX = 12
-
-/** Nearest ancestor that actually scrolls, or null when the page itself does. */
-function scrollParent(node: HTMLElement): HTMLElement | null {
-	let current = node.parentElement
-	while (current) {
-		const { overflowY } = window.getComputedStyle(current)
-		const scrollable = overflowY === "auto" || overflowY === "scroll"
-		if (scrollable && current.scrollHeight > current.clientHeight) return current
-		current = current.parentElement
-	}
-	return null
-}
 
 /**
  * Spring-driven scroll to an element inside its own scroll container.
@@ -44,7 +34,7 @@ export function useSpringScrollTo() {
 		}
 	}, [api])
 
-	return useCallback(
+	const scrollTo = useCallback(
 		(target: HTMLElement | null) => {
 			if (!target) return
 
@@ -75,4 +65,11 @@ export function useSpringScrollTo() {
 		},
 		[api],
 	)
+
+	/** Cancels an in-flight glide — a bento drag takes over the scroll container. */
+	const stop = useCallback(() => {
+		api.stop()
+	}, [api])
+
+	return { scrollTo, stop }
 }

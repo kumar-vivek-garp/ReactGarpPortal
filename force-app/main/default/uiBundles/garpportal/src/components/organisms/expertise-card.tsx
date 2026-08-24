@@ -17,7 +17,10 @@ import {
 } from "@/components/atoms/dropdown-menu"
 import { Label } from "@/components/atoms/label"
 import { Skeleton } from "@/components/atoms/skeleton"
-import { AccountSectionCard } from "@/components/molecules/account-section-card"
+import {
+	AccountSectionCard,
+	type AccountCardSlotProps,
+} from "@/components/molecules/account-section-card"
 import { useExpertise, useSaveExpertise } from "@/hooks/use-expertise"
 import { useSaveState } from "@/hooks/use-save-state"
 import { cn } from "@/lib/utils"
@@ -66,10 +69,7 @@ function orderedChosen(
 	return [...known, ...extras]
 }
 
-function displayLabel(
-	options: PicklistOption[],
-	value: string,
-): string {
+function displayLabel(options: PicklistOption[], value: string): string {
 	const match = options.find((option) => decodeLabel(option.value) === value)
 	return decodeLabel(match?.label ?? value)
 }
@@ -83,7 +83,9 @@ function toPayload(draft: Record<ExpertiseField, string[]>): ExpertiseValues {
 }
 
 function payloadsEqual(a: ExpertiseValues, b: ExpertiseValues): boolean {
-	return EXPERTISE_FIELDS.every((field) => (a[field] ?? "") === (b[field] ?? ""))
+	return EXPERTISE_FIELDS.every(
+		(field) => (a[field] ?? "") === (b[field] ?? ""),
+	)
 }
 
 function ExpertiseMultiSelect({
@@ -109,10 +111,7 @@ function ExpertiseMultiSelect({
 	onClose: () => void
 }) {
 	const selected = useMemo(() => new Set(chosen), [chosen])
-	const summary =
-		chosen.length === 0
-			? ""
-			: `${chosen.length} selected`
+	const summary = chosen.length === 0 ? "" : `${chosen.length} selected`
 
 	const chipTrails = useTrail(chosen.length, {
 		from: { opacity: 0, transform: "scale(0.9)" },
@@ -154,7 +153,10 @@ function ExpertiseMultiSelect({
 						<span className="min-w-0 flex-1 truncate">
 							{summary || placeholder}
 						</span>
-						<ChevronDownIcon className="size-4 shrink-0 opacity-50" aria-hidden />
+						<ChevronDownIcon
+							className="size-4 shrink-0 opacity-50"
+							aria-hidden
+						/>
 					</button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent
@@ -221,7 +223,7 @@ function ExpertiseMultiSelect({
 	)
 }
 
-function ExpertiseCard() {
+function ExpertiseCard({ handle }: AccountCardSlotProps) {
 	const query = useExpertise(true)
 	const saveMutation = useSaveExpertise()
 	const saveState = useSaveState(saveMutation)
@@ -270,13 +272,21 @@ function ExpertiseCard() {
 	}
 
 	return (
-		<AccountSectionCard section="expertise" saveState={saveState}>
+		<AccountSectionCard
+			section="expertise"
+			saveState={saveState}
+			handle={handle}
+		>
 			{query.isError ? (
 				<p className="text-sm text-muted-foreground">
 					We couldn&apos;t load your expertise. Please try again later.
 				</p>
 			) : query.isPending || !shown || !data ? (
-				<div className="flex flex-col gap-3" aria-busy aria-label="Loading expertise">
+				<div
+					className="flex flex-col gap-3"
+					aria-busy
+					aria-label="Loading expertise"
+				>
 					{[0, 1, 2, 3].map((key) => (
 						<div key={key} className="flex flex-col gap-1.5">
 							<Skeleton className="h-3.5 w-36" />
@@ -295,9 +305,7 @@ function ExpertiseCard() {
 							options={data.options[field] ?? []}
 							chosen={shown[field]}
 							disabled={busy}
-							onChosenChange={(next) =>
-								setDraft({ ...shown, [field]: next })
-							}
+							onChosenChange={(next) => setDraft({ ...shown, [field]: next })}
 							onCommit={(next) => commitField(field, next)}
 							onClose={saveIfChanged}
 						/>

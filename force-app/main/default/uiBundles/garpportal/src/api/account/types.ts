@@ -20,6 +20,15 @@ export type Identity = {
 	isMember: boolean
 	isIndividualMember: boolean
 	isAffiliateMember: boolean
+	/**
+	 * The gate the members-only content paywall reads.
+	 *
+	 * Narrower than `isMember` and not derivable from it: a lapsed Individual
+	 * still reports `isIndividualMember: true` and a membership type of
+	 * "Individual", so only this field says whether they may actually be let
+	 * through.
+	 */
+	isMemberInGoodStanding: boolean
 	audience: Audience
 	photoUrl: string | null
 }

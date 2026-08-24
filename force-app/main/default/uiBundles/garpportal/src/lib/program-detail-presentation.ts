@@ -8,6 +8,7 @@ import {
 	programOrderHref,
 	programRegistrationHref,
 	programResultsPath,
+	programWorkExperiencePath,
 	resolveExperienceHref,
 } from "@/lib/program-card-links"
 import { stripProgramFormalName } from "@/lib/program-formal-name"
@@ -20,10 +21,15 @@ export type ProgramActionKind =
 	| "takeExam"
 	| "viewOrder"
 	| "viewExamResults"
+	| "workExperience"
 	| "registerAgain"
 	| "digitalBadge"
 	| "downloadCertificate"
 	| "directory"
+	/* Course pages only — a course has an e-learning platform and an eBook
+	   where an exam programme has sittings. */
+	| "eLearning"
+	| "eBook"
 
 export type ProgramAction = {
 	kind: ProgramActionKind
@@ -38,7 +44,19 @@ export type ProgramAction = {
 export type JourneyMilestoneStatus = "complete" | "current" | "upcoming" | "blocked"
 
 export type JourneyMilestone = {
-	id: "registration" | "scheduling" | "exam" | "results" | "certification"
+	/**
+	 * Identity only — used as the list key, never branched on. Widened for
+	 * courses, whose stops ("coursework") have no equivalent on the two-part
+	 * exam journey; keeping the union closed would have meant labelling a
+	 * course's coursework step "scheduling" to satisfy the type.
+	 */
+	id:
+		| "registration"
+		| "scheduling"
+		| "exam"
+		| "results"
+		| "certification"
+		| "coursework"
 	label: string
 	status: JourneyMilestoneStatus
 	detail?: string | null
@@ -374,9 +392,7 @@ function buildMilestones(
 				id: "certification",
 				label: "Work experience",
 				status: "current",
-				detail: detail.cvStatus
-					? `Status: ${detail.cvStatus}`
-					: "Submit your work experience to finish certification.",
+				detail: cvStatusCopy(detail.cvStatus),
 			},
 		]
 	}
@@ -545,7 +561,83 @@ function splitActions(actions: ProgramAction[]): {
  * Maps Apex `ProgramDetail` into UI-ready status, CTAs, and journey milestones.
  * Pure — no React. Safe to unit-test every exam / program state.
  */
+/**
+ * Friendly wording for the raw `Candidate_Requirement__c.Status__c`.
+ *
+ * The status itself is never shown. Legacy printed "Current status: Initial"
+ * straight at the member; the vocabulary below is legacy's own mapping
+ * ("Submission Received" / "Review Failed" / "Submission Needed"), reworded.
+ */
+function cvStatusCopy(cvStatus: string | null | undefined): string {
+	switch (cvStatus?.trim()) {
+		case "Ready For Review":
+			return "Your submission has been received and is under review."
+		case "Failed Review":
+			return "We need more information before your submission can be approved."
+		default:
+			return "Submit your work experience to finish certification."
+	}
+}
+
+/**
+ * Appends the work-experience entry point.
+ *
+ * Gated on `programState === "CVSubmission"`, which is what both reference
+ * apps do — GarpAppv1 renders its CV card on exactly that condition, and
+ * MyGarp on the equivalent `isAllPartsPassed && !isCertified`. Apex folds the
+ * whole rule set into that one flag: two-part programme, contract not Expired
+ * or Completed, both parts passed, and (FRM only) results no longer loading.
+ *
+ * It deliberately does NOT key off `cvStatus`. Every FRM/ERP enrollment gets a
+ * Job_Experience requirement at signup — all 107 in this org sit at "Initial" —
+ * so a has-a-CV test is true from day one and put the CTA on every programme
+ * page, including members who have passed neither exam part.
+ */
+function withWorkExperienceAction(
+	detail: ProgramDetail,
+	presentation: ProgramDetailPresentation,
+): ProgramDetailPresentation {
+	if (detail.programState !== "CVSubmission") return presentation
+	const url = programWorkExperiencePath(detail.programType ?? "")
+	if (!url) return presentation
+	if (
+		presentation.primaryAction?.kind === "workExperience" ||
+		presentation.secondaryActions.some((a) => a.kind === "workExperience")
+	) {
+		return presentation
+	}
+
+	// Awaiting review: there is nothing to submit, but the submission stays
+	// readable — legacy's "View Your Submission". GarpAppv1 drops the link
+	// entirely here, which strands the member on a status line.
+	const underReview = detail.cvStatus?.trim() === "Ready For Review"
+	const action: ProgramAction = {
+		kind: "workExperience",
+		label: underReview
+			? "View work experience"
+			: detail.cvStatus?.trim() === "Failed Review"
+				? "Resubmit work experience"
+				: "Submit work experience",
+		url,
+		isExternal: false,
+	}
+
+	if (!presentation.primaryAction && !underReview) {
+		return { ...presentation, primaryAction: { ...action, primary: true } }
+	}
+	return {
+		...presentation,
+		secondaryActions: [...presentation.secondaryActions, action],
+	}
+}
+
 export function buildProgramDetailPresentation(
+	detail: ProgramDetail,
+): ProgramDetailPresentation {
+	return withWorkExperienceAction(detail, buildStatePresentation(detail))
+}
+
+function buildStatePresentation(
 	detail: ProgramDetail,
 ): ProgramDetailPresentation {
 	const displayName = displayProgramName(detail)
@@ -596,9 +688,8 @@ export function buildProgramDetailPresentation(
 			statusSummary:
 				"Congratulations! You are almost there to getting certified. Submit your work experience to complete your certification.",
 			nextStepTitle: "Finish certification",
-			nextStepBody: detail.cvStatus
-				? `Current status: ${detail.cvStatus}. Online submission from this portal is not available yet.`
-				: "Online submission from this portal is not available yet. Check back soon or contact Member Services.",
+			nextStepBody:
+				"Add the roles that make up your two years of risk management experience, then submit them for review.",
 			primaryAction: null,
 			secondaryActions: [],
 			milestones: buildMilestones(detail, part),

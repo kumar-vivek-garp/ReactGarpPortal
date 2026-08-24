@@ -1,5 +1,6 @@
 import { ArrowRight } from "lucide-react"
 
+import { GarpLogoFull } from "@/components/atoms/garp-logo-full"
 import { FooterBackToTop } from "@/components/molecules/footer-back-to-top"
 import { FooterLegalBar } from "@/components/molecules/footer-legal-bar"
 import { FooterNavSectionView } from "@/components/molecules/footer-nav-section"
@@ -12,11 +13,10 @@ import {
 	FOOTER_TAGLINE,
 } from "@/config/navigation/footer-misc-links"
 import { FOOTER_NAV_SECTIONS } from "@/config/navigation/footer-nav-sections"
-import { GARP_LOGO_FULL_COLOR } from "@/config/navigation/garp-logos"
 
-// "Full" (not "Short") is deliberate: it's the only non-knockout variant that
-// includes the "Global Association of Risk Professionals" wordmark, matching
-// the live footer's inline logo lockup (confirmed via its rendered ~7.6:1 aspect ratio).
+// The full lockup, matching the live footer. It used to be a dark-ink PNG,
+// which was invisible against this footer's own dark-mode gradient; the inline
+// version takes its colour from `text-foreground` and so works in both themes.
 
 // Maps each section's data key to the live footer's own named grid-area (see
   // the `.footer-sections-grid` rule in styles/layout.css) — literal strings, not
@@ -38,14 +38,7 @@ function Footer() {
 		<footer className="bg-linear-to-b from-surface-gradient-start to-surface-gradient-end px-8 py-10 font-sans text-foreground">
 			<div className="footer-sections-grid footer-container">
 				<div className="flex flex-col gap-4 lg:[grid-area:logo]">
-					<img
-						src={GARP_LOGO_FULL_COLOR}
-						alt="GARP - Global Association of Risk Professionals"
-						width={518}
-						height={68}
-						decoding="async"
-						className="h-9 w-auto"
-					/>
+					<GarpLogoFull className="h-9 w-auto" />
 					<p className="text-body text-foreground">{FOOTER_TAGLINE}</p>
 					<a
 						href={FOOTER_CONTACT_LINK.url}

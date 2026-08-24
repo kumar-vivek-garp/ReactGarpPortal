@@ -45,6 +45,11 @@ export {
 	CpdPendingShell,
 } from "./cpd-pending"
 export {
+	WorkExperienceContentSkeleton,
+	WorkExperiencePending,
+	WorkExperiencePendingShell,
+} from "./work-experience-pending"
+export {
 	HelpCenterPending,
 	HelpCenterPendingShell,
 	HelpCenterRequestsSkeleton,

@@ -10,6 +10,19 @@
 	--max-width-footer: 80rem; /* 1280px */
 	--max-width-auth: 26.25rem; /* 420px */
 
+	/*
+	 * App shell grid — the one place these three numbers live.
+	 * The toolbar logo slot, the sidebar, and the main column all derive their
+	 * left edges from these, so the logo sits above the sidebar avatar and the
+	 * first nav label starts exactly where page content starts:
+	 *
+	 *   [ shell-rail ][ shell-gutter ]page content…
+	 *   ^ shell-inset  ^ first nav label
+	 */
+	--spacing-shell-rail: 294px; /* sidebar width — the toolbar logo slot matches it */
+	--spacing-shell-gutter: 1rem; /* main column gutter (.page-container) */
+	--spacing-shell-inset: 1.5rem; /* sidebar p-3 + row px-3 — where the avatar's left edge lands */
+
 	/* Semantic type roles — prefer these over ad-hoc text-sm/base in shell UI */
 	--text-caption: 0.75rem; /* 12px — legal / fine print */
 	--text-caption--line-height: 1.25rem;
@@ -61,6 +74,7 @@
 	--color-toolbar: var(--toolbar);
 	--color-toolbar-foreground: var(--toolbar-foreground);
 	--color-overlay: var(--overlay);
+	--color-nav-scrim: var(--nav-scrim);
 
 	--font-sans: 'Nunito Sans', sans-serif;
 	--font-heading: 'Klinic Slab', 'Nunito Sans', sans-serif;
@@ -176,6 +190,8 @@
 	--toolbar-foreground: oklch(1 0 0); /* live-verified */
 	/* shadcn Base UI dialog overlay: bg-black/10 + supports-backdrop-filter:backdrop-blur-xs */
 	--overlay: oklch(0 0 0 / 0.1);
+	/* inferred: mega-menu scrim — heavier than --overlay so the dimmed page reads as inert */
+	--nav-scrim: oklch(0 0 0 / 0.5);
 }
 
 .dark {
@@ -217,6 +233,8 @@
 	--toolbar: oklch(0 0 0); /* mode-invariant brand hue */
 	--toolbar-foreground: oklch(1 0 0);
 	--overlay: oklch(0 0 0 / 0.1);
+	/* Darker still on dark chrome — 0.5 black over a near-black page reads as nothing. */
+	--nav-scrim: oklch(0 0 0 / 0.68);
 	/* Chrome gradients — darker stops so sidebar/footer don’t stay pastel. */
 	--surface-gradient-start: oklch(0.22 0.03 291.7);
 	--surface-gradient-end: oklch(0.2 0.02 197);

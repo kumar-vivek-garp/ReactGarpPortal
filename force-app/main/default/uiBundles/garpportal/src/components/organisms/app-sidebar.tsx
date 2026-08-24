@@ -70,7 +70,7 @@ function AppSidebar({ forceSkeleton = false }: { forceSkeleton?: boolean }) {
 	const claim = (key: string) => setPending({ key, from: pathname })
 
 	return (
-		<aside className="sticky top-20 hidden h-[calc(100vh-5rem)] w-[294px] shrink-0 flex-col self-start overflow-y-auto bg-linear-to-b from-surface-gradient-start to-surface-gradient-end app:flex">
+		<aside className="sticky top-20 hidden h-[calc(100vh-5rem)] w-shell-rail shrink-0 flex-col self-start overflow-y-auto bg-linear-to-b from-surface-gradient-start to-surface-gradient-end app:flex">
 			<div ref={containerRef} className="relative flex flex-col gap-1 p-3">
 				{/*
 				 * The only element that moves. A 3px bar in the gutter reads as a quiet
@@ -84,7 +84,7 @@ function AppSidebar({ forceSkeleton = false }: { forceSkeleton?: boolean }) {
 				/>
 
 				{showSkeleton ? (
-					<SidebarProfileSkeleton />
+					<SidebarProfileSkeleton inset />
 				) : (
 					<SidebarProfileLink
 						name={displayName}

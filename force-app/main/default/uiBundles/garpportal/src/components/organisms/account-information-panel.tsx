@@ -6,7 +6,7 @@ import { AccountFieldGrid } from "@/components/molecules/account-field-grid"
 import { AccountFieldList } from "@/components/molecules/account-field-list"
 import { AccountSectionCard } from "@/components/molecules/account-section-card"
 import { CompletionRingSkeleton } from "@/components/molecules/completion-ring"
-import { StaggerReveal } from "@/components/molecules/stagger-reveal"
+import { BentoDragHandle, BentoGrid } from "@/components/molecules/bento-grid"
 import { AccountIdentityHero } from "@/components/organisms/account-identity-hero"
 import {
 	CareerInformationEditForm,
@@ -18,12 +18,16 @@ import { MembershipAccountCard } from "@/components/organisms/membership-account
 import { PreferredChaptersCard } from "@/components/organisms/preferred-chapters-card"
 import { PersonalInfoEditForm } from "@/components/organisms/personal-info-edit-form"
 import {
-	ACCOUNT_CARD_GRID,
+	ACCOUNT_BENTO_SCOPE,
 	ACCOUNT_CARD_ORDER,
-	ACCOUNT_CARD_SPAN,
 	ACCOUNT_SECTION_META,
 	type AccountSection,
 } from "@/config/account-sections"
+import {
+	useBentoColumns,
+	type BentoRenderItem,
+	type BentoSlotControls,
+} from "@/hooks/use-bento-layout"
 import { useSpringScrollTo } from "@/hooks/use-spring-scroll-to"
 import type { AccountDesignations, AccountView } from "@/api/account/types"
 import {
@@ -59,6 +63,10 @@ type AccountInformationPanelProps = {
 }
 
 function AccountInformationSkeleton() {
+	// Bones must lay out in the member's own arrangement, or the whole grid
+	// re-shuffles the instant real data lands — a flash on every visit.
+	const columns = useBentoColumns(ACCOUNT_BENTO_SCOPE, ACCOUNT_CARD_ORDER)
+
 	return (
 		<div className="space-y-6" aria-busy aria-label="Loading account">
 			{/* Hero bone — same geometry as AccountIdentityHero. */}
@@ -79,34 +87,39 @@ function AccountInformationSkeleton() {
 				</div>
 			</div>
 
-			<div className={ACCOUNT_CARD_GRID}>
-				{ACCOUNT_CARD_ORDER.map((section, index) => (
-					<div
-						key={section}
-						className={`flex min-h-56 flex-col gap-3 rounded-xl border border-border bg-muted/40 px-6 py-5 ${ACCOUNT_CARD_SPAN[section]}`}
-					>
-						<div className="flex items-center gap-2">
-							<Skeleton className="size-8 shrink-0 rounded-lg" />
-							<Skeleton className="h-5 w-2/5 rounded-sm" />
-						</div>
-						<div className="flex flex-1 flex-col gap-2.5">
-							<Skeleton className="h-3.5 w-full rounded-sm" />
-							<Skeleton className="h-3.5 w-5/6 rounded-sm" />
-							<Skeleton className="h-3.5 w-4/6 rounded-sm" />
-							<Skeleton className="h-3.5 w-3/4 rounded-sm" />
-							{index % 2 === 0 ? (
-								<>
-									<Skeleton className="mt-1 h-3.5 w-1/3 rounded-sm" />
+			{/* Same masonry geometry as the live grid, so the bones cannot drift. */}
+			<div className="flex items-start gap-6">
+				{columns.map((column, columnIndex) => (
+					<div key={columnIndex} className="flex min-w-0 flex-1 flex-col gap-6">
+						{column.map((section, index) => (
+							<div
+								key={section}
+								className="flex min-h-56 flex-col gap-3 rounded-xl border border-border bg-muted/40 px-6 py-5"
+							>
+								<div className="flex items-center gap-2">
+									<Skeleton className="size-8 shrink-0 rounded-lg" />
+									<Skeleton className="h-5 w-2/5 rounded-sm" />
+								</div>
+								<div className="flex flex-1 flex-col gap-2.5">
 									<Skeleton className="h-3.5 w-full rounded-sm" />
-									<Skeleton className="h-3.5 w-2/3 rounded-sm" />
-								</>
-							) : (
-								<>
-									<Skeleton className="mt-1 h-3.5 w-2/5 rounded-sm" />
-									<Skeleton className="h-3.5 w-4/5 rounded-sm" />
-								</>
-							)}
-						</div>
+									<Skeleton className="h-3.5 w-5/6 rounded-sm" />
+									<Skeleton className="h-3.5 w-4/6 rounded-sm" />
+									<Skeleton className="h-3.5 w-3/4 rounded-sm" />
+									{index % 2 === 0 ? (
+										<>
+											<Skeleton className="mt-1 h-3.5 w-1/3 rounded-sm" />
+											<Skeleton className="h-3.5 w-full rounded-sm" />
+											<Skeleton className="h-3.5 w-2/3 rounded-sm" />
+										</>
+									) : (
+										<>
+											<Skeleton className="mt-1 h-3.5 w-2/5 rounded-sm" />
+											<Skeleton className="h-3.5 w-4/5 rounded-sm" />
+										</>
+									)}
+								</div>
+							</div>
+						))}
 					</div>
 				))}
 			</div>
@@ -122,7 +135,9 @@ function AccountInformationError() {
 	)
 }
 
-function heldDesignationsLabel(designations: AccountDesignations): string | null {
+function heldDesignationsLabel(
+	designations: AccountDesignations,
+): string | null {
 	const held: string[] = DESIGNATION_CODES.filter(
 		(code) => designations[code] === true,
 	)
@@ -184,7 +199,7 @@ function AccountInformationPanel({
 	const [careerEditOpen, setCareerEditOpen] = useState(false)
 	const [careerFocus, setCareerFocus] = useState<CareerFocusField | undefined>()
 	const [spotlight, setSpotlight] = useState<AccountSection | null>(null)
-	const scrollToElement = useSpringScrollTo()
+	const { scrollTo } = useSpringScrollTo()
 
 	useEffect(() => {
 		if (!spotlight) return
@@ -193,7 +208,7 @@ function AccountInformationPanel({
 	}, [spotlight])
 
 	const jumpTo = (section: AccountSection) => {
-		scrollToElement(document.getElementById(ACCOUNT_SECTION_META[section].domId))
+		scrollTo(document.getElementById(ACCOUNT_SECTION_META[section].domId))
 		setSpotlight(section)
 	}
 
@@ -210,6 +225,202 @@ function AccountInformationPanel({
 
 	const careerMissing = missingCountForSection(completeness, "career")
 
+	/**
+	 * Slots handed down by `BentoGrid`. Every card renders the same pair in the
+	 * same place, so the grip is always in the identical spot as the eye moves
+	 * down the grid.
+	 */
+	const slots = ({ handleProps }: BentoSlotControls) => ({
+		handle: handleProps ? <BentoDragHandle handleProps={handleProps} /> : null,
+	})
+
+	const item = (
+		section: AccountSection,
+		render: BentoRenderItem["render"],
+	): BentoRenderItem => ({
+		id: section,
+		label: ACCOUNT_SECTION_META[section].label,
+		render,
+	})
+
+	const bentoItems: BentoRenderItem[] = [
+		item("personal", (controls) => (
+			<AccountSectionCard
+				section="personal"
+				spotlight={spotlight === "personal"}
+				{...slots(controls)}
+				action={
+					<AccountEditDialog
+						title="Edit Personal Information"
+						description="Update your name, mobile number, photo, billing and mailing address."
+						open={personalEditOpen}
+						onOpenChange={setPersonalEditOpen}
+					>
+						<PersonalInfoEditForm
+							contactId={identity.contactId}
+							onSaved={() => setPersonalEditOpen(false)}
+						/>
+					</AccountEditDialog>
+				}
+			>
+				<AccountFieldGrid
+					rows={[
+						{ label: "First Name", value: personal.firstName },
+						{ label: "Last Name", value: personal.lastName },
+						{ label: "GARP ID", value: identity.garpId },
+						{ label: "Phone", value: personal.phone },
+						{ label: "Email", value: personal.email, span: 2 },
+					]}
+				/>
+
+				<div className="flex flex-col gap-4 border-t border-border pt-3 sm:flex-row sm:justify-between sm:gap-6">
+					<AddressBlock
+						title="Mailing Address"
+						lines={addressLines(mailingAddress)}
+						emptyMessage="No mailing address on file."
+					/>
+					<AddressBlock
+						title="Billing Address"
+						lines={addressLines(billingAddress)}
+						emptyMessage="No billing address on file."
+					/>
+				</div>
+
+				{!otherAddress.isEmpty ? (
+					<AddressBlock
+						title="Other Address"
+						lines={addressLines(otherAddress)}
+					/>
+				) : null}
+			</AccountSectionCard>
+		)),
+
+		item("membership", (controls) => (
+			<MembershipAccountCard
+				account={account}
+				autoRenewSetupComplete={autoRenewSetupComplete}
+				{...slots(controls)}
+			/>
+		)),
+
+		item("career", (controls) => (
+			<AccountSectionCard
+				section="career"
+				spotlight={spotlight === "career"}
+				missingCount={careerMissing}
+				{...slots(controls)}
+				action={
+					<AccountEditDialog
+						title="Edit Career Information"
+						description="Update your job, designations, and academic information."
+						open={careerEditOpen}
+						onOpenChange={(next) => {
+							setCareerEditOpen(next)
+							if (!next) setCareerFocus(undefined)
+						}}
+					>
+						<CareerInformationEditForm
+							// Remount on open so RHF re-seeds `defaultValues` from the
+							// freshest account — see the form's own note on why `values`
+							// cannot be used instead.
+							key={careerEditOpen ? "open" : "closed"}
+							account={account}
+							focusField={careerFocus}
+							onSaved={() => setCareerEditOpen(false)}
+						/>
+					</AccountEditDialog>
+				}
+			>
+				<p className="font-heading text-sm font-semibold text-foreground">
+					Employment Information
+				</p>
+				<AccountFieldList
+					onAdd={openCareerEdit}
+					rows={[
+						{
+							label: "Work status",
+							value: career.currentlyWorkingStatus,
+							addable: true,
+						},
+						{
+							label: "Industry",
+							value: career.areaOfConcentration,
+							addable: true,
+						},
+						{
+							label: "In the industry since",
+							value: career.industryWorkingYear,
+							addable: true,
+						},
+						{
+							label: "Current/Last Company",
+							value: career.company,
+							addable: true,
+						},
+						{
+							label: "Professional Level",
+							value: career.corporateTitle,
+							addable: true,
+						},
+						{ label: "Job Function", value: career.jobFunction, addable: true },
+						{
+							label: "In risk management since",
+							value: career.riskManagementWorkingYear,
+							addable: true,
+						},
+						// No editor exists for company city/country, so these must
+						// never offer an "Add" affordance.
+						{ label: "Company City", value: career.companyCity },
+						{ label: "Company Country", value: career.companyCountry },
+						{
+							label: "Professional designations",
+							value: heldDesignationsLabel(designations),
+						},
+					]}
+					emptyMessage="Add your employment details so we can tailor recommendations."
+				/>
+
+				<p className="pt-2 font-heading text-sm font-semibold text-foreground">
+					Academic Information
+				</p>
+				<AccountFieldList
+					onAdd={openCareerEdit}
+					rows={[
+						{ label: "School", value: academic.schoolName, addable: true },
+						{
+							label: "Degree Program",
+							value: academic.highestDegree,
+							addable: true,
+						},
+						// Not editable anywhere yet — display only.
+						{ label: "Degree program name", value: academic.degreeProgramName },
+						{
+							label: "Year of graduation",
+							value: academic.expectedGraduationDate,
+							addable: true,
+						},
+						{
+							label: "Month of graduation",
+							value: academic.expectedGraduationMonth,
+							addable: true,
+						},
+					]}
+					emptyMessage="No academic information added yet."
+				/>
+			</AccountSectionCard>
+		)),
+
+		item("chapters", (controls) => (
+			<PreferredChaptersCard account={account} {...slots(controls)} />
+		)),
+
+		item("expertise", (controls) => <ExpertiseCard {...slots(controls)} />),
+
+		item("directory", (controls) => (
+			<DirectorySettingsCard account={account} {...slots(controls)} />
+		)),
+	]
+
 	return (
 		<div className="space-y-6">
 			<AccountIdentityHero
@@ -220,180 +431,17 @@ function AccountInformationPanel({
 			/>
 
 			{/*
-			 * Bento. Auto-placement at `xl` gives three rows:
-			 * [personal personal][membership] / [career career][chapters] /
-			 * [expertise expertise][directory]. Below `xl` it is a single column
-			 * in the same DOM order, so identity and standing come first on a phone.
+			 * Bento. The order and column spans are the member's own — dragged by
+			 * the grip in each card header and remembered in localStorage. The
+			 * code order below is only the default a first visit starts from.
+			 *
+			 * Cards are declared as a registry rather than as JSX children so a
+			 * card's span travels with its id. The previous shape derived spans by
+			 * position (`ACCOUNT_CARD_SPAN[ACCOUNT_CARD_ORDER[index]]`) against
+			 * hand-written children, which only lined up by coincidence and broke
+			 * the moment either side was reordered.
 			 */}
-			<StaggerReveal
-				className={ACCOUNT_CARD_GRID}
-				getItemClassName={(index) =>
-					ACCOUNT_CARD_SPAN[ACCOUNT_CARD_ORDER[index]]
-				}
-			>
-				<AccountSectionCard
-					section="personal"
-					spotlight={spotlight === "personal"}
-					action={
-						<AccountEditDialog
-							title="Edit Personal Information"
-							description="Update your name, mobile number, photo, billing and mailing address."
-							open={personalEditOpen}
-							onOpenChange={setPersonalEditOpen}
-						>
-							<PersonalInfoEditForm
-								contactId={identity.contactId}
-								onSaved={() => setPersonalEditOpen(false)}
-							/>
-						</AccountEditDialog>
-					}
-				>
-					<AccountFieldGrid
-						rows={[
-							{ label: "First Name", value: personal.firstName },
-							{ label: "Last Name", value: personal.lastName },
-							{ label: "GARP ID", value: identity.garpId },
-							{ label: "Phone", value: personal.phone },
-							{ label: "Email", value: personal.email, span: 2 },
-						]}
-					/>
-
-					<div className="flex flex-col gap-4 border-t border-border pt-3 sm:flex-row sm:justify-between sm:gap-6">
-						<AddressBlock
-							title="Mailing Address"
-							lines={addressLines(mailingAddress)}
-							emptyMessage="No mailing address on file."
-						/>
-						<AddressBlock
-							title="Billing Address"
-							lines={addressLines(billingAddress)}
-							emptyMessage="No billing address on file."
-						/>
-					</div>
-
-					{!otherAddress.isEmpty ? (
-						<AddressBlock
-							title="Other Address"
-							lines={addressLines(otherAddress)}
-						/>
-					) : null}
-				</AccountSectionCard>
-
-				<MembershipAccountCard
-					account={account}
-					autoRenewSetupComplete={autoRenewSetupComplete}
-				/>
-
-				<AccountSectionCard
-					section="career"
-					spotlight={spotlight === "career"}
-					missingCount={careerMissing}
-					action={
-						<AccountEditDialog
-							title="Edit Career Information"
-							description="Update your job, designations, and academic information."
-							open={careerEditOpen}
-							onOpenChange={(next) => {
-								setCareerEditOpen(next)
-								if (!next) setCareerFocus(undefined)
-							}}
-						>
-							<CareerInformationEditForm
-								// Remount on open so RHF re-seeds `defaultValues` from the
-								// freshest account — see the form's own note on why `values`
-								// cannot be used instead.
-								key={careerEditOpen ? "open" : "closed"}
-								account={account}
-								focusField={careerFocus}
-								onSaved={() => setCareerEditOpen(false)}
-							/>
-						</AccountEditDialog>
-					}
-				>
-					<p className="font-heading text-sm font-semibold text-foreground">
-						Employment Information
-					</p>
-					<AccountFieldList
-						onAdd={openCareerEdit}
-						rows={[
-							{
-								label: "Work status",
-								value: career.currentlyWorkingStatus,
-								addable: true,
-							},
-							{
-								label: "Industry",
-								value: career.areaOfConcentration,
-								addable: true,
-							},
-							{
-								label: "In the industry since",
-								value: career.industryWorkingYear,
-								addable: true,
-							},
-							{
-								label: "Current/Last Company",
-								value: career.company,
-								addable: true,
-							},
-							{
-								label: "Professional Level",
-								value: career.corporateTitle,
-								addable: true,
-							},
-							{ label: "Job Function", value: career.jobFunction, addable: true },
-							{
-								label: "In risk management since",
-								value: career.riskManagementWorkingYear,
-								addable: true,
-							},
-							// No editor exists for company city/country, so these must
-							// never offer an "Add" affordance.
-							{ label: "Company City", value: career.companyCity },
-							{ label: "Company Country", value: career.companyCountry },
-							{
-								label: "Professional designations",
-								value: heldDesignationsLabel(designations),
-							},
-						]}
-						emptyMessage="Add your employment details so we can tailor recommendations."
-					/>
-
-					<p className="pt-2 font-heading text-sm font-semibold text-foreground">
-						Academic Information
-					</p>
-					<AccountFieldList
-						onAdd={openCareerEdit}
-						rows={[
-							{ label: "School", value: academic.schoolName, addable: true },
-							{
-								label: "Degree Program",
-								value: academic.highestDegree,
-								addable: true,
-							},
-							// Not editable anywhere yet — display only.
-							{ label: "Degree program name", value: academic.degreeProgramName },
-							{
-								label: "Year of graduation",
-								value: academic.expectedGraduationDate,
-								addable: true,
-							},
-							{
-								label: "Month of graduation",
-								value: academic.expectedGraduationMonth,
-								addable: true,
-							},
-						]}
-						emptyMessage="No academic information added yet."
-					/>
-				</AccountSectionCard>
-
-				<PreferredChaptersCard account={account} />
-
-				<ExpertiseCard />
-
-				<DirectorySettingsCard account={account} />
-			</StaggerReveal>
+			<BentoGrid scope={ACCOUNT_BENTO_SCOPE} items={bentoItems} />
 		</div>
 	)
 }

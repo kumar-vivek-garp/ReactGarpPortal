@@ -1,4 +1,4 @@
-import { animated, useSpring } from "@react-spring/web"
+import { animated } from "@react-spring/web"
 
 import type { ProgramDetail } from "@/api/programs"
 import { ProgramDetailHero } from "@/components/molecules/program-detail-hero"
@@ -8,14 +8,13 @@ import { ProgramJourney } from "@/components/molecules/program-journey"
 import { ProgramDetailSkeleton } from "@/components/molecules/page-pending"
 import { ProgramsSubpageHeader } from "@/components/molecules/programs-subpage-header"
 import { localizeProgramLogoUrl } from "@/config/program-logos"
+import { useSubpageTransition } from "@/hooks/use-subpage-transition"
 import { useProgramDetail } from "@/hooks/use-program-detail"
 import { buildProgramDetailPresentation } from "@/lib/program-detail-presentation"
 import { resolvePortalAssetUrl } from "@/lib/resolve-portal-asset-url"
 import { cn } from "@/lib/utils"
 
 /** Forward-nav feel when opening `/programs/$programType` from the listing. */
-const DETAIL_ENTER_SPRING = { mass: 0.9, tension: 320, friction: 26 }
-
 type ProgramDetailPanelProps = {
 	programType: string
 }
@@ -96,15 +95,11 @@ function ProgramDetailPanelView({ programType }: ProgramDetailPanelProps) {
 	const { data, isLoading, isError, error } = useProgramDetail(programType)
 	const detail = data?.programsDetailInfo ?? null
 
-	const enter = useSpring({
-		from: { opacity: 0, transform: "translateX(18px)" },
-		to: { opacity: 1, transform: "translateX(0px)" },
-		config: DETAIL_ENTER_SPRING,
-	})
+	const { style, exit } = useSubpageTransition()
 
 	return (
 		<animated.div
-			style={enter}
+			style={style}
 			className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
 		>
 			<ProgramsSubpageHeader
@@ -113,6 +108,7 @@ function ProgramDetailPanelView({ programType }: ProgramDetailPanelProps) {
 						? undefined
 						: programType.trim().toUpperCase() || "Program"
 				}
+				onNavigateBack={exit}
 			/>
 
 			<div className="mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

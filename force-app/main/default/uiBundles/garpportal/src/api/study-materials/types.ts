@@ -116,3 +116,36 @@ export type ApexStudyMaterialsPayload = {
 }
 
 export type { MemberPortalEnvelope }
+
+/** One vendor item inside an eBook key — what actually opens in the reader. */
+export type ApexEBookItem = {
+	title?: string | null
+	/** The vendor (Mobius) product id `eBookAccess` exchanges for a link. */
+	vendorId?: number | null
+}
+
+/**
+ * `GET myEBooks` — the purchased-materials archive.
+ *
+ * `eBooks` is a MAP keyed by edition year, not a list: Apex builds
+ * `Map<Integer, List<EBook>>`, so the JSON keys are year strings and carry no
+ * order of their own.
+ */
+export type MyEBooksView = {
+	statusMessage: string | null
+	statusCode: number
+	eBooks: Record<string, ApexArchiveEBook[]>
+}
+
+/** An owned eBook key, with the vendor items it resolved to. */
+export type ApexArchiveEBook = ApexStudyEBook & {
+	provider?: string | null
+	eBookItems?: ApexEBookItem[] | null
+}
+
+/** `GET eBookAccess?vendorId=` — one short-lived signed reader link. */
+export type EBookAccess = {
+	statusMessage: string | null
+	statusCode: number
+	accessURL: string | null
+}

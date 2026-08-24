@@ -102,6 +102,12 @@ export const CPD_ACTIVITIES_PAGE_SIZE = 20
  * URL a member might share.
  */
 export const cpdActivitiesSearchSchema = z.object({
+	/**
+	 * Scopes the page to one activity — the legacy's
+	 * `/cpd-activities-detail/{id}`, kept as a search param so the page can
+	 * drop back to the full list without a route change.
+	 */
+	activityId: z.string().optional().catch(undefined),
 	type: z.array(z.string()).optional().catch(undefined),
 	area: z.array(z.string()).optional().catch(undefined),
 	provider: z.array(z.string()).optional().catch(undefined),

@@ -3,13 +3,19 @@ import { cn } from "@/lib/utils"
 
 type SidebarProfileSkeletonProps = {
 	className?: string
+	/** Must match the `inset` of the SidebarProfileLink it stands in for. */
+	inset?: boolean
 }
 
 /** Matches SidebarProfileLink layout while CurrentUser is loading. */
-function SidebarProfileSkeleton({ className }: SidebarProfileSkeletonProps) {
+function SidebarProfileSkeleton({ className, inset = false }: SidebarProfileSkeletonProps) {
 	return (
 		<div
-			className={cn("flex items-center gap-4 px-6 py-5", className)}
+			className={cn(
+				"flex items-center gap-4",
+				inset ? "rounded-xl px-3 py-4" : "px-6 py-5",
+				className,
+			)}
 			aria-hidden
 			aria-busy="true"
 		>

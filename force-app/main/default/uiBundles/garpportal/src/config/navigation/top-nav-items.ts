@@ -1,3 +1,5 @@
+import { Building2, Cpu, Leaf, Newspaper, TrendingUp, Users } from "lucide-react"
+
 import type { TopNavItem } from "./types"
 
 /**
@@ -8,6 +10,8 @@ import type { TopNavItem } from "./types"
 export const TOP_NAV_ITEMS: TopNavItem[] = [
 	{
 		title: "FRM",
+		accentToken: "garp-cyan",
+		icon: TrendingUp,
 		heading: {
 			prefix: "Financial Risk Manager (",
 			highlight: "FRM",
@@ -20,10 +24,10 @@ export const TOP_NAV_ITEMS: TopNavItem[] = [
 			headerURL: "https://www.garp.org/frm",
 			links: [
 				{ title: "Overview", url: "https://www.garp.org/frm" },
-				{ title: "Programs and Exams", url: "https://www.garp.org/frm/program-exams" },
+				{ title: "Program and Exams", url: "https://www.garp.org/frm/program-exams" },
 				{ title: "Fees and Payments", url: "https://www.garp.org/frm/fees-payments" },
-				{ title: "Exams Logistics", url: "https://www.garp.org/frm/exam-logistics" },
-				{ title: "Exams Policies", url: "https://www.garp.org/frm/exam-policies" },
+				{ title: "Exam Logistics", url: "https://www.garp.org/frm/exam-logistics" },
+				{ title: "Exam Policies", url: "https://www.garp.org/frm/exam-policies" },
 			],
 		},
 		column2: {
@@ -31,12 +35,14 @@ export const TOP_NAV_ITEMS: TopNavItem[] = [
 			links: [
 				{ title: "Study Materials", url: "https://www.garp.org/frm/study-materials" },
 				{ title: "FAQs", url: "https://www.garp.org/frm/frequently-asked-questions" },
-				{ title: "Continuing Professional Development", url: "https://www.garp.org/cpd" },
+				{ title: "Continuing Professional Development (CPD)", url: "https://www.garp.org/cpd" },
 			],
 		},
 	},
 	{
 		title: "SCR",
+		accentToken: "garp-saffron",
+		icon: Leaf,
 		heading: {
 			prefix: "Sustainability and Climate Risk (",
 			highlight: "SCR",
@@ -49,10 +55,10 @@ export const TOP_NAV_ITEMS: TopNavItem[] = [
 			headerURL: "https://www.garp.org/scr",
 			links: [
 				{ title: "Overview", url: "https://www.garp.org/scr" },
-				{ title: "Programs and Exams", url: "https://www.garp.org/scr/program-exam" },
+				{ title: "Program and Exam", url: "https://www.garp.org/scr/program-exam" },
 				{ title: "Fees and Payments", url: "https://www.garp.org/scr/fees-payments" },
-				{ title: "Exams Logistics", url: "https://www.garp.org/scr/exam-logistics" },
-				{ title: "Exams Policies", url: "https://www.garp.org/scr/exam-policies" },
+				{ title: "Exam Logistics", url: "https://www.garp.org/scr/exam-logistics" },
+				{ title: "Exam Policies", url: "https://www.garp.org/scr/exam-policies" },
 			],
 		},
 		column2: {
@@ -60,12 +66,14 @@ export const TOP_NAV_ITEMS: TopNavItem[] = [
 			links: [
 				{ title: "Study Materials", url: "https://www.garp.org/scr/study-materials" },
 				{ title: "FAQs", url: "https://www.garp.org/scr/frequently-asked-questions" },
-				{ title: "Continuing Professional Development", url: "https://www.garp.org/cpd" },
+				{ title: "Continuing Professional Development (CPD)", url: "https://www.garp.org/cpd" },
 			],
 		},
 	},
 	{
 		title: "Risk & AI",
+		accentToken: "rai-orange",
+		icon: Cpu,
 		heading: {
 			prefix: "Risk and AI (",
 			highlight: "RAI",
@@ -78,10 +86,10 @@ export const TOP_NAV_ITEMS: TopNavItem[] = [
 			headerURL: "https://www.garp.org/rai",
 			links: [
 				{ title: "Overview", url: "https://www.garp.org/rai" },
-				{ title: "Programs and Exams", url: "https://www.garp.org/rai/program-exam" },
+				{ title: "Program and Exam", url: "https://www.garp.org/rai/program-exam" },
 				{ title: "Fees and Payments", url: "https://www.garp.org/rai/fees-payments" },
-				{ title: "Exams Logistics", url: "https://www.garp.org/rai/exam-logistics" },
-				{ title: "Exams Policies", url: "https://www.garp.org/rai/exam-policies" },
+				{ title: "Exam Logistics", url: "https://www.garp.org/rai/exam-logistics" },
+				{ title: "Exam Policies", url: "https://www.garp.org/rai/exam-policies" },
 			],
 		},
 		column2: {
@@ -89,19 +97,24 @@ export const TOP_NAV_ITEMS: TopNavItem[] = [
 			links: [
 				{ title: "Study Materials", url: "https://www.garp.org/rai/study-materials" },
 				{ title: "FAQs", url: "https://www.garp.org/rai/frequently-asked-questions" },
-				{ title: "Continuing Professional Development", url: "https://www.garp.org/cpd" },
+				{ title: "Continuing Professional Development (CPD)", url: "https://www.garp.org/cpd" },
 			],
 		},
 	},
 	{
 		title: "Membership",
+		accentToken: "deep-purple",
+		icon: Users,
 		column1: {
 			header: "Membership",
 			links: [
 				{ title: "Overview", url: "https://www.garp.org/membership" },
 				{ title: "Professional Chapters", url: "https://www.garp.org/membership/professional-chapters" },
 				{ title: "Volunteer Opportunities", url: "https://www.garp.org/membership/volunteer" },
-				{ title: "Directory", url: "https://my.garp.org/sfdcApp#!/public_directory" },
+				{
+					title: "Certification/Certificate Holder Directory",
+					url: "https://www.garp.org/certificate-holder-directory",
+				},
 			],
 		},
 		column2: {
@@ -110,44 +123,51 @@ export const TOP_NAV_ITEMS: TopNavItem[] = [
 		},
 	},
 	{
+		/*
+		 * Re-synced from the live www.garp.org nav (read off the rendered menu, not
+		 * inferred): three columns collapsed to two, and "Risk Intelligence" was
+		 * rebranded to the Risk Insights hub. The old Articles/Podcasts entries
+		 * pointed at chapter-meeting and webcast listings rather than at content.
+		 */
 		title: "Insights & Events",
+		accentToken: "bright-purple",
+		icon: Newspaper,
 		column1: {
-			header: "Risk Insights",
+			header: "Content",
 			links: [
-				{ title: "Financial Risk", url: "https://www.garp.org/financial-risk" },
-				{ title: "Sustainability and Climate", url: "https://www.garp.org/sustainability-climate-risk" },
-				{ title: "Risk and Artificial Intelligence", url: "https://www.garp.org/artificial-intelligence-risk" },
-			],
-		},
-		column2: {
-			header: "Content Type",
-			links: [
-				{ title: "Articles", url: "https://www.garp.org/events/all?type=chapter_meeting" },
-				{ title: "Podcasts", url: "https://www.garp.org/webcasts" },
+				{ title: "Latest Insights", url: "https://www.garp.org/risk-insights" },
+				{ title: "Articles", url: "https://www.garp.org/risk-insights-resources?types=article" },
+				{ title: "Podcasts", url: "https://www.garp.org/risk-insights-resources?types=podcast" },
 				{
-					title: "View All",
-					url: "https://www.garp.org/risk-insights-resources?types=article%2Cpodcast%2Cresource%2Cwebcast%2Cwhite_paper",
+					title: "Research and Reports",
+					url: "https://www.garp.org/risk-insights-resources?types=research%2Cwhite_paper",
 				},
 			],
 		},
-		column3: {
+		column2: {
 			header: "Events",
 			links: [
-				{ title: "Chapter Meetings", url: "https://www.garp.org/events/all?type=chapter_meeting" },
-				{ title: "Webcasts", url: "https://www.garp.org/webcasts" },
-				{ title: "Risk Events", url: "https://www.garp.org/events" },
-				{ title: "View All", url: "https://www.garp.org/events/all" },
+				{ title: "Upcoming Events", url: "https://www.garp.org/events" },
+				{
+					title: "Financial Risk Symposium",
+					url: "https://www.garp.org/event/2026-financial-risk-symposium",
+				},
+				{
+					title: "Climate and Nature Risk Symposium",
+					url: "https://www.garp.org/event/2026-climate-nature-symposium",
+				},
 			],
 		},
 	},
 	{
 		title: "About Us",
+		accentToken: "dark-blue-gray",
+		icon: Building2,
 		column1: {
 			header: "About Us",
 			links: [
 				{ title: "About GARP", url: "https://www.garp.org/about" },
 				{ title: "Board of Trustees", url: "https://www.garp.org/about/board-of-trustees" },
-				{ title: "GARP Risk Institute", url: "https://www.garp.org/sustainability-climate-risk" },
 				{ title: "Press Room", url: "https://www.garp.org/about/press-room" },
 				{ title: "Careers at GARP", url: "https://www.garp.org/about/careers-at-garp" },
 				{ title: "Contact Us", url: "https://www.garp.org/about/contact-us" },
@@ -163,6 +183,13 @@ export const TOP_NAV_ITEMS: TopNavItem[] = [
 				{
 					title: "GARP Benchmarking Initiative",
 					url: "https://www.garp.org/garp-benchmarking-initiative",
+					openInNewTab: true,
+				},
+				{
+					// Lives under Industry Engagement on live, not About Us — and the
+					// old entry pointed at the sustainability hub, not the institute.
+					title: "GARP Risk Institute",
+					url: "https://www.garp.org/garp-risk-institute",
 					openInNewTab: true,
 				},
 			],

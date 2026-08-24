@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { BookOpen, CalendarDays, CircleUser, ScrollText, Users, X } from "lucide-react"
 
 import {
@@ -17,9 +18,11 @@ import { CpdCreditBars } from "@/components/molecules/cpd-credit-bars"
 import { MetaLines } from "@/components/molecules/meta-lines"
 import { DashboardEnrolledList } from "@/components/molecules/dashboard-enrolled-list"
 import { DashboardEventsList } from "@/components/molecules/dashboard-events-list"
+import { DashboardNotificationsDialog } from "@/components/molecules/dashboard-notifications-dialog"
 import { DirectorySearch } from "@/components/molecules/directory-search"
 import { ProfileCompletenessMeter } from "@/components/molecules/profile-completeness-meter"
 import { StatusBadge } from "@/components/molecules/status-badge"
+import { DASHBOARD_NOTIFICATIONS_CARD } from "@/config/dashboard"
 import { DASHBOARD_PROVIDER } from "@/lib/compose-dashboard-cards"
 import { buildDashboardCardPresentation } from "@/lib/dashboard-card-presentation"
 import { resolvePortalAssetUrl } from "@/lib/resolve-portal-asset-url"
@@ -73,8 +76,11 @@ function DashboardCard({ card, onDismiss, className }: DashboardCardProps) {
 	const isDirectory = card.provider === DASHBOARD_PROVIDER.directory
 	const isEnrolled = card.provider === DASHBOARD_PROVIDER.enrolled
 	const isEvents = card.provider === DASHBOARD_PROVIDER.events
+	const isNotifications = card.provider === DASHBOARD_PROVIDER.notifications
 	const isCpd = card.provider === DASHBOARD_PROVIDER.cpd
 	const meta = asDashboardCardMeta(card.meta)
+	const notifications = meta.notifications ?? []
+	const [notificationsOpen, setNotificationsOpen] = useState(false)
 	const imageUrl = resolvePortalAssetUrl(card.imageUrl) ?? card.imageUrl
 	const percent =
 		typeof meta.percentComplete === "number"
@@ -209,17 +215,70 @@ function DashboardCard({ card, onDismiss, className }: DashboardCardProps) {
 						<DirectorySearch className="min-h-40" />
 					</div>
 				) : null}
+
+				{isNotifications && notifications.length > 0 ? (
+					<ul className="space-y-2">
+						{notifications
+							.slice(0, DASHBOARD_NOTIFICATIONS_CARD.previewLimit)
+							.map((notice, index) => (
+								<li
+									key={`${notice.notificationTitle ?? "notice"}-${index}`}
+									className="rounded-xl border border-border/60 bg-background/50 p-3"
+								>
+									<p className="text-sm font-semibold text-foreground">
+										{notice.notificationTitle ?? "Notification"}
+									</p>
+									{notice.notificationDetails ? (
+										<p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+											{notice.notificationDetails}
+										</p>
+									) : null}
+								</li>
+							))}
+						{notifications.length >
+						DASHBOARD_NOTIFICATIONS_CARD.previewLimit ? (
+							<li className="text-xs text-muted-foreground">
+								{notifications.length -
+									DASHBOARD_NOTIFICATIONS_CARD.previewLimit}{" "}
+								more
+							</li>
+						) : null}
+					</ul>
+				) : null}
 			</CardContent>
 
 			<CardFooter className="mt-auto border-t border-border/60 bg-transparent px-5 py-4">
-				<CardCta
-					label={card.ctaLabel}
-					url={card.ctaUrl}
-					isExternal={card.ctaIsExternal}
-					locked={card.locked}
-					disabled={isExam}
-				/>
+				{/*
+				 * Notifications open a dialog rather than navigating — there is no
+				 * notifications route, and the legacy's See All does the same.
+				 */}
+				{isNotifications ? (
+					<Button
+						type="button"
+						variant="ghost"
+						className="px-0 text-sm font-semibold text-primary hover:bg-transparent hover:text-primary/80"
+						onClick={() => setNotificationsOpen(true)}
+					>
+						{card.ctaLabel ?? DASHBOARD_NOTIFICATIONS_CARD.ctaLabel}
+					</Button>
+				) : (
+					<CardCta
+						label={card.ctaLabel}
+						url={card.ctaUrl}
+						isExternal={card.ctaIsExternal}
+						locked={card.locked}
+						disabled={isExam}
+					/>
+				)}
 			</CardFooter>
+
+			{isNotifications ? (
+				<DashboardNotificationsDialog
+					open={notificationsOpen}
+					onOpenChange={setNotificationsOpen}
+					notifications={notifications}
+				/>
+			) : null}
 		</Card>
 	)
 }

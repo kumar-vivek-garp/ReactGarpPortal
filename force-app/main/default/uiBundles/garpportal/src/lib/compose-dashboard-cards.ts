@@ -1,5 +1,8 @@
 import type { Completeness } from "@/api/account/types"
+import type { AdInfo } from "@/api/dashboard"
+import type { ProgramExamNotification } from "@/api/notifications"
 import type {
+	DashboardComponent,
 	DashboardEnrolledPreview,
 	DashboardEventPreview,
 	PortalCard,
@@ -7,6 +10,15 @@ import type {
 import type { CpdView } from "@/api/cpd"
 import type { MemberEvent } from "@/api/events"
 import type { EnrolledProgram } from "@/api/programs"
+import {
+	adRegistrationHref,
+	DASHBOARD_AD_CARD,
+	DASHBOARD_COMPONENT,
+	DASHBOARD_DIRECTORY_CARD,
+	DASHBOARD_NOTIFICATIONS_CARD,
+	DASHBOARD_PORTAL_CARDS,
+	DASHBOARD_PORTAL_LINKS,
+} from "@/config/dashboard"
 import {
 	cpdCardTitle,
 	cpdRemainingLabel,
@@ -24,21 +36,24 @@ export const DASHBOARD_PROVIDER = {
 	enrolled: "EnrolledPrograms",
 	events: "Events",
 	cpd: "CPDCredits",
+	portal: "ExternalPortal",
+	advertisement: "Advertisement",
+	notifications: "ExamNotifications",
 } as const
 
-/** Same ranks as legacy `GARP_BC_MemberPortal.getDashboardInfo`. */
-const ENROLLED_RANK = 1
-const CPD_RANK = 10
-const EVENTS_RANK = 20
 const PREVIEW_LIMIT = 2
 
 type ComposeDashboardCardsInput = {
-	serverCards: PortalCard[]
+	/** The server's `{ name, rankOrder }` manifest. */
+	components: DashboardComponent[]
 	enrolledPrograms: EnrolledProgram[]
 	registeredEvents: MemberEvent[]
 	/** `null` when the member has no CPD program. */
 	cpd?: CpdView | null
 	completeness?: Completeness | null
+	/** `GET ad` — null while loading, or when the member is mid-programme. */
+	ad?: AdInfo | null
+	examNotifications?: ProgramExamNotification[]
 	/** Defaults to `FORCE_SHOW_ALL_DASHBOARD_CARDS`. Tests pass false. */
 	showAll?: boolean
 }
@@ -123,23 +138,17 @@ function composedCard(input: {
 	}
 }
 
-/**
- * Legacy dashboard visibility, applied on top of `GET /memberportal/dashboard`.
- *
- * Enrolled Programs and My Events are not in that payload — the old remoting
- * page loaded them as follow-up component calls. We use the already-shipped
- * programs/events REST views and the same show/hide rules:
- * - Enrolled card when `enrolledPrograms` is non-empty (max 2)
- * - Events card when `registeredEvents` is non-empty (max 2)
- * - Hide Advertisement / ExamRegistration when the member is enrolled
- *   (legacy `computeAdType` returns null on any open exam attempt)
- */
-function profileCard(completeness: Completeness): PortalCard {
+/** The profile card. Content is client-side; the server only says whether to show it. */
+function profileCard(
+	completeness: Completeness | null | undefined,
+	rank: number,
+): PortalCard | null {
+	if (!completeness) return null
 	return {
 		key: "Dashboard_Profile_Completeness",
 		page: "Dashboard",
 		provider: DASHBOARD_PROVIDER.profile,
-		rank: 8,
+		rank,
 		title: "Your Profile Is Missing Information",
 		body: "Click below to help us better recommend you learning, networking, and programming.",
 		ctaLabel: "Update My Profile",
@@ -159,12 +168,54 @@ function profileCard(completeness: Completeness): PortalCard {
 	}
 }
 
+/** One of the three sibling Salesforce apps. Always a full page navigation. */
+function portalCard(
+	key: keyof typeof DASHBOARD_PORTAL_CARDS,
+	rank: number,
+): PortalCard {
+	const copy = DASHBOARD_PORTAL_CARDS[key]
+	return {
+		...composedCard({
+			key: `Dashboard_${key}`,
+			provider: DASHBOARD_PROVIDER.portal,
+			rank,
+			title: copy.title,
+			ctaLabel: copy.ctaLabel,
+			ctaUrl: DASHBOARD_PORTAL_LINKS[key],
+			meta: {},
+		}),
+		body: copy.body,
+		ctaIsExternal: true,
+	}
+}
+
+/**
+ * Turns the server's card manifest into renderable cards.
+ *
+ * **The server owns which cards appear and in what order.** `dashboardComponents`
+ * is a list of `{ name, rankOrder }`; this maps each known name onto a card and
+ * sorts by the server's rank. A name the switch does not know renders nothing,
+ * which is the legacy's behaviour and means a new server-side card is inert
+ * rather than broken until the client learns it.
+ *
+ * Cards whose content lives elsewhere are dropped when that content is absent —
+ * a manifest entry for Events with no registrations would otherwise draw an
+ * empty card. The manifest decides eligibility; the data decides whether there
+ * is anything worth showing.
+ *
+ * Not yet handled, and deliberately inert rather than half-drawn:
+ * `Advertisement` (needs `GET ad` for the administration name and whether
+ * registration is open) and `Exam Notifications` (needs the notifications list
+ * and its dialog).
+ */
 export function composeDashboardCards({
-	serverCards,
+	components,
 	enrolledPrograms,
 	registeredEvents,
 	cpd,
 	completeness,
+	ad,
+	examNotifications,
 	showAll = FORCE_SHOW_ALL_DASHBOARD_CARDS,
 }: ComposeDashboardCardsInput): PortalCard[] {
 	const enrolled = enrolledPreviews(
@@ -173,71 +224,140 @@ export function composeDashboardCards({
 	const upcoming = eventPreviews(
 		Array.isArray(registeredEvents) ? registeredEvents : [],
 	)
-	const hideExamPromo = !showAll && enrolled.length > 0
-
-	const cards = (Array.isArray(serverCards) ? serverCards : []).filter((card) => {
-		if (hideExamPromo && card.provider === DASHBOARD_PROVIDER.exam) {
-			return false
-		}
-		return true
-	})
-
-	if (
-		showAll &&
-		completeness &&
-		!cards.some((card) => card.provider === DASHBOARD_PROVIDER.profile)
-	) {
-		cards.push(profileCard(completeness))
-	}
-
-	/*
-	 * Gated on there being a bar to draw, which covers both empty cases: a
-	 * member with no CPE contract (401 → null upstream) and one with a contract
-	 * but no completed certification, who comes back 200 with every number
-	 * null. The legacy rendered a blank chart for both.
-	 */
 	const cpdRows = dashboardCreditRows(cpd)
-	if (cpdRows.length > 0) {
-		cards.push(
-			composedCard({
-				key: "Dashboard_CPD",
-				provider: DASHBOARD_PROVIDER.cpd,
-				rank: CPD_RANK,
-				title: cpdCardTitle(cpd),
-				ctaLabel: "Manage Credits",
-				ctaUrl: "/cpd",
-				meta: { cpdRows, cpdRemaining: cpdRemainingLabel(cpd) },
-			}),
-		)
-	}
+	const notices = Array.isArray(examNotifications) ? examNotifications : []
+	const manifest = Array.isArray(components) ? components : []
 
-	if (showAll || enrolled.length > 0) {
-		cards.push(
-			composedCard({
-				key: "Dashboard_Enrolled_Programs",
-				provider: DASHBOARD_PROVIDER.enrolled,
-				rank: ENROLLED_RANK,
-				title: "Enrolled Programs",
-				ctaLabel: "See all enrolled programs",
-				ctaUrl: "/programs?tab=in-progress",
-				meta: { enrolledPrograms: enrolled },
-			}),
-		)
-	}
+	const cards = manifest.flatMap<PortalCard>((component) => {
+		const rank = component.rankOrder ?? 0
+		switch (component.name) {
+			case DASHBOARD_COMPONENT.enrolled:
+				if (!showAll && enrolled.length === 0) return []
+				return composedCard({
+					key: "Dashboard_Enrolled_Programs",
+					provider: DASHBOARD_PROVIDER.enrolled,
+					rank,
+					title: "Enrolled Programs",
+					ctaLabel: "See all enrolled programs",
+					ctaUrl: "/programs?tab=in-progress",
+					meta: { enrolledPrograms: enrolled },
+				})
 
-	if (showAll || upcoming.length > 0) {
-		cards.push(
-			composedCard({
-				key: "Dashboard_Events",
-				provider: DASHBOARD_PROVIDER.events,
-				rank: EVENTS_RANK,
-				title: "My Events",
-				ctaLabel: "See all my events",
-				ctaUrl: "/events?tab=attending",
-				meta: { upcomingEvents: upcoming },
-			}),
-		)
-	}
+			case DASHBOARD_COMPONENT.cpd:
+				/*
+				 * Gated on there being a bar to draw, which covers both empty
+				 * cases: no CPE contract, and a contract with nothing certified
+				 * yet (200 with every number null). The legacy drew a blank chart
+				 * for both.
+				 */
+				if (cpdRows.length === 0) return []
+				return composedCard({
+					key: "Dashboard_CPD",
+					provider: DASHBOARD_PROVIDER.cpd,
+					rank,
+					title: cpdCardTitle(cpd),
+					ctaLabel: "Manage Credits",
+					ctaUrl: "/cpd",
+					meta: { cpdRows, cpdRemaining: cpdRemainingLabel(cpd) },
+				})
+
+			case DASHBOARD_COMPONENT.events:
+				if (!showAll && upcoming.length === 0) return []
+				return composedCard({
+					key: "Dashboard_Events",
+					provider: DASHBOARD_PROVIDER.events,
+					rank,
+					title: "My Events",
+					ctaLabel: "See all my events",
+					ctaUrl: "/events?tab=attending",
+					meta: { upcomingEvents: upcoming },
+				})
+
+			case DASHBOARD_COMPONENT.profile: {
+				const card = profileCard(completeness, rank)
+				return card ? card : []
+			}
+
+			case DASHBOARD_COMPONENT.directory:
+				return {
+					...composedCard({
+						key: "Dashboard_Member_Directory",
+						provider: DASHBOARD_PROVIDER.directory,
+						rank,
+						title: DASHBOARD_DIRECTORY_CARD.title,
+						ctaLabel: DASHBOARD_DIRECTORY_CARD.ctaLabel,
+						ctaUrl: DASHBOARD_DIRECTORY_CARD.ctaUrl,
+						meta: { searchEnabled: true },
+					}),
+				}
+
+			case DASHBOARD_COMPONENT.gbi:
+				return portalCard("gbi", rank)
+			case DASHBOARD_COMPONENT.epp:
+				return portalCard("epp", rank)
+			case DASHBOARD_COMPONENT.benchPrep:
+				return portalCard("benchPrep", rank)
+
+			case DASHBOARD_COMPONENT.advertisement: {
+				/*
+				 * `adType` null is a success meaning "nothing to sell" — the
+				 * member sits everything already, or has a result pending. The
+				 * manifest can still list the card, because the dashboard payload
+				 * decides that from a cheaper check than the ad service runs.
+				 */
+				const adType = ad?.adType?.trim()
+				if (!adType) return []
+				const href = adRegistrationHref(adType)
+				const open = ad?.isRegistrationOpen === true
+				return {
+					...composedCard({
+						key: "Dashboard_Advertisement",
+						provider: DASHBOARD_PROVIDER.advertisement,
+						rank,
+						title: `Take the ${adType} exam`,
+						ctaLabel: DASHBOARD_AD_CARD.ctaLabel,
+						// Only offered while registration is actually open; the card
+						// still shows the window when it is not.
+						ctaUrl: open && href ? href : "",
+						meta: {
+							examType: adType,
+							administrationName: ad?.adminName ?? undefined,
+							isRegistrationOpen: open,
+							registrationEnd: ad?.nextAdminRegistrationOpenDate ?? null,
+						},
+					}),
+					eyebrow: DASHBOARD_AD_CARD.eyebrow,
+					body: ad?.adminName?.trim()
+						? open
+							? `Registration is open for ${ad.adminName}.`
+							: `The next administration is ${ad.adminName}.`
+						: null,
+					ctaLabel: open ? DASHBOARD_AD_CARD.ctaLabel : null,
+					ctaUrl: open && href ? href : null,
+					ctaIsExternal: true,
+				}
+			}
+
+			case DASHBOARD_COMPONENT.examNotifications:
+				// The manifest only lists this when the notice list was non-empty
+				// server-side, but it is fetched separately — so an empty list here
+				// means the two disagreed, and an empty card helps nobody.
+				if (notices.length === 0) return []
+				return composedCard({
+					key: "Dashboard_Exam_Notifications",
+					provider: DASHBOARD_PROVIDER.notifications,
+					rank,
+					title: DASHBOARD_NOTIFICATIONS_CARD.title,
+					ctaLabel: DASHBOARD_NOTIFICATIONS_CARD.ctaLabel,
+					ctaUrl: "",
+					meta: { notifications: notices },
+				})
+
+			default:
+				// A card the server has learned about and this client has not.
+				return []
+		}
+	})
 
 	return cards.slice().sort((left, right) => left.rank - right.rank)
 }

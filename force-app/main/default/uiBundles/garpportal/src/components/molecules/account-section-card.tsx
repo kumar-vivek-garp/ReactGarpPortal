@@ -29,7 +29,16 @@ const PULSE_SPRING = { mass: 1, tension: 90, friction: 24 }
  */
 export type AccountSaveState = "idle" | "saving" | "saved"
 
-type AccountSectionCardBaseProps = {
+/**
+ * The bento slots every Account Information card forwards. Kept as one type so
+ * a new card cannot forget half of the pair.
+ */
+type AccountCardSlotProps = {
+	/** Reorder grip, leading the card title. */
+	handle?: ReactNode
+}
+
+type AccountSectionCardBaseProps = AccountCardSlotProps & {
 	/** Overrides the section blurb when the copy is conditional (membership). */
 	subtitle?: string
 	/** Extreme-right control in the title row (e.g. Edit). */
@@ -114,6 +123,7 @@ function AccountSectionCard({
 	saveState = "idle",
 	spotlight = false,
 	missingCount = 0,
+	handle,
 	children,
 	className,
 }: AccountSectionCardProps) {
@@ -149,6 +159,7 @@ function AccountSectionCard({
 			 */}
 			<CardHeader className="gap-1.5">
 				<CardTitle className="flex min-w-0 items-center gap-2 font-heading text-lg tracking-wide">
+					{handle}
 					{Icon ? (
 						<span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
 							<Icon className="size-4.5" aria-hidden />
@@ -171,9 +182,12 @@ function AccountSectionCard({
 				</CardAction>
 			</CardHeader>
 
-			<CardContent className="flex flex-1 flex-col gap-2.5">{children}</CardContent>
+			<CardContent className="flex flex-1 flex-col gap-2.5">
+				{children}
+			</CardContent>
 		</Card>
 	)
 }
 
 export { AccountSectionCard }
+export type { AccountCardSlotProps }

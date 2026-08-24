@@ -201,6 +201,15 @@ export type CpdActivityView = {
 
 /** Query-string filters. Multi-value fields are semicolon-delimited. */
 export type CpdActivityFilters = {
+	/**
+	 * One activity by id.
+	 *
+	 * **Overrides everything else.** Apex builds `WHERE Id = :singleId` and
+	 * drops the facet, sort and paging clauses entirely — the filters are not
+	 * combined with it, they are ignored. An unknown id is not an error either:
+	 * it comes back as an empty list at 200.
+	 */
+	activityId?: string
 	activityTypes?: string[]
 	areasOfStudy?: string[]
 	providers?: string[]

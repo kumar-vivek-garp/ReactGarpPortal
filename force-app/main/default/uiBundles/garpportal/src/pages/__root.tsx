@@ -6,7 +6,6 @@ import { preconnect, preload } from "react-dom"
 
 import { Toaster } from "@/components/atoms/sonner"
 import { COMMON_PROGRAM_LOGO_URLS, GARP_HUB_ORIGIN } from "@/config/program-logos"
-import { GARP_LOGO_KNOCKOUT } from "@/config/navigation/garp-logos"
 import klinicBook from "@/assets/fonts/KlinicSlabBook.woff2?url"
 import klinicBold from "@/assets/fonts/KlinicSlabBold.woff2?url"
 import nunitoBold from "@/assets/fonts/NunitoSans-Bold.woff2?url"
@@ -84,7 +83,6 @@ function RootComponent() {
 			fetchPriority: "high",
 		})
 	}
-	preload(GARP_LOGO_KNOCKOUT, { as: "image", fetchPriority: "high" })
 	for (const href of COMMON_PROGRAM_LOGO_URLS) {
 		preload(href, { as: "image" })
 	}

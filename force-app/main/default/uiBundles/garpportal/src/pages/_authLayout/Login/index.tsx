@@ -5,7 +5,8 @@ import { z } from "zod"
 import { LoginForm } from "@/components/organisms/login-form"
 import { isLocalCliAuthEnabled } from "@/auth/local-cli-auth"
 import { AUTH_REDIRECT_PARAM } from "@/auth/constants"
-import { GARP_AUTH_BG, GARP_LOGO_FULL } from "@/config/navigation/garp-logos"
+import { GarpLogoFull } from "@/components/atoms/garp-logo-full"
+import { GARP_AUTH_BG } from "@/config/navigation/garp-logos"
 import { pageTitle } from "@/lib/document-title"
 
 const loginSearchSchema = z.object({
@@ -46,11 +47,8 @@ function Login() {
 					<AuthLocalTools />
 				</Suspense>
 			) : null}
-			<img
-				src={GARP_LOGO_FULL}
-				alt="GARP - Global Association of Risk Professionals"
-				className="h-auto w-full max-w-sm"
-			/>
+			{/* Pinned to knockout: the backdrop image is dark in either theme. */}
+			<GarpLogoFull className="h-auto w-full max-w-sm text-toolbar-foreground" />
 			<LoginForm />
 			<footer className="flex flex-col items-center gap-3 text-caption text-corporate-navy-foreground">
 				<ul className="flex flex-wrap justify-center gap-4">

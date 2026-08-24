@@ -8,7 +8,10 @@ import {
 	SelectValue,
 } from "@/components/atoms/select"
 import { Skeleton } from "@/components/atoms/skeleton"
-import { AccountSectionCard } from "@/components/molecules/account-section-card"
+import {
+	AccountSectionCard,
+	type AccountCardSlotProps,
+} from "@/components/molecules/account-section-card"
 import { CardCta } from "@/components/molecules/card-cta"
 import { useAccountOptions } from "@/hooks/use-account-options"
 import { useSaveState } from "@/hooks/use-save-state"
@@ -16,7 +19,7 @@ import { useSavePreferredChapters } from "@/hooks/use-save-account-profile"
 
 const NONE_VALUE = "__none__"
 
-type PreferredChaptersCardProps = {
+type PreferredChaptersCardProps = AccountCardSlotProps & {
 	account: AccountView
 }
 
@@ -80,7 +83,10 @@ function ChapterSelect({
 	)
 }
 
-function PreferredChaptersCard({ account }: PreferredChaptersCardProps) {
+function PreferredChaptersCard({
+	account,
+	handle,
+}: PreferredChaptersCardProps) {
 	const { identity, chapters } = account
 	const optionsQuery = useAccountOptions(true)
 	const saveMutation = useSavePreferredChapters(identity.contactId)
@@ -96,9 +102,17 @@ function PreferredChaptersCard({ account }: PreferredChaptersCardProps) {
 	}
 
 	return (
-		<AccountSectionCard section="chapters" saveState={saveState}>
+		<AccountSectionCard
+			section="chapters"
+			saveState={saveState}
+			handle={handle}
+		>
 			{optionsQuery.isPending ? (
-				<div className="flex flex-col gap-3" aria-busy aria-label="Loading chapters">
+				<div
+					className="flex flex-col gap-3"
+					aria-busy
+					aria-label="Loading chapters"
+				>
 					<Skeleton className="h-3.5 w-28" />
 					<Skeleton className="h-9 w-full rounded-md" />
 					<Skeleton className="h-3.5 w-32" />

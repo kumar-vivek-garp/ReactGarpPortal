@@ -1,4 +1,5 @@
 import { isLocalViteHost } from "@/auth/sfdc-env"
+import { ERRATA_PROGRAM_SLUGS } from "@/config/errata"
 import { orderDetailsPath } from "@/lib/order-paths"
 import { resolvePortalAssetUrl } from "@/lib/resolve-portal-asset-url"
 
@@ -92,6 +93,36 @@ export function programResultsPath(programType: string): string | null {
 }
 
 /**
+ * In-app work experience for a program (`/programs/{slug}/work-experience`).
+ *
+ * Narrower than the detail gate: only FRM and ERP carry a certification CV,
+ * and Apex silently treats anything that is not FRM as ERP — so an unguarded
+ * slug would quietly show one programme's CV under another's name.
+ */
+export function programWorkExperiencePath(programType: string): string | null {
+	const slug = programTypeSlug(programType)
+	if (slug !== "frm" && slug !== "erp") return null
+	return `/programs/${slug}/work-experience`
+}
+
+/**
+ * In-app curriculum errata for a program (`/programs/{slug}/errata`).
+ *
+ * Narrower than the detail gate. Apex entitles a member holding an activated
+ * contract on FRM, SCR, RiskAI, RAIJ or ICBRR — everything else (FRR, FRR25,
+ * micro courses) has no published curriculum to report against, and the legacy
+ * hides the link for exactly those.
+ */
+export function programErrataPath(programType: string): string | null {
+	const slug = programTypeSlug(programType)
+	if (!slug) return null
+	const routeSlug = slug === "rai" ? "riskai" : slug
+	return (ERRATA_PROGRAM_SLUGS as readonly string[]).includes(routeSlug)
+		? `/programs/${routeSlug}/errata`
+		: null
+}
+
+/**
  * Absolute on local Vite; same-origin relative on Experience (MyGarp + portal
  * share `*.my.site.com`).
  */
@@ -105,8 +136,25 @@ function myGarpSfdcAppHref(hashRoute: string): string {
 }
 
 /**
+ * In-app course detail (`/courses/{slug}`).
+ *
+ * The complement of `programDetailsPath`: anything the two-part detail
+ * endpoint does not serve is a course, and `courseDetail` does serve it. Both
+ * the three fixed courses and micro courses go here — micro codes cannot be
+ * enumerated, so the slug is passed through and Apex resolves it.
+ */
+export function programCoursePath(programType: string): string | null {
+	const slug = programTypeSlug(programType)
+	if (!slug || supportsInAppProgramDetail(slug)) return null
+	return `/courses/${slug}`
+}
+
+/**
  * MyGarp program detail (legacy `myprograms-type` → `/myprograms/:examType`).
- * Used for types Apex detail does not support (FFR / FRR / micro).
+ *
+ * The last-resort fallback. It used to serve FFR / FRR / micro, which now have
+ * a real page — see `programCoursePath`. Kept for anything neither endpoint
+ * knows about.
  */
 export function programDetailsHref(programType: string): string | null {
 	const slug = programTypeSlug(programType)

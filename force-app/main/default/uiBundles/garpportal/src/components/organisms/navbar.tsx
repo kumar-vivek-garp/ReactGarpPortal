@@ -1,79 +1,43 @@
-import { useEffect } from "react"
-import { animated, useSpring } from "@react-spring/web"
-
-import { MobileNavBar } from "@/components/molecules/mobile-nav-sheet"
-import { NavMegaMenuItem } from "@/components/molecules/nav-mega-menu-item"
+import { GarpLogoMark } from "@/components/atoms/garp-logo-mark"
+import { MobileNavBar } from "@/components/organisms/mobile-nav-bar"
+import { NavMegaMenu } from "@/components/organisms/nav-mega-menu"
 import { SignOutButton } from "@/components/molecules/sign-out-button"
 import { ThemeToggle } from "@/components/molecules/theme-toggle"
-import { GARP_LOGO_KNOCKOUT } from "@/config/navigation/garp-logos"
-import { TOP_NAV_ITEMS } from "@/config/navigation/top-nav-items"
-import { useNavigationStore } from "@/store/navigation-store"
 
+/**
+ * App chrome header.
+ *
+ * Desktop geometry is derived from the shell grid tokens rather than the magic
+ * margins this bar used to carry, so three edges line up down the page:
+ *
+ *   |<-- shell-rail -->|<- gutter ->|
+ *   |  [GARP]          |  FRM  SCR  …        ← toolbar
+ *   |  (avatar) NAME   |  Dashboard…         ← sidebar / main column
+ *
+ * The mega-menu, its scrim, and the overflow logic all live in `NavMegaMenu`.
+ */
 function Navbar() {
-	const openDesktopNavTitle = useNavigationStore((state) => state.openDesktopNavTitle)
-	const closeDesktopNav = useNavigationStore((state) => state.closeDesktopNav)
-	const scheduleCloseDesktopNav = useNavigationStore((state) => state.scheduleCloseDesktopNav)
-	const isDesktopNavOpen = Boolean(openDesktopNavTitle)
-
-	const overlaySpring = useSpring({
-		opacity: isDesktopNavOpen ? 1 : 0,
-		config: { mass: 0.9, tension: 320, friction: 26 },
-	})
-
-	useEffect(() => {
-		if (!openDesktopNavTitle) return
-		function onKeyDown(event: KeyboardEvent) {
-			if (event.key === "Escape") closeDesktopNav()
-		}
-		window.addEventListener("keydown", onKeyDown)
-		return () => window.removeEventListener("keydown", onKeyDown)
-	}, [openDesktopNavTitle, closeDesktopNav])
-
 	return (
 		<>
-			{/* Desktop toolbar — mirrors live app-desktop-nav-bar (fixed 80px black bar). */}
+			{/* Fixed 80px black bar, desktop only. */}
 			<header className="fixed top-0 right-0 left-0 z-[1000] box-border hidden h-20 max-w-[100vw] items-center bg-toolbar text-toolbar-foreground app:flex">
-				<a href="https://www.garp.org/" className="mr-[25px] ml-[38px] shrink-0">
-					<img
-						src={GARP_LOGO_KNOCKOUT}
-						alt="GARP logo"
-						width={125}
-						height={36}
-						decoding="async"
-						fetchPriority="high"
-						className="w-[125px]"
-					/>
+				{/* Logo slot is exactly the sidebar's width, inset to the sidebar avatar. */}
+				<a
+					href="https://www.garp.org/"
+					className="flex w-shell-rail shrink-0 items-center pl-shell-inset"
+				>
+					<GarpLogoMark className="h-auto w-[125px]" />
 				</a>
 
-				<nav className="flex min-w-0 flex-1 items-center" aria-label="Primary">
-					{TOP_NAV_ITEMS.map((item) => (
-						<NavMegaMenuItem key={item.title} item={item} />
-					))}
-				</nav>
+				<NavMegaMenu />
 
-				<div className="ml-auto flex shrink-0 items-center gap-1 pr-4">
+				<div className="flex shrink-0 items-center gap-1 pr-shell-gutter">
 					<ThemeToggle variant="toolbar" />
-					<SignOutButton className="whitespace-nowrap text-body max-[1000px]:px-3 max-[1000px]:text-caption" />
+					<SignOutButton className="whitespace-nowrap text-body" />
 				</div>
 			</header>
 
-			{/*
-			 * Dim overlay — click closes immediately; mouseenter only schedules a close
-			 * so crossing the gap into the panel (z-2000 above) can cancel it.
-			 */}
-			<animated.div
-				className="fixed top-20 right-0 bottom-0 left-0 z-[999] hidden bg-black/50 app:block"
-				style={{
-					...overlaySpring,
-					visibility: overlaySpring.opacity.to((opacity) => (opacity > 0.01 ? "visible" : "hidden")),
-					pointerEvents: isDesktopNavOpen ? "auto" : "none",
-				}}
-				onClick={closeDesktopNav}
-				onMouseEnter={scheduleCloseDesktopNav}
-				aria-hidden="true"
-			/>
-
-			{/* Mobile toolbar — mirrors live app-mobile-nav-bar (< 960px). */}
+			{/* Mobile toolbar + full-screen menu (< 960px). */}
 			<MobileNavBar />
 
 			{/* Spacer so page content clears the fixed toolbars. */}

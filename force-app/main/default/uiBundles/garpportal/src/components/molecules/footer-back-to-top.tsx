@@ -3,6 +3,7 @@ import { animated, useSpring } from "@react-spring/web"
 import { ArrowUp } from "lucide-react"
 
 import { Button } from "@/components/atoms/button"
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion"
 
 const SHOW_AFTER_PX = 280
 const RING_R = 10
@@ -18,17 +19,9 @@ function pageScrollProgress() {
 }
 
 function FooterBackToTop() {
-	const [reduceMotion, setReduceMotion] = useState(false)
+	const reduceMotion = usePrefersReducedMotion()
 	const [visible, setVisible] = useState(false)
 	const [progress, setProgress] = useState(0)
-
-	useEffect(() => {
-		const media = window.matchMedia("(prefers-reduced-motion: reduce)")
-		const sync = () => setReduceMotion(media.matches)
-		sync()
-		media.addEventListener("change", sync)
-		return () => media.removeEventListener("change", sync)
-	}, [])
 
 	useEffect(() => {
 		const onScroll = () => {

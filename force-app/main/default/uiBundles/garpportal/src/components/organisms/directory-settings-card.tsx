@@ -2,12 +2,15 @@ import type { AccountView } from "@/api/account/types"
 import type { AccountProfileValues } from "@/api/account/save-profile"
 import { Checkbox } from "@/components/atoms/checkbox"
 import { Label } from "@/components/atoms/label"
-import { AccountSectionCard } from "@/components/molecules/account-section-card"
+import {
+	AccountSectionCard,
+	type AccountCardSlotProps,
+} from "@/components/molecules/account-section-card"
 import { useSaveDirectorySettings } from "@/hooks/use-save-account-profile"
 import { useSaveState } from "@/hooks/use-save-state"
 import { cn } from "@/lib/utils"
 
-type DirectorySettingsCardProps = {
+type DirectorySettingsCardProps = AccountCardSlotProps & {
 	account: AccountView
 }
 
@@ -73,7 +76,10 @@ function DirectoryCheck({
 	)
 }
 
-function DirectorySettingsCard({ account }: DirectorySettingsCardProps) {
+function DirectorySettingsCard({
+	account,
+	handle,
+}: DirectorySettingsCardProps) {
 	const { identity, directory } = account
 	const saveMutation = useSaveDirectorySettings(identity.contactId)
 	const busy = saveMutation.isPending
@@ -100,7 +106,11 @@ function DirectorySettingsCard({ account }: DirectorySettingsCardProps) {
 	}
 
 	return (
-		<AccountSectionCard section="directory" saveState={saveState}>
+		<AccountSectionCard
+			section="directory"
+			saveState={saveState}
+			handle={handle}
+		>
 			<div className="flex flex-col gap-2.5">
 				<DirectoryCheck
 					id="directory-opt-in"

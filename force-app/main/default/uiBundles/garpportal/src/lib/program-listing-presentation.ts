@@ -7,11 +7,11 @@ import type {
 import { formatLongDate } from "@/lib/account-format"
 import { daysUntil } from "@/lib/days-until"
 import {
+	programCoursePath,
 	programDetailsHref,
 	programDetailsPath,
 	programLearnMoreUrl,
 	programRegistrationHref,
-	supportsInAppProgramDetail,
 } from "@/lib/program-card-links"
 import { stripProgramFormalName } from "@/lib/program-formal-name"
 import type { MetaLine } from "@/lib/meta-line"
@@ -168,13 +168,18 @@ export function buildProgramListingPresentation(
 				? otherMetaLines(program)
 				: []
 
-	// Details is in-app where Apex supports the type, MyGarp otherwise.
+	/*
+	 * Details is in-app for both kinds now: `programDetail` serves the two-part
+	 * exam programmes and `courseDetail` serves the courses (FRR / FRR25 / FFR
+	 * / micro). MyGarp is the last resort for anything neither endpoint knows.
+	 */
 	const showDetails = variant === "inProgress" || variant === "completed"
 	const inAppDetails = showDetails
-		? programDetailsPath(program.programType)
+		? (programDetailsPath(program.programType) ??
+			programCoursePath(program.programType))
 		: null
 	const externalDetails =
-		showDetails && !supportsInAppProgramDetail(program.programType)
+		showDetails && !inAppDetails
 			? programDetailsHref(program.programType)
 			: null
 	const detailsUrl = inAppDetails ?? externalDetails
