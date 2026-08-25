@@ -27,12 +27,14 @@ import {
 	type ExamSubmitOutcome,
 } from "@/hooks/use-exam-registration-submit"
 import { buildRegisterRequest } from "@/lib/registration-payloads"
+import { cn } from "@/lib/utils"
 import {
 	isComplianceCountry as isComplianceCountryFor,
 	showAddresses as showAddressesFor,
 	showAutorenew as showAutorenewFor,
 	submitLabel as submitLabelFor,
 } from "@/lib/registration-presentation"
+import { FRM_REGISTRATION_HEADING } from "@/config/registration"
 import { LOGIN_PATH } from "@/auth/constants"
 import { getReturnPath } from "@/auth/return-path"
 
@@ -301,9 +303,31 @@ function FrmRegistrationForm({
 							/>
 						</>
 					) : null}
-					<h2 className="truncate font-heading text-xl font-semibold">
-						Register for the FRM Exam
-					</h2>
+					{/*
+					 * An `h1`, not an `h2`: on the public route this is the page's
+					 * only heading, and that page is linked from marketing email.
+					 * It was previously the sole `h2` on a document with no `h1`.
+					 *
+					 * A guest gets the larger size and the supporting line. Nothing
+					 * else occupies the left of the bar for them, and the two lines
+					 * balance the total-plus-button block opposite. A member keeps
+					 * the smaller size, because the back link already sits there.
+					 */}
+					<div className="flex min-w-0 flex-col justify-center">
+						<h1
+							className={cn(
+								"truncate font-heading font-semibold",
+								isAuthenticated ? "text-xl" : "text-2xl leading-tight",
+							)}
+						>
+							{FRM_REGISTRATION_HEADING.title}
+						</h1>
+						{isAuthenticated ? null : (
+							<p className="truncate text-caption leading-tight text-muted-foreground">
+								{FRM_REGISTRATION_HEADING.programme}
+							</p>
+						)}
+					</div>
 				</div>
 
 				<div className="flex items-center gap-4">

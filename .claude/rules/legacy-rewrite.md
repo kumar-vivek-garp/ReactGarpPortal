@@ -21,6 +21,11 @@ Work in this order. Do not invent endpoints or field lists from memory.
 
 If MyGarp shows a flow but GarpAppv1 has no matching API, stop and tell the user — do not guess a GraphQL join to paper over a missing backend.
 
+**Implementing a registration form?** `registration-forms.md` is the detailed
+rule for that path — what to take from GarpAppv1 and what never to copy, the
+guest/member route split, folder shape, UI/UX contract, and the traps that have
+already cost time. Read it before writing any of it.
+
 ## Do not
 
 - Copy GarpAppv1 or MyGarp UI stack (their fetch layer, routing, or styling) into this app.

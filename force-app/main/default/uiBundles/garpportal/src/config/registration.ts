@@ -57,6 +57,20 @@ export function isEnglishName(value: string): boolean {
 /* ===================== exam registration ===================== */
 
 /** Notices the exam form shows in specific situations. */
+/**
+ * Heading copy for the FRM registration form.
+ *
+ * `programme` is GARP's own name for the certification, taken verbatim from the
+ * production mega-menu (`config/navigation/top-nav-items.ts`) rather than
+ * invented. It is shown to guests only: someone arriving from a marketing link
+ * may know "FRM" purely as an acronym, whereas a signed-in member already has
+ * the whole portal around them saying what it is.
+ */
+export const FRM_REGISTRATION_HEADING = {
+	title: "Register for the FRM Exam",
+	programme: "Financial Risk Manager (FRM\u00AE) Certification",
+} as const
+
 export const EXAM_REGISTRATION_COPY = {
 	bothPartsAlert:
 		"Exam centres may not be in the same location. If you sit both parts on the same day, plan for travel between centres — late arrivals cannot sit the exam.",
