@@ -85,9 +85,9 @@ function AppSidebar({ forceSkeleton = false }: { forceSkeleton?: boolean }) {
 	return (
 		/*
 		 * Two elements, because they need different overflow: this wrapper animates
-		 * the width and hosts the edge toggle, which has to be free to overhang;
-		 * the aside inside it does the clipping. One element cannot do both — it
-		 * would slice the toggle in half.
+		 * the width and hosts the toggle, which straddles the rail's right edge and
+		 * so must be free to overhang; the aside inside it does the clipping. One
+		 * element cannot do both — it would slice the toggle in half.
 		 *
 		 * `sticky` already establishes the positioned ancestor the toggle resolves
 		 * against, so no `relative` here — the two would conflict.
