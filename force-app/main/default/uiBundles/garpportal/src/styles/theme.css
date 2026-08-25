@@ -22,6 +22,22 @@
 	--spacing-shell-rail: 294px; /* sidebar width — the toolbar logo slot matches it */
 	--spacing-shell-gutter: 1rem; /* main column gutter (.page-container) */
 	--spacing-shell-inset: 1.5rem; /* sidebar p-3 + row px-3 — where the avatar's left edge lands */
+	/*
+	 * Collapsed rail width = shell-inset (24) + puck (44) + row px-3 (12) +
+	 * container p-3 (12). Derived, not chosen: at exactly this width the 44px
+	 * icon puck keeps the same left edge it has when expanded, so collapsing
+	 * moves the panel's right edge and nothing else.
+	 */
+	--spacing-shell-rail-collapsed: 92px;
+	/*
+	 * Toolbar logo slot. Deliberately *narrower* than `shell-rail`: pinning it to
+	 * the full rail left ~150px of dead air between the wordmark and the first
+	 * nav label, which reads as a broken header rather than as alignment. The
+	 * logo's left edge still sits on `shell-inset` (above the sidebar avatar);
+	 * only the slot's right edge moves, so the nav row starts closer to the
+	 * brand and the top nav no longer looks detached from it.
+	 */
+	--spacing-toolbar-logo: 216px;
 
 	/* Semantic type roles — prefer these over ad-hoc text-sm/base in shell UI */
 	--text-caption: 0.75rem; /* 12px — legal / fine print */

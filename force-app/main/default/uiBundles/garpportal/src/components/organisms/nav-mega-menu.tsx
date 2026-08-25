@@ -40,7 +40,7 @@ const getNavItemKey = (item: TopNavItem) => item.title
  *    keyboard support (arrows + Escape) carries the weight hover used to.
  *
  * Items that don't fit collapse into a "More" trigger rather than shrinking the
- * type, so the row's left edge can stay locked to the content grid at any width.
+ * type, so the row's left edge stays put at any width.
  */
 function NavMegaMenu() {
 	const panelId = useId()
@@ -361,7 +361,8 @@ function NavMegaMenu() {
 
 	return (
 		<>
-			{/* Gutter matches `.page-container`, so the first label starts on the content grid. */}
+			{/* Breathing room off the logo slot; the row's left edge is set by
+			    `--spacing-toolbar-logo`, not by the content grid. */}
 			<div className="flex min-w-0 flex-1 items-center pl-shell-gutter">
 				{/* `-ml-3` cancels the first trigger's own padding: its *text* lands on
 				    the grid line, not its hit area. */}

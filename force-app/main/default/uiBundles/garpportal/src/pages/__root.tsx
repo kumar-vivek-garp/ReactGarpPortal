@@ -5,6 +5,7 @@ import { lazy, Suspense } from "react"
 import { preconnect, preload } from "react-dom"
 
 import { Toaster } from "@/components/atoms/sonner"
+import { TooltipProvider } from "@/components/atoms/tooltip"
 import { COMMON_PROGRAM_LOGO_URLS, GARP_HUB_ORIGIN } from "@/config/program-logos"
 import klinicBook from "@/assets/fonts/KlinicSlabBook.woff2?url"
 import klinicBold from "@/assets/fonts/KlinicSlabBold.woff2?url"
@@ -90,7 +91,13 @@ function RootComponent() {
 	return (
 		<>
 			<HeadContent />
-			<Outlet />
+			{/* Mounted once at the root so any collapsed-rail row (or future
+			    icon-only control) can label itself without each surface
+			    standing up its own provider — and so the hover delay is one
+			    decision, made in `atoms/tooltip`, rather than per call site. */}
+			<TooltipProvider>
+				<Outlet />
+			</TooltipProvider>
 			<Toaster position="top-center" richColors closeButton />
 			{RouterDevtools && QueryDevtools ? (
 				<Suspense fallback={null}>

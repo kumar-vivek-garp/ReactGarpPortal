@@ -15,8 +15,6 @@ import type { AlertRoute, AlertStatus } from "@/api/alert-bar"
 /** How loud the banner is. Maps to the `Alert` atom's two variants. */
 export type AlertTone = "urgent" | "notice"
 
-export const ALERT_BAR_TITLE = "Action needed"
-
 type AlertCopy = {
 	message: string
 	tone: AlertTone
@@ -88,7 +86,12 @@ export const ALERT_BAR_ACTION_LABEL: Record<AlertRoute, string> = {
 	"Exam Scheduling": "Schedule your exam",
 }
 
-/** Shown on the collapsed pill. */
+/** Shown on the toolbar trigger. Apex raises at most one alert portal-wide. */
 export const ALERT_BAR_COLLAPSED_LABEL = "1 alert"
-export const ALERT_BAR_COLLAPSE_LABEL = "Collapse alert"
-export const ALERT_BAR_EXPAND_LABEL = "Show alert"
+export const ALERT_BAR_COLLAPSE_LABEL = "Minimise alert"
+/**
+ * Contains the trigger's visible text on purpose: an accessible name that
+ * drops it would leave voice control with no way to say the button's label
+ * (WCAG 2.5.3).
+ */
+export const ALERT_BAR_EXPAND_LABEL = "Show 1 alert"

@@ -1,6 +1,5 @@
-import { ShieldCheck } from "lucide-react"
-
 import { Controller, type Control, type FieldErrors } from "react-hook-form"
+import { ShieldCheck } from "lucide-react"
 
 import {
 	Card,
@@ -11,12 +10,10 @@ import {
 import { Checkbox } from "@/components/atoms/checkbox"
 import { Label } from "@/components/atoms/label"
 import { FieldError } from "@/components/molecules/form-field"
-import type { FrmFormValues } from "@/components/forms/frm/frm-form-values"
-import {
-	ACKNOWLEDGEMENT_COPY,
-	CANDIDATE_RESPONSIBILITY_URL,
-	POLICY_LINKS,
-} from "@/config/registration"
+import type { AffiliateFormValues } from "@/components/forms/affiliate/affiliate-form-values"
+import { POLICY_LINKS, SMS_COPY } from "@/config/registration"
+
+const POLICIES_REQUIRED = "You must confirm you have read our policies."
 
 function PolicyLink({ href, children }: { href: string; children: string }) {
 	return (
@@ -31,26 +28,37 @@ function PolicyLink({ href, children }: { href: string; children: string }) {
 	)
 }
 
+/** The checkbox-backed fields only — a `Tick` cannot drive a text field. */
+type BooleanFieldName =
+	| "smsPromotionalUpdates"
+	| "attestPrivacyNotice"
+	| "attestLimitationOfLiability"
+	| "attestReleaseAndWaiver"
+
 type TickProps = {
 	id: string
-	name:
-		| "candidateResponsibility"
-		| "examPolicy"
-		| "attestPrivacyNotice"
-		| "attestLimitationOfLiability"
-		| "attestReleaseAndWaiver"
-	control: Control<FrmFormValues>
-	invalid: boolean
+	name: BooleanFieldName
+	control: Control<AffiliateFormValues>
+	required?: boolean
+	invalid?: boolean
 	disabled?: boolean
 	children: React.ReactNode
 }
 
-function Tick({ id, name, control, invalid, disabled, children }: TickProps) {
+function Tick({
+	id,
+	name,
+	control,
+	required = false,
+	invalid = false,
+	disabled,
+	children,
+}: TickProps) {
 	return (
 		<Controller
 			control={control}
 			name={name}
-			rules={{ required: ACKNOWLEDGEMENT_COPY.policiesRequired }}
+			rules={required ? { required: POLICIES_REQUIRED } : undefined}
 			render={({ field }) => (
 				<div className="flex items-start gap-3">
 					<Checkbox
@@ -70,37 +78,38 @@ function Tick({ id, name, control, invalid, disabled, children }: TickProps) {
 	)
 }
 
-type AcknowledgementsSectionProps = {
-	control: Control<FrmFormValues>
-	errors: FieldErrors<FrmFormValues>
-	/** Exam policies for this programme, from the programme's display config. */
-	examPolicyUrl: string
-	/** True when the billing country carries a GDPR or CASL tag. */
+type ConsentSectionProps = {
+	control: Control<AffiliateFormValues>
+	errors: FieldErrors<AffiliateFormValues>
+	/** True when the selected location carries a GDPR or CASL tag. */
 	isComplianceCountry: boolean
 	submitLabel: string
 	disabled?: boolean
 }
 
 /**
- * What the candidate is agreeing to.
+ * What the new member is agreeing to.
  *
- * The two acknowledgements are always required — Apex refuses the whole
- * registration unless both are ticked, and it records each as a timestamp on
- * the exam attempt.
+ * The three policy ticks appear only for a country tagged GDPR or CASL —
+ * `Country_Code__c.Compliance__c` is a *tag*, not a flag, and Apex reduces any
+ * non-blank value to a boolean. Everywhere else, submitting IS the agreement
+ * and the notice says so, which is why all three collapse into the single
+ * `consent.privacyPolicy` the register call sends.
  *
- * The three policy ticks below them only appear for a country tagged GDPR or
- * CASL. Everywhere else, submitting IS the agreement and the notice says so —
- * which is the legacy's behaviour, and the reason all three collapse into one
- * boolean server-side.
+ * They are conditionally *rendered* rather than conditionally *required*: a
+ * field react-hook-form has unmounted stops counting towards `isValid`, so
+ * changing location to a non-compliance country cannot strand the submit
+ * button behind a rule with no visible control to satisfy it. Toggling a
+ * `rules` object instead would do exactly that — RHF reads `rules` once at
+ * mount and never again.
  */
-function AcknowledgementsSection({
+function ConsentSection({
 	control,
 	errors,
-	examPolicyUrl,
 	isComplianceCountry,
 	submitLabel,
 	disabled,
-}: AcknowledgementsSectionProps) {
+}: ConsentSectionProps) {
 	const policiesInvalid = Boolean(
 		errors.attestPrivacyNotice ||
 			errors.attestLimitationOfLiability ||
@@ -112,59 +121,36 @@ function AcknowledgementsSection({
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2 text-lg">
 					<ShieldCheck className="size-5 text-muted-foreground" aria-hidden />
-					{ACKNOWLEDGEMENT_COPY.title}
+					Consent and policies
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="flex flex-col gap-4">
-				<Tick
-					id="candidateResponsibility"
-					name="candidateResponsibility"
-					control={control}
-					invalid={Boolean(errors.candidateResponsibility)}
-					disabled={disabled}
-				>
-					{ACKNOWLEDGEMENT_COPY.candidateResponsibility}{" "}
-					<PolicyLink href={CANDIDATE_RESPONSIBILITY_URL}>
-						{ACKNOWLEDGEMENT_COPY.candidateResponsibilityLink}
-					</PolicyLink>
-					.
-				</Tick>
-
-				<Tick
-					id="examPolicy"
-					name="examPolicy"
-					control={control}
-					invalid={Boolean(errors.examPolicy)}
-					disabled={disabled}
-				>
-					{ACKNOWLEDGEMENT_COPY.examPolicy}{" "}
-					<PolicyLink href={examPolicyUrl}>
-						{ACKNOWLEDGEMENT_COPY.examPolicyLink}
-					</PolicyLink>
-					.
-				</Tick>
-
-				<FieldError
-					message={
-						errors.candidateResponsibility?.message ?? errors.examPolicy?.message
-					}
-				/>
+				<div className="flex flex-col gap-2">
+					<p className="text-body font-bold">{SMS_COPY.promotionalHeading}</p>
+					{/* Optional — never required, and it starts unticked. */}
+					<Tick
+						id="smsPromotionalUpdates"
+						name="smsPromotionalUpdates"
+						control={control}
+						disabled={disabled}
+					>
+						{SMS_COPY.promotionalOptIn}
+					</Tick>
+				</div>
 
 				{isComplianceCountry ? (
 					<fieldset className="flex flex-col gap-3 border-t border-border pt-4">
 						<legend className="sr-only">Policy confirmations</legend>
-						<p className="text-caption text-muted-foreground">
-							{ACKNOWLEDGEMENT_COPY.complianceIntro}
-						</p>
 
 						<Tick
 							id="attestPrivacyNotice"
 							name="attestPrivacyNotice"
 							control={control}
+							required
 							invalid={policiesInvalid}
 							disabled={disabled}
 						>
-							I have read GARP&rsquo;s{" "}
+							Yes, I have read GARP&rsquo;s{" "}
 							<PolicyLink href={POLICY_LINKS.privacyNotice}>
 								Privacy Notice
 							</PolicyLink>{" "}
@@ -179,10 +165,11 @@ function AcknowledgementsSection({
 							id="attestLimitationOfLiability"
 							name="attestLimitationOfLiability"
 							control={control}
+							required
 							invalid={policiesInvalid}
 							disabled={disabled}
 						>
-							I have read GARP&rsquo;s{" "}
+							Yes, I have read GARP&rsquo;s{" "}
 							<PolicyLink href={POLICY_LINKS.limitationOfLiability}>
 								Limitation of Liability
 							</PolicyLink>
@@ -193,10 +180,11 @@ function AcknowledgementsSection({
 							id="attestReleaseAndWaiver"
 							name="attestReleaseAndWaiver"
 							control={control}
+							required
 							invalid={policiesInvalid}
 							disabled={disabled}
 						>
-							I have read GARP&rsquo;s{" "}
+							Yes, I have read GARP&rsquo;s{" "}
 							<PolicyLink href={POLICY_LINKS.releaseAndWaiver}>
 								Waiver and Release
 							</PolicyLink>
@@ -204,7 +192,7 @@ function AcknowledgementsSection({
 						</Tick>
 
 						{policiesInvalid ? (
-							<FieldError message={ACKNOWLEDGEMENT_COPY.policiesRequired} />
+							<FieldError message={POLICIES_REQUIRED} />
 						) : null}
 					</fieldset>
 				) : (
@@ -226,7 +214,8 @@ function AcknowledgementsSection({
 							Waiver and Release
 						</PolicyLink>
 						, and to receiving emails from GARP and selected third-party
-						providers.
+						providers with news, special offers, promotions and future messages
+						that may be of interest to you.
 					</p>
 				)}
 			</CardContent>
@@ -234,4 +223,4 @@ function AcknowledgementsSection({
 	)
 }
 
-export { AcknowledgementsSection }
+export { ConsentSection }

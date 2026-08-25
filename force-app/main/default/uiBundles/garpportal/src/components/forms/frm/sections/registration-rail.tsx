@@ -1,4 +1,4 @@
-import { Check, Plus } from "lucide-react"
+import { Check, Minus, PackagePlus, Plus, ReceiptText } from "lucide-react"
 
 import type { FeesResult } from "@/api/registration/exam-types"
 import type { SelectableMaterial } from "@/hooks/use-exam-registration"
@@ -103,17 +103,17 @@ function OfferRow({ material, onToggle, disabled }: OfferRowProps) {
 					onClick={onToggle}
 					disabled={disabled}
 					aria-pressed={material.selected}
-					className={cn(
-						"shrink-0",
-						// Added is a state, not an action — colouring it makes the cart
-						// readable at a glance instead of by reading every button.
-						material.selected &&
-							"border-success-green/40 bg-success-green/15 text-success-green hover:bg-success-green/25 hover:text-success-green",
-					)}
+					/*
+					 * The label says what the click does, not what the row is. The
+					 * row's own green tint already carries "in the cart", so tinting
+					 * this to match would read as a confirmation rather than as the
+					 * way back out of it.
+					 */
+					className="shrink-0"
 				>
 					{material.selected ? (
 						<>
-							<Check aria-hidden /> Added
+							<Minus aria-hidden /> Remove
 						</>
 					) : (
 						<>
@@ -200,11 +200,35 @@ function RegistrationRail({
 	const withSubtotal = showSubtotal(lines, fees?.vatAmount, fees?.njSalesTax)
 
 	return (
-		<div className="flex max-h-[calc(100vh-9rem)] flex-col gap-4 overflow-y-auto overscroll-contain scrollbar-none">
+		/*
+		 * The cap is measured against the viewport, but the rail's scroll parent
+		 * is not the viewport — so all three of these have to be subtracted or
+		 * the rail is taller than the slot it sits in and its bottom is clipped
+		 * with no way to scroll to it:
+		 *
+		 *   5rem    fixed navbar
+		 * + 3rem    the subpage shell's own `py-6`
+		 * + 5.5rem  this rail's `lg:top-22` pin offset
+		 * = 13.5rem
+		 *
+		 * It read `100vh-9rem` and overhung by the 6rem it forgot.
+		 *
+		 * The pin offset is load-bearing too: it must equal the sticky bar (4rem)
+		 * plus the grid gap (1.5rem). `sticky` with a `top` *larger* than the
+		 * element's natural offset pushes it down immediately, so at `top-28`
+		 * the rail sat 24px below the form column beside it, at rest, on first
+		 * paint.
+		 *
+		 * No `overscroll-contain`: when the rail bottoms out the wheel should
+		 * carry on scrolling the page. Trapping it in a secondary column is what
+		 * made a clipped rail read as "there is content but I can't scroll".
+		 */
+		<div className="flex max-h-[calc(100vh-13.5rem)] flex-col gap-4 overflow-y-auto scrollbar-none">
 			{offered.length > 0 ? (
 				<Card>
 					<CardHeader>
-						<CardTitle className="text-base">
+						<CardTitle className="flex items-center gap-2 text-base">
+							<PackagePlus className="size-4 text-muted-foreground" aria-hidden />
 							Add to your registration
 						</CardTitle>
 					</CardHeader>
@@ -255,7 +279,10 @@ function RegistrationRail({
 			<Card>
 				<CardHeader>
 					<CardTitle className="flex items-center justify-between gap-3 text-base">
-						Order summary
+						<span className="flex items-center gap-2">
+							<ReceiptText className="size-4 text-muted-foreground" aria-hidden />
+							Order summary
+						</span>
 						{isPricing && fees ? (
 							<span className="text-caption font-normal text-muted-foreground">
 								Updating…
@@ -265,9 +292,38 @@ function RegistrationRail({
 				</CardHeader>
 				<CardContent>
 					{!fees || lines.length === 0 ? (
-						<p className="text-body text-muted-foreground">
-							Choose your exam to see the total.
-						</p>
+						/*
+						 * Before an exam is picked this is the only card in the rail,
+						 * and a single muted sentence in it reads as something that
+						 * failed to load rather than as a summary waiting to fill in.
+						 * The placeholder rows say what will appear here, so the empty
+						 * state has the shape of the thing it becomes.
+						 */
+						<div className="flex flex-col gap-3">
+							<div className="flex items-center gap-3 text-muted-foreground">
+								<ReceiptText className="size-5 shrink-0" aria-hidden />
+								<p className="text-body">Choose your exam to see the total.</p>
+							</div>
+							<div
+								className="flex flex-col gap-2 border-t border-border pt-3"
+								aria-hidden
+							>
+								{["Exam registration", "Enrollment fee", "Total"].map(
+									(label, index) => (
+										<div
+											key={label}
+											className={cn(
+												"flex items-center justify-between gap-4 text-body text-muted-foreground/60",
+												index === 2 && "font-semibold",
+											)}
+										>
+											<span>{label}</span>
+											<span aria-hidden>&mdash;</span>
+										</div>
+									),
+								)}
+							</div>
+						</div>
 					) : (
 						<div
 							className="flex flex-col gap-2"

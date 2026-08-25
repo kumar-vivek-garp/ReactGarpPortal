@@ -1,11 +1,14 @@
-import { AlertBarBanner } from "@/components/molecules/alert-bar-banner"
+import { AlertBarCard } from "@/components/molecules/alert-bar-card"
 import { useAlertBar } from "@/hooks/use-alert-bar"
 
 /**
  * The one exam alert this member must act on, above every portal page.
  *
  * Mounted once in the app layout rather than per page: the query is shared, so
- * navigating does not refetch, and the collapsed state rides along with it.
+ * navigating does not refetch, and the phase rides along with it.
+ *
+ * This is only half of the alert — its minimised half is `AlertBarTrigger`,
+ * which lives in the toolbars. Exactly one of the two is ever visible.
  *
  * Renders nothing at all when there is no alert — which is the common case —
  * and nothing when the service is unreachable. It is chrome relative to the
@@ -13,16 +16,17 @@ import { useAlertBar } from "@/hooks/use-alert-bar"
  * by toasting on every route.
  */
 function AlertBar({ className }: { className?: string }) {
-	const { model, isCollapsed, collapse, expand } = useAlertBar()
+	const { model, phase, minimise, settleMinimised, settleExpanded } = useAlertBar()
 
 	if (!model) return null
 
 	return (
-		<AlertBarBanner
+		<AlertBarCard
 			model={model}
-			isCollapsed={isCollapsed}
-			onCollapse={collapse}
-			onExpand={expand}
+			phase={phase}
+			onMinimise={minimise}
+			onMinimised={settleMinimised}
+			onRestored={settleExpanded}
 			className={className}
 		/>
 	)

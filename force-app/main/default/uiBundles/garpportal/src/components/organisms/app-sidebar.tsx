@@ -2,16 +2,21 @@ import { useMemo, useState } from "react"
 import { animated } from "@react-spring/web"
 import { useLocation } from "@tanstack/react-router"
 
+import { SidebarCollapseToggle } from "@/components/molecules/sidebar-collapse-toggle"
 import { SidebarNavLink } from "@/components/molecules/sidebar-nav-link"
 import { SidebarProfileLink } from "@/components/molecules/sidebar-profile-link"
 import { SidebarProfileSkeleton } from "@/components/molecules/sidebar-profile-skeleton"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { useHasCpdProgram } from "@/hooks/use-has-cpd-program"
+import { useSidebarCollapse } from "@/hooks/use-sidebar-collapse"
 import { useSlidingIndicator } from "@/hooks/use-sliding-indicator"
 import { sideNavItems } from "@/config/navigation/side-nav-items"
 import { activeRouteKey, isRouteActive } from "@/lib/route-active"
 
 const PROFILE_ROUTE = "/my-account" as const
+
+/** Referenced by the collapse toggle's `aria-controls`. */
+const RAIL_ID = "app-sidebar-rail"
 
 type PendingSelection = { key: string; from: string }
 
@@ -38,6 +43,14 @@ function AppSidebar({ forceSkeleton = false }: { forceSkeleton?: boolean }) {
 		() => [PROFILE_ROUTE, ...navItems.map((item) => item.to)],
 		[navItems],
 	)
+
+	/**
+	 * Collapsing is a width-only change: every row's height and vertical offset
+	 * is set by its 44px puck, and the collapsed width is derived so that puck
+	 * keeps the same left edge. So the sliding rail below needs to know nothing
+	 * about it — its measurements are identical in both states.
+	 */
+	const { isCollapsed, toggle, widthStyle, labelStyle } = useSidebarCollapse()
 
 	/**
 	 * Rendering a new route blocks the main thread for tens of milliseconds, which
@@ -70,46 +83,86 @@ function AppSidebar({ forceSkeleton = false }: { forceSkeleton?: boolean }) {
 	const claim = (key: string) => setPending({ key, from: pathname })
 
 	return (
-		<aside className="sticky top-20 hidden h-[calc(100vh-5rem)] w-shell-rail shrink-0 flex-col self-start overflow-y-auto bg-linear-to-b from-surface-gradient-start to-surface-gradient-end app:flex">
-			<div ref={containerRef} className="relative flex flex-col gap-1 p-3">
+		/*
+		 * Two elements, because they need different overflow: this wrapper animates
+		 * the width and hosts the edge toggle, which has to be free to overhang;
+		 * the aside inside it does the clipping. One element cannot do both — it
+		 * would slice the toggle in half.
+		 *
+		 * `sticky` already establishes the positioned ancestor the toggle resolves
+		 * against, so no `relative` here — the two would conflict.
+		 */
+		<animated.div
+			style={widthStyle}
+			className="sticky top-20 z-20 hidden h-[calc(100vh-5rem)] shrink-0 self-start will-change-[width] app:block"
+		>
+			{/*
+			 * `overflow-x-hidden` is load-bearing, not tidiness: `overflow-y-auto`
+			 * alone makes CSS compute overflow-x to `auto`, and the content below is
+			 * deliberately wider than the panel while collapsed.
+			 */}
+			<aside
+				id={RAIL_ID}
+				className="flex h-full w-full flex-col overflow-x-hidden overflow-y-auto bg-linear-to-b from-surface-gradient-start to-surface-gradient-end"
+			>
 				{/*
-				 * The only element that moves. A 3px bar in the gutter reads as a quiet
-				 * marker rather than a travelling block, and at that width a dropped
-				 * frame during navigation is essentially invisible.
+				 * Held at the full expanded width so labels are clipped by the panel's
+				 * travelling edge rather than reflowing, re-wrapping, or squeezing
+				 * their glyphs while the width animates.
 				 */}
-				<animated.span
-					className="pointer-events-none absolute left-0 top-0 w-[3px] origin-top bg-primary will-change-transform"
-					style={indicatorStyle}
-					aria-hidden
-				/>
-
-				{showSkeleton ? (
-					<SidebarProfileSkeleton inset />
-				) : (
-					<SidebarProfileLink
-						name={displayName}
-						garpId={user?.garpId?.trim() || "—"}
-						avatarUrl={user?.photoUrl ?? undefined}
-						inset
-						registerRef={(node) => registerRef(PROFILE_ROUTE, node)}
-						onSelect={() => claim(PROFILE_ROUTE)}
+				<div
+					ref={containerRef}
+					className="relative flex w-shell-rail flex-col gap-1 p-3"
+				>
+					{/*
+					 * The only element that moves. A 3px bar in the gutter reads as a quiet
+					 * marker rather than a travelling block, and at that width a dropped
+					 * frame during navigation is essentially invisible.
+					 */}
+					<animated.span
+						className="pointer-events-none absolute left-0 top-0 w-[3px] origin-top bg-primary will-change-transform"
+						style={indicatorStyle}
+						aria-hidden
 					/>
-				)}
 
-				<nav className="flex flex-col gap-1">
-					{navItems.map(({ to, label, icon }) => (
-						<SidebarNavLink
-							key={to}
-							to={to}
-							label={label}
-							icon={icon}
-							registerRef={(node) => registerRef(to, node)}
-							onSelect={() => claim(to)}
+					{showSkeleton ? (
+						<SidebarProfileSkeleton inset labelStyle={labelStyle} />
+					) : (
+						<SidebarProfileLink
+							name={displayName}
+							garpId={user?.garpId?.trim() || "—"}
+							avatarUrl={user?.photoUrl ?? undefined}
+							inset
+							registerRef={(node) => registerRef(PROFILE_ROUTE, node)}
+							onSelect={() => claim(PROFILE_ROUTE)}
+							collapsed={isCollapsed}
+							labelStyle={labelStyle}
 						/>
-					))}
-				</nav>
-			</div>
-		</aside>
+					)}
+
+					<nav className="flex flex-col gap-1">
+						{navItems.map(({ to, label, icon }) => (
+							<SidebarNavLink
+								key={to}
+								to={to}
+								label={label}
+								icon={icon}
+								registerRef={(node) => registerRef(to, node)}
+								onSelect={() => claim(to)}
+								collapsed={isCollapsed}
+								labelStyle={labelStyle}
+							/>
+						))}
+					</nav>
+				</div>
+			</aside>
+
+			<SidebarCollapseToggle
+				collapsed={isCollapsed}
+				onToggle={toggle}
+				controls={RAIL_ID}
+			/>
+		</animated.div>
 	)
 }
 

@@ -19,14 +19,19 @@ const AuthLocalTools = lazy(() =>
 
 /**
  * Shared chrome for the unauthenticated pages: GARP backdrop, logo, the legal
- * strip, and the localhost dev tools. Login and Affiliate registration both
- * sit inside it, so anything added here reaches every auth page — which is the
- * point. The dev tools used to be rendered by the login page itself, which is
- * why they were missing from registration.
+ * strip, and the localhost dev tools. Anything added here reaches every auth
+ * page — which is the point; the dev tools used to be rendered by the login
+ * page itself, which is why they were missing from anything else.
+ *
+ * Login is currently its only occupant. Affiliate registration sat here too
+ * until it moved to `/registration/affiliate` under `_publicFormLayout` — this
+ * shell is a vertically-centred splash for one narrow card, which is right for
+ * a sign-in box and wrong for a form with eight fields and three attestations.
+ * A registration form belongs with the other registration forms.
  *
  * The shell does not scroll a tall child for it — a form that outgrows the
- * viewport caps its own height and scrolls internally, so the logo and footer
- * stay put. See `affiliate-registration-form`.
+ * viewport must cap its own height and scroll internally, so the logo and
+ * footer stay put.
  *
  * Inline `style` for the backdrop rather than a Tailwind class because the
  * asset URL resolves at runtime from the org's static resources.

@@ -1,4 +1,4 @@
-import { AlertCircle, Info } from "lucide-react"
+import { AlertCircle, GraduationCap, Info } from "lucide-react"
 
 import type { ExamAdminView } from "@/api/registration/exam-types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/atoms/card"
@@ -202,7 +202,10 @@ function YourExamSection({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle className="text-lg">Your exam</CardTitle>
+				<CardTitle className="flex items-center gap-2 text-lg">
+					<GraduationCap className="size-5 text-muted-foreground" aria-hidden />
+					Your exam
+				</CardTitle>
 			</CardHeader>
 			<CardContent className="flex flex-col gap-4">
 				<div className="flex flex-col gap-2">

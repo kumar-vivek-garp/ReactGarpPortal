@@ -3,11 +3,11 @@ import { redirect } from "@tanstack/react-router"
 
 import type { CurrentUser } from "@/api/auth/current-user"
 import { authQueryKeys, ensureCurrentUser } from "@/api/auth/query-options"
+import { DEFAULT_POST_LOGIN_PATH } from "@/auth/constants"
 import type { RegistrationSearch } from "@/config/registration"
 import {
 	isPaymentReturn,
 	MEMBER_REGISTRATION_ROUTE,
-	PUBLIC_REGISTRATION_ROUTE,
 } from "@/lib/registration-paths"
 
 type GuardArgs = {
@@ -41,29 +41,6 @@ function withSession(
 }
 
 /**
- * Guard for the **member** route: someone with no session is sent to the
- * public form rather than to Login.
- *
- * Registration is the one member route where a guest has somewhere better to
- * go than a sign-in wall — the same form is served publicly, and demanding an
- * account first is exactly the barrier the public route exists to remove.
- */
-export function redirectGuestToPublicForm({
-	context,
-	params,
-	search,
-}: GuardArgs): void | Promise<void> {
-	return withSession(context.queryClient, (user) => {
-		if (user || isPaymentReturn(search)) return
-		throw redirect({
-			to: PUBLIC_REGISTRATION_ROUTE,
-			params: { programType: params.programType },
-			search,
-		})
-	})
-}
-
-/**
  * Guard for the **public** route: a signed-in member is sent to the in-portal
  * form, which prefills from their contact record and keeps the portal chrome.
  *
@@ -82,5 +59,28 @@ export function redirectMemberToPortalForm({
 			params: { programType: params.programType },
 			search,
 		})
+	})
+}
+
+/**
+ * Guard for the **affiliate** route, which has no member twin.
+ *
+ * Affiliate sign-up creates a GARP account; someone with a session already has
+ * one, and the programme does not set `allowMemberPublicRegistration`, so the
+ * server would answer their email with `mustSignIn` anyway. Sending them to
+ * the dashboard says that before they fill anything in — and it is the same
+ * answer `_authLayout` gave while the form lived at `/affiliate`, so moving
+ * the route changes the address and nothing else.
+ *
+ * No payment-return suppression here, unlike the exam guard: an affiliate
+ * order is a single zero-price AFREE line settled server-side, so this route
+ * is never a checkout return and has no `oid`/`on` to protect.
+ */
+export function redirectMemberToDashboard({
+	context,
+}: Pick<GuardArgs, "context">): void | Promise<void> {
+	return withSession(context.queryClient, (user) => {
+		if (!user) return
+		throw redirect({ to: DEFAULT_POST_LOGIN_PATH })
 	})
 }

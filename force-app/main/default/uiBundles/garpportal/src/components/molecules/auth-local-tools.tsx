@@ -33,6 +33,7 @@ import {
 	fetchContactsFromListViewViaLocalCli,
 	getLocalDevContactId,
 	getLocalDevListViewApiName,
+	searchContactsViaLocalCli,
 	setLocalDevContact,
 	setLocalDevListViewApiName,
 	type LocalDevContact,
@@ -143,11 +144,18 @@ function LocalDevContactPanel({ onEntered }: { onEntered?: () => void }) {
 						}
 						return
 					}
-					const rows = await fetchContactsFromListViewViaLocalCli({
-						listViewApiName,
-						searchTerm: query,
-						limit: 40,
-					})
+					// A typed query searches every Contact via SOQL, not just the
+					// selected view. List views here are org metadata and are
+					// often filtered to a working subset — the stock "All
+					// Contacts" in this org is scoped to uncertified FRM
+					// candidates — so a view-bounded search silently hides
+					// anyone outside it. The view still drives the idle list.
+					const rows = query.trim()
+						? await searchContactsViaLocalCli({ q: query, limit: 40 })
+						: await fetchContactsFromListViewViaLocalCli({
+								listViewApiName,
+								limit: 40,
+							})
 					if (!cancelled) setContacts(rows)
 				} catch (error) {
 					if (!cancelled) {
@@ -311,7 +319,7 @@ function LocalDevContactPanel({ onEntered }: { onEntered?: () => void }) {
 				<Input
 					id="local-dev-contact-search"
 					type="search"
-					placeholder="Name, email, or GARP Id within this list…"
+					placeholder="Name, email, or GARP Id — searches all Contacts…"
 					value={query}
 					disabled={pending || viewsPending}
 					onChange={(event) => setQuery(event.target.value)}
@@ -334,7 +342,9 @@ function LocalDevContactPanel({ onEntered }: { onEntered?: () => void }) {
 						<p className="p-3 text-caption text-muted-foreground">Loading…</p>
 					) : contacts.length === 0 ? (
 						<p className="p-3 text-caption text-muted-foreground">
-							No Contacts found in this list view.
+							{query.trim()
+								? "No Contacts match that search."
+								: "No Contacts found in this list view."}
 						</p>
 					) : (
 						<ul className="divide-y divide-border">

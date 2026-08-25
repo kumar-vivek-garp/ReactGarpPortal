@@ -3,6 +3,7 @@ import { animated, useTransition } from "@react-spring/web"
 import { ChevronLeft } from "lucide-react"
 
 import { GarpLogoMark } from "@/components/atoms/garp-logo-mark"
+import { AlertBarTrigger } from "@/components/molecules/alert-bar-trigger"
 import { MegaMenuPanel } from "@/components/molecules/mega-menu-panel"
 import { MobileMenuIcon } from "@/components/molecules/mobile-menu-icon"
 import { MobileNavPanel } from "@/components/molecules/mobile-nav-panel"
@@ -78,6 +79,13 @@ function MobileNavBar() {
 				    white-on-black without swapping assets. */}
 				<GarpLogoMark className="h-8 w-auto shrink-0" />
 				<div className="flex shrink-0 items-center gap-1">
+					{/* Restoring from inside the open menu would drop the card
+					    behind the full-screen panel, so it closes first. */}
+					<AlertBarTrigger
+						placement="mobile"
+						variant={isOpen ? "sheet" : "toolbar"}
+						onActivate={closeMobileNav}
+					/>
 					<ThemeToggle variant={isOpen ? "sheet" : "toolbar"} />
 					<button
 						type="button"

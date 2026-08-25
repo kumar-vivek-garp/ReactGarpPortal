@@ -1,257 +1,107 @@
-import { useMemo, useState } from "react"
-import {
-	Controller,
-	useForm,
-	useWatch,
-	type SubmitHandler,
-} from "react-hook-form"
-import { Link } from "@tanstack/react-router"
-import { CheckCircle2 } from "lucide-react"
+import { useMemo } from "react"
+import { useForm, useWatch, type SubmitHandler } from "react-hook-form"
+import { Link, useRouterState } from "@tanstack/react-router"
 
 import { AppError } from "@/api/client"
-import type { RegistrationCountry } from "@/api/registration"
+import type { AffiliateRegistrationLoad } from "@/api/registration"
 import { Alert, AlertDescription, AlertTitle } from "@/components/atoms/alert"
 import { Button } from "@/components/atoms/button"
 import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from "@/components/atoms/card"
-import { Checkbox } from "@/components/atoms/checkbox"
-import { Input } from "@/components/atoms/input"
-import { Label } from "@/components/atoms/label"
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/atoms/select"
-import { Skeleton } from "@/components/atoms/skeleton"
+	EMPTY_AFFILIATE_VALUES,
+	type AffiliateFormValues,
+} from "@/components/forms/affiliate/affiliate-form-values"
+import { AffiliateRail } from "@/components/forms/affiliate/sections/affiliate-rail"
+import { ConsentSection } from "@/components/forms/affiliate/sections/consent-section"
+import { YourDetailsSection } from "@/components/forms/affiliate/sections/your-details-section"
+import { LOGIN_PATH } from "@/auth/constants"
+import { getReturnPath } from "@/auth/return-path"
 import {
 	AFFILIATE_REGISTRATION,
+	AFFILIATE_REGISTRATION_HEADING,
 	EMAIL_PATTERN,
-	isEnglishName,
-	PHONE_PATTERN,
-	POLICY_LINKS,
-	REGISTRATION_LIMITS,
-	SMS_COPY,
 } from "@/config/registration"
 import {
 	MustSignInError,
-	useAffiliateRegistration,
 	useAffiliateSignUp,
 	useVerifyAffiliateEmail,
 } from "@/hooks/use-affiliate-registration"
 
-type AffiliateFormValues = {
-	email: string
-	firstName: string
-	lastName: string
-	/** `"<countryCode> (+<phoneCode>)"` — GarpAppv1's own option value format. */
-	mobilePhoneCode: string
-	mobilePhone: string
-	smsPromotionalUpdates: boolean
-	/** `RegistrationCountry.countryCode`, not the display name. */
-	country: string
-	attestPrivacyNotice: boolean
-	attestLimitationOfLiability: boolean
-	attestReleaseAndWaiver: boolean
-}
-
-function FieldError({ message }: { message?: string }) {
-	if (!message) return null
-	return (
-		<p className="text-caption text-destructive" role="alert">
-			{message}
-		</p>
-	)
-}
-
-function Field({
-	id,
-	label,
-	error,
-	children,
-}: {
-	id: string
-	label: string
-	error?: string
-	children: React.ReactNode
-}) {
-	return (
-		<div className="flex flex-col gap-2">
-			<Label htmlFor={id} className="font-bold">
-				{label}
-				<span className="text-destructive" aria-hidden>
-					{" "}
-					*
-				</span>
-			</Label>
-			{children}
-			<FieldError message={error} />
-		</div>
-	)
-}
-
-function PolicyLink({ href, children }: { href: string; children: string }) {
-	return (
-		<a
-			href={href}
-			target="_blank"
-			rel="noreferrer"
-			className="font-semibold text-primary hover:underline"
-		>
-			{children}
-		</a>
-	)
-}
-
-/** One attestation row — a checkbox whose label carries the policy link. */
-function Attestation({
-	id,
-	checked,
-	onCheckedChange,
-	invalid,
-	disabled,
-	children,
-}: {
-	id: string
-	checked: boolean
-	onCheckedChange: (value: boolean) => void
-	invalid: boolean
-	disabled: boolean
-	children: React.ReactNode
-}) {
-	return (
-		<div className="flex items-start gap-3">
-			<Checkbox
-				id={id}
-				checked={checked}
-				onCheckedChange={(value) => {
-					onCheckedChange(value === true)
-				}}
-				aria-invalid={invalid ? true : undefined}
-				disabled={disabled}
-				className="mt-0.5"
-			/>
-			<Label htmlFor={id} className="text-body leading-5 font-normal">
-				{children}
-			</Label>
-		</div>
-	)
-}
-
-function AffiliateRegistrationSkeleton() {
-	return (
-		<div className="flex flex-col gap-4" aria-busy>
-			{/* Mirrors the real grid so the card does not resize when data lands. */}
-			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-				{Array.from({ length: 4 }).map((_, index) => (
-					<div key={index} className="flex flex-col gap-2">
-						<Skeleton className="h-4 w-32" />
-						<Skeleton className="h-10 w-full rounded-xl" />
-					</div>
-				))}
-				<div className="flex flex-col gap-2 sm:col-span-2">
-					<Skeleton className="h-4 w-32" />
-					<Skeleton className="h-10 w-full rounded-xl" />
-				</div>
-			</div>
-			<Skeleton className="h-[60px] w-full rounded-xl" />
-		</div>
-	)
+type AffiliateRegistrationFormProps = {
+	load: AffiliateRegistrationLoad
+	onRegistered: () => void
 }
 
 /**
- * Free Affiliate membership sign-up — the portal's "Create Account".
+ * Affiliate membership sign-up — this app's "Create Account".
  *
- * Deliberately has no cart, no fee table and no payment step. The affiliate
- * programme's only line is AFREE, a zero-price product, so the order settles
- * server-side with nothing to charge; the flow behind the single submit is
- * verify → register → close order (see `useAffiliateSignUp`).
+ * Laid out as the exam forms are, not as the narrow auth card it used to be:
+ * the same sticky bar carrying the title and the commitment, the same 60/40
+ * split with a pinned rail. It is a registration in everything but price, and
+ * squeezing eight fields plus three attestations into a 2xl splash card made a
+ * short form feel like a long one.
+ *
+ * What it does *not* borrow is a cart. The affiliate programme's only order
+ * line is AFREE, a zero-price product settled server-side, so there is no
+ * pricing call, no payment section and no debounce — the rail states the offer
+ * and the total is the constant "Free".
  *
  * Two rules come from the server payload rather than from this file:
  *
  * 1. **Whether the policy checkboxes appear.** `Country_Code__c.Compliance__c`
  *    is a tag ("GDPR", "CASL") rather than a flag; countries carrying one need
  *    explicit ticks, and everyone else gets the implicit notice above the
- *    button. Picking a different country switches between them mid-form.
+ *    button. Picking a different location switches between them mid-form.
  * 2. **Whether an email may register at all.** The affiliate programme does
  *    not set `allowMemberPublicRegistration`, so an email that already belongs
  *    to a member comes back `mustSignIn` and is answered with a link to sign
  *    in — not a retry.
  */
-function AffiliateRegistrationForm() {
-	const load = useAffiliateRegistration()
+function AffiliateRegistrationForm({
+	load,
+	onRegistered,
+}: AffiliateRegistrationFormProps) {
 	const signUp = useAffiliateSignUp()
 	const verifyEmail = useVerifyAffiliateEmail()
-	const [completed, setCompleted] = useState(false)
+	/* Only read to build the post-sign-in return path. */
+	const location = useRouterState({ select: (state) => state.location })
 
 	const {
 		control,
 		register,
 		handleSubmit,
 		getValues,
-		formState: { errors, isSubmitting },
+		formState: { errors, isValid },
 	} = useForm<AffiliateFormValues>({
-		defaultValues: {
-			email: "",
-			firstName: "",
-			lastName: "",
-			mobilePhoneCode: "",
-			mobilePhone: "",
-			smsPromotionalUpdates: false,
-			country: "",
-			attestPrivacyNotice: false,
-			attestLimitationOfLiability: false,
-			attestReleaseAndWaiver: false,
-		},
-		mode: "onSubmit",
+		defaultValues: EMPTY_AFFILIATE_VALUES,
+		/*
+		 * `onTouched`, not `onSubmit`: the button below stays disabled until the
+		 * form is valid, and `isValid` is only maintained when the mode is not
+		 * `onSubmit`. `onTouched` waits for a first blur before showing a field's
+		 * error, so nobody is told their email is invalid halfway through typing
+		 * it, and it re-renders far less than `onChange`.
+		 */
+		mode: "onTouched",
 	})
-
-	const countries = useMemo<RegistrationCountry[]>(
-		() =>
-			[...(load.data?.countries ?? [])].sort((a, b) =>
-				a.name.localeCompare(b.name),
-			),
-		[load.data?.countries],
-	)
-
-	/**
-	 * Only countries that actually carry a dial code. Value format is
-	 * GarpAppv1's: `"<countryCode> (+<phoneCode>)"` — Apex reads the digits
-	 * back out of it, so the country half has to travel with them.
-	 */
-	const phoneCodeOptions = useMemo(
-		() =>
-			countries
-				.filter((country) => Boolean(country.phoneCode))
-				.map((country) => ({
-					value: `${country.countryCode} (+${country.phoneCode})`,
-					label: `${country.name} (+${country.phoneCode})`,
-				})),
-		[countries],
-	)
 
 	// `useWatch`, not the destructured `watch()` — the latter returns a fresh
 	// function each render, which opts the whole component out of memoization.
 	const selectedCountry = useWatch({ control, name: "country" })
-	const needsAttestations = useMemo(
+
+	const isComplianceCountry = useMemo(
 		() =>
-			countries.some(
+			load.countries.some(
 				(country) =>
 					country.countryCode === selectedCountry && country.compliance === true,
 			),
-		[countries, selectedCountry],
+		[load.countries, selectedCountry],
 	)
 
 	/**
 	 * Identity check on blur, as GarpAppv1 does it — so somebody who already
 	 * has an account learns that before filling the rest of the form. Skipped
 	 * when the address is not yet a valid email, or when this exact address was
-	 * already checked (the result is reused as the registration's session).
+	 * already checked (the result is reused as the registration's session, so a
+	 * normal fill-and-submit makes one identity call, not two).
 	 */
 	const handleIdentityBlur = () => {
 		const { email, firstName, lastName } = getValues()
@@ -275,19 +125,20 @@ function AffiliateRegistrationForm() {
 				// The three ticks are one consent server-side; on a non-compliance
 				// country there are no ticks and submitting IS the agreement, which
 				// is what the notice above the button says.
-				privacyPolicy: needsAttestations
+				privacyPolicy: isComplianceCountry
 					? values.attestPrivacyNotice &&
 						values.attestLimitationOfLiability &&
 						values.attestReleaseAndWaiver
 					: true,
 			})
-			setCompleted(true)
+			onRegistered()
 		} catch {
 			// Rendered inline below — `mustSignIn` is a routine answer, not a toast.
 		}
 	}
 
-	const isPending = signUp.isPending || isSubmitting
+	const isBusy = signUp.isPending
+	const label = AFFILIATE_REGISTRATION.submitLabel
 	// Either leg can say it: the blur check is advisory, the submit check binds.
 	const mustSignIn =
 		signUp.error instanceof MustSignInError ||
@@ -299,465 +150,166 @@ function AffiliateRegistrationForm() {
 			? AppError.fromUnknown(signUp.error).messages[0]
 			: null
 
-	if (completed) {
-		return (
-			<Card className="w-full max-w-2xl bg-secondary">
-				<CardContent className="flex flex-col items-center gap-4 py-8 text-center">
-					<CheckCircle2 className="size-10 text-success-green" aria-hidden />
-					<CardTitle className="font-sans text-title font-medium">
-						You&rsquo;re an Affiliate Member
-					</CardTitle>
-					<p className="text-body text-muted-foreground">
-						Your Affiliate membership is active. Check your inbox for the
-						welcome email with your GARP ID.
-					</p>
-					<Button asChild className="mt-2 h-[60px] w-full max-w-sm">
-						<Link to="/Login">Go to Sign In</Link>
-					</Button>
-				</CardContent>
-			</Card>
-		)
-	}
-
-	const ineligible =
-		load.data && load.data.eligibility.isEligible === false
-			? (load.data.eligibility.message ??
-				"Affiliate registration is not available right now.")
-			: null
-
 	return (
-		/*
-		 * Scrolled INSIDE the card so a tall form never drags the GARP logo and
-		 * footer off screen — only the field area moves.
-		 *
-		 * The 17rem is the shell's chrome around this card (logo, footer, the
-		 * gaps between them and the page padding), so at a normal viewport the
-		 * page itself does not scroll at all. `svh` rather than `vh` because a
-		 * mobile browser's collapsing address bar makes `vh` taller than what
-		 * is actually visible. The floor stops the card collapsing to a slit on
-		 * a short window — below that the page scrolls again, which is the
-		 * right trade at that size.
-		 */
-		<Card className="flex max-h-[calc(100svh-17rem)] min-h-[20rem] w-full max-w-2xl flex-col bg-secondary">
-			<CardHeader className="shrink-0">
-				<CardTitle className="font-sans text-center text-title font-medium">
-					{AFFILIATE_REGISTRATION.title}
-				</CardTitle>
-				<p className="text-center text-body text-muted-foreground">
-					{AFFILIATE_REGISTRATION.byline}
-				</p>
-			</CardHeader>
-			<CardContent className="flex-1 overflow-y-auto">
-				{load.isPending ? <AffiliateRegistrationSkeleton /> : null}
+		<form
+			className="flex flex-col gap-6"
+			onSubmit={(event) => {
+				void handleSubmit(onSubmit)(event)
+			}}
+			noValidate
+		>
+			{/*
+			 * One bar: what you are doing, what it costs and the commitment.
+			 *
+			 * Fully opaque, because content scrolling under a translucent bar reads
+			 * as a rendering fault rather than as depth; and no negative margin,
+			 * because bleeding it past the container makes it wider than its scroll
+			 * parent and buys a few pixels of horizontal scroll.
+			 *
+			 * No back link, unlike the exam forms' bar. Every in-app parent is
+			 * behind the session guard and this route is guest-only, so the only
+			 * "back" available is off to garp.org — which is leaving, not going
+			 * back, and not what a back arrow promises mid-form.
+			 */}
+			<div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 bg-background py-3">
+				{/*
+				 * An `h1`, not an `h2`: this is the page's only heading, and the page
+				 * is linked from marketing email and from the Login card.
+				 */}
+				<h1 className="min-w-0 truncate font-heading text-2xl font-semibold">
+					<span className="text-garp-cyan">
+						{AFFILIATE_REGISTRATION_HEADING.highlight}
+					</span>
+					{AFFILIATE_REGISTRATION_HEADING.suffix}
+				</h1>
 
-				{load.isError ? (
-					<Alert variant="destructive">
-						<AlertTitle>Unable to open registration</AlertTitle>
-						<AlertDescription>
-							{AppError.fromUnknown(load.error).messages[0]}
-						</AlertDescription>
-					</Alert>
-				) : null}
+				<div className="flex items-center gap-4">
+					{/*
+					 * Pinned to the button's own height, matching the exam forms' total
+					 * block, so the two bars line up. Nothing arrives late here — the
+					 * figure is a constant — but the geometry is shared.
+					 */}
+					<div className="flex h-10 shrink-0 flex-col items-end justify-center text-right">
+						<p className="text-caption leading-none text-muted-foreground">
+							Total
+						</p>
+						<span className="text-lg leading-tight font-semibold text-primary">
+							Free
+						</span>
+					</div>
 
-				{ineligible ? (
-					<Alert variant="destructive">
-						<AlertTitle>Registration unavailable</AlertTitle>
-						<AlertDescription>{ineligible}</AlertDescription>
-					</Alert>
-				) : null}
-
-				{load.data && !ineligible ? (
-					<form
-						className="flex flex-col gap-4"
-						onSubmit={(event) => {
-							void handleSubmit(onSubmit)(event)
-						}}
-						noValidate
+					{/*
+					 * Disabled until every required answer is in, so the first thing
+					 * somebody learns about a missing field is not a failed submission.
+					 * Everything this form validates is owned by react-hook-form, so
+					 * `isValid` alone is the whole answer — unlike the exam forms,
+					 * whose exam selection lives outside it.
+					 */}
+					<Button
+						type="submit"
+						size="lg"
+						disabled={isBusy || !isValid}
+						title={
+							isValid || isBusy
+								? undefined
+								: "Complete the required fields to continue."
+						}
 					>
-						{/*
-						 * GarpAppv1's Returning card. It renders a modal for any
-						 * returning customer but only `mustSignIn` actually blocks —
-						 * so this states both cases and only blocks on the second.
-						 */}
-						{mustSignIn || existingCustomer ? (
-							<Alert variant={mustSignIn ? "destructive" : "default"}>
-								<AlertTitle>
-									{mustSignIn
-										? "You already have an account"
-										: "We found your record"}
-								</AlertTitle>
-								<AlertDescription>
-									An account already exists for this email address.{" "}
-									{mustSignIn
-										? "Please sign in to continue."
-										: "Sign in to keep this registration on your existing record."}{" "}
-									<Link
-										to="/Login"
-										className="font-semibold text-primary hover:underline"
-									>
-										Sign In
-									</Link>
-								</AlertDescription>
-							</Alert>
-						) : null}
+						{isBusy ? "Registering…" : label}
+					</Button>
+				</div>
+			</div>
 
-						{failureMessage ? (
-							<Alert variant="destructive">
-								<AlertTitle>Registration failed</AlertTitle>
-								<AlertDescription>{failureMessage}</AlertDescription>
-							</Alert>
-						) : null}
+			{/*
+			 * Above the form rather than beside the email field: signing in is a
+			 * full navigation that discards whatever has been typed, so the offer
+			 * has to arrive before anyone starts typing.
+			 */}
+			<Alert>
+				<AlertDescription>
+					{AFFILIATE_REGISTRATION.byline}{" "}
+					<Link
+						to={LOGIN_PATH}
+						search={{ startUrl: getReturnPath(location) }}
+						className="font-medium text-primary underline underline-offset-2"
+					>
+						Already have an account? Sign in
+					</Link>
+				</AlertDescription>
+			</Alert>
 
-						{/*
-						 * Two columns from `sm` up, one below. Names lead so that by
-						 * the time the email field blurs and fires the identity check,
-						 * it has a first and last name to send with it.
-						 */}
-						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-							<Field
-								id="firstName"
-								label="First Name"
-								error={errors.firstName?.message}
-							>
-								<Input
-									id="firstName"
-									autoComplete="given-name"
-									placeholder="First Name / Given Name"
-									maxLength={REGISTRATION_LIMITS.nameMaxLength}
-									disabled={isPending}
-									aria-invalid={errors.firstName ? true : undefined}
-									className="h-10 rounded-xl bg-background"
-									{...register("firstName", {
-										required: "Please enter your first name / given name.",
-										minLength: {
-											value: REGISTRATION_LIMITS.nameMinLength,
-											message: "Your first name must be more than 1 character.",
-										},
-										validate: (value) =>
-											isEnglishName(value) ||
-											"Please enter only English characters.",
-										onBlur: handleIdentityBlur,
-									})}
-								/>
-							</Field>
-
-							<Field
-								id="lastName"
-								label="Last Name"
-								error={errors.lastName?.message}
-							>
-								<Input
-									id="lastName"
-									autoComplete="family-name"
-									placeholder="Last Name / Surname"
-									maxLength={REGISTRATION_LIMITS.nameMaxLength}
-									disabled={isPending}
-									aria-invalid={errors.lastName ? true : undefined}
-									className="h-10 rounded-xl bg-background"
-									{...register("lastName", {
-										required: "Please enter your last name / surname.",
-										minLength: {
-											value: REGISTRATION_LIMITS.nameMinLength,
-											message: "Your last name must be more than 1 character.",
-										},
-										validate: (value) =>
-											isEnglishName(value) ||
-											"Please enter only English characters.",
-										onBlur: handleIdentityBlur,
-									})}
-								/>
-							</Field>
-
-							<Field
-								id="email"
-								label="Email Address"
-								error={errors.email?.message}
-							>
-								<Input
-									id="email"
-									type="email"
-									autoComplete="email"
-									placeholder="Name@example.com"
-									maxLength={REGISTRATION_LIMITS.emailMaxLength}
-									disabled={isPending}
-									aria-invalid={errors.email ? true : undefined}
-									className="h-10 rounded-xl bg-background"
-									{...register("email", {
-										required: "Email address is required.",
-										pattern: {
-											value: EMAIL_PATTERN,
-											message: "Please enter a valid email address.",
-										},
-										onBlur: handleIdentityBlur,
-									})}
-								/>
-							</Field>
-
-							<Field
-								id="country"
-								label="Location"
-								error={errors.country?.message}
-							>
-								<Controller
-									control={control}
-									name="country"
-									rules={{ required: "Please select your location." }}
-									render={({ field }) => (
-										<Select
-											value={field.value}
-											onValueChange={field.onChange}
-											disabled={isPending}
-										>
-											<SelectTrigger
-												id="country"
-												aria-invalid={errors.country ? true : undefined}
-												className="h-10 w-full rounded-xl bg-background"
-											>
-												<SelectValue placeholder="Select Location" />
-											</SelectTrigger>
-											<SelectContent>
-												{countries.map((country) => (
-													<SelectItem
-														key={country.id}
-														value={country.countryCode}
-													>
-														{country.name}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-									)}
-								/>
-							</Field>
-
-							{/*
-							 * Spans the grid: the dial code and the number are one field
-							 * split 1:2, so pairing it with anything else would give four
-							 * controls on one row.
-							 *
-							 * Required on every GarpAppv1 registration kind, affiliate
-							 * included — its validation sits outside the guest-only block
-							 * in useExamRegistrationForm.sectionErrors.
-							 */}
-							<div className="flex flex-col gap-2 sm:col-span-2">
-								<Label htmlFor="mobilePhone" className="font-bold">
-									Mobile Phone
-									<span className="text-destructive" aria-hidden>
-										{" "}
-										*
-									</span>
-								</Label>
-								<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-									<Controller
-										control={control}
-										name="mobilePhoneCode"
-										rules={{ required: "Please select a country code." }}
-										render={({ field }) => (
-											<Select
-												value={field.value}
-												onValueChange={field.onChange}
-												disabled={isPending}
-											>
-												<SelectTrigger
-													id="mobilePhoneCode"
-													aria-label="Mobile phone country code"
-													aria-invalid={
-														errors.mobilePhoneCode ? true : undefined
-													}
-													className="h-10 w-full rounded-xl bg-background"
-												>
-													<SelectValue placeholder="Select a Country Code" />
-												</SelectTrigger>
-												<SelectContent>
-													{phoneCodeOptions.map((option) => (
-														<SelectItem
-															key={option.value}
-															value={option.value}
-														>
-															{option.label}
-														</SelectItem>
-													))}
-												</SelectContent>
-											</Select>
-										)}
-									/>
-									<div className="sm:col-span-2">
-										<Input
-											id="mobilePhone"
-											type="tel"
-											inputMode="numeric"
-											autoComplete="tel"
-											disabled={isPending}
-											aria-invalid={errors.mobilePhone ? true : undefined}
-											className="h-10 rounded-xl bg-background"
-											{...register("mobilePhone", {
-												required:
-													"Please select a country code and enter a mobile phone number.",
-												pattern: {
-													value: PHONE_PATTERN,
-													message: "Please enter between 7 and 15 numbers.",
-												},
-											})}
-										/>
-									</div>
-								</div>
-								<FieldError
-									message={
-										errors.mobilePhoneCode?.message ??
-										errors.mobilePhone?.message
-									}
-								/>
-								<p className="text-caption text-muted-foreground">
-									{SMS_COPY.notice}
-								</p>
-							</div>
-
-							<div className="flex flex-col gap-2 sm:col-span-2">
-								<p className="text-body font-bold">
-									{SMS_COPY.promotionalHeading}
-								</p>
-								<Controller
-									control={control}
-									name="smsPromotionalUpdates"
-									render={({ field }) => (
-										<Attestation
-											id="smsPromotionalUpdates"
-											checked={field.value}
-											onCheckedChange={field.onChange}
-											invalid={false}
-											disabled={isPending}
-										>
-											{SMS_COPY.promotionalOptIn}
-										</Attestation>
-									)}
-								/>
-							</div>
-						</div>
-
-						{needsAttestations ? (
-							<fieldset className="flex flex-col gap-3">
-								<legend className="sr-only">Policy attestations</legend>
-								<Controller
-									control={control}
-									name="attestPrivacyNotice"
-									rules={{
-										required: "You must confirm you have read our policies.",
-									}}
-									render={({ field }) => (
-										<Attestation
-											id="attestPrivacyNotice"
-											checked={field.value}
-											onCheckedChange={field.onChange}
-											invalid={Boolean(errors.attestPrivacyNotice)}
-											disabled={isPending}
-										>
-											Yes, I have read GARP&rsquo;s{" "}
-											<PolicyLink href={POLICY_LINKS.privacyNotice}>
-												Privacy Notice
-											</PolicyLink>{" "}
-											and{" "}
-											<PolicyLink href={POLICY_LINKS.codeOfConduct}>
-												Code of Conduct
-											</PolicyLink>
-											.
-										</Attestation>
-									)}
-								/>
-								<Controller
-									control={control}
-									name="attestLimitationOfLiability"
-									rules={{
-										required: "You must confirm you have read our policies.",
-									}}
-									render={({ field }) => (
-										<Attestation
-											id="attestLimitationOfLiability"
-											checked={field.value}
-											onCheckedChange={field.onChange}
-											invalid={Boolean(errors.attestLimitationOfLiability)}
-											disabled={isPending}
-										>
-											Yes, I have read GARP&rsquo;s{" "}
-											<PolicyLink href={POLICY_LINKS.limitationOfLiability}>
-												Limitation of Liability
-											</PolicyLink>
-											.
-										</Attestation>
-									)}
-								/>
-								<Controller
-									control={control}
-									name="attestReleaseAndWaiver"
-									rules={{
-										required: "You must confirm you have read our policies.",
-									}}
-									render={({ field }) => (
-										<Attestation
-											id="attestReleaseAndWaiver"
-											checked={field.value}
-											onCheckedChange={field.onChange}
-											invalid={Boolean(errors.attestReleaseAndWaiver)}
-											disabled={isPending}
-										>
-											Yes, I have read GARP&rsquo;s{" "}
-											<PolicyLink href={POLICY_LINKS.releaseAndWaiver}>
-												Waiver and Release
-											</PolicyLink>
-											.
-										</Attestation>
-									)}
-								/>
-								{errors.attestPrivacyNotice ||
-								errors.attestLimitationOfLiability ||
-								errors.attestReleaseAndWaiver ? (
-									<FieldError message="You must confirm you have read our policies." />
-								) : null}
-							</fieldset>
-						) : (
-							<p className="text-caption text-muted-foreground">
-								By clicking{" "}
-								<strong>{AFFILIATE_REGISTRATION.submitLabel}</strong> you agree
-								to the{" "}
-								<PolicyLink href={POLICY_LINKS.privacyNotice}>
-									Privacy Notice
-								</PolicyLink>
-								,{" "}
-								<PolicyLink href={POLICY_LINKS.codeOfConduct}>
-									Code of Conduct
-								</PolicyLink>
-								,{" "}
-								<PolicyLink href={POLICY_LINKS.limitationOfLiability}>
-									Limitation of Liability
-								</PolicyLink>{" "}
-								and{" "}
-								<PolicyLink href={POLICY_LINKS.releaseAndWaiver}>
-									Waiver and Release
-								</PolicyLink>
-								, and to receiving emails from GARP and select third party
-								providers with news, special offers, promotions and future
-								messages that may be of interest to you.
-							</p>
-						)}
-
-						<Button type="submit" className="mt-2 h-[60px]" disabled={isPending}>
-							{isPending ? "Registering…" : AFFILIATE_REGISTRATION.submitLabel}
-						</Button>
-
-						<div className="flex items-center justify-center gap-2 text-body">
-							<span className="text-muted-foreground">
-								Already have an account?
-							</span>
+			{/*
+			 * GarpAppv1 raises a modal for any returning customer but only
+			 * `mustSignIn` actually blocks — so this states both cases inline and
+			 * only the second one carries a way out.
+			 */}
+			{mustSignIn ? (
+				<Alert variant="destructive">
+					<AlertTitle>You already have an account</AlertTitle>
+					<AlertDescription className="flex flex-col items-start gap-3">
+						<span>
+							An account already exists for this email address. Please sign in
+							instead — you will start again from the sign-in page, so nothing
+							typed here is kept.
+						</span>
+						<Button asChild size="sm" variant="outline">
 							<Link
-								to="/Login"
-								className="font-semibold text-primary hover:underline"
+								to={LOGIN_PATH}
+								search={{ startUrl: getReturnPath(location) }}
 							>
-								Sign In
+								Sign in and start again
 							</Link>
-						</div>
-					</form>
-				) : null}
-			</CardContent>
-		</Card>
+						</Button>
+					</AlertDescription>
+				</Alert>
+			) : existingCustomer ? (
+				<Alert>
+					<AlertTitle>We found your record</AlertTitle>
+					<AlertDescription>
+						We already hold a record for this email address. You can carry on —
+						this membership will be added to it.
+					</AlertDescription>
+				</Alert>
+			) : null}
+
+			{failureMessage ? (
+				<Alert variant="destructive">
+					<AlertTitle>Unable to complete your registration</AlertTitle>
+					<AlertDescription>{failureMessage}</AlertDescription>
+				</Alert>
+			) : null}
+
+			<div className="grid grid-cols-1 gap-6 lg:grid-cols-10">
+				<div className="flex flex-col gap-6 lg:col-span-6">
+					<YourDetailsSection
+						register={register}
+						control={control}
+						errors={errors}
+						countries={load.countries}
+						onIdentityBlur={handleIdentityBlur}
+						disabled={isBusy}
+					/>
+
+					<ConsentSection
+						control={control}
+						errors={errors}
+						isComplianceCountry={isComplianceCountry}
+						submitLabel={label}
+						disabled={isBusy}
+					/>
+				</div>
+
+				{/*
+				 * `h-fit` + `sticky` is what pins the rail: it sizes to its content
+				 * and stays put while the main column scrolls past it. `top-22` is
+				 * the sticky bar (4rem) plus the grid gap (1.5rem) — a larger `top`
+				 * pushes the rail down below the column beside it on first paint.
+				 */}
+				<aside className="lg:sticky lg:top-22 lg:col-span-4 lg:h-fit">
+					<AffiliateRail />
+				</aside>
+			</div>
+		</form>
 	)
 }
 

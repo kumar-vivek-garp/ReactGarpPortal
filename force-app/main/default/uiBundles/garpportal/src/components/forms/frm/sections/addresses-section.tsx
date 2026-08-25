@@ -1,3 +1,5 @@
+import { MapPin } from "lucide-react"
+
 import { useMemo } from "react"
 import {
 	Controller,
@@ -33,6 +35,12 @@ type AddressBlockProps = {
 	control: Control<FrmFormValues>
 	errors: FieldErrors<FrmFormValues>
 	countries: RegistrationCountry[]
+	/**
+	 * Billing only. The billing country decides which payment methods are
+	 * permitted, so changing it here has the same consequences as changing it
+	 * in the Location field — the shipping country decides nothing.
+	 */
+	onCountryChange?: (countryCode: string) => void
 	/** A mirrored shipping address is shown read-only rather than hidden. */
 	disabled?: boolean
 }
@@ -55,6 +63,7 @@ function AddressBlock({
 	control,
 	errors,
 	countries,
+	onCountryChange,
 	disabled,
 }: AddressBlockProps) {
 	const sectionErrors = errors[prefix]
@@ -178,7 +187,10 @@ function AddressBlock({
 								// `undefined` latches the Select into uncontrolled mode and
 								// every later value is ignored.
 								value={field.value ?? ""}
-								onValueChange={field.onChange}
+								onValueChange={(next) => {
+									field.onChange(next)
+									onCountryChange?.(next)
+								}}
 								disabled={disabled}
 							>
 								<SelectTrigger
@@ -211,6 +223,8 @@ type AddressesSectionProps = {
 	countries: RegistrationCountry[]
 	sameAsBilling: boolean
 	onSameAsBillingChange: (next: boolean) => void
+	/** Applied to the billing block only — see `AddressBlockProps`. */
+	onCountryChange: (countryCode: string) => void
 	disabled?: boolean
 }
 
@@ -228,12 +242,16 @@ function AddressesSection({
 	countries,
 	sameAsBilling,
 	onSameAsBillingChange,
+	onCountryChange,
 	disabled,
 }: AddressesSectionProps) {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle className="text-lg">Billing &amp; shipping</CardTitle>
+				<CardTitle className="flex items-center gap-2 text-lg">
+					<MapPin className="size-5 text-muted-foreground" aria-hidden />
+					Billing &amp; shipping
+				</CardTitle>
 				<p className="text-body text-muted-foreground">
 					Needed for wire and ACH orders so finance can raise your invoice.
 				</p>
@@ -246,6 +264,7 @@ function AddressesSection({
 					control={control}
 					errors={errors}
 					countries={countries}
+					onCountryChange={onCountryChange}
 					disabled={disabled}
 				/>
 

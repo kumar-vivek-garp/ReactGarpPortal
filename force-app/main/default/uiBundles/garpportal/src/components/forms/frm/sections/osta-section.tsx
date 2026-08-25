@@ -1,3 +1,5 @@
+import { IdCard } from "lucide-react"
+
 import {
 	Controller,
 	type Control,
@@ -121,7 +123,10 @@ function OstaSection({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle className="text-lg">{OSTA_COPY.title}</CardTitle>
+				<CardTitle className="flex items-center gap-2 text-lg">
+					<IdCard className="size-5 text-muted-foreground" aria-hidden />
+					{OSTA_COPY.title}
+				</CardTitle>
 				<p className="text-body text-muted-foreground">{OSTA_COPY.intro}</p>
 			</CardHeader>
 			<CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">

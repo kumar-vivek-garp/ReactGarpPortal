@@ -61,7 +61,10 @@ function PaymentSection({
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle className="text-lg">Payment</CardTitle>
+				<CardTitle className="flex items-center gap-2 text-lg">
+					<CreditCard className="size-5 text-muted-foreground" aria-hidden />
+					Payment
+				</CardTitle>
 			</CardHeader>
 			<CardContent className="flex flex-col gap-4">
 				<Controller

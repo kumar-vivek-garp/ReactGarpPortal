@@ -15,6 +15,34 @@ This rule assumes `legacy-rewrite.md` (which repo is which), `commands.md`
 
 ---
 
+## 0. The order that works
+
+FRM took as long as it did because most of the list below was discovered rather
+than planned. Follow the sequence; each step points at the section that explains
+it.
+
+1. **Read GarpAppv1 for this programme** (§1) — endpoints and their order, exact
+   field list, validation character-for-character, and every `isAuthenticated`
+   branch. Retrieve the deployed copy, not the local checkout.
+2. **Read the Apex for what no client can tell you** (§1, §8) — what is
+   actually required, what is validated server-side, what is not idempotent.
+3. **Diff the programme against FRM before writing anything.** Almost all the
+   machinery is shared (§3). What is usually genuinely new: the programme's
+   title and `publicByLine`, its policy URL, which sections apply at all, and
+   whether it has study materials or shipping.
+4. **Wire the route pair and guards** (§2) — member under `_appLayout`, public
+   under `_publicFormLayout`. Do not add a layout group.
+5. **Build from the shared pieces** (§3) — reuse the hooks, payload builders and
+   pure rules; add only the sections this programme needs.
+6. **Account for every field the payload sends** (§5) — anything
+   `buildRegisterRequest` puts on the wire with no control behind it is being
+   posted as its default, silently.
+7. **Wire the cross-field effects** (§6) — the billing country is the one that
+   bites, and it has two entry points.
+8. **Work the checklist** (§8), both audiences, in a browser.
+
+---
+
 ## 1. Before writing anything: read GarpAppv1 for **logic only**
 
 **STRICT. This is the rule that matters most, and the one most easily skipped.**
@@ -98,26 +126,60 @@ The same form is served to a signed-in member and to a visitor with no account.
 
 | Audience | Route | Layout group |
 |---|---|---|
-| Member | `/programs/$programType/register` | `_programsFormLayout` |
+| Member | `/programs/$programType/register` | `_appLayout` (the normal portal layout) |
 | Guest | `/registration/$programType` | `_publicFormLayout` |
+| Affiliate (guest only) | `/registration/affiliate` | `_publicFormLayout` |
 
 `/registration/<type>` is the legacy public address and is already in
 circulation in GARP marketing email — keep it.
 
-**There is no `/register` or `/registration` route for membership sign-up.**
-Affiliate registration lives at `/affiliate`. Do not add one.
+**Membership sign-up lives at `/registration/affiliate` — a *static* sibling
+of `/registration/$programType`, not a case inside it.** TanStack Router sorts
+routes by specificity, so a static segment always matches ahead of a dynamic
+one and the affiliate path never reaches the exam dispatcher. It must not:
+`program-registration-panel` branches on programme slug to build an *exam*
+cart, and `redirectMemberToPortalForm` would bounce a member to
+`/programs/affiliate/register`, which is not a real page.
 
-### Guards go on the leaf route, never on the layout
+Affiliate is the only programme with **no member twin**. Sign-up creates the
+GARP account, and anyone with a session already has one, so its guard is
+`redirectMemberToDashboard` rather than a redirect to an in-portal form. It
+also has no payment return to protect — its order is a single AFREE line for
+zero, settled server-side — which is why that guard has no `isPaymentReturn`
+branch while the exam one does.
 
-Both redirects need `params.programType`, and a pathless layout sitting above
-that segment cannot see it. The layout groups exist **only** to supply chrome.
+`/affiliate` was the old address and still resolves, but only as a redirect
+(`pages/affiliate/index.tsx`, `beforeLoad` throws, renders nothing). Link to
+`AFFILIATE_REGISTRATION_ROUTE`, never to `/affiliate`.
 
-Guards live in `auth/registration-guard.ts` and are shared, not rewritten:
+### Never give a route its own layout group just to change its guard
 
-- `redirectGuestToPublicForm` — on the member route
-- `redirectMemberToPortalForm` — on the public route
+The obvious way to send a guest somewhere other than Login is a second layout
+group whose `beforeLoad` runs instead of `_appLayout`'s. **Do not.** Two sibling
+pathless layouts are two different positions in the React tree, so crossing
+between them unmounts and remounts the entire portal shell — navbar, sidebar,
+footer, alert bar — and replays `PageEnterFade` over all of it. That is a
+visible full-screen flash on every navigation in or out of the route, and it
+also breaks the alert bar's "mounted once, never refetches" guarantee. This was
+shipped and had to be undone; the give-away is that `/programs → /programs/scr`
+is smooth while `/programs → /programs/frm/register` flashes.
 
-Both must:
+Verify with node identity, not by eye:
+`const h = document.querySelector('header')` before a client-side navigation,
+then `h === document.querySelector('header')` after. Same node = no remount.
+
+**Instead, let the one layout guard decide.** A parent `beforeLoad` runs before
+any child's, so the exception belongs in the parent:
+`_appLayout` asks `publicRegistrationFallback(location.pathname)`
+(`lib/registration-paths.ts`) and redirects to the public twin when there is
+one, falling back to Login otherwise. The member route then stays an ordinary
+`_appLayout` child like its siblings.
+
+The public route keeps its own leaf guard (`redirectMemberToPortalForm` in
+`auth/registration-guard.ts`) — it lives under a different shell anyway, so
+there is no shared chrome to preserve.
+
+Guards must:
 
 - **Resolve the session synchronously on a cache hit.** An `async beforeLoad`
   always returns a Promise, which flashes the pending shell on every
@@ -125,15 +187,7 @@ Both must:
   fetched, `null` = guest, object = member.
 - **Carry `search` through the redirect.** A marketing link is
   `?regCode=TEAM24`; losing it on the bounce silently reprices the order.
-- **Never redirect a payment return.** See below.
-
-### The member route cannot live under `_appLayout`
-
-`_appLayout`'s `beforeLoad` throws a guest to `/Login`, and a parent guard runs
-before any child can decide otherwise. That is the entire reason
-`_programsFormLayout` exists. It wears the same chrome via the shared
-`components/organisms/app-layout-shell.tsx`. Both groups are pathless, so the
-URL is unchanged.
+- **Keep a payment return's params.** See below.
 
 ### The payment return is sacred
 
@@ -171,12 +225,20 @@ src/
 │   ├── use-exam-registration.ts         # load + derived selection state
 │   └── use-exam-registration-submit.ts  # the submit sequence
 ├── auth/registration-guard.ts   # SHARED
+├── components/forms/registration-shell.ts   # SHARED page shell classes
 └── components/forms/<programme>/        # ← the only per-programme folder
     ├── <programme>-registration-panel.tsx   # load / skeleton / outcome switch
     ├── <programme>-registration-form.tsx    # layout + react-hook-form owner
     ├── <programme>-form-values.ts           # typed values + seed function
     └── sections/                            # one file per card
 ```
+
+`registration-shell.ts` holds the fixed-height, internally-scrolling shell
+(`REGISTRATION_SHELL` + `REGISTRATION_SCROLL`) every registration form is
+served in. It is shared because a form's sticky bar only sticks if the *form*
+scrolls and the document does not — and because two copies of that geometry
+drifted apart is a submit bar that leaves the screen on one route and not its
+sibling.
 
 `components/forms/program-registration/program-registration-panel.tsx` is the
 dispatcher: it branches on programme slug and renders the built form, falling
@@ -219,19 +281,35 @@ guest-granted like the rest of it.
 
 The registration form is a **checkout**, not a settings page.
 
-- **70/30 split** — form in `lg:col-span-7`, order summary rail in
-  `lg:col-span-3`. The rail does not scroll with the form.
+- **60/40 split** — form in `lg:col-span-6`, order summary rail in
+  `lg:col-span-4`, inside `lg:grid-cols-10`. The rail is pinned
+  (`lg:sticky lg:top-22 lg:h-fit`) and scrolls internally rather than with the
+  form, so the running total stays on screen.
+- **A sticky `top` must equal the element's natural offset, never exceed it.**
+  `sticky` with a larger `top` pushes the element *down* immediately, at rest,
+  on first paint — at `top-28` the rail sat 24px below the form column beside
+  it and looked misaligned before anyone scrolled. The natural offset here is
+  the sticky bar (4rem) + the grid gap (1.5rem) = `top-22`.
+- **A pinned rail must be capped against its scroll parent, not the viewport.**
+  `max-h-[calc(100vh-13.5rem)]` subtracts all three things above it — 5rem
+  navbar, 3rem shell `py-6`, 5.5rem pin offset. It once read `100vh-9rem`,
+  which made the rail 6rem taller than the slot it sits in: the bottom was
+  clipped, and because the rail also had `overscroll-contain` the wheel would
+  not chain to the page, so the total was genuinely unreachable. Do not put
+  `overscroll-contain` on a secondary column — when it bottoms out the page
+  should keep scrolling. **These two numbers are coupled: change the pin offset
+  and this cap must follow.**
 - **One sticky bar** carries back link (members only), title, live total and the
   submit button. Fully opaque — content scrolling under a translucent bar reads
   as a rendering fault. **No negative margins**: they make the bar wider than
   its scroll parent and clip the back arrow.
 - **The form title is the page's `h1`.** On the public route it is the only
   heading the document has, and that page is linked from marketing email — it
-  must not be an `h2` under nothing. A guest also gets a larger title plus a
-  muted supporting line naming the certification in full (GARP's own wording,
-  not invented), because nothing else occupies the left of the bar for them and
-  two lines balance the total-plus-button block opposite. A member keeps the
-  single smaller line — the back link already sits there.
+  must not be an `h2` under nothing. It names the certification in full and in
+  GARP's own wording, with the acronym tinted in the programme's brand colour —
+  rendered through the shared `MegaMenuHeadingText` molecule and a
+  `MegaMenuHeading`-shaped constant, so it matches the nav exactly and no hex is
+  written by hand. Same title for both audiences.
 - **Reserve space for values that arrive late.** The total block is always
   rendered at a fixed `h-10` showing `Total —` before pricing, because a block
   that appears later resizes the bar and makes the header jump.
@@ -241,6 +319,54 @@ The registration form is a **checkout**, not a settings page.
 - **Debounce pricing** (400ms) and key the query by the request so an
   out-of-order response cannot overwrite a newer total. `keepPreviousData` holds
   the last figure so it updates rather than blinking away.
+
+- **Every field the payload sends needs a control, or a deliberate default.**
+  `smsPromotionalUpdates` sat in `buildRegisterRequest` for weeks with nothing
+  rendering it, so every registration posted `false` — a marketing consent
+  answered on the candidate's behalf. When adding a programme, walk the request
+  builder and confirm each field is either on screen or intentionally fixed.
+- **Confirm before submitting** (`ConfirmRegistrationDialog`). Order of
+  operations matters: `handleSubmit` validates, the built request is then
+  *staged* in state, and only the dialog's confirm fires the mutation. Past that
+  point `register` writes an order and `payOrder` cannot be called twice, so the
+  total gets one more look. On failure close the dialog — the error belongs
+  against the form it has to be fixed in.
+- **A cart control says what the click does**: `Add` ⇄ `Remove`, not `Add` ⇄
+  `Added`. The row's own tint already carries "in the cart", so tinting the
+  button to match reads as a confirmation rather than as the way back out.
+- **Empty states keep the shape of what they become.** Before an exam is picked
+  the rail's one card showed a single muted sentence, which reads as a failed
+  load; it now carries greyed placeholder rows for the lines that will appear.
+- **One icon per card title**, muted and `aria-hidden` — the text still carries
+  the meaning. A form this long needs fixed points to scan by.
+
+### What a member does **not** see
+
+Ported from GarpAppv1, which is the authority on this — the branches are its
+`IndividualDetailsCard`.
+
+| Hidden for a member | Why |
+|---|---|
+| First name, last name, email | Already on their record, and registering does not change it. Showing them invites edits that look saved to the account but are not. The values stay in the form and still travel with the order — only the controls go |
+| Nothing else | In particular **not** the phone or the promotional-SMS opt-in: GarpAppv1 shows both to everyone, and the phone is how exam-day changes reach a candidate |
+
+**Location is not part of this.** It is gated on `!showAddresses`, for both
+audiences — visible while no billing address card is on screen, hidden once one
+is, because that card carries its own country and asking twice is two chances to
+disagree. Gating it on login instead looks reasonable and is wrong: a member
+with no billing country on file then has a required field they cannot see, and
+Register stays disabled with nothing on screen to fix.
+
+### The guest byline
+
+Each programme has one line of copy shown under the title to guests only —
+GarpAppv1's `publicByLine` in `programConfig.ts`. It is **static per programme**,
+not computed: FRM's warns that returning Part II candidates must sign in
+(their Part I record lives on an account); SCR's advertises a member rate. Port
+the programme's own line; do not write a new one, and do not show it to members.
+
+It is the upfront half of the same conversation the server has at submit via
+`mustSignIn`, which is the point — signing in does not preserve what was typed.
 
 ### What a guest does **not** get
 
@@ -298,6 +424,30 @@ Follow `forms.md`. Registration forms add these, all learned the hard way:
 - **Consents always start unticked.** A tick recorded against a policy the
   candidate did not read this time is worthless.
 
+### Changing the billing country is not a field write
+
+It has three consequences, all applied together, and GarpAppv1 applies all
+three from **both** entry points — the Location select *and* the billing address
+card's own country select. Wiring only one leaves the other broken:
+
+1. the address card's country follows it — they are the same country;
+2. the province is cleared, because it belonged to the old country;
+3. **the payment method is re-picked** via `defaultPaymentType`.
+
+(3) is the one that hurts. A country may forbid the method already selected, and
+the tile then only *renders* as unselected — the form value stays put, so the
+address cards stay up, the submit label stays wrong, and the order is priced and
+posted with a method the country does not allow, failing at the server instead
+of at the point of choosing. `defaultPaymentType` existed in
+`registration-presentation.ts` with a docstring saying "re-run whenever the
+billing country changes" and **nothing called it**. Check for that shape when
+porting: a pure rule written but never wired.
+
+**Write the fields individually.** `setValue("billing", {...})` on the parent
+object leaves the individually-registered child inputs showing their old text,
+so the previous country's province stays on screen and gets submitted. Use
+`setValue("billing.country", …)` and `setValue("billing.province", "")`.
+
 ---
 
 ## 7. Traps that have already cost real time
@@ -311,6 +461,11 @@ Each of these shipped as a bug once. Recognise them by symptom.
 | Form loads, every submit fails | The Data SDK's CSRF preflight 403s for guests | The transport split in §4 |
 | Every request dies as `Failed to fetch` | `SFDC_ENV.apiPath` is `"/"` locally, so `"/" + "/services/…"` becomes `//services/…` — a protocol-relative URL resolving to host `services` | Strip the trailing slash before concatenating |
 | A signed-in member shown guest chrome | Using `load.isAuthenticated` (the **server's** view) for a **client-routing** decision. They genuinely disagree on local dev, where the gateway signs in as a non-community user | Server payload governs submit behaviour; the client session governs where links may point |
+| Whole screen flashes navigating into one route but not its siblings | That route was put in its own pathless layout group, so the shared shell unmounts and remounts across the boundary | Keep it in `_appLayout` and put the exception in the parent guard (§2) |
+| A pinned column sits lower than the one beside it, before any scrolling | `sticky` with a `top` greater than the element's natural offset pushes it down immediately | Make `top` equal the natural offset (§5) |
+| A value is posted that nobody chose | A field is in `buildRegisterRequest` with no control rendering it, so it ships as its default | Walk the request builder against the UI (§5) |
+| A payment method the country forbids survives a country change | The tile de-selects visually but the form value does not change, because nothing re-runs `defaultPaymentType` | Wire the country-change effects from **both** entry points (§6) |
+| A cleared sub-field still shows its old text | `setValue` on the parent object does not refresh individually-registered child inputs | Set the leaf paths (§6) |
 | Whole files reformatted, huge spurious diff | Running `npx prettier --write` inside the UI bundle. The root `.prettierrc` targets **Apex/XML metadata only**, so it applies 2-space/single-quote defaults to a tabs/double-quote/no-semicolon codebase | **Never run prettier in the UI bundle.** `npm run lint` is the formatter of record |
 
 Local dev caveat worth knowing before debugging auth: the CLI gateway signs
@@ -345,3 +500,66 @@ Add unit tests for every pure rule and for guard decisions
 `GARP_ExamReg_API` (Apex Class Access).** That grant lives on the guest Profile,
 which is not tracked in this repo — it is an org-side change and a release
 prerequisite, not a code bug. Localhost is unaffected.
+
+### Verifying a registration against the real Apex without writing records
+
+Reading the client is guesswork; reading the Apex is better; running it is
+proof. Anonymous Apex inside a savepoint exercises the whole flow end to end
+and then discards it, so the question "does our payload actually work" gets a
+yes/no instead of an opinion:
+
+```apex
+Savepoint sp = Database.setSavepoint();
+try {
+    GARP_ExamReg_RegService svc = new GARP_ExamReg_RegService();
+    // deserialize the EXACT JSON our client sends — not a hand-built DTO,
+    // or the test proves something the browser never does
+    GARP_ExamReg_Dto.RegisterResult reg = svc.register(
+        (GARP_ExamReg_Dto.RegisterRequest) JSON.deserialize(ourBody,
+            GARP_ExamReg_Dto.RegisterRequest.class));
+    svc.completeOfflineOrder(reg.orderId, null);
+    // then SOQL what landed: Contact.DO_NOT_FIRE__c, the contract, the lines
+} catch (Exception e) { System.debug('FAILED ' + e.getMessage()); }
+Database.rollback(sp);
+```
+
+Run it as `sf apex run --file …`. Anonymous Apex is not a community user, so
+`isCommunityUser()` is false and the guest branch is what executes — which is
+the branch worth testing.
+
+### Two affiliate gaps that are NOT code bugs — verified this way
+
+Both were confirmed with the probe above; do not "fix" them in the client.
+
+| Symptom | Cause | Where it belongs |
+|---|---|---|
+| Affiliate sign-up creates no `Form_Data__c`, and `verifyCustomer` returns `sessionId: null` | The affiliate programme's `formName` is `membership-affiliate`; `selector.formByName` finds nothing because the org holds only a `Form__c` for `membership-individual`. A missing form is silently skipped, not an error | Org data. A release prerequisite like the guest Apex Class Access above |
+| The Location the candidate picks never reaches `Contact.MailingCountry` or `Account.Billing/ShippingCountry` — only `Opportunity.Billing_Country__c` | `updateContactProfile` / `updateAccountProfile` gate the country write on `billingAddress.street1 != null`, and a membership form has no street to send | Apex. Do **not** invent a street value to get past it |
+
+Also settled, so it is not re-investigated: `verifyCustomer` deliberately does
+**not** return `contactId` / `accountId` / `leadId` (the Apex says so in a
+comment, and `GARP_ExamReg_Customer.resolve` ignores client-supplied ids
+anyway). Our payload builders still forward them; they arrive `undefined`, are
+dropped by `JSON.stringify`, and the server would ignore them regardless. Dead
+weight, not a defect.
+
+---
+
+## 9. Known API gaps — do not build against these
+
+Verified against the org; they are not client bugs and not worth re-diagnosing.
+
+**`studyMaterials[].description` is always `null`.** `GARP_ExamReg_LoadService`
+maps it from `Product2.Customer_Description__c`, which is empty on all 14
+study-material products. The copy does exist — `Content__c.Description__c` (one
+sentence) and `Content__c.Story__c` (the full published copy with bullets, as
+HTML), both populated on all 22 content records — and the selector already
+queries the first of those and discards it. Confirmed by executing
+`new GARP_ExamReg_LoadService().load('frm', null, null)` directly: every FRM
+material returns `descNull=true`.
+
+So a product-details popover cannot be built yet. The request is written up in
+`doc/backend-request-study-material-details.md`; it needs the backend team, not
+a client workaround. If `Story__c` is ever exposed it arrives as raw HTML — this
+codebase has no sanitiser and uses `dangerouslySetInnerHTML` nowhere, so that
+would be a deliberate addition, not an incidental one.

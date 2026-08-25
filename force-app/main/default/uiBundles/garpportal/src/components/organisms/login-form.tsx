@@ -21,6 +21,7 @@ import { Label } from "@/components/atoms/label"
 import { useLogin } from "@/hooks/use-login"
 import { AUTH_REDIRECT_PARAM } from "@/auth/constants"
 import { getSafeStartUrl } from "@/auth/start-url"
+import { AFFILIATE_REGISTRATION_ROUTE } from "@/lib/registration-paths"
 
 type LoginFormValues = {
 	email: string
@@ -150,12 +151,13 @@ function LoginForm() {
 					</Button>
 
 					<div className="flex items-center justify-center gap-2 text-body">
-						{/*
-						 * Create Account is free Affiliate membership — this app has no
-						 * /registration or /register route. See pages/_authLayout/affiliate.
+							{/*
+						 * Create Account is free Affiliate membership. It lives with the
+						 * other public registration forms at /registration/affiliate;
+						 * /affiliate still resolves, but only as a redirect to it.
 						 */}
 						<Link
-							to="/affiliate"
+							to={AFFILIATE_REGISTRATION_ROUTE}
 							className="font-semibold text-primary hover:underline"
 						>
 							Create Account

@@ -2,27 +2,22 @@ import { animated } from "@react-spring/web"
 
 import { Card } from "@/components/atoms/card"
 import { FrmRegistrationPanel } from "@/components/forms/frm/frm-registration-panel"
+import {
+	REGISTRATION_SCROLL,
+	REGISTRATION_SHELL,
+} from "@/components/forms/registration-shell"
 import { ProgramsSubpageHeader } from "@/components/molecules/programs-subpage-header"
 import { useSubpageTransition } from "@/hooks/use-subpage-transition"
 import { cn } from "@/lib/utils"
 
-/** The shell every programme subpage shares — fixed height, scrolling body. */
-const SUBPAGE_SHELL =
-	"-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
+/**
+ * The placeholder branch's scroller, which sits *below* a
+ * `ProgramsSubpageHeader` rather than starting flush — so it keeps the top
+ * margin the shared `REGISTRATION_SCROLL` deliberately does not have, and does
+ * not need its inset either: its header is outside the clip.
+ */
 const SUBPAGE_SCROLL =
 	"mt-4 min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-/**
- * No top margin — a form with its own sticky bar must start flush.
- *
- * The horizontal padding is not cosmetic. `overflow-y-auto` also clips the X
- * axis, and the back link inside the bar nudges 5px left on hover; sitting
- * flush against this edge, that nudge would be cut off. Insetting the whole
- * column keeps the bar and the cards aligned with each other and leaves the
- * hover somewhere to go. The pages that use `ProgramsSubpageHeader` above the
- * scroller never hit this — their header is outside the clip.
- */
-const SUBPAGE_SCROLL_FLUSH =
-	"min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 
 type ProgramRegistrationPanelProps = {
 	programType: string
@@ -59,8 +54,8 @@ function ProgramRegistrationPanel({
 	// header above it would stack two headers and two back links.
 	if (isBuilt) {
 		return (
-			<animated.div style={style} className={cn(SUBPAGE_SHELL, className)}>
-				<div className={SUBPAGE_SCROLL_FLUSH}>
+			<animated.div style={style} className={cn(REGISTRATION_SHELL, className)}>
+				<div className={REGISTRATION_SCROLL}>
 					<FrmRegistrationPanel
 						programType={slug}
 						regCode={regCode}
@@ -73,7 +68,7 @@ function ProgramRegistrationPanel({
 	}
 
 	return (
-		<animated.div style={style} className={cn(SUBPAGE_SHELL, className)}>
+		<animated.div style={style} className={cn(REGISTRATION_SHELL, className)}>
 			<ProgramsSubpageHeader
 				title={`${label} Registration`}
 				onNavigateBack={exit}

@@ -12,8 +12,8 @@ import { Route as rootRouteImport } from './pages/__root'
 import { Route as IndexRouteImport } from './pages/index'
 import { Route as AppLayoutRouteRouteImport } from './pages/_appLayout/route'
 import { Route as AuthLayoutRouteRouteImport } from './pages/_authLayout/route'
-import { Route as ProgramsFormLayoutRouteRouteImport } from './pages/_programsFormLayout/route'
 import { Route as PublicFormLayoutRouteRouteImport } from './pages/_publicFormLayout/route'
+import { Route as AffiliateIndexRouteImport } from './pages/affiliate/index'
 import { Route as AppLayoutContentIndexRouteImport } from './pages/_appLayout/content/index'
 import { Route as AppLayoutCpdIndexRouteImport } from './pages/_appLayout/cpd/index'
 import { Route as AppLayoutDashboardIndexRouteImport } from './pages/_appLayout/dashboard/index'
@@ -26,7 +26,6 @@ import { Route as AppLayoutMyAccountIndexRouteImport } from './pages/_appLayout/
 import { Route as AppLayoutProgramsIndexRouteImport } from './pages/_appLayout/programs/index'
 import { Route as AppLayoutStudyMaterialsIndexRouteImport } from './pages/_appLayout/study-materials/index'
 import { Route as AuthLayoutLoginIndexRouteImport } from './pages/_authLayout/Login/index'
-import { Route as AuthLayoutAffiliateIndexRouteImport } from './pages/_authLayout/affiliate/index'
 import { Route as AppLayoutCoursesCourseTypeIndexRouteImport } from './pages/_appLayout/courses/$courseType/index'
 import { Route as AppLayoutCpdActivitiesDetailActivityIdIndexRouteImport } from './pages/_appLayout/cpd-activities-detail/$activityId/index'
 import { Route as AppLayoutCpdActivitiesIndexRouteImport } from './pages/_appLayout/cpd/activities/index'
@@ -35,12 +34,13 @@ import { Route as AppLayoutOrderDetailsOrderNumberIndexRouteImport } from './pag
 import { Route as AppLayoutProgramsProgramTypeIndexRouteImport } from './pages/_appLayout/programs/$programType/index'
 import { Route as AppLayoutStudyMaterialsArchiveIndexRouteImport } from './pages/_appLayout/study-materials/archive/index'
 import { Route as PublicFormLayoutRegistrationProgramTypeIndexRouteImport } from './pages/_publicFormLayout/registration/$programType/index'
+import { Route as PublicFormLayoutRegistrationAffiliateIndexRouteImport } from './pages/_publicFormLayout/registration/affiliate/index'
 import { Route as AppLayoutMyAccountOrdersOrderNumberIndexRouteImport } from './pages/_appLayout/my-account/orders/$orderNumber/index'
 import { Route as AppLayoutProgramsProgramTypeErrataIndexRouteImport } from './pages/_appLayout/programs/$programType/errata/index'
 import { Route as AppLayoutProgramsProgramTypeExamSetupIndexRouteImport } from './pages/_appLayout/programs/$programType/exam-setup/index'
+import { Route as AppLayoutProgramsProgramTypeRegisterIndexRouteImport } from './pages/_appLayout/programs/$programType/register/index'
 import { Route as AppLayoutProgramsProgramTypeResultsIndexRouteImport } from './pages/_appLayout/programs/$programType/results/index'
 import { Route as AppLayoutProgramsProgramTypeWorkExperienceIndexRouteImport } from './pages/_appLayout/programs/$programType/work-experience/index'
-import { Route as ProgramsFormLayoutProgramsProgramTypeRegisterIndexRouteImport } from './pages/_programsFormLayout/programs/$programType/register/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -55,12 +55,13 @@ const AuthLayoutRouteRoute = AuthLayoutRouteRouteImport.update({
   id: '/_authLayout',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProgramsFormLayoutRouteRoute = ProgramsFormLayoutRouteRouteImport.update({
-  id: '/_programsFormLayout',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PublicFormLayoutRouteRoute = PublicFormLayoutRouteRouteImport.update({
   id: '/_publicFormLayout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AffiliateIndexRoute = AffiliateIndexRouteImport.update({
+  id: '/affiliate/',
+  path: '/affiliate/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppLayoutContentIndexRoute = AppLayoutContentIndexRouteImport.update({
@@ -128,12 +129,6 @@ const AuthLayoutLoginIndexRoute = AuthLayoutLoginIndexRouteImport.update({
   path: '/Login/',
   getParentRoute: () => AuthLayoutRouteRoute,
 } as any)
-const AuthLayoutAffiliateIndexRoute =
-  AuthLayoutAffiliateIndexRouteImport.update({
-    id: '/affiliate/',
-    path: '/affiliate/',
-    getParentRoute: () => AuthLayoutRouteRoute,
-  } as any)
 const AppLayoutCoursesCourseTypeIndexRoute =
   AppLayoutCoursesCourseTypeIndexRouteImport.update({
     id: '/courses/$courseType/',
@@ -182,6 +177,12 @@ const PublicFormLayoutRegistrationProgramTypeIndexRoute =
     path: '/registration/$programType/',
     getParentRoute: () => PublicFormLayoutRouteRoute,
   } as any)
+const PublicFormLayoutRegistrationAffiliateIndexRoute =
+  PublicFormLayoutRegistrationAffiliateIndexRouteImport.update({
+    id: '/registration/affiliate/',
+    path: '/registration/affiliate/',
+    getParentRoute: () => PublicFormLayoutRouteRoute,
+  } as any)
 const AppLayoutMyAccountOrdersOrderNumberIndexRoute =
   AppLayoutMyAccountOrdersOrderNumberIndexRouteImport.update({
     id: '/my-account/orders/$orderNumber/',
@@ -200,6 +201,12 @@ const AppLayoutProgramsProgramTypeExamSetupIndexRoute =
     path: '/programs/$programType/exam-setup/',
     getParentRoute: () => AppLayoutRouteRoute,
   } as any)
+const AppLayoutProgramsProgramTypeRegisterIndexRoute =
+  AppLayoutProgramsProgramTypeRegisterIndexRouteImport.update({
+    id: '/programs/$programType/register/',
+    path: '/programs/$programType/register/',
+    getParentRoute: () => AppLayoutRouteRoute,
+  } as any)
 const AppLayoutProgramsProgramTypeResultsIndexRoute =
   AppLayoutProgramsProgramTypeResultsIndexRouteImport.update({
     id: '/programs/$programType/results/',
@@ -212,15 +219,10 @@ const AppLayoutProgramsProgramTypeWorkExperienceIndexRoute =
     path: '/programs/$programType/work-experience/',
     getParentRoute: () => AppLayoutRouteRoute,
   } as any)
-const ProgramsFormLayoutProgramsProgramTypeRegisterIndexRoute =
-  ProgramsFormLayoutProgramsProgramTypeRegisterIndexRouteImport.update({
-    id: '/programs/$programType/register/',
-    path: '/programs/$programType/register/',
-    getParentRoute: () => ProgramsFormLayoutRouteRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/affiliate/': typeof AffiliateIndexRoute
   '/content/': typeof AppLayoutContentIndexRoute
   '/cpd/': typeof AppLayoutCpdIndexRoute
   '/dashboard/': typeof AppLayoutDashboardIndexRoute
@@ -233,7 +235,6 @@ export interface FileRoutesByFullPath {
   '/programs/': typeof AppLayoutProgramsIndexRoute
   '/study-materials/': typeof AppLayoutStudyMaterialsIndexRoute
   '/Login/': typeof AuthLayoutLoginIndexRoute
-  '/affiliate/': typeof AuthLayoutAffiliateIndexRoute
   '/courses/$courseType/': typeof AppLayoutCoursesCourseTypeIndexRoute
   '/cpd-activities-detail/$activityId/': typeof AppLayoutCpdActivitiesDetailActivityIdIndexRoute
   '/cpd/activities/': typeof AppLayoutCpdActivitiesIndexRoute
@@ -242,15 +243,17 @@ export interface FileRoutesByFullPath {
   '/programs/$programType/': typeof AppLayoutProgramsProgramTypeIndexRoute
   '/study-materials/archive/': typeof AppLayoutStudyMaterialsArchiveIndexRoute
   '/registration/$programType/': typeof PublicFormLayoutRegistrationProgramTypeIndexRoute
+  '/registration/affiliate/': typeof PublicFormLayoutRegistrationAffiliateIndexRoute
   '/my-account/orders/$orderNumber/': typeof AppLayoutMyAccountOrdersOrderNumberIndexRoute
   '/programs/$programType/errata/': typeof AppLayoutProgramsProgramTypeErrataIndexRoute
   '/programs/$programType/exam-setup/': typeof AppLayoutProgramsProgramTypeExamSetupIndexRoute
+  '/programs/$programType/register/': typeof AppLayoutProgramsProgramTypeRegisterIndexRoute
   '/programs/$programType/results/': typeof AppLayoutProgramsProgramTypeResultsIndexRoute
   '/programs/$programType/work-experience/': typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
-  '/programs/$programType/register/': typeof ProgramsFormLayoutProgramsProgramTypeRegisterIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/affiliate': typeof AffiliateIndexRoute
   '/content': typeof AppLayoutContentIndexRoute
   '/cpd': typeof AppLayoutCpdIndexRoute
   '/dashboard': typeof AppLayoutDashboardIndexRoute
@@ -263,7 +266,6 @@ export interface FileRoutesByTo {
   '/programs': typeof AppLayoutProgramsIndexRoute
   '/study-materials': typeof AppLayoutStudyMaterialsIndexRoute
   '/Login': typeof AuthLayoutLoginIndexRoute
-  '/affiliate': typeof AuthLayoutAffiliateIndexRoute
   '/courses/$courseType': typeof AppLayoutCoursesCourseTypeIndexRoute
   '/cpd-activities-detail/$activityId': typeof AppLayoutCpdActivitiesDetailActivityIdIndexRoute
   '/cpd/activities': typeof AppLayoutCpdActivitiesIndexRoute
@@ -272,20 +274,21 @@ export interface FileRoutesByTo {
   '/programs/$programType': typeof AppLayoutProgramsProgramTypeIndexRoute
   '/study-materials/archive': typeof AppLayoutStudyMaterialsArchiveIndexRoute
   '/registration/$programType': typeof PublicFormLayoutRegistrationProgramTypeIndexRoute
+  '/registration/affiliate': typeof PublicFormLayoutRegistrationAffiliateIndexRoute
   '/my-account/orders/$orderNumber': typeof AppLayoutMyAccountOrdersOrderNumberIndexRoute
   '/programs/$programType/errata': typeof AppLayoutProgramsProgramTypeErrataIndexRoute
   '/programs/$programType/exam-setup': typeof AppLayoutProgramsProgramTypeExamSetupIndexRoute
+  '/programs/$programType/register': typeof AppLayoutProgramsProgramTypeRegisterIndexRoute
   '/programs/$programType/results': typeof AppLayoutProgramsProgramTypeResultsIndexRoute
   '/programs/$programType/work-experience': typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
-  '/programs/$programType/register': typeof ProgramsFormLayoutProgramsProgramTypeRegisterIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_appLayout': typeof AppLayoutRouteRouteWithChildren
   '/_authLayout': typeof AuthLayoutRouteRouteWithChildren
-  '/_programsFormLayout': typeof ProgramsFormLayoutRouteRouteWithChildren
   '/_publicFormLayout': typeof PublicFormLayoutRouteRouteWithChildren
+  '/affiliate/': typeof AffiliateIndexRoute
   '/_appLayout/content/': typeof AppLayoutContentIndexRoute
   '/_appLayout/cpd/': typeof AppLayoutCpdIndexRoute
   '/_appLayout/dashboard/': typeof AppLayoutDashboardIndexRoute
@@ -298,7 +301,6 @@ export interface FileRoutesById {
   '/_appLayout/programs/': typeof AppLayoutProgramsIndexRoute
   '/_appLayout/study-materials/': typeof AppLayoutStudyMaterialsIndexRoute
   '/_authLayout/Login/': typeof AuthLayoutLoginIndexRoute
-  '/_authLayout/affiliate/': typeof AuthLayoutAffiliateIndexRoute
   '/_appLayout/courses/$courseType/': typeof AppLayoutCoursesCourseTypeIndexRoute
   '/_appLayout/cpd-activities-detail/$activityId/': typeof AppLayoutCpdActivitiesDetailActivityIdIndexRoute
   '/_appLayout/cpd/activities/': typeof AppLayoutCpdActivitiesIndexRoute
@@ -307,17 +309,19 @@ export interface FileRoutesById {
   '/_appLayout/programs/$programType/': typeof AppLayoutProgramsProgramTypeIndexRoute
   '/_appLayout/study-materials/archive/': typeof AppLayoutStudyMaterialsArchiveIndexRoute
   '/_publicFormLayout/registration/$programType/': typeof PublicFormLayoutRegistrationProgramTypeIndexRoute
+  '/_publicFormLayout/registration/affiliate/': typeof PublicFormLayoutRegistrationAffiliateIndexRoute
   '/_appLayout/my-account/orders/$orderNumber/': typeof AppLayoutMyAccountOrdersOrderNumberIndexRoute
   '/_appLayout/programs/$programType/errata/': typeof AppLayoutProgramsProgramTypeErrataIndexRoute
   '/_appLayout/programs/$programType/exam-setup/': typeof AppLayoutProgramsProgramTypeExamSetupIndexRoute
+  '/_appLayout/programs/$programType/register/': typeof AppLayoutProgramsProgramTypeRegisterIndexRoute
   '/_appLayout/programs/$programType/results/': typeof AppLayoutProgramsProgramTypeResultsIndexRoute
   '/_appLayout/programs/$programType/work-experience/': typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
-  '/_programsFormLayout/programs/$programType/register/': typeof ProgramsFormLayoutProgramsProgramTypeRegisterIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/affiliate/'
     | '/content/'
     | '/cpd/'
     | '/dashboard/'
@@ -330,7 +334,6 @@ export interface FileRouteTypes {
     | '/programs/'
     | '/study-materials/'
     | '/Login/'
-    | '/affiliate/'
     | '/courses/$courseType/'
     | '/cpd-activities-detail/$activityId/'
     | '/cpd/activities/'
@@ -339,15 +342,17 @@ export interface FileRouteTypes {
     | '/programs/$programType/'
     | '/study-materials/archive/'
     | '/registration/$programType/'
+    | '/registration/affiliate/'
     | '/my-account/orders/$orderNumber/'
     | '/programs/$programType/errata/'
     | '/programs/$programType/exam-setup/'
+    | '/programs/$programType/register/'
     | '/programs/$programType/results/'
     | '/programs/$programType/work-experience/'
-    | '/programs/$programType/register/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/affiliate'
     | '/content'
     | '/cpd'
     | '/dashboard'
@@ -360,7 +365,6 @@ export interface FileRouteTypes {
     | '/programs'
     | '/study-materials'
     | '/Login'
-    | '/affiliate'
     | '/courses/$courseType'
     | '/cpd-activities-detail/$activityId'
     | '/cpd/activities'
@@ -369,19 +373,20 @@ export interface FileRouteTypes {
     | '/programs/$programType'
     | '/study-materials/archive'
     | '/registration/$programType'
+    | '/registration/affiliate'
     | '/my-account/orders/$orderNumber'
     | '/programs/$programType/errata'
     | '/programs/$programType/exam-setup'
+    | '/programs/$programType/register'
     | '/programs/$programType/results'
     | '/programs/$programType/work-experience'
-    | '/programs/$programType/register'
   id:
     | '__root__'
     | '/'
     | '/_appLayout'
     | '/_authLayout'
-    | '/_programsFormLayout'
     | '/_publicFormLayout'
+    | '/affiliate/'
     | '/_appLayout/content/'
     | '/_appLayout/cpd/'
     | '/_appLayout/dashboard/'
@@ -394,7 +399,6 @@ export interface FileRouteTypes {
     | '/_appLayout/programs/'
     | '/_appLayout/study-materials/'
     | '/_authLayout/Login/'
-    | '/_authLayout/affiliate/'
     | '/_appLayout/courses/$courseType/'
     | '/_appLayout/cpd-activities-detail/$activityId/'
     | '/_appLayout/cpd/activities/'
@@ -403,20 +407,21 @@ export interface FileRouteTypes {
     | '/_appLayout/programs/$programType/'
     | '/_appLayout/study-materials/archive/'
     | '/_publicFormLayout/registration/$programType/'
+    | '/_publicFormLayout/registration/affiliate/'
     | '/_appLayout/my-account/orders/$orderNumber/'
     | '/_appLayout/programs/$programType/errata/'
     | '/_appLayout/programs/$programType/exam-setup/'
+    | '/_appLayout/programs/$programType/register/'
     | '/_appLayout/programs/$programType/results/'
     | '/_appLayout/programs/$programType/work-experience/'
-    | '/_programsFormLayout/programs/$programType/register/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppLayoutRouteRoute: typeof AppLayoutRouteRouteWithChildren
   AuthLayoutRouteRoute: typeof AuthLayoutRouteRouteWithChildren
-  ProgramsFormLayoutRouteRoute: typeof ProgramsFormLayoutRouteRouteWithChildren
   PublicFormLayoutRouteRoute: typeof PublicFormLayoutRouteRouteWithChildren
+  AffiliateIndexRoute: typeof AffiliateIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -442,18 +447,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLayoutRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_programsFormLayout': {
-      id: '/_programsFormLayout'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof ProgramsFormLayoutRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_publicFormLayout': {
       id: '/_publicFormLayout'
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof PublicFormLayoutRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/affiliate/': {
+      id: '/affiliate/'
+      path: '/affiliate'
+      fullPath: '/affiliate/'
+      preLoaderRoute: typeof AffiliateIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_appLayout/content/': {
@@ -540,13 +545,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLayoutLoginIndexRouteImport
       parentRoute: typeof AuthLayoutRouteRoute
     }
-    '/_authLayout/affiliate/': {
-      id: '/_authLayout/affiliate/'
-      path: '/affiliate'
-      fullPath: '/affiliate/'
-      preLoaderRoute: typeof AuthLayoutAffiliateIndexRouteImport
-      parentRoute: typeof AuthLayoutRouteRoute
-    }
     '/_appLayout/courses/$courseType/': {
       id: '/_appLayout/courses/$courseType/'
       path: '/courses/$courseType'
@@ -603,6 +601,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicFormLayoutRegistrationProgramTypeIndexRouteImport
       parentRoute: typeof PublicFormLayoutRouteRoute
     }
+    '/_publicFormLayout/registration/affiliate/': {
+      id: '/_publicFormLayout/registration/affiliate/'
+      path: '/registration/affiliate'
+      fullPath: '/registration/affiliate/'
+      preLoaderRoute: typeof PublicFormLayoutRegistrationAffiliateIndexRouteImport
+      parentRoute: typeof PublicFormLayoutRouteRoute
+    }
     '/_appLayout/my-account/orders/$orderNumber/': {
       id: '/_appLayout/my-account/orders/$orderNumber/'
       path: '/my-account/orders/$orderNumber'
@@ -624,6 +629,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLayoutProgramsProgramTypeExamSetupIndexRouteImport
       parentRoute: typeof AppLayoutRouteRoute
     }
+    '/_appLayout/programs/$programType/register/': {
+      id: '/_appLayout/programs/$programType/register/'
+      path: '/programs/$programType/register'
+      fullPath: '/programs/$programType/register/'
+      preLoaderRoute: typeof AppLayoutProgramsProgramTypeRegisterIndexRouteImport
+      parentRoute: typeof AppLayoutRouteRoute
+    }
     '/_appLayout/programs/$programType/results/': {
       id: '/_appLayout/programs/$programType/results/'
       path: '/programs/$programType/results'
@@ -637,13 +649,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/programs/$programType/work-experience/'
       preLoaderRoute: typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRouteImport
       parentRoute: typeof AppLayoutRouteRoute
-    }
-    '/_programsFormLayout/programs/$programType/register/': {
-      id: '/_programsFormLayout/programs/$programType/register/'
-      path: '/programs/$programType/register'
-      fullPath: '/programs/$programType/register/'
-      preLoaderRoute: typeof ProgramsFormLayoutProgramsProgramTypeRegisterIndexRouteImport
-      parentRoute: typeof ProgramsFormLayoutRouteRoute
     }
   }
 }
@@ -670,6 +675,7 @@ interface AppLayoutRouteRouteChildren {
   AppLayoutMyAccountOrdersOrderNumberIndexRoute: typeof AppLayoutMyAccountOrdersOrderNumberIndexRoute
   AppLayoutProgramsProgramTypeErrataIndexRoute: typeof AppLayoutProgramsProgramTypeErrataIndexRoute
   AppLayoutProgramsProgramTypeExamSetupIndexRoute: typeof AppLayoutProgramsProgramTypeExamSetupIndexRoute
+  AppLayoutProgramsProgramTypeRegisterIndexRoute: typeof AppLayoutProgramsProgramTypeRegisterIndexRoute
   AppLayoutProgramsProgramTypeResultsIndexRoute: typeof AppLayoutProgramsProgramTypeResultsIndexRoute
   AppLayoutProgramsProgramTypeWorkExperienceIndexRoute: typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
 }
@@ -703,6 +709,8 @@ const AppLayoutRouteRouteChildren: AppLayoutRouteRouteChildren = {
     AppLayoutProgramsProgramTypeErrataIndexRoute,
   AppLayoutProgramsProgramTypeExamSetupIndexRoute:
     AppLayoutProgramsProgramTypeExamSetupIndexRoute,
+  AppLayoutProgramsProgramTypeRegisterIndexRoute:
+    AppLayoutProgramsProgramTypeRegisterIndexRoute,
   AppLayoutProgramsProgramTypeResultsIndexRoute:
     AppLayoutProgramsProgramTypeResultsIndexRoute,
   AppLayoutProgramsProgramTypeWorkExperienceIndexRoute:
@@ -715,40 +723,26 @@ const AppLayoutRouteRouteWithChildren = AppLayoutRouteRoute._addFileChildren(
 
 interface AuthLayoutRouteRouteChildren {
   AuthLayoutLoginIndexRoute: typeof AuthLayoutLoginIndexRoute
-  AuthLayoutAffiliateIndexRoute: typeof AuthLayoutAffiliateIndexRoute
 }
 
 const AuthLayoutRouteRouteChildren: AuthLayoutRouteRouteChildren = {
   AuthLayoutLoginIndexRoute: AuthLayoutLoginIndexRoute,
-  AuthLayoutAffiliateIndexRoute: AuthLayoutAffiliateIndexRoute,
 }
 
 const AuthLayoutRouteRouteWithChildren = AuthLayoutRouteRoute._addFileChildren(
   AuthLayoutRouteRouteChildren,
 )
 
-interface ProgramsFormLayoutRouteRouteChildren {
-  ProgramsFormLayoutProgramsProgramTypeRegisterIndexRoute: typeof ProgramsFormLayoutProgramsProgramTypeRegisterIndexRoute
-}
-
-const ProgramsFormLayoutRouteRouteChildren: ProgramsFormLayoutRouteRouteChildren =
-  {
-    ProgramsFormLayoutProgramsProgramTypeRegisterIndexRoute:
-      ProgramsFormLayoutProgramsProgramTypeRegisterIndexRoute,
-  }
-
-const ProgramsFormLayoutRouteRouteWithChildren =
-  ProgramsFormLayoutRouteRoute._addFileChildren(
-    ProgramsFormLayoutRouteRouteChildren,
-  )
-
 interface PublicFormLayoutRouteRouteChildren {
   PublicFormLayoutRegistrationProgramTypeIndexRoute: typeof PublicFormLayoutRegistrationProgramTypeIndexRoute
+  PublicFormLayoutRegistrationAffiliateIndexRoute: typeof PublicFormLayoutRegistrationAffiliateIndexRoute
 }
 
 const PublicFormLayoutRouteRouteChildren: PublicFormLayoutRouteRouteChildren = {
   PublicFormLayoutRegistrationProgramTypeIndexRoute:
     PublicFormLayoutRegistrationProgramTypeIndexRoute,
+  PublicFormLayoutRegistrationAffiliateIndexRoute:
+    PublicFormLayoutRegistrationAffiliateIndexRoute,
 }
 
 const PublicFormLayoutRouteRouteWithChildren =
@@ -760,8 +754,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppLayoutRouteRoute: AppLayoutRouteRouteWithChildren,
   AuthLayoutRouteRoute: AuthLayoutRouteRouteWithChildren,
-  ProgramsFormLayoutRouteRoute: ProgramsFormLayoutRouteRouteWithChildren,
   PublicFormLayoutRouteRoute: PublicFormLayoutRouteRouteWithChildren,
+  AffiliateIndexRoute: AffiliateIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -5,9 +5,13 @@ import type { CurrentUser } from "@/api/auth/current-user"
 import { authQueryKeys } from "@/api/auth/query-options"
 import type { RegistrationSearch } from "@/config/registration"
 import {
-	redirectGuestToPublicForm,
+	redirectMemberToDashboard,
 	redirectMemberToPortalForm,
 } from "@/auth/registration-guard"
+import {
+	AFFILIATE_REGISTRATION_ROUTE,
+	publicRegistrationFallback,
+} from "@/lib/registration-paths"
 
 type RedirectTarget = {
 	to?: string
@@ -23,16 +27,6 @@ const MEMBER: CurrentUser = {
 	photoUrl: null,
 }
 
-/**
- * Seeded rather than fetched: both guards read the cache synchronously when it
- * is populated, which is the path every navigation after the first one takes.
- */
-function clientWith(user: CurrentUser | null) {
-	const queryClient = new QueryClient()
-	queryClient.setQueryData(authQueryKeys.currentUser, user)
-	return queryClient
-}
-
 /** Every key is present after validation, so start from a full blank set. */
 const NO_SEARCH: RegistrationSearch = {
 	regCode: undefined,
@@ -42,13 +36,28 @@ const NO_SEARCH: RegistrationSearch = {
 	on: undefined,
 }
 
+const PAID: Partial<RegistrationSearch> = {
+	stripe_return: "1",
+	oid: "801",
+	on: "W1",
+}
+
+/**
+ * Seeded rather than fetched: the guard reads the cache synchronously when it
+ * is populated, which is the path every navigation after the first one takes.
+ */
+function clientWith(user: CurrentUser | null) {
+	const queryClient = new QueryClient()
+	queryClient.setQueryData(authQueryKeys.currentUser, user)
+	return queryClient
+}
+
 function run(
-	guard: typeof redirectGuestToPublicForm,
 	user: CurrentUser | null,
 	search: Partial<RegistrationSearch> = {},
 ) {
 	try {
-		guard({
+		redirectMemberToPortalForm({
 			context: { queryClient: clientWith(user) },
 			params: { programType: "frm" },
 			search: { ...NO_SEARCH, ...search },
@@ -60,63 +69,112 @@ function run(
 	return null
 }
 
-const PAID: Partial<RegistrationSearch> = {
-	stripe_return: "1",
-	oid: "801",
-	on: "W1",
-}
-
-describe("redirectGuestToPublicForm (member route)", () => {
-	it("sends a visitor with no session to the public form", () => {
-		const target = run(redirectGuestToPublicForm, null)
-		expect(target?.to).toBe("/registration/$programType")
-		expect(target?.params).toEqual({ programType: "frm" })
+describe("publicRegistrationFallback", () => {
+	it("offers the public form for a member registration path", () => {
+		expect(publicRegistrationFallback("/programs/frm/register")).toEqual({
+			programType: "frm",
+		})
+		// Trailing slash is the same route.
+		expect(publicRegistrationFallback("/programs/scr/register/")).toEqual({
+			programType: "scr",
+		})
 	})
 
-	it("carries the registration code across the bounce", () => {
-		// A marketing link is `/programs/frm/register?regCode=X`. Losing the code
-		// on the way to the public form silently reprices the whole order.
-		const target = run(redirectGuestToPublicForm, null, { regCode: "TEAM24" })
-		expect(target?.search).toMatchObject({ regCode: "TEAM24" })
-	})
-
-	it("leaves a member where they are", () => {
-		expect(run(redirectGuestToPublicForm, MEMBER)).toBeNull()
-	})
-
-	it("never redirects a payment return, even for a guest", () => {
-		// The order is already charged; redirecting drops `oid`/`on` and the
-		// candidate loses the only confirmation they get.
-		expect(run(redirectGuestToPublicForm, null, PAID)).toBeNull()
+	it("offers nothing for any other member path", () => {
+		// If this ever matched too widely, `_appLayout` would stop sending people
+		// to Login and start bouncing them at a registration form instead.
+		for (const path of [
+			"/programs",
+			"/programs/frm",
+			"/programs/frm/results",
+			"/programs/frm/exam-setup",
+			"/dashboard",
+			"/registration/frm",
+			"/programs/frm/register/extra",
+		]) {
+			expect(publicRegistrationFallback(path)).toBeNull()
+		}
 	})
 })
 
 describe("redirectMemberToPortalForm (public route)", () => {
 	it("sends a signed-in member to the in-portal form", () => {
-		const target = run(redirectMemberToPortalForm, MEMBER)
+		const target = run(MEMBER)
 		expect(target?.to).toBe("/programs/$programType/register")
 		expect(target?.params).toEqual({ programType: "frm" })
 	})
 
-	it("leaves a guest where they are", () => {
-		expect(run(redirectMemberToPortalForm, null)).toBeNull()
+	it("carries the registration code across the bounce", () => {
+		// A marketing link is `/registration/frm?regCode=X`. Losing the code on
+		// the way to the member form silently reprices the whole order.
+		const target = run(MEMBER, { regCode: "TEAM24" })
+		expect(target?.search).toMatchObject({ regCode: "TEAM24" })
+	})
+
+	it("leaves a guest on the public form", () => {
+		expect(run(null)).toBeNull()
 	})
 
 	it("never redirects a payment return, even for a member", () => {
-		expect(run(redirectMemberToPortalForm, MEMBER, PAID)).toBeNull()
+		// The order is already charged; redirecting drops `oid`/`on` and the
+		// candidate loses the only confirmation they get.
+		expect(run(MEMBER, PAID)).toBeNull()
 	})
 })
 
-describe("the two guards together", () => {
+describe("the two directions together", () => {
 	it("cannot bounce the same visitor back and forth", () => {
-		// Both guards firing on one visitor is a redirect loop. Exactly one of
-		// them may act, for any session and either route.
-		for (const user of [null, MEMBER]) {
-			const acted = [
-				run(redirectGuestToPublicForm, user),
-				run(redirectMemberToPortalForm, user),
-			].filter(Boolean)
-			expect(acted).toHaveLength(1)
+		// A member is moved off the public route; a guest is moved off the member
+		// route (by `_appLayout`, via publicRegistrationFallback). Exactly one of
+		// those may act for any given session, or the two chase each other.
+		const memberActsOnPublic = run(MEMBER) !== null
+		const guestActsOnMember =
+			publicRegistrationFallback("/programs/frm/register") !== null
+
+		expect(memberActsOnPublic).toBe(true)
+		expect(run(null)).toBeNull()
+		expect(guestActsOnMember).toBe(true)
+	})
+})
+
+describe("redirectMemberToDashboard (affiliate route)", () => {
+	function runAffiliate(user: CurrentUser | null) {
+		try {
+			redirectMemberToDashboard({ context: { queryClient: clientWith(user) } })
+		} catch (thrown) {
+			return (thrown as { options: RedirectTarget }).options
 		}
+		return null
+	}
+
+	it("leaves a guest on the form", () => {
+		// The whole point of the page: someone with no account, creating one.
+		expect(runAffiliate(null)).toBeNull()
+	})
+
+	it("sends a signed-in member to their dashboard", () => {
+		// They already have the account this form creates, and the programme
+		// does not allow member public registration — the server would answer
+		// their email `mustSignIn` anyway.
+		expect(runAffiliate(MEMBER)?.to).toBe("/dashboard")
+	})
+
+	it("never sends anyone to a member twin of this form", () => {
+		// There isn't one. If this ever pointed at `/programs/affiliate/register`
+		// it would land on the exam dispatcher's placeholder.
+		expect(runAffiliate(MEMBER)?.to).not.toContain("affiliate")
+	})
+})
+
+describe("the affiliate route is static", () => {
+	it("cannot be captured by the exam dispatcher's dynamic segment", () => {
+		// TanStack Router sorts static ahead of dynamic, so `/registration/
+		// affiliate` matches its own route — but the member-side fallback must
+		// also refuse to claim it, or `_appLayout` would try to bounce it.
+		expect(AFFILIATE_REGISTRATION_ROUTE).toBe("/registration/affiliate")
+		expect(publicRegistrationFallback(AFFILIATE_REGISTRATION_ROUTE)).toBeNull()
+		expect(publicRegistrationFallback("/programs/affiliate/register")).toEqual({
+			programType: "affiliate",
+		})
 	})
 })

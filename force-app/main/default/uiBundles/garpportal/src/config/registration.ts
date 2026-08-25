@@ -1,4 +1,5 @@
 import { z } from "zod"
+import type { MegaMenuHeading } from "@/config/navigation/types"
 
 /** Static copy and policy links for the public registration forms. */
 
@@ -8,6 +9,47 @@ export const AFFILIATE_REGISTRATION = {
 	byline:
 		"Get easy access to future events and stay informed with news updates, risk insights, industry-sponsored webcasts and more. Become an Affiliate GARP Member today — for free.",
 	submitLabel: "Register",
+} as const
+
+/**
+ * The Affiliate form's title, and the word inside it that carries the tint.
+ *
+ * Deliberately *not* a `MegaMenuHeading` like `FRM_REGISTRATION_HEADING`: that
+ * shape requires a registered-symbol acronym (`®`/`™`), and Affiliate
+ * membership is a membership tier, not a certification — it has neither. It is
+ * rendered with the same typography and the same brand token so the two forms'
+ * header bars still read as one family.
+ */
+export const AFFILIATE_REGISTRATION_HEADING = {
+	highlight: "Affiliate",
+	suffix: " Membership Registration",
+} as const
+
+/** The document title, and the h1, read the same. */
+export const AFFILIATE_REGISTRATION_TITLE =
+	`${AFFILIATE_REGISTRATION_HEADING.highlight}${AFFILIATE_REGISTRATION_HEADING.suffix}` as const
+
+/**
+ * What the rail lists as included.
+ *
+ * Unpacked from `AFFILIATE_REGISTRATION.byline` — the same promise the legacy
+ * card made in one paragraph, split so the rail can list it the way the exam
+ * rail lists a cart. Nothing here carries a price: the affiliate programme's
+ * only order line is AFREE, a zero-price product, which is why the summary
+ * below it is a fixed "Free" rather than a figure that has to be fetched.
+ */
+export const AFFILIATE_BENEFITS = [
+	"Invitations to future GARP events",
+	"News updates and risk insights",
+	"Industry-sponsored webcasts",
+	"A GARP ID, so you can register for any GARP programme",
+] as const
+
+/** Shown in place of the form once the membership exists. */
+export const AFFILIATE_REGISTRATION_OUTCOME = {
+	title: "You\u2019re an Affiliate Member",
+	message:
+		"Your Affiliate membership is active. Check your inbox for the welcome email with your GARP ID.",
 } as const
 
 export const POLICY_LINKS = {
@@ -58,18 +100,20 @@ export function isEnglishName(value: string): boolean {
 
 /** Notices the exam form shows in specific situations. */
 /**
- * Heading copy for the FRM registration form.
+ * The FRM registration form's title.
  *
- * `programme` is GARP's own name for the certification, taken verbatim from the
- * production mega-menu (`config/navigation/top-nav-items.ts`) rather than
- * invented. It is shown to guests only: someone arriving from a marketing link
- * may know "FRM" purely as an acronym, whereas a signed-in member already has
- * the whole portal around them saying what it is.
+ * GARP's own name for the certification, following the production mega-menu
+ * (`config/navigation/top-nav-items.ts`) rather than inventing wording — same
+ * shape, so it renders through the same `MegaMenuHeadingText` component and the
+ * tinted acronym matches the one in the nav exactly.
  */
-export const FRM_REGISTRATION_HEADING = {
-	title: "Register for the FRM Exam",
-	programme: "Financial Risk Manager (FRM\u00AE) Certification",
-} as const
+export const FRM_REGISTRATION_HEADING: MegaMenuHeading = {
+	prefix: "Financial Risk Manager (",
+	highlight: "FRM",
+	highlightToken: "garp-cyan",
+	symbol: "\u00AE",
+	suffix: ") Exam Registration",
+}
 
 export const EXAM_REGISTRATION_COPY = {
 	bothPartsAlert:
@@ -157,6 +201,19 @@ export const PUBLIC_REGISTRATION_EXIT = {
 	href: "https://www.garp.org",
 	label: "GARP.org",
 } as const
+
+/**
+ * Shown to guests under the title, never to members.
+ *
+ * Ported verbatim from the legacy programme config, where it is `publicByLine`
+ * and is per-programme rather than computed — FRM's warns about Part II
+ * because a returning candidate's Part I record lives on an account they have
+ * to be signed into. It is the upfront half of the same conversation the
+ * server has at submit via `mustSignIn`; saying it before the form is filled
+ * in is the whole point, because signing in does not preserve what was typed.
+ */
+export const FRM_REGISTRATION_BYLINE =
+	"Returning candidates registering for the FRM Part II Exam must sign in to continue with registration."
 
 /**
  * A search param that has to survive as a string.

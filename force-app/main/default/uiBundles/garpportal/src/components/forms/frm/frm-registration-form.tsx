@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { Link, useRouterState } from "@tanstack/react-router"
 
@@ -7,6 +7,7 @@ import type { ExamRegistrationLoad } from "@/api/registration/exam-types"
 import type { PersonalInfoEditData } from "@/api/personal-info/types"
 import { Alert, AlertDescription, AlertTitle } from "@/components/atoms/alert"
 import { Button } from "@/components/atoms/button"
+import { MegaMenuHeadingText } from "@/components/molecules/mega-menu-heading"
 import { ProgramsSubpageHeader } from "@/components/molecules/programs-subpage-header"
 import { AnimatedAmount } from "@/components/forms/frm/animated-amount"
 import {
@@ -15,6 +16,7 @@ import {
 } from "@/components/forms/frm/frm-form-values"
 import { AcknowledgementsSection } from "@/components/forms/frm/sections/acknowledgements-section"
 import { AddressesSection } from "@/components/forms/frm/sections/addresses-section"
+import { ConfirmRegistrationDialog } from "@/components/forms/frm/sections/confirm-registration-dialog"
 import { OstaSection } from "@/components/forms/frm/sections/osta-section"
 import { PaymentSection } from "@/components/forms/frm/sections/payment-section"
 import { RegistrationRail } from "@/components/forms/frm/sections/registration-rail"
@@ -24,17 +26,21 @@ import { useExamRegistrationState } from "@/hooks/use-exam-registration"
 import {
 	MustSignInError,
 	useExamRegistrationSubmit,
+	type ExamSubmitInput,
 	type ExamSubmitOutcome,
 } from "@/hooks/use-exam-registration-submit"
 import { buildRegisterRequest } from "@/lib/registration-payloads"
-import { cn } from "@/lib/utils"
 import {
+	defaultPaymentType,
 	isComplianceCountry as isComplianceCountryFor,
 	showAddresses as showAddressesFor,
 	showAutorenew as showAutorenewFor,
 	submitLabel as submitLabelFor,
 } from "@/lib/registration-presentation"
-import { FRM_REGISTRATION_HEADING } from "@/config/registration"
+import {
+	FRM_REGISTRATION_BYLINE,
+	FRM_REGISTRATION_HEADING,
+} from "@/config/registration"
 import { LOGIN_PATH } from "@/auth/constants"
 import { getReturnPath } from "@/auth/return-path"
 
@@ -86,6 +92,10 @@ function FrmRegistrationForm({
 }: FrmRegistrationFormProps) {
 	const submit = useExamRegistrationSubmit()
 	const [submitError, setSubmitError] = useState<string | null>(null)
+	/** Built and validated, waiting on the confirmation dialog. */
+	const [pendingSubmit, setPendingSubmit] = useState<ExamSubmitInput | null>(
+		null,
+	)
 	/* Only read to build the post-sign-in return path. */
 	const location = useRouterState({ select: (state) => state.location })
 
@@ -183,6 +193,45 @@ function FrmRegistrationForm({
 		(!state.part2Active ||
 			Boolean(state.selection.part2.rateId && state.selection.part2.siteId))
 
+	/*
+	 * Changing the billing country has three consequences, all of which the
+	 * legacy app applies together and none of which are optional:
+	 *
+	 * 1. the address card's country follows it — they are the same country;
+	 * 2. the province is cleared, because it belonged to the old country;
+	 * 3. the payment method is re-picked. The new country may forbid what was
+	 *    already selected, and the tile only *renders* as unselected in that
+	 *    case — the value stays put, so without this the order is priced and
+	 *    submitted with a method the country does not allow, and fails at the
+	 *    server instead of at the point of choosing.
+	 */
+	const handleCountryChange = useCallback(
+		(countryCode: string) => {
+			/*
+			 * Field by field, not one `setValue("billing", {...})`: writing the
+			 * parent object leaves the individually-registered inputs showing
+			 * their old text, so the province from the previous country stays on
+			 * screen and gets submitted with the new one.
+			 */
+			setValue("billing.country", countryCode, { shouldDirty: true })
+			setValue("billing.province", "", { shouldDirty: true })
+			const country = load.countries.find(
+				(candidate) => candidate.countryCode === countryCode,
+			)
+			if (!country) return
+			setValue(
+				"paymentType",
+				defaultPaymentType(
+					country,
+					load.stripe?.useStripe === true,
+					getValues("paymentType"),
+				),
+				{ shouldDirty: true, shouldValidate: true },
+			)
+		},
+		[getValues, setValue, load.countries, load.stripe?.useStripe],
+	)
+
 	const onSubmit = handleSubmit(async (values) => {
 		setSubmitError(null)
 
@@ -248,20 +297,34 @@ function FrmRegistrationForm({
 			candidateResponsibility: values.candidateResponsibility,
 		})
 
+		/*
+		 * Staged, not sent. Everything past this point writes records — the order
+		 * is created and `payOrder` cannot be called twice — so the figures get
+		 * one more look first. Validation has already run: `handleSubmit` only
+		 * reaches here on a valid form.
+		 */
+		setPendingSubmit({
+			request,
+			checkAddress:
+				showAddresses && load.program.addressVerificationDisabled !== true,
+		})
+	})
+
+	const confirmSubmit = async () => {
+		if (!pendingSubmit) return
 		try {
-			const outcome = await submit.mutateAsync({
-				request,
-				checkAddress:
-					showAddresses &&
-					load.program.addressVerificationDisabled !== true,
-			})
+			const outcome = await submit.mutateAsync(pendingSubmit)
+			setPendingSubmit(null)
 			// A redirect means the browser is already leaving for the payment
 			// provider; rendering a confirmation behind it would flash.
 			if (outcome.kind !== "redirecting") onRegistered(outcome)
 		} catch (error) {
+			// Close, so the failure is read against the form it has to be fixed
+			// in rather than behind a dialog offering to try again.
+			setPendingSubmit(null)
 			setSubmitError(AppError.fromUnknown(error).messages[0])
 		}
-	})
+	}
 
 	const mustSignIn = submit.error instanceof MustSignInError
 	const isBusy = submit.isPending
@@ -308,26 +371,13 @@ function FrmRegistrationForm({
 					 * only heading, and that page is linked from marketing email.
 					 * It was previously the sole `h2` on a document with no `h1`.
 					 *
-					 * A guest gets the larger size and the supporting line. Nothing
-					 * else occupies the left of the bar for them, and the two lines
-					 * balance the total-plus-button block opposite. A member keeps
-					 * the smaller size, because the back link already sits there.
+					 * Same title for both audiences — it names the certification in
+					 * full, so the supporting line a guest used to get underneath it
+					 * would now just repeat the title.
 					 */}
-					<div className="flex min-w-0 flex-col justify-center">
-						<h1
-							className={cn(
-								"truncate font-heading font-semibold",
-								isAuthenticated ? "text-xl" : "text-2xl leading-tight",
-							)}
-						>
-							{FRM_REGISTRATION_HEADING.title}
-						</h1>
-						{isAuthenticated ? null : (
-							<p className="truncate text-caption leading-tight text-muted-foreground">
-								{FRM_REGISTRATION_HEADING.programme}
-							</p>
-						)}
-					</div>
+					<h1 className="truncate font-heading text-2xl font-semibold">
+						<MegaMenuHeadingText heading={FRM_REGISTRATION_HEADING} />
+					</h1>
 				</div>
 
 				<div className="flex items-center gap-4">
@@ -378,6 +428,38 @@ function FrmRegistrationForm({
 				</div>
 			</div>
 
+			{/*
+			 * Guest-only, and above the form rather than beside the email field:
+			 * signing in is a full navigation that discards whatever has been
+			 * typed, so the offer has to arrive before anyone starts typing.
+			 */}
+			{isAuthenticated ? null : (
+				<Alert>
+					<AlertDescription>
+						{FRM_REGISTRATION_BYLINE}{" "}
+						<Link
+							to={LOGIN_PATH}
+							search={{ startUrl: getReturnPath(location) }}
+							className="font-medium text-primary underline underline-offset-2"
+						>
+							Sign in
+						</Link>
+					</AlertDescription>
+				</Alert>
+			)}
+
+			<ConfirmRegistrationDialog
+				open={pendingSubmit !== null}
+				onOpenChange={(next) => {
+					if (!next) setPendingSubmit(null)
+				}}
+				fees={fees}
+				submitLabel={label}
+				paymentType={paymentType}
+				isPending={isBusy}
+				onConfirm={() => void confirmSubmit()}
+			/>
+
 			{mustSignIn ? (
 				<Alert variant="destructive">
 					<AlertTitle>You already have an account</AlertTitle>
@@ -409,13 +491,15 @@ function FrmRegistrationForm({
 			) : null}
 
 			<div className="grid grid-cols-1 gap-6 lg:grid-cols-10">
-				<div className="flex flex-col gap-6 lg:col-span-7">
+				<div className="flex flex-col gap-6 lg:col-span-6">
 					<YourDetailsSection
 						register={register}
 						control={control}
 						errors={errors}
 						countries={load.countries}
 						isAuthenticated={isAuthenticated}
+						showLocation={!showAddresses}
+						onCountryChange={handleCountryChange}
 						disabled={isBusy}
 					/>
 
@@ -468,6 +552,7 @@ function FrmRegistrationForm({
 							control={control}
 							errors={errors}
 							countries={load.countries}
+							onCountryChange={handleCountryChange}
 							sameAsBilling={sameAsBilling}
 							onSameAsBillingChange={(next) => {
 								setValue("billingAndShippingSame", next, { shouldDirty: true })
@@ -494,7 +579,7 @@ function FrmRegistrationForm({
 				 * `h-fit` + `sticky` is what pins the rail: it sizes to its content
 				 * and stays put while the main column scrolls past it.
 				 */}
-				<aside className="lg:sticky lg:top-28 lg:col-span-3 lg:h-fit">
+				<aside className="lg:sticky lg:top-22 lg:col-span-4 lg:h-fit">
 					<RegistrationRail
 						materials={state.visibleMaterials}
 						onToggleMaterial={state.toggleMaterial}
