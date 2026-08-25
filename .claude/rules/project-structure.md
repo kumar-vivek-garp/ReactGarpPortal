@@ -65,9 +65,40 @@ src/
 ├── components/
 │   ├── atoms/               # shadcn/ui-generated primitives (button, card, sonner, …)
 │   ├── molecules/           # Hand-composed combinations of atoms
-│   └── organisms/           # Larger hand-composed sections
+│   ├── organisms/           # Larger hand-composed sections
+│   └── forms/               # One folder per major form (see below)
 └── pages/                   # File-based routes — layouts + one folder per page, plus __root.tsx
 ```
+
+### `components/forms/` — the fourth tier
+
+**Every major form lives here, one folder per form.** Not in `organisms/`.
+
+```
+components/forms/
+└── <form-name>/
+    └── <form-name>-form.tsx
+```
+
+A major form is one a person fills in and submits — registration, checkout, a
+multi-step wizard. It is not a single labelled control, and not a dialog that
+happens to contain two fields.
+
+Only the form's own component tree goes here. Everything else keeps its
+existing home:
+
+| Concern | Where |
+|---|---|
+| Form component(s) | `components/forms/<form-name>/` |
+| Endpoints, request/response types | `api/<domain>/` |
+| React Query hooks | `hooks/` |
+| Static copy, options, patterns | `config/` |
+| The route that renders it | `pages/` |
+
+Forms are still built from **atoms and molecules** — the tier says where a form
+lives, not that it may reinvent primitives. Anything inside a form that proves
+useful to a second form belongs in `molecules/`, promoted when the second use
+actually appears rather than in anticipation of it.
 
 ### Key files
 

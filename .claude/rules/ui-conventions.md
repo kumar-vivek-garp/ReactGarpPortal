@@ -8,7 +8,7 @@ paths:
 
 ## UI
 
-- **Component library — atomic design:** shadcn/ui primitives generate into `src/components/atoms/` (via `components.json`'s `aliases.ui`), and are used over raw HTML equivalents. `src/components/molecules/` and `src/components/organisms/` hold hand-authored compositions of atoms — shadcn does not generate these, they must be built manually. **Before importing any component, verify both the file exists AND the named export exists within that file.** Never assume a component or export is available — read the file to confirm the exact exports before importing.
+- **Component library — atomic design:** shadcn/ui primitives generate into `src/components/atoms/` (via `components.json`'s `aliases.ui`), and are used over raw HTML equivalents. `src/components/molecules/` and `src/components/organisms/` hold hand-authored compositions of atoms — shadcn does not generate these, they must be built manually. `src/components/forms/` is the fourth tier: every major form gets its own folder there rather than living in `organisms/` (see `project-structure.md`). **Before importing any component, verify both the file exists AND the named export exists within that file.** Never assume a component or export is available — read the file to confirm the exact exports before importing.
 - To add a new atom, run `npx shadcn add <component>` from the UI Bundle directory — it will land in `src/components/atoms/` automatically.
 - **Styling:** Tailwind CSS only. No inline `style={{}}`. Use `cn()` from `@/lib/utils` for conditional classes.
 - **Icons:** Lucide React.

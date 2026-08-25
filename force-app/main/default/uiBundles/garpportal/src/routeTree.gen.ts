@@ -24,6 +24,7 @@ import { Route as AppLayoutMyAccountIndexRouteImport } from './pages/_appLayout/
 import { Route as AppLayoutProgramsIndexRouteImport } from './pages/_appLayout/programs/index'
 import { Route as AppLayoutStudyMaterialsIndexRouteImport } from './pages/_appLayout/study-materials/index'
 import { Route as AuthLayoutLoginIndexRouteImport } from './pages/_authLayout/Login/index'
+import { Route as AuthLayoutAffiliateIndexRouteImport } from './pages/_authLayout/affiliate/index'
 import { Route as AppLayoutCoursesCourseTypeIndexRouteImport } from './pages/_appLayout/courses/$courseType/index'
 import { Route as AppLayoutCpdActivitiesDetailActivityIdIndexRouteImport } from './pages/_appLayout/cpd-activities-detail/$activityId/index'
 import { Route as AppLayoutCpdActivitiesIndexRouteImport } from './pages/_appLayout/cpd/activities/index'
@@ -115,6 +116,12 @@ const AuthLayoutLoginIndexRoute = AuthLayoutLoginIndexRouteImport.update({
   path: '/Login/',
   getParentRoute: () => AuthLayoutRouteRoute,
 } as any)
+const AuthLayoutAffiliateIndexRoute =
+  AuthLayoutAffiliateIndexRouteImport.update({
+    id: '/affiliate/',
+    path: '/affiliate/',
+    getParentRoute: () => AuthLayoutRouteRoute,
+  } as any)
 const AppLayoutCoursesCourseTypeIndexRoute =
   AppLayoutCoursesCourseTypeIndexRouteImport.update({
     id: '/courses/$courseType/',
@@ -202,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/programs/': typeof AppLayoutProgramsIndexRoute
   '/study-materials/': typeof AppLayoutStudyMaterialsIndexRoute
   '/Login/': typeof AuthLayoutLoginIndexRoute
+  '/affiliate/': typeof AuthLayoutAffiliateIndexRoute
   '/courses/$courseType/': typeof AppLayoutCoursesCourseTypeIndexRoute
   '/cpd-activities-detail/$activityId/': typeof AppLayoutCpdActivitiesDetailActivityIdIndexRoute
   '/cpd/activities/': typeof AppLayoutCpdActivitiesIndexRoute
@@ -229,6 +237,7 @@ export interface FileRoutesByTo {
   '/programs': typeof AppLayoutProgramsIndexRoute
   '/study-materials': typeof AppLayoutStudyMaterialsIndexRoute
   '/Login': typeof AuthLayoutLoginIndexRoute
+  '/affiliate': typeof AuthLayoutAffiliateIndexRoute
   '/courses/$courseType': typeof AppLayoutCoursesCourseTypeIndexRoute
   '/cpd-activities-detail/$activityId': typeof AppLayoutCpdActivitiesDetailActivityIdIndexRoute
   '/cpd/activities': typeof AppLayoutCpdActivitiesIndexRoute
@@ -259,6 +268,7 @@ export interface FileRoutesById {
   '/_appLayout/programs/': typeof AppLayoutProgramsIndexRoute
   '/_appLayout/study-materials/': typeof AppLayoutStudyMaterialsIndexRoute
   '/_authLayout/Login/': typeof AuthLayoutLoginIndexRoute
+  '/_authLayout/affiliate/': typeof AuthLayoutAffiliateIndexRoute
   '/_appLayout/courses/$courseType/': typeof AppLayoutCoursesCourseTypeIndexRoute
   '/_appLayout/cpd-activities-detail/$activityId/': typeof AppLayoutCpdActivitiesDetailActivityIdIndexRoute
   '/_appLayout/cpd/activities/': typeof AppLayoutCpdActivitiesIndexRoute
@@ -288,6 +298,7 @@ export interface FileRouteTypes {
     | '/programs/'
     | '/study-materials/'
     | '/Login/'
+    | '/affiliate/'
     | '/courses/$courseType/'
     | '/cpd-activities-detail/$activityId/'
     | '/cpd/activities/'
@@ -315,6 +326,7 @@ export interface FileRouteTypes {
     | '/programs'
     | '/study-materials'
     | '/Login'
+    | '/affiliate'
     | '/courses/$courseType'
     | '/cpd-activities-detail/$activityId'
     | '/cpd/activities'
@@ -344,6 +356,7 @@ export interface FileRouteTypes {
     | '/_appLayout/programs/'
     | '/_appLayout/study-materials/'
     | '/_authLayout/Login/'
+    | '/_authLayout/affiliate/'
     | '/_appLayout/courses/$courseType/'
     | '/_appLayout/cpd-activities-detail/$activityId/'
     | '/_appLayout/cpd/activities/'
@@ -469,6 +482,13 @@ declare module '@tanstack/react-router' {
       path: '/Login'
       fullPath: '/Login/'
       preLoaderRoute: typeof AuthLayoutLoginIndexRouteImport
+      parentRoute: typeof AuthLayoutRouteRoute
+    }
+    '/_authLayout/affiliate/': {
+      id: '/_authLayout/affiliate/'
+      path: '/affiliate'
+      fullPath: '/affiliate/'
+      preLoaderRoute: typeof AuthLayoutAffiliateIndexRouteImport
       parentRoute: typeof AuthLayoutRouteRoute
     }
     '/_appLayout/courses/$courseType/': {
@@ -625,10 +645,12 @@ const AppLayoutRouteRouteWithChildren = AppLayoutRouteRoute._addFileChildren(
 
 interface AuthLayoutRouteRouteChildren {
   AuthLayoutLoginIndexRoute: typeof AuthLayoutLoginIndexRoute
+  AuthLayoutAffiliateIndexRoute: typeof AuthLayoutAffiliateIndexRoute
 }
 
 const AuthLayoutRouteRouteChildren: AuthLayoutRouteRouteChildren = {
   AuthLayoutLoginIndexRoute: AuthLayoutLoginIndexRoute,
+  AuthLayoutAffiliateIndexRoute: AuthLayoutAffiliateIndexRoute,
 }
 
 const AuthLayoutRouteRouteWithChildren = AuthLayoutRouteRoute._addFileChildren(

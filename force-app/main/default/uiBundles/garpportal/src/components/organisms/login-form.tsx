@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useForm, type SubmitHandler } from "react-hook-form"
-import { useSearch } from "@tanstack/react-router"
+import { Link, useSearch } from "@tanstack/react-router"
 import { Eye, EyeOff } from "lucide-react"
 
 import { Button } from "@/components/atoms/button"
@@ -150,12 +150,16 @@ function LoginForm() {
 					</Button>
 
 					<div className="flex items-center justify-center gap-2 text-body">
-						<a
-							href="/registration"
+						{/*
+						 * Create Account is free Affiliate membership — this app has no
+						 * /registration or /register route. See pages/_authLayout/affiliate.
+						 */}
+						<Link
+							to="/affiliate"
 							className="font-semibold text-primary hover:underline"
 						>
 							Create Account
-						</a>
+						</Link>
 						<span className="text-muted-foreground">|</span>
 						<a
 							href="/forgot-password"

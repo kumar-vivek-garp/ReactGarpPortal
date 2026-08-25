@@ -4,7 +4,7 @@
 
 ## 1. Check if it already exists locally
 
-Look in `src/components/atoms/`, `src/components/molecules/`, and `src/components/organisms/` first. If a component that does the job already exists, reuse it — do not reinstall it via the shadcn CLI and do not hand-author a duplicate.
+Look in `src/components/atoms/`, `src/components/molecules/`, `src/components/organisms/`, and `src/components/forms/` first. If a component that does the job already exists, reuse it — do not reinstall it via the shadcn CLI and do not hand-author a duplicate.
 
 ## 2. Check whether shadcn/ui provides it
 
@@ -25,9 +25,10 @@ Only write a component by hand when Context7 confirms shadcn's registry has no e
 
 - **Atom** (`src/components/atoms/`) — a single, indivisible primitive with no composition of other custom components. Rare to hand-author here, since shadcn covers most primitives — only for a genuinely project-specific low-level element shadcn has no equivalent for.
 - **Molecule** (`src/components/molecules/`) — a small, hand-composed combination of existing atoms (e.g. a labeled form field, a stat tile).
-- **Organism** (`src/components/organisms/`) — a larger hand-composed section built from atoms/molecules (e.g. a full form, a page header).
+- **Organism** (`src/components/organisms/`) — a larger hand-composed section built from atoms/molecules (e.g. a page header, a results panel).
+- **Form** (`src/components/forms/<form-name>/`) — a major form a person fills in and submits. Its own folder, never `organisms/`. See `project-structure.md`.
 
-Build hand-authored molecules/organisms out of existing atoms — don't reinvent a primitive shadcn/Radix already provides just because it's being used inside a bigger composition.
+Build hand-authored molecules, organisms and forms out of existing atoms — don't reinvent a primitive shadcn/Radix already provides just because it's being used inside a bigger composition.
 
 ## Why
 
