@@ -191,3 +191,154 @@ export type RegistrationOptions = {
 	companies: string[]
 	schools: string[]
 }
+
+/* ===================== verify / register ===================== */
+
+/** UTM attribution, read once from the landing URL and carried to the order. */
+export type RegistrationTracking = {
+	utmCampaign?: string | null
+	utmContent?: string | null
+	utmMedium?: string | null
+	utmSource?: string | null
+	utmTerm?: string | null
+	trackCta?: string | null
+}
+
+export type ExamVerifyCustomerRequest = {
+	type: string
+	courseCode?: string | null
+	email: string
+	firstName: string
+	lastName: string
+	tracking?: RegistrationTracking
+}
+
+export type CustomerInput = {
+	contactId?: string | null
+	accountId?: string | null
+	leadId?: string | null
+	firstName: string
+	lastName: string
+	email: string
+	/** `"<countryCode> (+<phoneCode>)"` — Apex reads the digits back out. */
+	mobilePhoneCode: string
+	mobilePhone: string
+	smsPromotionalUpdates: boolean
+	title: string
+	company: string
+}
+
+/**
+ * The China identity block, sent only when a chosen exam centre is an OSTA
+ * site.
+ *
+ * Apex applies NO validation to any of this — it writes the fields to the
+ * Contact whenever `idNumber` is present. Every rule that protects this data
+ * is client-side, which is why `idFormatError` is ported exactly rather than
+ * approximated.
+ */
+export type PersonalInput = {
+	gender: string
+	idType: string
+	idLocation: string
+	idNumber: string
+	/** Lower `d` — the Apex field really is `nameOnId`. */
+	nameOnId: string
+	ostaConsent: boolean
+	fullNameInChinese: string
+	/** `yyyy-MM-dd`, or null. */
+	dateOfBirth: string | null
+	idExpireDate: string | null
+	phone: string
+	workStatus: string
+	companyName: string
+	schoolName: string
+	studentStatus: string
+	degreeName: string
+	businessEmail: string
+	professionalLevel: string
+	jobFunction: string
+	riskSpecialty: string
+}
+
+/**
+ * Consent, stored by Apex as timestamps on the Exam_Attempt__c.
+ *
+ * `privacyPolicy` is the three compliance ticks collapsed into one, and is
+ * true outright for a country that carries no compliance tag. `examPolicy`
+ * is the exam-policy AND candidate-responsibility acknowledgements together —
+ * Apex refuses the registration outright unless it is true.
+ */
+export type ConsentInput = {
+	privacyPolicy: boolean
+	examPolicy: boolean
+	osta: boolean
+	releaseExamResults: boolean
+}
+
+/** The body for BOTH `verifyAddress` and `register` — they are identical. */
+export type ExamRegisterRequest = {
+	type: string
+	courseCode?: string | null
+	regCode?: string | null
+	membershipSelected: boolean
+	riskNetSelected: boolean
+	/** `Form_Data__c` id from `verifyCustomer`. */
+	sessionId?: string | null
+	customer: CustomerInput
+	personal: PersonalInput | null
+	selection: SelectionInput
+	materials: string[]
+	paymentType: string | null
+	billingAddress: AddressInput
+	shippingAddress: AddressInput
+	billingAndShippingSame: boolean
+	autoRenew: boolean
+	consent: ConsentInput
+}
+
+export type ExamRegisterResult = {
+	orderId?: string | null
+	orderNumber?: string | null
+	/** First Exam_Attempt__c id. */
+	registrationId?: string | null
+	contractId?: string | null
+	contactId?: string | null
+	accountId?: string | null
+	total?: number | null
+	/** False means nothing to pay — no checkout, no payOrder. */
+	hasBilling?: boolean | null
+}
+
+/**
+ * `verifyAddress` checks the COUNTRY only — that it is present, known, and
+ * permits billing / shipping. Street, city and postal code are never seen by
+ * the server, so their rules live entirely in the form.
+ */
+export type AddressCheckResult = {
+	billingValid?: boolean | null
+	billingAllowed?: boolean | null
+	shippingValid?: boolean | null
+	shippingAllowed?: boolean | null
+	message?: string | null
+}
+
+/** `POST checkout` — a Stripe-HOSTED session, not the Experience Cloud page. */
+export type CheckoutResult = {
+	checkoutUrl?: string | null
+	orderNumber?: string | null
+	orderId?: string | null
+	orderName?: string | null
+	accountId?: string | null
+	isError?: boolean | null
+	msg?: string | null
+}
+
+export type PaymentStatusResult = {
+	isOrderFound?: boolean | null
+	isPaymentFound?: boolean | null
+	isPaymentSuccess?: boolean | null
+	/** The order was cancelled — the registration did not survive. */
+	isOrderRolledback?: boolean | null
+	paymentType?: string | null
+}

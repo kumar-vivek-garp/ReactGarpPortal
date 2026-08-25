@@ -206,3 +206,148 @@ export function submitLabel(hasBilling: boolean, paymentType: string): string {
 export function phoneCodeDigits(mobilePhoneCode: string): string | null {
 	return mobilePhoneCode.replace(/[^0-9]/g, "") || null
 }
+
+/* ===================== identity (OSTA) ===================== */
+
+/**
+ * Whether an ID number is acceptable for where it was issued.
+ *
+ * Ported verbatim from the legacy, and it matters more here than most ported
+ * rules: Apex applies NO validation to the identity block — it writes whatever
+ * arrives straight onto the Contact. If this is wrong, a candidate turns up at
+ * a Chinese test centre with an ID GARP recorded incorrectly.
+ *
+ * The China passport rule excludes **I** and **O** because they are too easily
+ * confused with 1 and 0 on a printed document.
+ *
+ * Returns null when the number is acceptable, or when it is empty — an absent
+ * value is the "required" check's business, not this one's.
+ */
+export function idFormatError(
+	idLocation: string,
+	idType: string,
+	idNumber: string,
+): string | null {
+	if (!idNumber) return null
+
+	if (idLocation === "China") {
+		if (idType === "Passport") {
+			if (idNumber.length !== 9) return "Your ID must be 9 characters long."
+			if (!/^[A-HJ-NP-Za-hj-np-z0-9]{9}$/.test(idNumber)) {
+				return 'Your ID must only contain numbers and letters, not including "I" or "O".'
+			}
+			return null
+		}
+		if (!/^[A-Za-z0-9]{18}$/.test(idNumber)) {
+			return "Your ID should consist of 18 numbers or letters."
+		}
+		return null
+	}
+
+	if (idType === "Passport") {
+		if (!/^[A-Za-z0-9]{5,10}$/.test(idNumber)) {
+			return "Your ID must be between 5 and 10 characters long, and only contain numbers and letters."
+		}
+		return null
+	}
+
+	if (!/^[A-Za-z0-9]{5,25}$/.test(idNumber)) {
+		return "Your ID must be between 5 and 25 characters long, and only contain numbers and letters."
+	}
+	return null
+}
+
+/* ===================== payment ===================== */
+
+/** The payment types Apex prices and branches on. */
+export type PaymentType = "Stripe" | "Wire Transfer" | "ACH"
+
+type PaymentCountry = {
+	creditCardAllowed?: boolean | null
+	wireAllowed?: boolean | null
+	achAllowed?: boolean | null
+} | null
+
+/**
+ * Which payment types the country permits.
+ *
+ * Before a country is chosen, wire and ACH stay open and only card is gated —
+ * by the org-level Stripe switch — so the options are not all dead on first
+ * paint, before the candidate has told us where they are.
+ */
+export function isPaymentAllowed(
+	type: string,
+	country: PaymentCountry,
+	useStripe: boolean,
+): boolean {
+	if (!country) return type !== "Stripe" || useStripe
+	if (type === "Stripe") return useStripe && country.creditCardAllowed === true
+	if (type === "Wire Transfer") return country.wireAllowed === true
+	if (type === "ACH") return country.achAllowed === true
+	return false
+}
+
+/**
+ * Preference order card → wire → ACH, keeping a still-valid current choice.
+ *
+ * Re-run whenever the billing country changes: the new country may not permit
+ * what was already selected, and silently leaving an impossible payment type
+ * in place would fail at submit rather than at the point of choosing.
+ */
+export function defaultPaymentType(
+	country: PaymentCountry,
+	useStripe: boolean,
+	current: string,
+): string {
+	const order: PaymentType[] = ["Stripe", "Wire Transfer", "ACH"]
+	if (current && isPaymentAllowed(current, country, useStripe)) return current
+	return order.find((type) => isPaymentAllowed(type, country, useStripe)) ?? ""
+}
+
+/**
+ * Address cards appear for the offline methods only.
+ *
+ * A card order collects its address on Stripe's own checkout page, so asking
+ * for it here as well would be two chances to disagree. Wire and ACH never
+ * reach Stripe, so finance needs the address from us.
+ */
+export function showAddresses(paymentType: string): boolean {
+	return Boolean(paymentType) && paymentType !== "Stripe"
+}
+
+/** Wire and ACH carry a processing fee and are taxed locally by Apex. */
+export function isOfflinePayment(paymentType: string): boolean {
+	return paymentType === "Wire Transfer" || paymentType === "ACH"
+}
+
+/**
+ * The auto-renew offer.
+ *
+ * Only for a card order — there is no saved payment method to renew against
+ * otherwise — and only when the cart actually contains a complimentary
+ * membership to renew. Someone who already has auto-renew on is not asked
+ * again.
+ */
+export function showAutorenew(
+	isAutoRenewEnabled: boolean | null | undefined,
+	paymentType: string,
+	hasCompMembership: boolean | null | undefined,
+): boolean {
+	return (
+		isAutoRenewEnabled !== true &&
+		paymentType === "Stripe" &&
+		hasCompMembership === true
+	)
+}
+
+/** A country tagged GDPR/CASL needs the policies ticked, not just implied. */
+export function isComplianceCountry(
+	countries: Array<{ countryCode: string; compliance?: boolean | null }>,
+	countryCode: string,
+): boolean {
+	if (!countryCode) return false
+	return countries.some(
+		(country) =>
+			country.countryCode === countryCode && country.compliance === true,
+	)
+}

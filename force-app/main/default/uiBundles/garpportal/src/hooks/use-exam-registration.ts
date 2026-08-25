@@ -12,7 +12,6 @@ import {
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import {
 	buildFeesRequest,
-	emptyAddress,
 	emptySelection,
 	type ExamSelectionState,
 	type RegistrationAddress,
@@ -50,9 +49,21 @@ type ExamRegistrationStateArgs = {
 	programType: string
 	regCode?: string
 	courseCode?: string
-	/** Pricing inputs the form owns (react-hook-form), not this hook. */
+	/**
+	 * Pricing inputs the form owns (react-hook-form), not this hook.
+	 *
+	 * These are real fields now, not placeholders: the payment type decides
+	 * whether Apex adds the wire/ACH processing fee and computes tax locally,
+	 * and the address decides shipping — so a stale value here means a total
+	 * that does not match the order.
+	 */
 	billingCountry: string
 	mobilePhoneCode: string
+	paymentType: string
+	billingAddress: RegistrationAddress
+	shippingAddress: RegistrationAddress
+	billingAndShippingSame: boolean
+	autoRenew: boolean
 }
 
 /**
@@ -71,6 +82,11 @@ export function useExamRegistrationState({
 	courseCode,
 	billingCountry,
 	mobilePhoneCode,
+	paymentType,
+	billingAddress,
+	shippingAddress,
+	billingAndShippingSame,
+	autoRenew,
 }: ExamRegistrationStateArgs) {
 	const [selection, setSelection] = useState<ExamSelectionState>(() => {
 		const base = emptySelection()
@@ -177,9 +193,16 @@ export function useExamRegistrationState({
 		)
 	}, [])
 
-	const billingAddress: RegistrationAddress = useMemo(
-		() => ({ ...emptyAddress(), country: billingCountry }),
-		[billingCountry],
+	/**
+	 * A card order shows no address card, so the Location select is the only
+	 * country there is — fall back to it rather than pricing against a blank.
+	 */
+	const pricedBilling: RegistrationAddress = useMemo(
+		() => ({
+			...billingAddress,
+			country: billingAddress.country || billingCountry,
+		}),
+		[billingAddress, billingCountry],
 	)
 
 	const feesRequest = useMemo(
@@ -191,12 +214,15 @@ export function useExamRegistrationState({
 				contactId: load.contact?.id ?? null,
 				selection: effective,
 				materials,
-				// Payment is a later pass; the cart prices fine without one.
-				paymentType: "",
-				billingAddress,
-				shippingAddress: billingAddress,
-				billingAndShippingSame: true,
-				autoRenew: false,
+				paymentType,
+				billingAddress: pricedBilling,
+				shippingAddress: billingAndShippingSame
+					? pricedBilling
+					: shippingAddress,
+				billingAndShippingSame,
+				autoRenew,
+				// FRM has no membership upsell and no Risk.net add-on — both are
+				// course/membership programme concerns.
 				membershipSelected: false,
 				riskNetSelected: false,
 				mobilePhoneCode,
@@ -208,7 +234,11 @@ export function useExamRegistrationState({
 			load.contact?.id,
 			effective,
 			materials,
-			billingAddress,
+			paymentType,
+			pricedBilling,
+			shippingAddress,
+			billingAndShippingSame,
+			autoRenew,
 			mobilePhoneCode,
 		],
 	)

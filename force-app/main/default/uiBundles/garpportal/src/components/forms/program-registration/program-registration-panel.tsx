@@ -26,6 +26,9 @@ const SUBPAGE_SCROLL_FLUSH =
 
 type ProgramRegistrationPanelProps = {
 	programType: string
+	regCode?: string
+	/** Set when the browser has just come back from the payment provider. */
+	paymentReturn?: { orderNumber?: string } | null
 	className?: string
 }
 
@@ -41,6 +44,8 @@ type ProgramRegistrationPanelProps = {
  */
 function ProgramRegistrationPanel({
 	programType,
+	regCode,
+	paymentReturn,
 	className,
 }: ProgramRegistrationPanelProps) {
 	const { style, exit } = useSubpageTransition()
@@ -56,7 +61,12 @@ function ProgramRegistrationPanel({
 		return (
 			<animated.div style={style} className={cn(SUBPAGE_SHELL, className)}>
 				<div className={SUBPAGE_SCROLL_FLUSH}>
-					<FrmRegistrationPanel programType={slug} onNavigateBack={exit} />
+					<FrmRegistrationPanel
+						programType={slug}
+						regCode={regCode}
+						paymentReturn={paymentReturn}
+						onNavigateBack={exit}
+					/>
 				</div>
 			</animated.div>
 		)

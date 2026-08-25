@@ -29,6 +29,16 @@ export type RegistrationCountry = {
 	countryCode: string
 	phoneCode?: string | null
 	billingAllowed?: boolean | null
+	shippingAllowed?: boolean | null
+	/**
+	 * Which payment methods this country permits. A country may allow any
+	 * combination, so these decide what the payment options offer — a method
+	 * the country forbids is shown disabled rather than hidden, so its absence
+	 * is explained.
+	 */
+	creditCardAllowed?: boolean | null
+	wireAllowed?: boolean | null
+	achAllowed?: boolean | null
 	/**
 	 * `Country_Code__c.Compliance__c` is a *tag* ("GDPR", "CASL"), not a
 	 * checkbox — Apex reduces any non-blank value to this boolean. When true
@@ -41,10 +51,17 @@ export type RegistrationCountry = {
 /** Prefilled contact, present only when a session is already signed in. */
 export type RegistrationContact = {
 	id: string
+	accountId?: string | null
 	firstName?: string | null
 	lastName?: string | null
 	email?: string | null
+	mobilePhone?: string | null
+	phone?: string | null
+	title?: string | null
+	company?: string | null
 	isMember?: boolean | null
+	/** Already renewing — do not offer auto-renew a second time. */
+	isAutoRenewEnabled?: boolean | null
 }
 
 /** `GET examreg/info?type=affiliate`. */

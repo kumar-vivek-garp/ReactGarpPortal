@@ -32,6 +32,8 @@ type YourDetailsSectionProps = {
 	control: Control<FrmFormValues>
 	errors: FieldErrors<FrmFormValues>
 	countries: RegistrationCountry[]
+	/** False on the public form — nothing has been prefilled. */
+	isAuthenticated?: boolean
 	disabled?: boolean
 }
 
@@ -51,6 +53,7 @@ function YourDetailsSection({
 	control,
 	errors,
 	countries,
+	isAuthenticated = true,
 	disabled,
 }: YourDetailsSectionProps) {
 	const sortedCountries = useMemo(
@@ -74,8 +77,9 @@ function YourDetailsSection({
 			<CardHeader>
 				<CardTitle className="text-lg">Your details</CardTitle>
 				<p className="text-body text-muted-foreground">
-					Prefilled from your account. Anything you change here is saved with
-					your registration.
+					{isAuthenticated
+						? "Prefilled from your account. Anything you change here is saved with your registration."
+						: "We will use these details to create your GARP account and to contact you about the exam."}
 				</p>
 			</CardHeader>
 			<CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">

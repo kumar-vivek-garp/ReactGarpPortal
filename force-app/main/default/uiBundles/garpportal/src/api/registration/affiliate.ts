@@ -1,12 +1,8 @@
-import { createDataSDK } from "@salesforce/platform-sdk"
-
-import type { MemberPortalEnvelope } from "@/api/account/types"
+import { AppError } from "@/api/client"
 import {
-	AppError,
-	normalizeHttpResponse,
-	unwrapApiResult,
-	unwrapMemberPortalEnvelope,
-} from "@/api/client"
+	EXAMREG_UNREACHABLE,
+	examregFetch,
+} from "@/api/registration/examreg-fetch"
 import type {
 	AffiliateRegisterRequest,
 	AffiliateRegistrationLoad,
@@ -23,44 +19,6 @@ import type {
  */
 export const AFFILIATE_PROGRAM_TYPE = "affiliate"
 
-const EXAMREG_BASE = "/services/apexrest/examreg"
-
-/**
- * The registration endpoint is guest-reachable — it has to be, since the whole
- * point is signing up someone who has no session yet — and answers with the
- * portal-standard envelope. `sdk.fetch` still carries the session when one
- * exists, which is how the load reports `isAuthenticated`.
- */
-async function examregFetch<T>(
-	path: string,
-	init: RequestInit,
-	messages: { unreachable: string; fallback: string },
-): Promise<T> {
-	const sdk = await createDataSDK()
-	const response = await sdk.fetch?.(`${EXAMREG_BASE}${path}`, {
-		...init,
-		headers: {
-			Accept: "application/json",
-			...(init.body ? { "Content-Type": "application/json" } : {}),
-			...init.headers,
-		},
-	})
-
-	const result = await normalizeHttpResponse<MemberPortalEnvelope<T>>(
-		response,
-		{
-			unreachableMessage: messages.unreachable,
-			fallbackErrorMessage: messages.fallback,
-		},
-	)
-
-	return unwrapMemberPortalEnvelope(unwrapApiResult(result), {
-		fallbackErrorMessage: messages.fallback,
-		missingDataMessage: messages.fallback,
-		status: result.status,
-	})
-}
-
 /**
  * Opens the Affiliate registration form.
  *
@@ -74,7 +32,7 @@ export function fetchAffiliateRegistration(): Promise<AffiliateRegistrationLoad>
 		`/info?type=${encodeURIComponent(AFFILIATE_PROGRAM_TYPE)}`,
 		{ method: "GET" },
 		{
-			unreachable: "Unable to reach the registration service.",
+			unreachable: EXAMREG_UNREACHABLE,
 			fallback: "Unable to open the registration form. Please try again.",
 		},
 	)
@@ -103,7 +61,7 @@ export function verifyAffiliateCustomer(
 			} satisfies VerifyCustomerRequest),
 		},
 		{
-			unreachable: "Unable to reach the registration service.",
+			unreachable: EXAMREG_UNREACHABLE,
 			fallback: "Unable to check that email address. Please try again.",
 		},
 	)
@@ -131,7 +89,7 @@ export function registerAffiliate(
 			} satisfies AffiliateRegisterRequest),
 		},
 		{
-			unreachable: "Unable to reach the registration service.",
+			unreachable: EXAMREG_UNREACHABLE,
 			fallback: "Unable to complete your registration. Please try again.",
 		},
 	)
@@ -161,7 +119,7 @@ export async function completeAffiliateOrder(orderId: string): Promise<void> {
 		"/payOrder",
 		{ method: "POST", body: JSON.stringify({ orderId }) },
 		{
-			unreachable: "Unable to reach the registration service.",
+			unreachable: EXAMREG_UNREACHABLE,
 			fallback: "Your account was created but the order did not close.",
 		},
 	)

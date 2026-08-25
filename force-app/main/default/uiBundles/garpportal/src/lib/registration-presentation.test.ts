@@ -6,11 +6,18 @@ import type {
 	StudyMaterialView,
 } from "@/api/registration/exam-types"
 import {
+	defaultPaymentType,
+	idFormatError,
+	isComplianceCountry,
+	isOfflinePayment,
 	isOstaRequired,
+	isPaymentAllowed,
 	isOutOfOrder,
 	isPart1Active,
 	isPart2Active,
 	resolvePartSelection,
+	showAddresses,
+	showAutorenew,
 	showSubtotal,
 	sortAdmins,
 	sortFeeLines,
@@ -21,9 +28,12 @@ import {
 } from "@/lib/registration-presentation"
 import {
 	buildFeesRequest,
+	buildRegisterRequest,
 	emptyAddress,
 	emptySelection,
 	selectionInput,
+	toRegistrationAddress,
+	toRegistrationPhoneCode,
 } from "@/lib/registration-payloads"
 
 const admin = (id: string, epoch: number): ExamAdminView => ({
@@ -229,5 +239,298 @@ describe("payload", () => {
 	it("keeps only dial digits from the composite phone code", () => {
 		expect(phoneCodeDigits("China (+86)")).toBe("86")
 		expect(phoneCodeDigits("")).toBeNull()
+	})
+})
+
+describe("idFormatError", () => {
+	// Apex validates NONE of this — if these rules are wrong, bad ID data is
+	// simply saved onto the Contact.
+	it("requires exactly 9 characters for a China passport", () => {
+		expect(idFormatError("China", "Passport", "AB123456")).toBe(
+			"Your ID must be 9 characters long.",
+		)
+		expect(idFormatError("China", "Passport", "AB1234567")).toBeNull()
+	})
+
+	it("rejects I and O in a China passport", () => {
+		// Too easily confused with 1 and 0 on a printed document.
+		const message =
+			'Your ID must only contain numbers and letters, not including "I" or "O".'
+		expect(idFormatError("China", "Passport", "ABI234567")).toBe(message)
+		expect(idFormatError("China", "Passport", "ABO234567")).toBe(message)
+		expect(idFormatError("China", "Passport", "ABH234567")).toBeNull()
+	})
+
+	it("requires 18 characters for a China non-passport ID", () => {
+		expect(idFormatError("China", "Driver's License", "12345678901234567")).toBe(
+			"Your ID should consist of 18 numbers or letters.",
+		)
+		expect(
+			idFormatError("China", "Driver's License", "123456789012345678"),
+		).toBeNull()
+	})
+
+	it("allows 5–10 for a non-China passport", () => {
+		expect(idFormatError("Non-China", "Passport", "1234")).not.toBeNull()
+		expect(idFormatError("Non-China", "Passport", "12345")).toBeNull()
+		expect(idFormatError("Non-China", "Passport", "1234567890")).toBeNull()
+		expect(idFormatError("Non-China", "Passport", "12345678901")).not.toBeNull()
+	})
+
+	it("allows 5–25 for any other non-China ID", () => {
+		expect(idFormatError("Non-China", "Driver's License", "1234")).not.toBeNull()
+		expect(
+			idFormatError("Non-China", "Driver's License", "A".repeat(25)),
+		).toBeNull()
+		expect(
+			idFormatError("Non-China", "Driver's License", "A".repeat(26)),
+		).not.toBeNull()
+	})
+
+	it("says nothing about an empty value — that is the required check's job", () => {
+		expect(idFormatError("China", "Passport", "")).toBeNull()
+	})
+})
+
+describe("payment rules", () => {
+	const usa = { creditCardAllowed: true, wireAllowed: true, achAllowed: true }
+	const cardOnly = {
+		creditCardAllowed: true,
+		wireAllowed: false,
+		achAllowed: false,
+	}
+
+	it("leaves wire and ACH open before a country is chosen", () => {
+		expect(isPaymentAllowed("Wire Transfer", null, true)).toBe(true)
+		expect(isPaymentAllowed("ACH", null, true)).toBe(true)
+	})
+
+	it("gates card on the org switch as well as the country", () => {
+		expect(isPaymentAllowed("Stripe", usa, false)).toBe(false)
+		expect(isPaymentAllowed("Stripe", usa, true)).toBe(true)
+	})
+
+	it("prefers card, then wire, then ACH", () => {
+		expect(defaultPaymentType(usa, true, "")).toBe("Stripe")
+		expect(defaultPaymentType(usa, false, "")).toBe("Wire Transfer")
+	})
+
+	it("keeps a still-valid choice when the country changes", () => {
+		expect(defaultPaymentType(usa, true, "ACH")).toBe("ACH")
+	})
+
+	it("replaces a choice the new country forbids", () => {
+		// Silently leaving it would fail at submit instead of at the choice.
+		expect(defaultPaymentType(cardOnly, true, "ACH")).toBe("Stripe")
+	})
+
+	it("shows addresses only for the offline methods", () => {
+		expect(showAddresses("Stripe")).toBe(false)
+		expect(showAddresses("")).toBe(false)
+		expect(showAddresses("Wire Transfer")).toBe(true)
+		expect(showAddresses("ACH")).toBe(true)
+	})
+
+	it("knows which methods carry the processing fee", () => {
+		expect(isOfflinePayment("Wire Transfer")).toBe(true)
+		expect(isOfflinePayment("Stripe")).toBe(false)
+	})
+})
+
+describe("showAutorenew", () => {
+	it("needs a card order AND a complimentary membership in the cart", () => {
+		expect(showAutorenew(false, "Stripe", true)).toBe(true)
+		expect(showAutorenew(false, "Wire Transfer", true)).toBe(false)
+		expect(showAutorenew(false, "Stripe", false)).toBe(false)
+	})
+
+	it("does not ask someone who already has it on", () => {
+		expect(showAutorenew(true, "Stripe", true)).toBe(false)
+	})
+})
+
+describe("isComplianceCountry", () => {
+	const countries = [
+		{ countryCode: "Germany", compliance: true },
+		{ countryCode: "United States", compliance: false },
+	]
+
+	it("is true only for a country carrying the tag", () => {
+		expect(isComplianceCountry(countries, "Germany")).toBe(true)
+		expect(isComplianceCountry(countries, "United States")).toBe(false)
+		expect(isComplianceCountry(countries, "")).toBe(false)
+	})
+})
+
+describe("buildRegisterRequest", () => {
+	const base = {
+		type: "frm",
+		selection: emptySelection(),
+		materials: [],
+		paymentType: "Stripe",
+		billingAddress: { ...emptyAddress(), country: "United States" },
+		shippingAddress: emptyAddress(),
+		billingAndShippingSame: true,
+		autoRenew: false,
+		membershipSelected: false,
+		riskNetSelected: false,
+		mobilePhoneCode: "United States (+1)",
+		firstName: "Ada",
+		lastName: "Lovelace",
+		email: "ada@example.com",
+		mobilePhone: "5551234567",
+		smsPromotionalUpdates: false,
+		personal: null,
+		isComplianceCountry: false,
+		attestPrivacyNotice: false,
+		attestLimitationOfLiability: false,
+		attestReleaseAndWaiver: false,
+		examPolicy: true,
+		candidateResponsibility: true,
+	}
+
+	it("treats submitting as consent outside a compliance country", () => {
+		// The notice above the button says exactly this, so the three unticked
+		// boxes must not block a US registration.
+		const request = buildRegisterRequest(base)
+		expect(request.consent.privacyPolicy).toBe(true)
+	})
+
+	it("requires all three ticks in a compliance country", () => {
+		const partial = buildRegisterRequest({
+			...base,
+			isComplianceCountry: true,
+			attestPrivacyNotice: true,
+			attestLimitationOfLiability: true,
+		})
+		expect(partial.consent.privacyPolicy).toBe(false)
+
+		const complete = buildRegisterRequest({
+			...base,
+			isComplianceCountry: true,
+			attestPrivacyNotice: true,
+			attestLimitationOfLiability: true,
+			attestReleaseAndWaiver: true,
+		})
+		expect(complete.consent.privacyPolicy).toBe(true)
+	})
+
+	it("needs BOTH acknowledgements for examPolicy", () => {
+		// Apex refuses the whole registration unless this is true.
+		expect(
+			buildRegisterRequest({ ...base, candidateResponsibility: false }).consent
+				.examPolicy,
+		).toBe(false)
+		expect(buildRegisterRequest(base).consent.examPolicy).toBe(true)
+	})
+
+	it("omits the identity block when no China centre is chosen", () => {
+		// Apex writes the block whenever an ID number is present, so sending an
+		// unwanted one would overwrite the member's stored identity.
+		expect(buildRegisterRequest(base).personal).toBeNull()
+		expect(buildRegisterRequest(base).consent.osta).toBe(false)
+	})
+
+	it("carries the identity consent through when the block is present", () => {
+		const request = buildRegisterRequest({
+			...base,
+			personal: {
+				gender: "Female",
+				idType: "Passport",
+				idLocation: "China",
+				idNumber: "AB1234567",
+				nameOnId: "Ada Lovelace",
+				ostaConsent: true,
+				fullNameInChinese: "阿达",
+				dateOfBirth: "1990-01-01",
+				idExpireDate: "2030-01-01",
+				phone: "5551234567",
+				workStatus: "Working",
+				companyName: "GARP",
+				schoolName: "Somewhere",
+				studentStatus: "Not In School",
+				degreeName: "BSc",
+				businessEmail: "",
+				professionalLevel: "",
+				jobFunction: "",
+				riskSpecialty: "",
+			},
+		})
+		expect(request.personal?.idNumber).toBe("AB1234567")
+		expect(request.consent.osta).toBe(true)
+	})
+
+	it("mirrors billing into shipping when they are the same", () => {
+		const request = buildRegisterRequest(base)
+		expect(request.shippingAddress.country).toBe("United States")
+	})
+
+	it("sends the distinct shipping address when they differ", () => {
+		const request = buildRegisterRequest({
+			...base,
+			billingAndShippingSame: false,
+			shippingAddress: { ...emptyAddress(), country: "Canada" },
+		})
+		expect(request.shippingAddress.country).toBe("Canada")
+	})
+})
+
+describe("address + phone translation", () => {
+	const countries = [
+		{ name: "United States", countryCode: "United States", phoneCode: "1" },
+		{ name: "Canada", countryCode: "Canada", phoneCode: "1" },
+		{ name: "China", countryCode: "China", phoneCode: "86" },
+	]
+
+	it("renames the portal address fields to the registration ones", () => {
+		expect(
+			toRegistrationAddress({
+				company: "GARP",
+				address1: "111 Town Square",
+				address2: "Floor 14",
+				address3: "",
+				city: "Jersey City",
+				state: "NJ",
+				postalCode: "07310",
+				country: "United States",
+				phone: "5551234567",
+			}),
+		).toEqual({
+			company: "GARP",
+			street1: "111 Town Square",
+			street2: "Floor 14",
+			street3: "",
+			city: "Jersey City",
+			province: "NJ",
+			postalCode: "07310",
+			country: "United States",
+			phone: "5551234567",
+		})
+	})
+
+	it("returns an empty address rather than throwing on nothing", () => {
+		expect(toRegistrationAddress(null).country).toBe("")
+	})
+
+	it("builds the composite phone code Apex expects", () => {
+		expect(
+			toRegistrationPhoneCode("+86", "China", countries),
+		).toBe("China (+86)")
+	})
+
+	it("breaks a shared dial code using the member's own country", () => {
+		// The US and Canada both dial +1; picking the first match would put
+		// the wrong country on the order.
+		expect(toRegistrationPhoneCode("+1", "Canada", countries)).toBe(
+			"Canada (+1)",
+		)
+		expect(toRegistrationPhoneCode("+1", "United States", countries)).toBe(
+			"United States (+1)",
+		)
+	})
+
+	it("is empty when there is no code to translate", () => {
+		expect(toRegistrationPhoneCode("", "United States", countries)).toBe("")
+		expect(toRegistrationPhoneCode("+999", "Nowhere", countries)).toBe("")
 	})
 })

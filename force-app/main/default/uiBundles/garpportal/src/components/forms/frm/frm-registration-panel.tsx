@@ -1,3 +1,5 @@
+import { useState } from "react"
+
 import { AppError } from "@/api/client"
 import { Alert, AlertDescription, AlertTitle } from "@/components/atoms/alert"
 import {
@@ -7,6 +9,11 @@ import {
 } from "@/components/atoms/card"
 import { Skeleton } from "@/components/atoms/skeleton"
 import { FrmRegistrationForm } from "@/components/forms/frm/frm-registration-form"
+import {
+	RegistrationOutcome,
+	type RegistrationOutcomeKind,
+} from "@/components/forms/frm/sections/registration-outcome"
+import type { ExamSubmitOutcome } from "@/hooks/use-exam-registration-submit"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { useExamRegistrationLoad } from "@/hooks/use-exam-registration"
 import { usePersonalInfoEditData } from "@/hooks/use-personal-info-edit-data"
@@ -17,6 +24,14 @@ type FrmRegistrationPanelProps = {
 	regCode?: string
 	/** Plays the page exit before Back navigates. */
 	onNavigateBack: (run: () => void) => void
+	/**
+	 * The payment provider's answer, when the browser has just come back from
+	 * it. Arrives as a fresh page load with no React state, so it has to be
+	 * read from the URL rather than remembered.
+	 */
+	paymentReturn?: {
+		orderNumber?: string
+	} | null
 }
 
 /**
@@ -135,13 +150,64 @@ function FrmRegistrationPanel({
 	programType,
 	regCode,
 	onNavigateBack,
+	paymentReturn,
 }: FrmRegistrationPanelProps) {
+	const [outcome, setOutcome] = useState<{
+		kind: RegistrationOutcomeKind
+		orderNumber?: string | null
+		total?: number | null
+		currency?: string | null
+	} | null>(null)
 	const load = useExamRegistrationLoad(programType, regCode)
 	const currentUser = useCurrentUser()
 	const contactId = currentUser.data?.contactId ?? ""
-	const profile = usePersonalInfoEditData(contactId, Boolean(contactId))
+	/* Empty for a guest — the public route serves this form with no session. */
+	const hasContact = Boolean(contactId)
+	const isAuthenticated = Boolean(currentUser.data)
+	const profile = usePersonalInfoEditData(contactId, hasContact)
 
-	if (load.isPending || profile.isPending) return <RegistrationSkeleton />
+	/*
+	 * A return from the payment provider is shown before anything else is
+	 * fetched. The order is already written by this point — re-rendering the
+	 * form while the load resolves would invite a second registration.
+	 */
+	if (paymentReturn) {
+		return (
+			<RegistrationOutcome
+				kind="paid"
+				orderNumber={paymentReturn.orderNumber}
+				isAuthenticated={isAuthenticated}
+			/>
+		)
+	}
+
+	if (outcome) {
+		return (
+			<RegistrationOutcome
+				kind={outcome.kind}
+				orderNumber={outcome.orderNumber}
+				total={outcome.total}
+				currency={outcome.currency}
+				isAuthenticated={isAuthenticated}
+			/>
+		)
+	}
+
+	/*
+	 * The profile is only waited for when there is a contact to load. A
+	 * disabled React Query sits at `status: "pending"` for ever, so testing it
+	 * unconditionally strands a guest — who has no contact id, so the query
+	 * never runs — on the skeleton permanently. `currentUser` is settled
+	 * before this by both route guards; it is tested anyway so the one-shot
+	 * form seed cannot lose a race with it.
+	 */
+	if (
+		load.isPending ||
+		currentUser.isPending ||
+		(hasContact && profile.isPending)
+	) {
+		return <RegistrationSkeleton />
+	}
 
 	if (load.isError) {
 		return (
@@ -173,10 +239,20 @@ function FrmRegistrationPanel({
 			programType={programType}
 			regCode={regCode}
 			onNavigateBack={onNavigateBack}
+			onRegistered={(result: ExamSubmitOutcome) => {
+				if (result.kind === "redirecting") return
+				setOutcome({
+					kind: result.kind,
+					orderNumber: result.result.orderNumber,
+					total: result.result.total,
+					currency: "USD",
+				})
+			}}
 			// A missing profile is not fatal — the form renders empty and the
 			// member fills it in, which beats blocking registration on a
 			// secondary read.
 			profile={profile.data ?? null}
+			isAuthenticated={isAuthenticated}
 		/>
 	)
 }

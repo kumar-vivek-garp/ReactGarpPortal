@@ -10,6 +10,17 @@ import type { FeesRequest } from "@/api/registration/exam-types"
 export const registrationQueryKeys = {
 	all: ["registration"] as const,
 	affiliate: ["registration", "affiliate"] as const,
+	/** One programme's load. Keyed by reg code too — a code changes pricing. */
+	exam: (programType: string, regCode?: string | null, courseCode?: string | null) =>
+		[
+			"registration",
+			"exam",
+			programType.trim().toLowerCase(),
+			regCode ?? null,
+			courseCode ?? null,
+		] as const,
+	/** The priced cart. The request itself is the key — see below. */
+	fees: (request: unknown) => ["registration", "fees", request] as const,
 }
 
 /**
@@ -42,13 +53,7 @@ export function examRegistrationQueryOptions(
 	courseCode?: string,
 ) {
 	return queryOptions({
-		queryKey: [
-			...registrationQueryKeys.all,
-			"exam",
-			programType.trim().toLowerCase(),
-			regCode ?? null,
-			courseCode ?? null,
-		] as const,
+		queryKey: registrationQueryKeys.exam(programType, regCode, courseCode),
 		queryFn: () => fetchExamRegistration(programType, regCode, courseCode),
 		enabled: Boolean(programType.trim()),
 		staleTime: 5 * 60_000,
@@ -66,7 +71,7 @@ export function examRegistrationQueryOptions(
  */
 export function examFeesQueryOptions(request: FeesRequest | null) {
 	return queryOptions({
-		queryKey: [...registrationQueryKeys.all, "fees", request] as const,
+		queryKey: registrationQueryKeys.fees(request),
 		queryFn: () => calculateFees(request as FeesRequest),
 		enabled: request !== null,
 		staleTime: 60_000,
