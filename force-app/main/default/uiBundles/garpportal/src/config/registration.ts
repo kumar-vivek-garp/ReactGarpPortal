@@ -51,3 +51,13 @@ const NON_ENGLISH_NAME = /-{2,}|\s{2,}|'{2,}|[^a-z\-\s']/i
 export function isEnglishName(value: string): boolean {
 	return !NON_ENGLISH_NAME.test(value)
 }
+
+/* ===================== exam registration ===================== */
+
+/** Notices the exam form shows in specific situations. */
+export const EXAM_REGISTRATION_COPY = {
+	bothPartsAlert:
+		"Exam centres may not be in the same location. If you sit both parts on the same day, plan for travel between centres — late arrivals cannot sit the exam.",
+	ostaSiteNotice:
+		"You can choose Simplified Chinese or American English as your exam language during scheduling, which happens after you register here.",
+} as const

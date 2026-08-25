@@ -129,7 +129,7 @@ function ProgramRow({
 					<CardCta
 						label={registrationLink.label}
 						url={registrationLink.url}
-						isExternal
+						isExternal={registrationLink.isExternal}
 					/>
 				) : null}
 

@@ -35,6 +35,7 @@ import { Route as AppLayoutStudyMaterialsArchiveIndexRouteImport } from './pages
 import { Route as AppLayoutMyAccountOrdersOrderNumberIndexRouteImport } from './pages/_appLayout/my-account/orders/$orderNumber/index'
 import { Route as AppLayoutProgramsProgramTypeErrataIndexRouteImport } from './pages/_appLayout/programs/$programType/errata/index'
 import { Route as AppLayoutProgramsProgramTypeExamSetupIndexRouteImport } from './pages/_appLayout/programs/$programType/exam-setup/index'
+import { Route as AppLayoutProgramsProgramTypeRegisterIndexRouteImport } from './pages/_appLayout/programs/$programType/register/index'
 import { Route as AppLayoutProgramsProgramTypeResultsIndexRouteImport } from './pages/_appLayout/programs/$programType/results/index'
 import { Route as AppLayoutProgramsProgramTypeWorkExperienceIndexRouteImport } from './pages/_appLayout/programs/$programType/work-experience/index'
 
@@ -182,6 +183,12 @@ const AppLayoutProgramsProgramTypeExamSetupIndexRoute =
     path: '/programs/$programType/exam-setup/',
     getParentRoute: () => AppLayoutRouteRoute,
   } as any)
+const AppLayoutProgramsProgramTypeRegisterIndexRoute =
+  AppLayoutProgramsProgramTypeRegisterIndexRouteImport.update({
+    id: '/programs/$programType/register/',
+    path: '/programs/$programType/register/',
+    getParentRoute: () => AppLayoutRouteRoute,
+  } as any)
 const AppLayoutProgramsProgramTypeResultsIndexRoute =
   AppLayoutProgramsProgramTypeResultsIndexRouteImport.update({
     id: '/programs/$programType/results/',
@@ -220,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/my-account/orders/$orderNumber/': typeof AppLayoutMyAccountOrdersOrderNumberIndexRoute
   '/programs/$programType/errata/': typeof AppLayoutProgramsProgramTypeErrataIndexRoute
   '/programs/$programType/exam-setup/': typeof AppLayoutProgramsProgramTypeExamSetupIndexRoute
+  '/programs/$programType/register/': typeof AppLayoutProgramsProgramTypeRegisterIndexRoute
   '/programs/$programType/results/': typeof AppLayoutProgramsProgramTypeResultsIndexRoute
   '/programs/$programType/work-experience/': typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
 }
@@ -248,6 +256,7 @@ export interface FileRoutesByTo {
   '/my-account/orders/$orderNumber': typeof AppLayoutMyAccountOrdersOrderNumberIndexRoute
   '/programs/$programType/errata': typeof AppLayoutProgramsProgramTypeErrataIndexRoute
   '/programs/$programType/exam-setup': typeof AppLayoutProgramsProgramTypeExamSetupIndexRoute
+  '/programs/$programType/register': typeof AppLayoutProgramsProgramTypeRegisterIndexRoute
   '/programs/$programType/results': typeof AppLayoutProgramsProgramTypeResultsIndexRoute
   '/programs/$programType/work-experience': typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
 }
@@ -279,6 +288,7 @@ export interface FileRoutesById {
   '/_appLayout/my-account/orders/$orderNumber/': typeof AppLayoutMyAccountOrdersOrderNumberIndexRoute
   '/_appLayout/programs/$programType/errata/': typeof AppLayoutProgramsProgramTypeErrataIndexRoute
   '/_appLayout/programs/$programType/exam-setup/': typeof AppLayoutProgramsProgramTypeExamSetupIndexRoute
+  '/_appLayout/programs/$programType/register/': typeof AppLayoutProgramsProgramTypeRegisterIndexRoute
   '/_appLayout/programs/$programType/results/': typeof AppLayoutProgramsProgramTypeResultsIndexRoute
   '/_appLayout/programs/$programType/work-experience/': typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
 }
@@ -309,6 +319,7 @@ export interface FileRouteTypes {
     | '/my-account/orders/$orderNumber/'
     | '/programs/$programType/errata/'
     | '/programs/$programType/exam-setup/'
+    | '/programs/$programType/register/'
     | '/programs/$programType/results/'
     | '/programs/$programType/work-experience/'
   fileRoutesByTo: FileRoutesByTo
@@ -337,6 +348,7 @@ export interface FileRouteTypes {
     | '/my-account/orders/$orderNumber'
     | '/programs/$programType/errata'
     | '/programs/$programType/exam-setup'
+    | '/programs/$programType/register'
     | '/programs/$programType/results'
     | '/programs/$programType/work-experience'
   id:
@@ -367,6 +379,7 @@ export interface FileRouteTypes {
     | '/_appLayout/my-account/orders/$orderNumber/'
     | '/_appLayout/programs/$programType/errata/'
     | '/_appLayout/programs/$programType/exam-setup/'
+    | '/_appLayout/programs/$programType/register/'
     | '/_appLayout/programs/$programType/results/'
     | '/_appLayout/programs/$programType/work-experience/'
   fileRoutesById: FileRoutesById
@@ -561,6 +574,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLayoutProgramsProgramTypeExamSetupIndexRouteImport
       parentRoute: typeof AppLayoutRouteRoute
     }
+    '/_appLayout/programs/$programType/register/': {
+      id: '/_appLayout/programs/$programType/register/'
+      path: '/programs/$programType/register'
+      fullPath: '/programs/$programType/register/'
+      preLoaderRoute: typeof AppLayoutProgramsProgramTypeRegisterIndexRouteImport
+      parentRoute: typeof AppLayoutRouteRoute
+    }
     '/_appLayout/programs/$programType/results/': {
       id: '/_appLayout/programs/$programType/results/'
       path: '/programs/$programType/results'
@@ -600,6 +620,7 @@ interface AppLayoutRouteRouteChildren {
   AppLayoutMyAccountOrdersOrderNumberIndexRoute: typeof AppLayoutMyAccountOrdersOrderNumberIndexRoute
   AppLayoutProgramsProgramTypeErrataIndexRoute: typeof AppLayoutProgramsProgramTypeErrataIndexRoute
   AppLayoutProgramsProgramTypeExamSetupIndexRoute: typeof AppLayoutProgramsProgramTypeExamSetupIndexRoute
+  AppLayoutProgramsProgramTypeRegisterIndexRoute: typeof AppLayoutProgramsProgramTypeRegisterIndexRoute
   AppLayoutProgramsProgramTypeResultsIndexRoute: typeof AppLayoutProgramsProgramTypeResultsIndexRoute
   AppLayoutProgramsProgramTypeWorkExperienceIndexRoute: typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
 }
@@ -633,6 +654,8 @@ const AppLayoutRouteRouteChildren: AppLayoutRouteRouteChildren = {
     AppLayoutProgramsProgramTypeErrataIndexRoute,
   AppLayoutProgramsProgramTypeExamSetupIndexRoute:
     AppLayoutProgramsProgramTypeExamSetupIndexRoute,
+  AppLayoutProgramsProgramTypeRegisterIndexRoute:
+    AppLayoutProgramsProgramTypeRegisterIndexRoute,
   AppLayoutProgramsProgramTypeResultsIndexRoute:
     AppLayoutProgramsProgramTypeResultsIndexRoute,
   AppLayoutProgramsProgramTypeWorkExperienceIndexRoute:

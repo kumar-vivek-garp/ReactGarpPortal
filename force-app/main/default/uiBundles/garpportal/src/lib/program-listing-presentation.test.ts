@@ -289,7 +289,9 @@ describe("buildProgramListingPresentation — explore", () => {
 		expect(result.statusLabel).toBe("Registration open")
 		expect(result.statusTone).toBe("success")
 		expect(result.registrationLink?.label).toBe("Register Now")
-		expect(result.registrationLink?.isExternal).toBe(true)
+		// In-app now — the card renders a router Link, not a MyGarp hand-off.
+		expect(result.registrationLink?.url).toBe("/programs/erp/register")
+		expect(result.registrationLink?.isExternal).toBe(false)
 		expect(result.learnMoreLink?.url).toBe("https://www.garp.org/erp")
 		expect(result.detailsLink).toBeNull()
 		expect(result.metaLines).toEqual([
@@ -408,5 +410,39 @@ describe("programBrandSurface", () => {
 		for (const type of ["FRM", "SCR", "ERP", "RAI", "RAIJ", "FRR25", "ZZZ"]) {
 			expect(programBrandSurface(type).chip).toBeTruthy()
 		}
+	})
+})
+
+describe("buildProgramListingPresentation — registration route", () => {
+	it("routes every explore programme to its own in-app form", () => {
+		for (const [programType, expected] of [
+			["FRM", "/programs/frm/register"],
+			["SCR", "/programs/scr/register"],
+			["RAIJ", "/programs/raij/register"],
+		] as const) {
+			const result = buildProgramListingPresentation(
+				"other",
+				other({ programType }),
+			)
+			expect(result.registrationLink?.url).toBe(expected)
+			expect(result.registrationLink?.isExternal).toBe(false)
+		}
+	})
+
+	it("uses the riskai slug, matching the detail route", () => {
+		// The portal and marketing site say "rai"; our routes say "riskai".
+		const result = buildProgramListingPresentation(
+			"other",
+			other({ programType: "RAI" }),
+		)
+		expect(result.registrationLink?.url).toBe("/programs/riskai/register")
+	})
+
+	it("offers nothing when registration is closed", () => {
+		const result = buildProgramListingPresentation(
+			"other",
+			other({ programType: "FRM", isRegistrationOpen: false }),
+		)
+		expect(result.registrationLink).toBeNull()
 	})
 })

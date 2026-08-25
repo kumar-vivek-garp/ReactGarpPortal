@@ -11,7 +11,7 @@ import {
 	programDetailsHref,
 	programDetailsPath,
 	programLearnMoreUrl,
-	programRegistrationHref,
+	programRegistrationPath,
 } from "@/lib/program-card-links"
 import { stripProgramFormalName } from "@/lib/program-formal-name"
 import type { MetaLine } from "@/lib/meta-line"
@@ -192,17 +192,15 @@ export function buildProgramListingPresentation(
 			}
 		: null
 
+	// Register Now opens the in-app registration route. Every programme in the
+	// listing goes there — the page resolves the programme from the slug.
 	const registrationUrl =
 		isOther && program.isRegistrationOpen
-			? programRegistrationHref(
-					info?.registrationPath,
-					program.programType,
-					program.isMicroCourse,
-				)
+			? programRegistrationPath(program.programType)
 			: null
 
 	const registrationLink: ProgramListingLink | null = registrationUrl
-		? { label: "Register Now", url: registrationUrl, isExternal: true }
+		? { label: "Register Now", url: registrationUrl, isExternal: false }
 		: null
 
 	const learnMoreUrl = isOther

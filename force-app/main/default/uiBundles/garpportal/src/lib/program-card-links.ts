@@ -179,6 +179,21 @@ export function programLearnMoreUrl(
 }
 
 /**
+ * In-app registration for a program (`/programs/{slug}/register`).
+ *
+ * A child segment like `exam-setup` and `errata`, so one dynamic route serves
+ * every programme. Note this does NOT depend on `/programs/{slug}` resolving:
+ * `programDetail` only serves the two-part exams, but a course-kind programme
+ * still registers here.
+ */
+export function programRegistrationPath(programType: string): string | null {
+	const slug = programTypeSlug(programType)
+	if (!slug) return null
+	const routeSlug = slug === "rai" ? "riskai" : slug
+	return `/programs/${routeSlug}/register`
+}
+
+/**
  * MyGarp registration wizard (garpApp2 `navigateToRegistration`).
  * Prefers Apex `registrationPath`; otherwise derives from program type
  * (RiskAI → `rai`, micro → `micro/{code}`).

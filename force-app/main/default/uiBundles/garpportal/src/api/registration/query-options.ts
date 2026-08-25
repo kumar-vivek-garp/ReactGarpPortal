@@ -1,6 +1,11 @@
 import { queryOptions } from "@tanstack/react-query"
 
 import { fetchAffiliateRegistration } from "@/api/registration/affiliate"
+import {
+	calculateFees,
+	fetchExamRegistration,
+} from "@/api/registration/exam-registration"
+import type { FeesRequest } from "@/api/registration/exam-types"
 
 export const registrationQueryKeys = {
 	all: ["registration"] as const,
@@ -24,3 +29,48 @@ export const affiliateRegistrationQueryOptions = queryOptions({
 		errorTitle: "Unable to open registration",
 	},
 })
+
+/* ===================== exam registration ===================== */
+
+/**
+ * The form's own load. Keyed by programme AND reg code, because a code changes
+ * eligibility, pricing and the exam options the payload carries.
+ */
+export function examRegistrationQueryOptions(
+	programType: string,
+	regCode?: string,
+	courseCode?: string,
+) {
+	return queryOptions({
+		queryKey: [
+			...registrationQueryKeys.all,
+			"exam",
+			programType.trim().toLowerCase(),
+			regCode ?? null,
+			courseCode ?? null,
+		] as const,
+		queryFn: () => fetchExamRegistration(programType, regCode, courseCode),
+		enabled: Boolean(programType.trim()),
+		staleTime: 5 * 60_000,
+		retry: false,
+		meta: { toastError: true, errorTitle: "Unable to open registration" },
+	})
+}
+
+/**
+ * Prices the cart.
+ *
+ * The request itself is the cache key, so an identical cart is never re-priced
+ * and — the part that matters — a slow response for a superseded cart is never
+ * applied. That is the out-of-order guard, for free.
+ */
+export function examFeesQueryOptions(request: FeesRequest | null) {
+	return queryOptions({
+		queryKey: [...registrationQueryKeys.all, "fees", request] as const,
+		queryFn: () => calculateFees(request as FeesRequest),
+		enabled: request !== null,
+		staleTime: 60_000,
+		retry: false,
+		meta: { toastError: true, errorTitle: "Could not calculate fees" },
+	})
+}

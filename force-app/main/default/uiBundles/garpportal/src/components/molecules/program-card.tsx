@@ -136,7 +136,7 @@ function ProgramCard({
 						<CardCta
 							label={registrationLink.label}
 							url={registrationLink.url}
-							isExternal
+							isExternal={registrationLink.isExternal}
 						/>
 					) : null}
 
