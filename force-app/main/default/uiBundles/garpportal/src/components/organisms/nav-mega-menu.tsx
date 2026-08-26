@@ -14,6 +14,13 @@ import { NAV_CONTENT_SPRING, NAV_MORPH_SPRING, NAV_PANEL_SPRING } from "@/lib/na
 import { useNavigationStore } from "@/store/navigation-store"
 
 const MORE_LABEL = "More"
+/**
+ * Space between trigger pills, so an open pill and its hovered neighbour never
+ * touch. Must equal the row's `gap-x-1.5` — the overflow math adds it to every
+ * measured width, since the absolutely-positioned measuring copies cannot
+ * carry the live row's gaps themselves.
+ */
+const NAV_ROW_GAP_PX = 6
 /** Keeps the panel clear of both viewport edges. */
 const VIEWPORT_GUTTER = 20
 /** Distance from the panel's left edge to the caret when there is room for it. */
@@ -60,7 +67,11 @@ function NavMegaMenu() {
 		visibleItems,
 		overflowItems,
 		hasOverflow,
-	} = useNavOverflow({ items: TOP_NAV_ITEMS, getKey: getNavItemKey })
+	} = useNavOverflow({
+		items: TOP_NAV_ITEMS,
+		getKey: getNavItemKey,
+		gapPx: NAV_ROW_GAP_PX,
+	})
 
 	const orderedTitles = [
 		...visibleItems.map(getNavItemKey),
@@ -379,7 +390,7 @@ function NavMegaMenu() {
 						aria-hidden
 					/>
 
-					<nav className="flex min-w-0 items-center" aria-label="Primary">
+					<nav className="flex min-w-0 items-center gap-x-1.5" aria-label="Primary">
 						{visibleItems.map((item) => trigger(item.title))}
 						{hasOverflow ? trigger(NAV_OVERFLOW_KEY) : null}
 					</nav>

@@ -4,6 +4,8 @@ import { MobileNavBar } from "@/components/organisms/mobile-nav-bar"
 import { NavMegaMenu } from "@/components/organisms/nav-mega-menu"
 import { SignOutButton } from "@/components/molecules/sign-out-button"
 import { ThemeToggle } from "@/components/molecules/theme-toggle"
+import { useScrolledNav } from "@/hooks/use-scrolled-nav"
+import { cn } from "@/lib/utils"
 
 /**
  * App chrome header.
@@ -30,10 +32,21 @@ import { ThemeToggle } from "@/components/molecules/theme-toggle"
  * The mega-menu, its scrim, and the overflow logic all live in `NavMegaMenu`.
  */
 function Navbar() {
+	const scrolled = useScrolledNav()
+
 	return (
 		<>
-			{/* Fixed 80px black bar, desktop only. */}
-			<header className="fixed top-0 right-0 left-0 z-[1000] box-border hidden h-20 max-w-[100vw] items-center bg-toolbar text-toolbar-foreground app:flex">
+			{/* Fixed 80px white-chrome bar, desktop only. Solid at all times — the
+			    canvas below is deliberately duller than the chrome, so garp.org's
+			    transparent-at-rest look would read as a colour mismatch against
+			    the white sidebar. The hairline frames the content panel; the
+			    scroll signal survives as the shadow lift. */}
+			<header
+				className={cn(
+					"fixed top-0 right-0 left-0 z-[1000] box-border hidden h-20 max-w-[100vw] items-center border-b border-border bg-toolbar text-toolbar-foreground transition-shadow duration-200 app:flex",
+					scrolled && "shadow-xs",
+				)}
+			>
 				{/* Inset to the sidebar avatar; width is the toolbar's own, not the rail's. */}
 				<a
 					href="https://www.garp.org/"

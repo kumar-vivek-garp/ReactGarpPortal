@@ -208,21 +208,24 @@ function YourExamSection({
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="flex flex-col gap-4">
-				<div className="flex flex-col gap-2">
-					<Label htmlFor="examPart" className="font-bold">
-						Exam part
-						<span className="text-destructive" aria-hidden>
-							{" "}
-							*
-						</span>
-					</Label>
-					{partsAvailable.length === 0 ? (
-						<p className="text-body text-muted-foreground">
-							No exams available
-						</p>
-					) : partsAvailable.length === 1 ? (
-						<p className="text-body">{partsAvailable[0]}</p>
-					) : (
+				{/*
+				 * Only a real choice earns a control. A single-part programme
+				 * offers one option — as does FRM when only Part I is open — and
+				 * the part block below already carries the exam's name, so
+				 * stating it here as well prints nearly the same words twice
+				 * under a label asking for a decision nobody has to make.
+				 */}
+				{partsAvailable.length === 0 ? (
+					<p className="text-body text-muted-foreground">No exams available</p>
+				) : partsAvailable.length > 1 ? (
+					<div className="flex flex-col gap-2">
+						<Label htmlFor="examPart" className="font-bold">
+							Exam part
+							<span className="text-destructive" aria-hidden>
+								{" "}
+								*
+							</span>
+						</Label>
 						<Select
 							value={partSelected}
 							onValueChange={onSelectPart}
@@ -239,8 +242,8 @@ function YourExamSection({
 								))}
 							</SelectContent>
 						</Select>
-					)}
-				</div>
+					</div>
+				) : null}
 
 				{part1Active && part2Active ? (
 					<div

@@ -1,128 +1,71 @@
-import { useState } from "react"
 import { animated, useTransition } from "@react-spring/web"
 import { useNavigate } from "@tanstack/react-router"
-import { useForm, type SubmitHandler } from "react-hook-form"
 
-import { Button } from "@/components/atoms/button"
-import { Input } from "@/components/atoms/input"
-import { Label } from "@/components/atoms/label"
+import type { CaseSummary } from "@/api/help-center"
 import { PillTabs } from "@/components/atoms/pill-tabs"
 import { Tabs } from "@/components/atoms/tabs"
-import { Textarea } from "@/components/atoms/textarea"
-import { HelpCenterRequests } from "@/components/molecules/help-center-requests"
+import { SupportCaseForm } from "@/components/forms/support-case/support-case-form"
+import { EmptyState } from "@/components/molecules/empty-state"
+import {
+	HelpCenterRequests,
+	HelpCenterRequestsSkeleton,
+} from "@/components/molecules/help-center-requests"
 import { HelpCenterResources } from "@/components/molecules/help-center-resources"
-import { HelpCenterRequestsSkeleton } from "@/components/molecules/page-pending"
 import {
 	HELP_CENTER_BUCKET_META,
 	HELP_CENTER_TAB_ITEMS,
+	HELP_REQUESTS_ERROR,
 	type HelpCenterTab,
 } from "@/config/help-center"
 import { useCases } from "@/hooks/use-cases"
-import { useSubmitCase } from "@/hooks/use-submit-case"
 import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
 import { cn } from "@/lib/utils"
 
-const SUBJECT_MAX = 255
-const DESCRIPTION_MAX = 3200
-
-type SupportCaseFormValues = {
-	subject: string
-	description: string
-}
+/**
+ * Full-height panel shell shared with the pending skeleton so the chrome
+ * cannot drift — same shape as Programs / My Account / Events.
+ */
+const HELP_CENTER_SHELL =
+	"-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
+const HELP_CENTER_SCROLL =
+	"mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+const GET_HELP_GRID =
+	"grid items-start gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)] lg:gap-10"
 
 type HelpCenterPanelProps = {
 	tab: HelpCenterTab
 	className?: string
 }
 
-function FieldError({ message }: { message?: string }) {
-	if (!message) return null
+/** Fixed chrome above the scroll region — also rendered by the pending shell. */
+function HelpCenterHeader({
+	tab,
+	requestCount,
+}: {
+	tab: HelpCenterTab
+	requestCount?: number
+}) {
 	return (
-		<p className="text-xs text-destructive" role="alert">
-			{message}
-		</p>
-	)
-}
-
-function SupportCaseForm({ onSubmitted }: { onSubmitted: () => void }) {
-	const submitCase = useSubmitCase()
-	const {
-		register,
-		handleSubmit,
-		reset,
-		formState: { errors, isSubmitting },
-	} = useForm<SupportCaseFormValues>({
-		defaultValues: { subject: "", description: "" },
-		mode: "onSubmit",
-	})
-
-	const isBusy = isSubmitting || submitCase.isPending
-
-	const onSubmit: SubmitHandler<SupportCaseFormValues> = async (values) => {
-		try {
-			await submitCase.mutateAsync({
-				subject: values.subject,
-				description: values.description,
-			})
-			reset({ subject: "", description: "" })
-			onSubmitted()
-		} catch {
-			// Toast via MutationCache.
-		}
-	}
-
-	return (
-		<form
-			className="space-y-5"
-			onSubmit={(event) => {
-				void handleSubmit(onSubmit)(event)
-			}}
-			noValidate
-		>
-			<div className="flex flex-col gap-1.5">
-				<Label htmlFor="help-center-subject">Subject</Label>
-				<Input
-					id="help-center-subject"
-					maxLength={SUBJECT_MAX}
-					aria-invalid={Boolean(errors.subject)}
-					disabled={isBusy}
-					{...register("subject", {
-						required: "Subject is required",
-						maxLength: {
-							value: SUBJECT_MAX,
-							message: `Subject must be ${SUBJECT_MAX} characters or fewer`,
-						},
-					})}
-				/>
-				<FieldError message={errors.subject?.message} />
+		<header className="shrink-0 space-y-4">
+			<div>
+				<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+					Help Center
+				</h1>
+				<p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+					Open a support case with Member Services, track requests you have
+					already raised, or use the links for FAQs and other contact options.
+				</p>
 			</div>
 
-			<div className="flex flex-col gap-1.5">
-				<Label htmlFor="help-center-description">Description</Label>
-				<Textarea
-					id="help-center-description"
-					rows={10}
-					maxLength={DESCRIPTION_MAX}
-					aria-invalid={Boolean(errors.description)}
-					disabled={isBusy}
-					className="min-h-48"
-					{...register("description", {
-						required: "Description is required",
-						maxLength: {
-							value: DESCRIPTION_MAX,
-							message: `Description must be ${DESCRIPTION_MAX} characters or fewer`,
-						},
-					})}
-				/>
-				<FieldError message={errors.description?.message} />
-			</div>
-
-			<div className="flex justify-end">
-				<Button type="submit" disabled={isBusy}>
-					{isBusy ? "Submitting…" : "Submit"}
-				</Button>
-			</div>
-		</form>
+			<PillTabs
+				items={HELP_CENTER_TAB_ITEMS.map((item) =>
+					item.value === "requests" && requestCount !== undefined
+						? { ...item, count: requestCount }
+						: item,
+				)}
+				value={tab}
+			/>
+		</header>
 	)
 }
 
@@ -130,7 +73,7 @@ function GetHelpTabBody({ onSubmitted }: { onSubmitted: () => void }) {
 	const { icon: Icon, heading } = HELP_CENTER_BUCKET_META["get-help"]
 
 	return (
-		<div className="grid items-start gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)] lg:gap-10">
+		<div className={GET_HELP_GRID}>
 			<section className="min-w-0 space-y-5">
 				<div>
 					<h2 className="flex items-center gap-2 font-heading text-xl font-semibold tracking-wide text-foreground">
@@ -151,27 +94,27 @@ function GetHelpTabBody({ onSubmitted }: { onSubmitted: () => void }) {
 	)
 }
 
-function RequestsTabBody() {
-	const { data, isPending, isError } = useCases()
-
+function RequestsTabBody({
+	cases,
+	isPending,
+	isError,
+}: {
+	cases: CaseSummary[] | undefined
+	isPending: boolean
+	isError: boolean
+}) {
 	if (isPending) return <HelpCenterRequestsSkeleton />
 
 	if (isError) {
-		return (
-			<p className="text-sm text-muted-foreground">
-				We couldn&apos;t load your requests. Please try again later.
-			</p>
-		)
+		return <EmptyState {...HELP_REQUESTS_ERROR} tone="error" />
 	}
 
-	// The pill already names this section, so the heading would just repeat it.
-	return <HelpCenterRequests cases={data ?? []} showHeading={false} />
+	return <HelpCenterRequests cases={cases ?? []} />
 }
 
 function HelpCenterPanel({ tab, className }: HelpCenterPanelProps) {
 	const navigate = useNavigate({ from: "/help-center/" })
-	const { data } = useCases()
-	const [justSubmitted, setJustSubmitted] = useState(false)
+	const { data, isPending, isError } = useCases()
 
 	const selectTab = (next: HelpCenterTab) => {
 		void navigate({ search: { tab: next }, replace: true })
@@ -180,10 +123,10 @@ function HelpCenterPanel({ tab, className }: HelpCenterPanelProps) {
 	/**
 	 * Land on the requests list after submitting: the new case appearing with a
 	 * status is stronger confirmation than a thank-you message, and it is where
-	 * the member will look to track it.
+	 * the member will look to track it. The mutation's success toast is the
+	 * single explicit confirmation.
 	 */
 	const handleSubmitted = () => {
-		setJustSubmitted(true)
 		selectTab("requests")
 	}
 
@@ -193,43 +136,26 @@ function HelpCenterPanel({ tab, className }: HelpCenterPanelProps) {
 		<Tabs
 			value={tab}
 			onValueChange={(value) => selectTab(value as HelpCenterTab)}
-			className={cn("gap-0", className)}
+			className={cn(HELP_CENTER_SHELL, className)}
 		>
-			<header className="space-y-4">
-				<div>
-					<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
-						Help Center
-					</h1>
-					<p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-						Open a support case with Member Services, track requests you have
-						already raised, or use the links for FAQs and other contact options.
-					</p>
-				</div>
+			<HelpCenterHeader tab={tab} requestCount={data?.length ?? 0} />
 
-				<PillTabs
-					items={HELP_CENTER_TAB_ITEMS.map((item) =>
-						item.value === "requests"
-							? { ...item, count: data?.length ?? 0 }
-							: item,
-					)}
-					value={tab}
-				/>
-			</header>
-
-			<div className="mt-6">
-				{justSubmitted && tab === "requests" ? (
-					<p className="mb-4 rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm text-foreground">
-						Thanks — your case has been submitted. Member Services will follow
-						up, and you can track it below.
-					</p>
-				) : null}
-
+			<div className={HELP_CENTER_SCROLL}>
 				{tabTransitions((style, currentTab) => (
-					<animated.div key={currentTab} role="tabpanel" style={style}>
+					<animated.div
+						key={currentTab}
+						role="tabpanel"
+						style={style}
+						className="pb-2"
+					>
 						{currentTab === "get-help" ? (
 							<GetHelpTabBody onSubmitted={handleSubmitted} />
 						) : (
-							<RequestsTabBody />
+							<RequestsTabBody
+								cases={data}
+								isPending={isPending}
+								isError={isError}
+							/>
 						)}
 					</animated.div>
 				))}
@@ -238,4 +164,10 @@ function HelpCenterPanel({ tab, className }: HelpCenterPanelProps) {
 	)
 }
 
-export { HelpCenterPanel }
+export {
+	GET_HELP_GRID,
+	HELP_CENTER_SCROLL,
+	HELP_CENTER_SHELL,
+	HelpCenterHeader,
+	HelpCenterPanel,
+}

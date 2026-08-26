@@ -67,11 +67,16 @@ function SidebarProfileLink({
 				decoding="async"
 				className="size-full object-cover"
 			/>
+			{/*
+			 * Bare like the nav icons below it — no fill while inactive. Only the
+			 * fallback glyph goes bare; a real avatar photo still fills the circle.
+			 */}
 			<AvatarFallback
 				className={cn(
+					"bg-transparent",
 					isActive
 						? "bg-primary text-primary-foreground"
-						: "bg-border text-muted-foreground",
+						: "text-muted-foreground",
 				)}
 			>
 				<CircleUser className="size-7" aria-hidden />

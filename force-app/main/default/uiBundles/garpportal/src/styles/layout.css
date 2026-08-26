@@ -7,34 +7,4 @@
 	.footer-container {
 		@apply mx-auto w-full max-w-footer;
 	}
-
-	/*
-	 * Named grid layout for the footer's section columns, copied from the
-	 * live footer's own grid-template-areas (garpApp2, .footer_grid) so the
-	 * uneven column heights (FRM/SCR/RAI tall, Additional Education/About Us
-	 * stacked, etc.) match exactly rather than approximating via CSS columns.
-	 * Row tracks are `auto` (not the live site's literal px heights) since
-	 * those px values are just a byproduct of its own font metrics.
-	 * Column tracks match live: fixed social column + equal 1fr link columns
-	 * inside max-w-footer (1280px), so ultrawide never stretches the grid.
-	 */
-	.footer-sections-grid {
-		display: flex;
-		flex-direction: column;
-		gap: 2rem;
-	}
-	@media (min-width: 1024px) {
-		.footer-sections-grid {
-			display: grid;
-			grid-template-columns: 300px repeat(4, 1fr);
-			grid-template-rows: auto auto auto auto;
-			grid-template-areas:
-				"logo frm scr rai education"
-				"logo frm scr rai about"
-				"logo membership resources events industry"
-				"logo membership resources events industry";
-			column-gap: 25px;
-			row-gap: 15px;
-		}
-	}
 }

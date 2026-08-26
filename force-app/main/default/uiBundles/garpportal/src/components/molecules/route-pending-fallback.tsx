@@ -16,8 +16,9 @@ function BootSplashScreen() {
 			aria-label="Loading GARP"
 		>
 			{/* Always on the dark backdrop image, so it is pinned to the knockout
-			    colour rather than following the theme. */}
-			<GarpLogoFull className="h-auto w-full max-w-80 text-toolbar-foreground" />
+			    colour — the mode-invariant corporate-navy pairing, not
+			    `--toolbar-foreground`, which follows the light nav now. */}
+			<GarpLogoFull className="h-auto w-full max-w-80 text-corporate-navy-foreground" />
 			<div className="boot-bar" aria-hidden="true">
 				<span />
 			</div>

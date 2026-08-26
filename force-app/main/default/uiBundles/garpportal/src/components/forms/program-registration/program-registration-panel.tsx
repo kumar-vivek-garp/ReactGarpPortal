@@ -1,12 +1,13 @@
 import { animated } from "@react-spring/web"
 
 import { Card } from "@/components/atoms/card"
-import { FrmRegistrationPanel } from "@/components/forms/frm/frm-registration-panel"
+import { ExamRegistrationPanel } from "@/components/forms/exam-registration/exam-registration-panel"
 import {
 	REGISTRATION_SCROLL,
 	REGISTRATION_SHELL,
 } from "@/components/forms/registration-shell"
 import { ProgramsSubpageHeader } from "@/components/molecules/programs-subpage-header"
+import { resolveExamProgram } from "@/lib/registration-programs"
 import { useSubpageTransition } from "@/hooks/use-subpage-transition"
 import { cn } from "@/lib/utils"
 
@@ -34,8 +35,10 @@ type ProgramRegistrationPanelProps = {
  * that is where Register Now is: the button only shows for programmes the
  * member is not enrolled in, which have no detail page to return to.
  *
- * One dynamic route serves every programme, so FRM, SCR, RAIJ and the rest all
- * land here. The form itself is deliberately not built yet.
+ * One dynamic route serves every programme, so FRM, SCR, RAI, RAIJ and the
+ * rest all land here, and the slug is what picks the programme. Anything the
+ * registry does not cover — the courses and the membership kinds, whose forms
+ * are still to be written — gets a placeholder rather than a dead end.
  */
 function ProgramRegistrationPanel({
 	programType,
@@ -46,18 +49,22 @@ function ProgramRegistrationPanel({
 	const { style, exit } = useSubpageTransition()
 	const slug = programType.trim().toLowerCase()
 	const label = slug.toUpperCase()
-	// One programme at a time. Everything else still gets the page and the
-	// back link, so the route is never a dead end.
-	const isBuilt = slug === "frm"
+	/*
+	 * Resolved rather than compared: this also applies the legacy slug
+	 * aliases, so `/registration/rai` reaches Risk AI instead of asking the
+	 * registration module for a type it rejects.
+	 */
+	const program = resolveExamProgram(slug)
 
 	// A built form folds Back into its own sticky bar, so rendering the shared
 	// header above it would stack two headers and two back links.
-	if (isBuilt) {
+	if (program) {
 		return (
 			<animated.div style={style} className={cn(REGISTRATION_SHELL, className)}>
 				<div className={REGISTRATION_SCROLL}>
-					<FrmRegistrationPanel
-						programType={slug}
+					<ExamRegistrationPanel
+						program={program}
+						programType={program.registrationType}
 						regCode={regCode}
 						paymentReturn={paymentReturn}
 						onNavigateBack={exit}

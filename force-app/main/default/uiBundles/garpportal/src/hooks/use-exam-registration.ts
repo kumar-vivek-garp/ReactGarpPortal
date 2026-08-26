@@ -64,6 +64,8 @@ type ExamRegistrationStateArgs = {
 	shippingAddress: RegistrationAddress
 	billingAndShippingSame: boolean
 	autoRenew: boolean
+	/** The course membership upsell. Always false for an exam programme. */
+	membershipSelected: boolean
 }
 
 /**
@@ -87,6 +89,7 @@ export function useExamRegistrationState({
 	shippingAddress,
 	billingAndShippingSame,
 	autoRenew,
+	membershipSelected,
 }: ExamRegistrationStateArgs) {
 	const [selection, setSelection] = useState<ExamSelectionState>(() => {
 		const base = emptySelection()
@@ -221,9 +224,12 @@ export function useExamRegistrationState({
 					: shippingAddress,
 				billingAndShippingSame,
 				autoRenew,
-				// FRM has no membership upsell and no Risk.net add-on — both are
-				// course/membership programme concerns.
-				membershipSelected: false,
+				membershipSelected,
+				/*
+				 * Risk.net (MEMR) is the membership programme's own add-on, and
+				 * `mem` is not served by this form yet — the load payload does not
+				 * even carry `riskNetOffer`. Fixed false until it is.
+				 */
 				riskNetSelected: false,
 				mobilePhoneCode,
 			}),
@@ -239,6 +245,7 @@ export function useExamRegistrationState({
 			shippingAddress,
 			billingAndShippingSame,
 			autoRenew,
+			membershipSelected,
 			mobilePhoneCode,
 		],
 	)

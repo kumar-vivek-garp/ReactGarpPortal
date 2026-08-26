@@ -4,6 +4,7 @@ import { redirectMemberToPortalForm } from "@/auth/registration-guard"
 import { ProgramRegistrationPanel } from "@/components/forms/program-registration/program-registration-panel"
 import { registrationSearchSchema } from "@/config/registration"
 import { pageTitle } from "@/lib/document-title"
+import { resolveExamProgram } from "@/lib/registration-programs"
 
 /**
  * Public registration for one programme — `/registration/frm`.
@@ -24,11 +25,19 @@ export const Route = createFileRoute("/_publicFormLayout/registration/$programTy
 	validateSearch: registrationSearchSchema,
 	/* A signed-in member gets the in-portal form, which prefills for them. */
 	beforeLoad: redirectMemberToPortalForm,
+	/*
+	 * The programme's own short name, not the raw slug — `riskai` uppercased
+	 * reads "RISKAI Registration". Unbuilt programmes keep the slug fallback.
+	 */
 	head: ({ params }) => ({
 		meta: [
 			{
 				title: pageTitle(
-					`${params.programType.toUpperCase() || "Program"} Registration`,
+					`${
+						resolveExamProgram(params.programType)?.abbrevName ||
+						params.programType.toUpperCase() ||
+						"Program"
+					} Registration`,
 				),
 			},
 		],

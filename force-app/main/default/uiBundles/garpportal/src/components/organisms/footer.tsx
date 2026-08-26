@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react"
 import { GarpLogoFull } from "@/components/atoms/garp-logo-full"
 import { FooterBackToTop } from "@/components/molecules/footer-back-to-top"
 import { FooterLegalBar } from "@/components/molecules/footer-legal-bar"
-import { FooterNavSectionView } from "@/components/molecules/footer-nav-section"
+import { FooterSitemap } from "@/components/molecules/footer-sitemap"
 import { FooterSocialLinks } from "@/components/molecules/footer-social-links"
 import {
 	FOOTER_CONTACT_LINK,
@@ -14,32 +14,33 @@ import {
 } from "@/config/navigation/footer-misc-links"
 import { FOOTER_NAV_SECTIONS } from "@/config/navigation/footer-nav-sections"
 
-// The full lockup, matching the live footer. It used to be a dark-ink PNG,
-// which was invisible against this footer's own dark-mode gradient; the inline
-// version takes its colour from `text-foreground` and so works in both themes.
-
-// Maps each section's data key to the live footer's own named grid-area (see
-  // the `.footer-sections-grid` rule in styles/layout.css) — literal strings, not
-// interpolated, so Tailwind's build-time class scanner can see them.
-const SECTION_GRID_AREA_CLASS: Record<string, string> = {
-	frm: "lg:[grid-area:frm]",
-	scr: "lg:[grid-area:scr]",
-	rai: "lg:[grid-area:rai]",
-	membership: "lg:[grid-area:membership]",
-	resources: "lg:[grid-area:resources]",
-	events: "lg:[grid-area:events]",
-	"additional-education": "lg:[grid-area:education]",
-	"about-us": "lg:[grid-area:about]",
-	"industry-engagement": "lg:[grid-area:industry]",
-}
-
+/**
+ * The portal footer.
+ *
+ * Three bands, in descending order of how often they are actually wanted: the
+ * brand and how to reach GARP, then the sitemap (disclosed — see
+ * [FooterSitemap] for why), then the legal line. Everything that was here
+ * before is still here; the 48 marketing-site links simply no longer occupy
+ * ~640px of desktop and ~2,400px of mobile beneath every page.
+ *
+ * The lockup is the inline [GarpLogoFull] rather than a PNG: it takes its
+ * colour from `text-foreground`, so it survives this footer's dark-mode
+ * surface, which the dark-ink asset did not.
+ *
+ * Painted as chrome, not canvas: the same card-white surface as the toolbar
+ * and sidebar, separated from the dulled main panel by a hairline — one frame
+ * around the content, matching www.garp.org's white-chrome look.
+ */
 function Footer() {
 	return (
-		<footer className="bg-linear-to-b from-surface-gradient-start to-surface-gradient-end px-8 py-10 font-sans text-foreground">
-			<div className="footer-sections-grid footer-container">
-				<div className="flex flex-col gap-4 lg:[grid-area:logo]">
+		<footer className="border-t border-border bg-card px-8 py-8 font-sans text-foreground">
+			<div className="footer-container flex flex-col gap-6 pb-8 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
+				<div className="flex flex-col items-start gap-3 lg:max-w-lg">
 					<GarpLogoFull className="h-9 w-auto" />
-					<p className="text-body text-foreground">{FOOTER_TAGLINE}</p>
+					<p className="text-body text-muted-foreground">{FOOTER_TAGLINE}</p>
+				</div>
+
+				<div className="flex flex-col items-start gap-4 lg:items-end">
 					<a
 						href={FOOTER_CONTACT_LINK.url}
 						className="flex items-center gap-2 text-body font-black hover:underline"
@@ -51,12 +52,13 @@ function Footer() {
 					</a>
 					<FooterSocialLinks links={FOOTER_SOCIAL_LINKS} />
 				</div>
-
-				{FOOTER_NAV_SECTIONS.map((section) => (
-					<FooterNavSectionView key={section.key} section={section} className={SECTION_GRID_AREA_CLASS[section.key]} />
-				))}
 			</div>
 
+			<div className="footer-container">
+				<FooterSitemap sections={FOOTER_NAV_SECTIONS} />
+			</div>
+
+			{/* Space, not a rule — see [FooterSitemap] on why the seams went. */}
 			<div className="footer-container mt-10">
 				<FooterLegalBar links={FOOTER_LEGAL_LINKS} copyright={FOOTER_COPYRIGHT} />
 			</div>

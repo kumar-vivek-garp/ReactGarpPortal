@@ -7,11 +7,11 @@ type FooterLegalBarProps = {
 
 function FooterLegalBar({ links, copyright }: FooterLegalBarProps) {
 	return (
-		<div className="flex flex-col gap-4 border-t border-background pt-6 text-caption text-foreground sm:flex-row sm:items-center sm:justify-between">
+		<div className="flex flex-col gap-3 text-caption text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
 			<ul className="flex flex-wrap gap-x-4 gap-y-2">
 				{links.map((link) => (
 					<li key={link.title}>
-						<a href={link.url} className="hover:underline">
+						<a href={link.url} className="hover:text-foreground hover:underline">
 							{link.title}
 						</a>
 					</li>

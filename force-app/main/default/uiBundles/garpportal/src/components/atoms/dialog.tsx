@@ -101,7 +101,7 @@ function DialogContent({
           <animated.div
             data-slot="dialog-content"
             className={cn(
-              "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] origin-center gap-4 overflow-hidden rounded-2xl border bg-background p-6 shadow-lg outline-none will-change-transform sm:max-w-lg",
+              "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] origin-center gap-4 overflow-hidden rounded-2xl border bg-popover p-6 shadow-lg outline-none will-change-transform sm:max-w-lg",
               className
             )}
             style={{

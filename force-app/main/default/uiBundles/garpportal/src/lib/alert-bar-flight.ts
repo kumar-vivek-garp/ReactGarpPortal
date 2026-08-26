@@ -24,7 +24,7 @@ export const ALERT_FLIGHT_SPRING = { mass: 1.1, tension: 210, friction: 30 } as 
  * Low friction so it visibly overshoots. That bounce is what stitches the two
  * halves together: without it the card disappearing and the button appearing
  * read as two unrelated animations rather than one thing being put away.
- * Same intent as `POP_SPRING` in `forms/frm/animated-amount`.
+ * Same intent as `POP_SPRING` in `forms/exam-registration/animated-amount`.
  */
 export const ALERT_LANDING_SPRING = { mass: 0.7, tension: 380, friction: 14 } as const
 

@@ -103,7 +103,7 @@ function AppSidebar({ forceSkeleton = false }: { forceSkeleton?: boolean }) {
 			 */}
 			<aside
 				id={RAIL_ID}
-				className="flex h-full w-full flex-col overflow-x-hidden overflow-y-auto bg-linear-to-b from-surface-gradient-start to-surface-gradient-end"
+				className="flex h-full w-full flex-col overflow-x-hidden overflow-y-auto border-r border-sidebar-border bg-sidebar"
 			>
 				{/*
 				 * Held at the full expanded width so labels are clipped by the panel's

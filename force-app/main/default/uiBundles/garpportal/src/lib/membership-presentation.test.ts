@@ -77,6 +77,22 @@ describe("buildBenefitPresentation", () => {
 		expect(result.hiddenBulletCount).toBe(2)
 	})
 
+	it("keeps the untrimmed copy for the details dialog", () => {
+		const result = buildBenefitPresentation(
+			benefit({ bullets: ["one", "two", "three", "four", "five"] }),
+		)
+		expect(result.paragraphs).toEqual(["Curated research.", "Updated weekly."])
+		expect(result.allBullets).toEqual(["one", "two", "three", "four", "five"])
+		expect(result.hasDetails).toBe(true)
+	})
+
+	it("offers no details when there is nothing beyond the title", () => {
+		const result = buildBenefitPresentation(
+			benefit({ paragraphs: [], bullets: ["  "] }),
+		)
+		expect(result.hasDetails).toBe(false)
+	})
+
 	it("reports no hidden bullets when everything fits", () => {
 		const result = buildBenefitPresentation(benefit({ bullets: ["one", "two"] }))
 		expect(result.bullets).toHaveLength(2)
@@ -159,7 +175,9 @@ describe("buildMembershipIdentityPresentation", () => {
 
 	it("surfaces memberSince and autoRenew, which were previously dropped", () => {
 		const result = buildMembershipIdentityPresentation(identity())
-		expect(result.memberSinceLabel).toContain("Member since")
+		expect(
+			result.metaLines.find((line) => line.icon === "memberSince")?.text,
+		).toContain("Member since")
 		expect(result.autoRenewLabel).toBe("Auto-renew on")
 	})
 
@@ -170,20 +188,26 @@ describe("buildMembershipIdentityPresentation", () => {
 		).toBeNull()
 	})
 
-	it("states a far-off renewal date without a tone", () => {
+	it("states a far-off renewal date as a meta line, not a chip", () => {
 		vi.useFakeTimers()
 		vi.setSystemTime(new Date(2026, 7, 18))
 		const result = buildMembershipIdentityPresentation(identity())
 		expect(result.expiryLabel).toContain("Renews")
 		expect(result.expiryTone).toBeNull()
+		expect(
+			result.metaLines.find((line) => line.icon === "renews")?.text,
+		).toContain("Renews")
 	})
 
-	it("warns as renewal approaches", () => {
+	it("warns as renewal approaches, and the badge then owns the fact", () => {
 		vi.useFakeTimers()
 		vi.setSystemTime(new Date(2028, 0, 10))
 		const result = buildMembershipIdentityPresentation(identity())
 		expect(result.expiryLabel).toBe("Expires in 30 days")
 		expect(result.expiryTone).toBe("warning")
+		// A toned expiry renders as a StatusBadge in the chip row — it must not
+		// also appear as a meta line, or the same fact shows twice.
+		expect(result.metaLines.some((line) => line.icon === "renews")).toBe(false)
 	})
 
 	it("flags an expired membership as danger", () => {
@@ -199,7 +223,7 @@ describe("buildMembershipIdentityPresentation", () => {
 			identity({ membershipExpiration: null, memberSince: null }),
 		)
 		expect(result.expiryLabel).toBeNull()
-		expect(result.memberSinceLabel).toBeNull()
+		expect(result.metaLines).toEqual([])
 	})
 })
 

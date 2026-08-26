@@ -3,8 +3,10 @@ import { MapPin } from "lucide-react"
 import { useMemo } from "react"
 import {
 	Controller,
+	useWatch,
 	type Control,
 	type FieldErrors,
+	type UseFormGetValues,
 	type UseFormRegister,
 } from "react-hook-form"
 
@@ -26,14 +28,16 @@ import {
 	SelectValue,
 } from "@/components/atoms/select"
 import { FormField } from "@/components/molecules/form-field"
-import type { FrmFormValues } from "@/components/forms/frm/frm-form-values"
+import type { ExamFormValues } from "@/components/forms/exam-registration/exam-form-values"
 
 type AddressBlockProps = {
 	prefix: "billing" | "shipping"
 	title: string
-	register: UseFormRegister<FrmFormValues>
-	control: Control<FrmFormValues>
-	errors: FieldErrors<FrmFormValues>
+	register: UseFormRegister<ExamFormValues>
+	control: Control<ExamFormValues>
+	/** For the validate closures — rules are registered once, values are not. */
+	getValues: UseFormGetValues<ExamFormValues>
+	errors: FieldErrors<ExamFormValues>
 	countries: RegistrationCountry[]
 	/**
 	 * Billing only. The billing country decides which payment methods are
@@ -61,6 +65,7 @@ function AddressBlock({
 	title,
 	register,
 	control,
+	getValues,
 	errors,
 	countries,
 	onCountryChange,
@@ -72,6 +77,23 @@ function AddressBlock({
 		[countries],
 	)
 	const required = (message: string) => (disabled ? false : message)
+
+	/*
+	 * The block's own country decides its address rules — a US billing address
+	 * needs a state even while the books ship somewhere that has none.
+	 */
+	const selectedCountryCode = useWatch({ control, name: `${prefix}.country` })
+	const selectedCountry =
+		countries.find((c) => c.countryCode === selectedCountryCode) ?? null
+	/*
+	 * The province select is billing-only, as the legacy has it — the shipping
+	 * province is informational and free text there, and Apex checks neither.
+	 */
+	const provinces =
+		prefix === "billing" ? (selectedCountry?.provinces ?? []) : []
+	const provinceRequired =
+		prefix === "billing" && selectedCountry?.provinceRequired === true
+	const postalCodeRequired = selectedCountry?.postalCodeRequired === true
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -140,24 +162,84 @@ function AddressBlock({
 				</FormField>
 
 				{/*
-				 * Free text and never required. There is no per-country table of
-				 * which places use a province — Apex is the authority and refuses
-				 * what it will not accept, so demanding one here would block
-				 * addresses that are perfectly valid.
+				 * The country's own `provinces` list decides the control, and
+				 * `provinceRequired` decides requiredness — both expressed as
+				 * `validate` closures reading `getValues`, never as a toggled
+				 * `required` rule: react-hook-form registers rules once and never
+				 * re-reads them, so a rule switched by a later country change would
+				 * carry on enforcing the old country's requirement.
 				 */}
-				<FormField id={`${prefix}-province`} label="State / Province">
-					<Input
+				{provinces.length > 0 ? (
+					<FormField
 						id={`${prefix}-province`}
-						autoComplete="address-level1"
-						disabled={disabled}
-						{...register(`${prefix}.province`)}
-					/>
-				</FormField>
+						label="State / Province"
+						required={provinceRequired && !disabled}
+						error={sectionErrors?.province?.message}
+					>
+						<Controller
+							control={control}
+							name={`${prefix}.province`}
+							rules={{
+								validate: (value) => {
+									if (disabled || prefix !== "billing") return true
+									const code = getValues(`${prefix}.country`)
+									const country = countries.find(
+										(candidate) => candidate.countryCode === code,
+									)
+									if (country?.provinceRequired !== true) return true
+									return (
+										Boolean(value?.trim()) || "State / Province is required."
+									)
+								},
+							}}
+							render={({ field }) => (
+								<Select
+									// Never `undefined` — that latches Radix into
+									// uncontrolled mode and the placeholder sticks.
+									value={field.value ?? ""}
+									onValueChange={field.onChange}
+									disabled={disabled}
+								>
+									<SelectTrigger
+										id={`${prefix}-province`}
+										aria-invalid={
+											sectionErrors?.province ? true : undefined
+										}
+										className="w-full"
+									>
+										<SelectValue placeholder="Select state / province" />
+									</SelectTrigger>
+									<SelectContent>
+										{provinces.map((province) => (
+											<SelectItem key={province.name} value={province.name}>
+												{province.name}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							)}
+						/>
+					</FormField>
+				) : (
+					<FormField id={`${prefix}-province`} label="State / Province">
+						<Input
+							id={`${prefix}-province`}
+							autoComplete="address-level1"
+							disabled={disabled}
+							{...register(`${prefix}.province`)}
+						/>
+					</FormField>
+				)}
 
+				{/*
+				 * Required only where the country says so — Hong Kong and friends
+				 * have no postal codes, and with submit gated on `isValid` an
+				 * unconditional rule would strand those candidates entirely.
+				 */}
 				<FormField
 					id={`${prefix}-postalCode`}
 					label="Postal code"
-					required={!disabled}
+					required={postalCodeRequired && !disabled}
 					error={sectionErrors?.postalCode?.message}
 				>
 					<Input
@@ -166,7 +248,15 @@ function AddressBlock({
 						disabled={disabled}
 						aria-invalid={sectionErrors?.postalCode ? true : undefined}
 						{...register(`${prefix}.postalCode`, {
-							required: required("Postal code is required."),
+							validate: (value) => {
+								if (disabled) return true
+								const code = getValues(`${prefix}.country`)
+								const country = countries.find(
+									(candidate) => candidate.countryCode === code,
+								)
+								if (country?.postalCodeRequired !== true) return true
+								return Boolean(value?.trim()) || "Postal code is required."
+							},
 						})}
 					/>
 				</FormField>
@@ -180,7 +270,13 @@ function AddressBlock({
 					<Controller
 						control={control}
 						name={`${prefix}.country`}
-						rules={{ required: required("Country is required.") }}
+						rules={{
+							required: required("Country is required."),
+							// The new country may drop (or add) the postal/province
+							// requirement — re-validate both so a stale error cannot
+							// hold submit against a rule that no longer applies.
+							deps: [`${prefix}.province`, `${prefix}.postalCode`],
+						}}
 						render={({ field }) => (
 							<Select
 								// `value` is always a string, never undefined: handing Radix
@@ -217,9 +313,10 @@ function AddressBlock({
 }
 
 type AddressesSectionProps = {
-	register: UseFormRegister<FrmFormValues>
-	control: Control<FrmFormValues>
-	errors: FieldErrors<FrmFormValues>
+	register: UseFormRegister<ExamFormValues>
+	control: Control<ExamFormValues>
+	getValues: UseFormGetValues<ExamFormValues>
+	errors: FieldErrors<ExamFormValues>
 	countries: RegistrationCountry[]
 	sameAsBilling: boolean
 	onSameAsBillingChange: (next: boolean) => void
@@ -238,6 +335,7 @@ type AddressesSectionProps = {
 function AddressesSection({
 	register,
 	control,
+	getValues,
 	errors,
 	countries,
 	sameAsBilling,
@@ -262,6 +360,7 @@ function AddressesSection({
 					title="Billing address"
 					register={register}
 					control={control}
+					getValues={getValues}
 					errors={errors}
 					countries={countries}
 					onCountryChange={onCountryChange}
@@ -290,6 +389,7 @@ function AddressesSection({
 						title="Shipping address"
 						register={register}
 						control={control}
+						getValues={getValues}
 						errors={errors}
 						countries={countries}
 						disabled={disabled}

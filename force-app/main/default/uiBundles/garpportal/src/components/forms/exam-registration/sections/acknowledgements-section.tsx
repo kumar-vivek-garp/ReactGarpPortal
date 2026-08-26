@@ -11,12 +11,13 @@ import {
 import { Checkbox } from "@/components/atoms/checkbox"
 import { Label } from "@/components/atoms/label"
 import { FieldError } from "@/components/molecules/form-field"
-import type { FrmFormValues } from "@/components/forms/frm/frm-form-values"
+import type { ExamFormValues } from "@/components/forms/exam-registration/exam-form-values"
 import {
 	ACKNOWLEDGEMENT_COPY,
 	CANDIDATE_RESPONSIBILITY_URL,
 	POLICY_LINKS,
 } from "@/config/registration"
+import { cn } from "@/lib/utils"
 
 function PolicyLink({ href, children }: { href: string; children: string }) {
 	return (
@@ -39,7 +40,7 @@ type TickProps = {
 		| "attestPrivacyNotice"
 		| "attestLimitationOfLiability"
 		| "attestReleaseAndWaiver"
-	control: Control<FrmFormValues>
+	control: Control<ExamFormValues>
 	invalid: boolean
 	disabled?: boolean
 	children: React.ReactNode
@@ -71,10 +72,17 @@ function Tick({ id, name, control, invalid, disabled, children }: TickProps) {
 }
 
 type AcknowledgementsSectionProps = {
-	control: Control<FrmFormValues>
-	errors: FieldErrors<FrmFormValues>
+	control: Control<ExamFormValues>
+	errors: FieldErrors<ExamFormValues>
 	/** Exam policies for this programme, from the programme's display config. */
 	examPolicyUrl: string
+	/**
+	 * The candidate responsibility / exam policy pair.
+	 *
+	 * Exam kinds only. A course has no exam policy, and `GARP_ExamReg_RegService`
+	 * requires the attestation for `kind == 'exam'` and for nothing else.
+	 */
+	showCandidateAcknowledgements: boolean
 	/** True when the billing country carries a GDPR or CASL tag. */
 	isComplianceCountry: boolean
 	submitLabel: string
@@ -84,19 +92,29 @@ type AcknowledgementsSectionProps = {
 /**
  * What the candidate is agreeing to.
  *
- * The two acknowledgements are always required — Apex refuses the whole
- * registration unless both are ticked, and it records each as a timestamp on
- * the exam attempt.
+ * Two blocks with different audiences, which is why they are gated separately
+ * rather than as one card:
  *
- * The three policy ticks below them only appear for a country tagged GDPR or
- * CASL. Everywhere else, submitting IS the agreement and the notice says so —
- * which is the legacy's behaviour, and the reason all three collapse into one
+ * - The **candidate acknowledgements** are exam-only, and on an exam they are
+ *   mandatory — Apex refuses the whole registration unless both are ticked,
+ *   and records each as a timestamp on the exam attempt.
+ * - The **compliance ticks** apply to every programme kind, because a GDPR or
+ *   CASL registrant has to answer them whatever they are buying. Hiding them
+ *   for a course would post `privacyPolicy: false` for every EU course
+ *   registrant, which Apex accepts in silence.
+ *
+ * Outside a compliance country, submitting IS the agreement and the notice
+ * says so — the legacy's behaviour, and the reason all three collapse into one
  * boolean server-side.
+ *
+ * The caller decides whether this card renders at all: with neither block it
+ * would be a heading and nothing to do. See `showAcknowledgementsCard`.
  */
 function AcknowledgementsSection({
 	control,
 	errors,
 	examPolicyUrl,
+	showCandidateAcknowledgements,
 	isComplianceCountry,
 	submitLabel,
 	disabled,
@@ -116,7 +134,9 @@ function AcknowledgementsSection({
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="flex flex-col gap-4">
-				<Tick
+				{showCandidateAcknowledgements ? (
+					<>
+						<Tick
 					id="candidateResponsibility"
 					name="candidateResponsibility"
 					control={control}
@@ -144,14 +164,24 @@ function AcknowledgementsSection({
 					.
 				</Tick>
 
-				<FieldError
-					message={
-						errors.candidateResponsibility?.message ?? errors.examPolicy?.message
-					}
-				/>
+						<FieldError
+							message={
+								errors.candidateResponsibility?.message ??
+								errors.examPolicy?.message
+							}
+						/>
+					</>
+				) : null}
 
 				{isComplianceCountry ? (
-					<fieldset className="flex flex-col gap-3 border-t border-border pt-4">
+					<fieldset
+						className={cn(
+							"flex flex-col gap-3",
+							// Nothing above it on a course — a rule under the heading
+							// would divide the card from itself.
+							showCandidateAcknowledgements && "border-t border-border pt-4",
+						)}
+					>
 						<legend className="sr-only">Policy confirmations</legend>
 						<p className="text-caption text-muted-foreground">
 							{ACKNOWLEDGEMENT_COPY.complianceIntro}
@@ -208,7 +238,12 @@ function AcknowledgementsSection({
 						) : null}
 					</fieldset>
 				) : (
-					<p className="border-t border-border pt-4 text-caption text-muted-foreground">
+					<p
+						className={cn(
+							"text-caption text-muted-foreground",
+							showCandidateAcknowledgements && "border-t border-border pt-4",
+						)}
+					>
 						By selecting <strong>{submitLabel}</strong> you agree to the{" "}
 						<PolicyLink href={POLICY_LINKS.privacyNotice}>
 							Privacy Notice

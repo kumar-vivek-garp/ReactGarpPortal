@@ -11,6 +11,7 @@ import type {
 	ExamPartView,
 	ExamSiteView,
 	FeeLine,
+	ProgramKind,
 	StudyMaterialView,
 } from "@/api/registration/exam-types"
 
@@ -324,19 +325,22 @@ export function isOfflinePayment(paymentType: string): boolean {
  * The auto-renew offer.
  *
  * Only for a card order — there is no saved payment method to renew against
- * otherwise — and only when the cart actually contains a complimentary
- * membership to renew. Someone who already has auto-renew on is not asked
- * again.
+ * otherwise — and only when the cart actually contains a membership to renew:
+ * either one included with the programme (`hasCompMembership`) or one the
+ * candidate just added from the course upsell card (`membershipSelected`,
+ * GarpAppv1's `form.membership` branch). Someone who already has auto-renew
+ * on is not asked again.
  */
 export function showAutorenew(
 	isAutoRenewEnabled: boolean | null | undefined,
 	paymentType: string,
 	hasCompMembership: boolean | null | undefined,
+	membershipSelected: boolean = false,
 ): boolean {
 	return (
 		isAutoRenewEnabled !== true &&
 		paymentType === "Stripe" &&
-		hasCompMembership === true
+		(hasCompMembership === true || membershipSelected === true)
 	)
 }
 
@@ -351,3 +355,34 @@ export function isComplianceCountry(
 			country.countryCode === countryCode && country.compliance === true,
 	)
 }
+
+/* ===================== programme kind ===================== */
+
+/**
+ * Whether this programme sits an exam.
+ *
+ * A course (frr25, ffr, micro) has no `examSelection` at all, and a membership
+ * has neither exam nor course. The distinction is the server's, not ours:
+ * `GARP_ExamReg_RegService` requires a selection and the exam-policy
+ * attestation for `kind == 'exam'` and for nothing else.
+ *
+ * A missing kind reads as an exam. Every programme the payload has ever sent
+ * carries one, and the exam path is the conservative default — it asks for
+ * more, rather than quietly skipping a card the server then demands.
+ */
+export function isExamKind(kind: ProgramKind | null | undefined): boolean {
+	return (kind ?? "exam") === "exam"
+}
+
+/**
+ * The candidate acknowledgements — responsibility statement and exam policies.
+ *
+ * Exam kinds only. A course has no exam policy to agree to, and the server
+ * does not ask for one.
+ */
+export function showCandidateAcknowledgements(
+	kind: ProgramKind | null | undefined,
+): boolean {
+	return isExamKind(kind)
+}
+

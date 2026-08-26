@@ -1,4 +1,4 @@
-import type { MouseEvent } from "react"
+import type { MouseEvent, ReactNode } from "react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { ArrowLeft } from "lucide-react"
 
@@ -19,8 +19,15 @@ type ProgramsSubpageBack =
 	| { kind: "studyMaterials"; label?: string }
 
 type ProgramsSubpageHeaderProps = {
-	/** Optional page title. When omitted, only the breadcrumb renders (hero owns the H1). */
-	title?: string
+	/**
+	 * Optional page title. When omitted, only the breadcrumb renders (hero owns
+	 * the H1).
+	 *
+	 * A node rather than a string so a programme page can pass its branded
+	 * heading — the tinted acronym is markup, and rebuilding it as plain text
+	 * here would put a second, subtly different title in front of people.
+	 */
+	title?: ReactNode
 	className?: string
 	/**
 	 * Back target. Defaults to the programs listing. Program-scoped subpages

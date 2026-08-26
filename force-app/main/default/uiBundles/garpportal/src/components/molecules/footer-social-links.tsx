@@ -66,7 +66,7 @@ function SocialQrButton({ link }: { link: SocialLink & { kind: "qr" } }) {
 
 function FooterSocialLinks({ links }: { links: SocialLink[] }) {
 	return (
-		<div className="grid grid-cols-4 gap-x-2.5 gap-y-3.5 border-y-2 border-[#DFEAEA] px-2.5 pt-3 pb-1.5 text-center lg:border-b-0">
+		<div className="flex flex-wrap items-center gap-x-4 gap-y-3">
 			{links.map((link) => {
 				if (link.kind === "qr") {
 					return <SocialQrButton key={link.name} link={link} />

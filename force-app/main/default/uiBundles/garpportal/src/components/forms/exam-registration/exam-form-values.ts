@@ -8,7 +8,7 @@ import {
 } from "@/lib/registration-payloads"
 
 /** The China identity block. Only collected when an OSTA centre is chosen. */
-export type FrmOstaValues = {
+export type ExamOstaValues = {
 	idType: string
 	idLocation: string
 	idNumber: string
@@ -30,7 +30,7 @@ export type FrmOstaValues = {
 }
 
 /** The typed fields react-hook-form owns on the FRM registration form. */
-export type FrmFormValues = {
+export type ExamFormValues = {
 	firstName: string
 	lastName: string
 	email: string
@@ -55,6 +55,15 @@ export type FrmFormValues = {
 	billingAndShippingSame: boolean
 	autoRenew: boolean
 
+	/**
+	 * The course membership upsell — MEMI/MEMC added to this same order.
+	 *
+	 * Course kinds only, and it is not cosmetic: `courseMainLine` swaps the
+	 * non-member product for the member one on this flag, so ticking it
+	 * re-prices the course itself as well as adding a membership line.
+	 */
+	membershipSelected: boolean
+
 	/** Both required by Apex, collapsed into one `consent.examPolicy`. */
 	candidateResponsibility: boolean
 	examPolicy: boolean
@@ -64,10 +73,10 @@ export type FrmFormValues = {
 	attestLimitationOfLiability: boolean
 	attestReleaseAndWaiver: boolean
 
-	osta: FrmOstaValues
+	osta: ExamOstaValues
 }
 
-export const EMPTY_FRM_OSTA_VALUES: FrmOstaValues = {
+export const EMPTY_EXAM_OSTA_VALUES: ExamOstaValues = {
 	idType: "Passport",
 	idLocation: "",
 	idNumber: "",
@@ -86,7 +95,7 @@ export const EMPTY_FRM_OSTA_VALUES: FrmOstaValues = {
 	ostaConsent: false,
 }
 
-export const EMPTY_FRM_FORM_VALUES: FrmFormValues = {
+export const EMPTY_EXAM_FORM_VALUES: ExamFormValues = {
 	firstName: "",
 	lastName: "",
 	email: "",
@@ -99,12 +108,14 @@ export const EMPTY_FRM_FORM_VALUES: FrmFormValues = {
 	shipping: emptyAddress(),
 	billingAndShippingSame: true,
 	autoRenew: false,
+	/* Nothing is added to a cart on the candidate's behalf. */
+	membershipSelected: false,
 	candidateResponsibility: false,
 	examPolicy: false,
 	attestPrivacyNotice: false,
 	attestLimitationOfLiability: false,
 	attestReleaseAndWaiver: false,
-	osta: EMPTY_FRM_OSTA_VALUES,
+	osta: EMPTY_EXAM_OSTA_VALUES,
 }
 
 /**
@@ -124,16 +135,16 @@ export const EMPTY_FRM_FORM_VALUES: FrmFormValues = {
  * Every consent starts unticked. A tick recorded against a policy the
  * candidate did not read this time is worthless.
  */
-export function toFrmFormValues(
+export function toExamFormValues(
 	data: PersonalInfoEditData | null,
 	countries: RegistrationCountry[],
-): FrmFormValues {
-	if (!data) return EMPTY_FRM_FORM_VALUES
+): ExamFormValues {
+	if (!data) return EMPTY_EXAM_FORM_VALUES
 
 	const billing = toRegistrationAddress(data.billing)
 
 	return {
-		...EMPTY_FRM_FORM_VALUES,
+		...EMPTY_EXAM_FORM_VALUES,
 		firstName: data.firstName ?? "",
 		lastName: data.lastName ?? "",
 		email: data.email ?? "",

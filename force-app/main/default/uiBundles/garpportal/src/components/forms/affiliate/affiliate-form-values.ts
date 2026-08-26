@@ -23,7 +23,7 @@ export type AffiliateFormValues = {
 /**
  * Everything empty, always.
  *
- * There is no seed function and no prefill here, unlike `toFrmFormValues`.
+ * There is no seed function and no prefill here, unlike `toExamFormValues`.
  * This route is guest-only by construction — `redirectMemberToDashboard` sends
  * anyone with a session away before the form mounts — so there is never a
  * contact record to seed from, and the whole point of the form is to create

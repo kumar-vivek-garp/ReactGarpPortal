@@ -22,9 +22,9 @@ type TriggerVariant = "toolbar" | "sheet"
  * product is exactly the shape that turns into an unreadable chain of `&&`s,
  * and each cell here is one legible answer to "what does this look like there".
  *
- * `toolbar` is the black bar, which is mode-invariant — the same in light and
- * dark — so it is tinted from `--toolbar-foreground` rather than from the
- * page's foreground, which would disappear into it in one of the two themes.
+ * `toolbar` is the nav bar surface — white in light, dark card in dark, per
+ * www.garp.org — so it is tinted from `--toolbar-foreground` rather than from
+ * the page's foreground, keeping it legible whatever the bar is painted.
  * `sheet` is the light panel the mobile bar switches to when its menu opens.
  *
  * Colour is reserved for urgency: a notice-tone alert is outlined, not tinted
@@ -32,8 +32,8 @@ type TriggerVariant = "toolbar" | "sheet"
  */
 const TRIGGER_TONE: Record<TriggerVariant, Record<AlertTone, string>> = {
 	toolbar: {
-		// The brand vermillion clears roughly 8:1 on true black, so urgency
-		// survives the toolbar's fixed background in both themes.
+		// Same destructive-on-surface recipe the sheet variant already uses on
+		// light chrome, so urgency reads on the toolbar in both themes.
 		urgent:
 			"border-destructive/60 bg-destructive/15 text-destructive hover:bg-destructive/25 hover:text-destructive",
 		notice:
@@ -49,7 +49,7 @@ const TRIGGER_TONE: Record<TriggerVariant, Record<AlertTone, string>> = {
 
 type AlertBarTriggerProps = {
 	placement: AlertBarPlacement
-	/** Outlined on the black toolbar; sheet when the mobile panel uses light chrome. */
+	/** Outlined on the toolbar surface; sheet when the mobile panel uses light chrome. */
 	variant?: TriggerVariant
 	/** Runs before the card comes back — the mobile bar closes its panel here. */
 	onActivate?: () => void

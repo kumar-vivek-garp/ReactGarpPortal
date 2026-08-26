@@ -8,7 +8,7 @@ function MegaMenuHeadingText({ heading }: { heading: MegaMenuHeading }) {
 				<span className="text-rai-orange">R</span>
 				<span className="text-rai-blue">
 					AI
-					<sup>{heading.symbol}</sup>
+					{heading.symbol ? <sup>{heading.symbol}</sup> : null}
 				</span>
 				{heading.suffix}
 			</>
@@ -23,7 +23,7 @@ function MegaMenuHeadingText({ heading }: { heading: MegaMenuHeading }) {
 			{heading.prefix}
 			<span className={highlightClass}>
 				{heading.highlight}
-				<sup>{heading.symbol}</sup>
+				{heading.symbol ? <sup>{heading.symbol}</sup> : null}
 			</span>
 			{heading.suffix}
 		</>

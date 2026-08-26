@@ -108,6 +108,9 @@ export type ExamRegistrationLoad = {
 	stripe?: { useStripe?: boolean | null } | null
 	membershipOffer?: { productCode?: string; amount?: number } | null
 	affiliateCode?: string | null
+	/** Typeahead suggestions for the OSTA company/school fields. */
+	companies?: string[] | null
+	schools?: string[] | null
 }
 
 /* ===================== fees ===================== */

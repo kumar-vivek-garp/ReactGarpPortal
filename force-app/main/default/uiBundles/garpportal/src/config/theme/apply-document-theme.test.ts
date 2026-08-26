@@ -6,10 +6,17 @@ import {
 	resolveAppearanceMode,
 } from "./apply-document-theme"
 
+const SUPPRESSOR_SELECTOR = "style[data-suppress-transitions]"
+
 afterEach(() => {
 	document.documentElement.className = ""
 	document.documentElement.removeAttribute("data-theme")
 	document.documentElement.style.colorScheme = ""
+	// Suppressors from real-timer tests remove themselves asynchronously;
+	// sweep them so they cannot leak into a later fake-timer test.
+	document.head
+		.querySelectorAll(SUPPRESSOR_SELECTOR)
+		.forEach((node) => node.remove())
 	vi.restoreAllMocks()
 })
 
@@ -38,6 +45,43 @@ describe("applyDocumentTheme", () => {
 		applyDocumentTheme({ mode: "light", palette: "default" })
 		expect(document.documentElement.classList.contains("light")).toBe(true)
 		expect(document.documentElement.classList.contains("dark")).toBe(false)
+	})
+
+	it("suspends transitions for the swap, then lifts the suppression", () => {
+		vi.useFakeTimers()
+		try {
+			applyDocumentTheme({ mode: "light", palette: "default" })
+			vi.runAllTimers()
+			document.head
+				.querySelectorAll(SUPPRESSOR_SELECTOR)
+				.forEach((node) => node.remove())
+
+			applyDocumentTheme({ mode: "dark", palette: "default" })
+			const suppressor = document.head.querySelector(SUPPRESSOR_SELECTOR)
+			expect(suppressor?.textContent).toContain("transition:none!important")
+
+			vi.runAllTimers()
+			expect(document.head.querySelector(SUPPRESSOR_SELECTOR)).toBeNull()
+		} finally {
+			vi.useRealTimers()
+		}
+	})
+
+	it("does not suspend transitions when re-asserting the current theme", () => {
+		vi.useFakeTimers()
+		try {
+			applyDocumentTheme({ mode: "dark", palette: "default" })
+			vi.runAllTimers()
+			document.head
+				.querySelectorAll(SUPPRESSOR_SELECTOR)
+				.forEach((node) => node.remove())
+
+			// Same theme again — boot/rehydrate path — must not inject a suppressor.
+			applyDocumentTheme({ mode: "dark", palette: "default" })
+			expect(document.head.querySelector(SUPPRESSOR_SELECTOR)).toBeNull()
+		} finally {
+			vi.useRealTimers()
+		}
 	})
 })
 

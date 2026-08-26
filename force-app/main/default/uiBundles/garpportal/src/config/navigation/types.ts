@@ -39,7 +39,12 @@ export type MegaMenuHeading = {
 	prefix: string
 	highlight: string
 	highlightToken: "garp-cyan" | "garp-saffron" | "rai-split"
-	symbol: "®" | "™"
+	/**
+	 * Optional: every mega-menu entry is a registered certification and carries
+	 * one, but the registration forms reuse this shape for programmes that do
+	 * not — FRR25 is a dated course, not a registered mark.
+	 */
+	symbol?: "®" | "™"
 	suffix: string
 }
 
@@ -63,6 +68,12 @@ export type SideNavLink = {
 export type FooterNavSection = {
 	key: string
 	label: string
+	/**
+	 * Accent the section is marked with in the footer sitemap. Reuses the
+	 * mega-menu's own palette so a footer heading and its nav counterpart carry
+	 * the same colour, and sections with no nav twin inherit their family's.
+	 */
+	accentToken: NavAccentToken
 	links: ExternalNavLink[]
 }
 

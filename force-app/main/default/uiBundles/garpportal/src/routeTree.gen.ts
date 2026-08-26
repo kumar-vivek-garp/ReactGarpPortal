@@ -34,6 +34,7 @@ import { Route as AppLayoutOrderDetailsOrderNumberIndexRouteImport } from './pag
 import { Route as AppLayoutProgramsProgramTypeIndexRouteImport } from './pages/_appLayout/programs/$programType/index'
 import { Route as AppLayoutStudyMaterialsArchiveIndexRouteImport } from './pages/_appLayout/study-materials/archive/index'
 import { Route as PublicFormLayoutRegistrationProgramTypeIndexRouteImport } from './pages/_publicFormLayout/registration/$programType/index'
+import { Route as PublicFormLayoutRegistrationProgramTypeRegCodeRouteImport } from './pages/_publicFormLayout/registration/$programType/$regCode'
 import { Route as PublicFormLayoutRegistrationAffiliateIndexRouteImport } from './pages/_publicFormLayout/registration/affiliate/index'
 import { Route as AppLayoutMyAccountOrdersOrderNumberIndexRouteImport } from './pages/_appLayout/my-account/orders/$orderNumber/index'
 import { Route as AppLayoutProgramsProgramTypeErrataIndexRouteImport } from './pages/_appLayout/programs/$programType/errata/index'
@@ -177,6 +178,12 @@ const PublicFormLayoutRegistrationProgramTypeIndexRoute =
     path: '/registration/$programType/',
     getParentRoute: () => PublicFormLayoutRouteRoute,
   } as any)
+const PublicFormLayoutRegistrationProgramTypeRegCodeRoute =
+  PublicFormLayoutRegistrationProgramTypeRegCodeRouteImport.update({
+    id: '/registration/$programType/$regCode',
+    path: '/registration/$programType/$regCode',
+    getParentRoute: () => PublicFormLayoutRouteRoute,
+  } as any)
 const PublicFormLayoutRegistrationAffiliateIndexRoute =
   PublicFormLayoutRegistrationAffiliateIndexRouteImport.update({
     id: '/registration/affiliate/',
@@ -235,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/programs/': typeof AppLayoutProgramsIndexRoute
   '/study-materials/': typeof AppLayoutStudyMaterialsIndexRoute
   '/Login/': typeof AuthLayoutLoginIndexRoute
+  '/registration/$programType/$regCode': typeof PublicFormLayoutRegistrationProgramTypeRegCodeRoute
   '/courses/$courseType/': typeof AppLayoutCoursesCourseTypeIndexRoute
   '/cpd-activities-detail/$activityId/': typeof AppLayoutCpdActivitiesDetailActivityIdIndexRoute
   '/cpd/activities/': typeof AppLayoutCpdActivitiesIndexRoute
@@ -266,6 +274,7 @@ export interface FileRoutesByTo {
   '/programs': typeof AppLayoutProgramsIndexRoute
   '/study-materials': typeof AppLayoutStudyMaterialsIndexRoute
   '/Login': typeof AuthLayoutLoginIndexRoute
+  '/registration/$programType/$regCode': typeof PublicFormLayoutRegistrationProgramTypeRegCodeRoute
   '/courses/$courseType': typeof AppLayoutCoursesCourseTypeIndexRoute
   '/cpd-activities-detail/$activityId': typeof AppLayoutCpdActivitiesDetailActivityIdIndexRoute
   '/cpd/activities': typeof AppLayoutCpdActivitiesIndexRoute
@@ -301,6 +310,7 @@ export interface FileRoutesById {
   '/_appLayout/programs/': typeof AppLayoutProgramsIndexRoute
   '/_appLayout/study-materials/': typeof AppLayoutStudyMaterialsIndexRoute
   '/_authLayout/Login/': typeof AuthLayoutLoginIndexRoute
+  '/_publicFormLayout/registration/$programType/$regCode': typeof PublicFormLayoutRegistrationProgramTypeRegCodeRoute
   '/_appLayout/courses/$courseType/': typeof AppLayoutCoursesCourseTypeIndexRoute
   '/_appLayout/cpd-activities-detail/$activityId/': typeof AppLayoutCpdActivitiesDetailActivityIdIndexRoute
   '/_appLayout/cpd/activities/': typeof AppLayoutCpdActivitiesIndexRoute
@@ -334,6 +344,7 @@ export interface FileRouteTypes {
     | '/programs/'
     | '/study-materials/'
     | '/Login/'
+    | '/registration/$programType/$regCode'
     | '/courses/$courseType/'
     | '/cpd-activities-detail/$activityId/'
     | '/cpd/activities/'
@@ -365,6 +376,7 @@ export interface FileRouteTypes {
     | '/programs'
     | '/study-materials'
     | '/Login'
+    | '/registration/$programType/$regCode'
     | '/courses/$courseType'
     | '/cpd-activities-detail/$activityId'
     | '/cpd/activities'
@@ -399,6 +411,7 @@ export interface FileRouteTypes {
     | '/_appLayout/programs/'
     | '/_appLayout/study-materials/'
     | '/_authLayout/Login/'
+    | '/_publicFormLayout/registration/$programType/$regCode'
     | '/_appLayout/courses/$courseType/'
     | '/_appLayout/cpd-activities-detail/$activityId/'
     | '/_appLayout/cpd/activities/'
@@ -601,6 +614,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicFormLayoutRegistrationProgramTypeIndexRouteImport
       parentRoute: typeof PublicFormLayoutRouteRoute
     }
+    '/_publicFormLayout/registration/$programType/$regCode': {
+      id: '/_publicFormLayout/registration/$programType/$regCode'
+      path: '/registration/$programType/$regCode'
+      fullPath: '/registration/$programType/$regCode'
+      preLoaderRoute: typeof PublicFormLayoutRegistrationProgramTypeRegCodeRouteImport
+      parentRoute: typeof PublicFormLayoutRouteRoute
+    }
     '/_publicFormLayout/registration/affiliate/': {
       id: '/_publicFormLayout/registration/affiliate/'
       path: '/registration/affiliate'
@@ -734,11 +754,14 @@ const AuthLayoutRouteRouteWithChildren = AuthLayoutRouteRoute._addFileChildren(
 )
 
 interface PublicFormLayoutRouteRouteChildren {
+  PublicFormLayoutRegistrationProgramTypeRegCodeRoute: typeof PublicFormLayoutRegistrationProgramTypeRegCodeRoute
   PublicFormLayoutRegistrationProgramTypeIndexRoute: typeof PublicFormLayoutRegistrationProgramTypeIndexRoute
   PublicFormLayoutRegistrationAffiliateIndexRoute: typeof PublicFormLayoutRegistrationAffiliateIndexRoute
 }
 
 const PublicFormLayoutRouteRouteChildren: PublicFormLayoutRouteRouteChildren = {
+  PublicFormLayoutRegistrationProgramTypeRegCodeRoute:
+    PublicFormLayoutRegistrationProgramTypeRegCodeRoute,
   PublicFormLayoutRegistrationProgramTypeIndexRoute:
     PublicFormLayoutRegistrationProgramTypeIndexRoute,
   PublicFormLayoutRegistrationAffiliateIndexRoute:

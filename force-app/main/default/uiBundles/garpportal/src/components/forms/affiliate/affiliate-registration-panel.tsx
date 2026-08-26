@@ -3,55 +3,36 @@ import { animated } from "@react-spring/web"
 
 import { AppError } from "@/api/client"
 import { Alert, AlertDescription, AlertTitle } from "@/components/atoms/alert"
-import {
-	Card,
-	CardContent,
-	CardHeader,
-} from "@/components/atoms/card"
 import { Skeleton } from "@/components/atoms/skeleton"
 import { AffiliateRegistrationForm } from "@/components/forms/affiliate/affiliate-registration-form"
 import { AffiliateOutcome } from "@/components/forms/affiliate/sections/affiliate-outcome"
 import {
+	REGISTRATION_BAR_CONTROL_HEIGHT,
+	REGISTRATION_GRID,
+	REGISTRATION_MAIN_COLUMN,
+	REGISTRATION_RAIL_COLUMN,
 	REGISTRATION_SCROLL,
 	REGISTRATION_SHELL,
+	REGISTRATION_STICKY_BAR,
 } from "@/components/forms/registration-shell"
+import {
+	SkeletonCard,
+	SkeletonField,
+	SkeletonRows,
+} from "@/components/molecules/form-skeleton"
 import { useAffiliateRegistration } from "@/hooks/use-affiliate-registration"
 import { useSubpageTransition } from "@/hooks/use-subpage-transition"
 import { cn } from "@/lib/utils"
 
-function SkeletonField({ className }: { className?: string }) {
-	return (
-		<div className={cn("flex flex-col gap-2", className)}>
-			<Skeleton className="h-4 w-24" />
-			<Skeleton className="h-9 w-full rounded-xl" />
-		</div>
-	)
-}
-
-function SkeletonCard({
-	rows,
-	className,
-}: {
-	rows: React.ReactNode
-	className?: string
-}) {
-	return (
-		<Card className={className}>
-			<CardHeader>
-				<Skeleton className="h-5 w-40" />
-			</CardHeader>
-			<CardContent>{rows}</CardContent>
-		</Card>
-	)
-}
-
 /**
  * The page's own shape, greyed out.
  *
- * Mirrors the real layout card for card — the header bar, the 60/40 split, the
- * same field grid — so nothing jumps or reflows when the countries land. A
- * generic block skeleton is quicker to write and then makes every arrival feel
- * like a lurch.
+ * Same 60/40 split and same bar geometry as the real form, taken from the
+ * shared constants rather than restated — a skeleton that guesses its own
+ * numbers is a skeleton that drifts, and the exam one had.
+ *
+ * No back-link placeholder: this route is guest-only, so the real bar never
+ * has one.
  */
 function AffiliateRegistrationSkeleton() {
 	return (
@@ -59,16 +40,20 @@ function AffiliateRegistrationSkeleton() {
 			<span className="sr-only">Loading Affiliate membership registration…</span>
 
 			{/* The header bar: title, total, submit. */}
-			<div className="flex flex-wrap items-center justify-between gap-4 py-3">
-				<Skeleton className="h-6 w-80" />
+			<div className={REGISTRATION_STICKY_BAR}>
+				<Skeleton className="h-8 w-80" />
 				<div className="flex items-center gap-4">
-					<Skeleton className="h-10 w-16" />
-					<Skeleton className="h-11 w-32 rounded-xl" />
+					<Skeleton
+						className={cn(REGISTRATION_BAR_CONTROL_HEIGHT, "w-16 shrink-0")}
+					/>
+					<Skeleton
+						className={cn(REGISTRATION_BAR_CONTROL_HEIGHT, "w-32 rounded-xl")}
+					/>
 				</div>
 			</div>
 
-			<div className="grid grid-cols-1 gap-6 lg:grid-cols-10">
-				<div className="flex flex-col gap-6 lg:col-span-6">
+			<div className={REGISTRATION_GRID}>
+				<div className={REGISTRATION_MAIN_COLUMN}>
 					<SkeletonCard
 						rows={
 							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -80,31 +65,14 @@ function AffiliateRegistrationSkeleton() {
 							</div>
 						}
 					/>
-					<SkeletonCard
-						rows={
-							<div className="flex flex-col gap-3">
-								{Array.from({ length: 3 }).map((_, index) => (
-									<Skeleton key={index} className="h-5 w-full rounded-lg" />
-								))}
-							</div>
-						}
-					/>
+					<SkeletonCard rows={<SkeletonRows count={3} />} />
 				</div>
 
-				<div className="flex flex-col gap-4 lg:col-span-4">
-					<SkeletonCard
-						rows={
-							<div className="flex flex-col gap-3">
-								{Array.from({ length: 4 }).map((_, index) => (
-									<Skeleton key={index} className="h-5 w-full rounded-lg" />
-								))}
-							</div>
-						}
-					/>
-					<SkeletonCard
-						rows={<Skeleton className="h-20 w-full rounded-xl" />}
-					/>
-				</div>
+				<aside className={REGISTRATION_RAIL_COLUMN}>
+					<div className="flex flex-col gap-4">
+						<SkeletonCard rows={<SkeletonRows count={4} />} />
+					</div>
+				</aside>
 			</div>
 		</div>
 	)

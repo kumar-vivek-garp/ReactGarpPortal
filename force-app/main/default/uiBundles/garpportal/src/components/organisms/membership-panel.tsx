@@ -1,181 +1,96 @@
 import { animated, useTransition } from "@react-spring/web"
-import { Link, useNavigate } from "@tanstack/react-router"
-import { BadgeCheck, CircleUser } from "lucide-react"
+import { useNavigate } from "@tanstack/react-router"
+import { BadgeCheck, LayoutGrid, List } from "lucide-react"
 
-import type { MembershipView } from "@/api/membership/types"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar"
-import { Button } from "@/components/atoms/button"
-import { Card, CardContent } from "@/components/atoms/card"
+import type { Benefit, MembershipView } from "@/api/membership/types"
 import { PillTabs } from "@/components/atoms/pill-tabs"
 import { Tabs } from "@/components/atoms/tabs"
+import { ToggleGroup, ToggleGroupItem } from "@/components/atoms/toggle-group"
 import { BenefitCard } from "@/components/molecules/benefit-card"
+import { BenefitRow } from "@/components/molecules/benefit-row"
 import { MemberDirectoryPanel } from "@/components/organisms/member-directory-panel"
+import { MembershipHero } from "@/components/organisms/membership-hero"
 import {
 	MembershipBenefitsSkeleton,
 	MembershipDirectorySkeleton,
 	MembershipPendingShell,
 } from "@/components/molecules/page-pending"
 import { StaggerReveal } from "@/components/molecules/stagger-reveal"
-import { StatusBadge } from "@/components/molecules/status-badge"
-import { MEMBERSHIP_TAB_ITEMS, type MembershipTab } from "@/config/membership"
-import { useMembership } from "@/hooks/use-membership"
+import type { ListView } from "@/config/list-view"
 import {
-	buildMembershipHeroPresentation,
-	buildMembershipIdentityPresentation,
-	lockedBenefitsNotice,
-} from "@/lib/membership-presentation"
-import { resolvePortalAssetUrl } from "@/lib/resolve-portal-asset-url"
+	MEMBERSHIP_BENEFITS_EMPTY,
+	MEMBERSHIP_TAB_ITEMS,
+	resolveMembershipView,
+	type MembershipTab,
+} from "@/config/membership"
+import { useMembership } from "@/hooks/use-membership"
 import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
 import { cn } from "@/lib/utils"
+import { useListViewStore } from "@/store/list-view-store"
 
 type MembershipPanelProps = {
 	tab: MembershipTab
+	view: ListView | undefined
 }
 
-function MembershipHero({ data }: { data: MembershipView }) {
-	const { identity, hero, lockedCount } = data
-	const photoUrl = resolvePortalAssetUrl(identity.photoUrl)
-	const heroContent = buildMembershipHeroPresentation(hero)
-	const me = buildMembershipIdentityPresentation(identity)
-	const lockedNotice = lockedBenefitsNotice(lockedCount)
-	const hasHeroCopy =
-		Boolean(heroContent.eyebrow) ||
-		Boolean(heroContent.badgeLabel) ||
-		Boolean(heroContent.body) ||
-		heroContent.bullets.length > 0 ||
-		Boolean(heroContent.cta)
-	const memberMeta = [me.memberSinceLabel, me.autoRenewLabel]
-		.filter(Boolean)
-		.join(" - ")
+function BenefitsEmptyState() {
+	const { icon: Icon, title, message } = MEMBERSHIP_BENEFITS_EMPTY
 
 	return (
-		<Card className="gap-0 bg-muted/40 py-5 shadow-none">
-			<CardContent className="grid items-center gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-				<div className="flex items-start gap-4">
-					<Avatar className="size-14 shrink-0 overflow-hidden rounded-full">
-						<AvatarImage
-							src={photoUrl}
-							alt={identity.fullName ?? ""}
-							className="size-full object-cover"
-						/>
-						<AvatarFallback className="bg-transparent p-0 text-muted-foreground">
-							<CircleUser
-								className="size-14"
-								strokeWidth={1.25}
-								absoluteStrokeWidth
-								aria-hidden
-							/>
-						</AvatarFallback>
-					</Avatar>
-					<div className="min-w-0 text-sm">
-						<p className="font-heading text-base font-semibold tracking-wide text-foreground">
-							{identity.fullName ?? "—"}
-						</p>
-						<p className="mt-1 text-muted-foreground">
-							<span className="font-semibold text-foreground">GARP ID:</span>{" "}
-							{identity.garpId ?? "—"}
-						</p>
-						<p className="text-muted-foreground">
-							<span className="font-semibold text-foreground">Member Type:</span>{" "}
-							{identity.membershipType ?? "—"}
-						</p>
-						<div className="mt-2 flex flex-wrap items-center gap-2">
-							{me.statusLabel && me.statusTone ? (
-								<StatusBadge label={me.statusLabel} tone={me.statusTone} />
-							) : null}
-							{me.expiryLabel ? (
-								me.expiryTone ? (
-									<StatusBadge label={me.expiryLabel} tone={me.expiryTone} />
-								) : (
-									<span className="text-muted-foreground">{me.expiryLabel}</span>
-								)
-							) : null}
-						</div>
-						{memberMeta ? (
-							<p className="mt-1 text-xs text-muted-foreground">{memberMeta}</p>
-						) : null}
-					</div>
-				</div>
+		<div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-16 text-center">
+			<Icon className="size-10 text-muted-foreground" aria-hidden />
+			<p className="mt-4 font-heading text-lg font-semibold tracking-wide text-foreground">
+				{title}
+			</p>
+			<p className="mt-2 max-w-md text-sm text-muted-foreground">{message}</p>
+		</div>
+	)
+}
 
-				{hasHeroCopy || lockedNotice ? (
-					<div className="space-y-3 md:justify-self-end md:text-right">
-						{hasHeroCopy ? (
-							<>
-								{heroContent.eyebrow || heroContent.badgeLabel ? (
-									<div className="flex flex-wrap items-center gap-2 md:justify-end">
-										{heroContent.eyebrow ? (
-											<span className="text-xs font-bold tracking-wider uppercase text-muted-foreground">
-												{heroContent.eyebrow}
-											</span>
-										) : null}
-										{heroContent.badgeLabel ? (
-											<StatusBadge
-												label={heroContent.badgeLabel}
-												tone="info"
-											/>
-										) : null}
-									</div>
-								) : null}
-
-								{heroContent.body ? (
-									<p className="text-sm text-muted-foreground">
-										{heroContent.body}
-									</p>
-								) : null}
-
-								{heroContent.bullets.length > 0 ? (
-									<ul className="list-disc space-y-1 pl-5 text-left text-sm text-muted-foreground md:ml-auto md:inline-block">
-										{heroContent.bullets.map((bullet) => (
-											<li key={bullet}>{bullet}</li>
-										))}
-									</ul>
-								) : null}
-
-								{heroContent.cta ? (
-									<Button asChild className="md:ml-auto">
-										{heroContent.cta.isExternal ? (
-											<a
-												href={heroContent.cta.url}
-												{...(heroContent.cta.newWindow
-													? {
-															target: "_blank",
-															rel: "noreferrer noopener",
-														}
-													: {})}
-											>
-												{heroContent.cta.label}
-											</a>
-										) : (
-											<Link to={heroContent.cta.url}>
-												{heroContent.cta.label}
-											</Link>
-										)}
-									</Button>
-								) : null}
-							</>
-						) : null}
-
-						{lockedNotice ? (
-							<p className="text-sm text-muted-foreground">{lockedNotice}</p>
-						) : null}
-					</div>
-				) : null}
-			</CardContent>
-		</Card>
+/** One section rendered in the active layout — card and row share a presentation. */
+function BenefitCollection({
+	benefits,
+	view,
+}: {
+	benefits: Benefit[]
+	view: ListView
+}) {
+	return (
+		<StaggerReveal
+			// Remount on view change so the cascade replays; `useTrail` will not
+			// re-run on its own because the `to` values are unchanged.
+			key={view}
+			className={
+				view === "grid"
+					? "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+					: "flex flex-col gap-3"
+			}
+			itemClassName={view === "grid" ? "h-full" : undefined}
+		>
+			{benefits.map((benefit, index) =>
+				view === "grid" ? (
+					<BenefitCard key={benefit.id} benefit={benefit} />
+				) : (
+					<BenefitRow key={benefit.id} benefit={benefit} priority={index < 3} />
+				),
+			)}
+		</StaggerReveal>
 	)
 }
 
 function BenefitsTabBody({
 	data,
+	view,
 	isLoading,
 	isError,
 }: {
 	data: MembershipView | undefined
+	view: ListView
 	isLoading: boolean
 	isError: boolean
 }) {
 	if (isLoading) {
-		return <MembershipBenefitsSkeleton />
+		return <MembershipBenefitsSkeleton view={view} />
 	}
 
 	if (isError || !data) {
@@ -193,7 +108,7 @@ function BenefitsTabBody({
 			<MembershipHero data={data} />
 
 			{sections.length === 0 ? (
-				<p className="text-sm text-muted-foreground">No benefits are published yet.</p>
+				<BenefitsEmptyState />
 			) : (
 				sections.map((section) => (
 					<section key={section.name} className="space-y-4">
@@ -210,14 +125,7 @@ function BenefitsTabBody({
 								({section.benefits.length})
 							</span>
 						</h2>
-						<StaggerReveal
-							className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-							itemClassName="h-full"
-						>
-							{section.benefits.map((benefit) => (
-								<BenefitCard key={benefit.id} benefit={benefit} />
-							))}
-						</StaggerReveal>
+						<BenefitCollection benefits={section.benefits} view={view} />
 					</section>
 				))
 			)}
@@ -264,14 +172,31 @@ function DirectoryTabBody({
 	)
 }
 
-function MembershipPanel({ tab }: MembershipPanelProps) {
+function MembershipPanel({ tab, view }: MembershipPanelProps) {
 	const navigate = useNavigate({ from: "/membership/" })
 	const { data, isLoading, isError } = useMembership()
 
+	const preferredView = useListViewStore((state) => state.preferred.membership)
+	const setPreferredView = useListViewStore((state) => state.setPreferred)
+	const activeView = resolveMembershipView(view, preferredView)
+
+	const benefitsCount = data
+		? data.sections.reduce((sum, section) => sum + section.benefits.length, 0)
+		: undefined
+
 	const tabTransitions = useTransition(tab, TAB_PANEL_TRANSITION)
 
+	const selectView = (next: ListView) => {
+		// Remembered so the choice survives leaving the page and coming back.
+		setPreferredView("membership", next)
+		void navigate({
+			search: (prev) => ({ ...prev, view: next }),
+			replace: true,
+		})
+	}
+
 	if (isLoading) {
-		return <MembershipPendingShell tab={tab} />
+		return <MembershipPendingShell tab={tab} view={view} />
 	}
 
 	return (
@@ -279,18 +204,49 @@ function MembershipPanel({ tab }: MembershipPanelProps) {
 			value={tab}
 			onValueChange={(value) => {
 				void navigate({
-					search: { tab: value as MembershipTab },
+					search: (prev) => ({ ...prev, tab: value as MembershipTab }),
 					replace: true,
 				})
 			}}
 			className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
 		>
 			<header className="shrink-0 space-y-4">
-				<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
-					Membership Benefits
-				</h1>
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+						Membership Benefits
+					</h1>
 
-				<PillTabs items={MEMBERSHIP_TAB_ITEMS} value={tab} />
+					{/* The directory has no grid/list layouts, so no dead control there. */}
+					{tab === "benefits" ? (
+						<ToggleGroup
+							variant="outline"
+							type="single"
+							value={activeView}
+							onValueChange={(value) => {
+								// Radix allows deselecting the active item; ignore that.
+								if (!value) return
+								selectView(value as ListView)
+							}}
+							aria-label="Benefits layout"
+						>
+							<ToggleGroupItem value="grid" aria-label="Grid view">
+								<LayoutGrid aria-hidden />
+							</ToggleGroupItem>
+							<ToggleGroupItem value="list" aria-label="List view">
+								<List aria-hidden />
+							</ToggleGroupItem>
+						</ToggleGroup>
+					) : null}
+				</div>
+
+				<PillTabs
+					items={MEMBERSHIP_TAB_ITEMS.map((item) =>
+						item.value === "benefits" && benefitsCount !== undefined
+							? { ...item, count: benefitsCount }
+							: item,
+					)}
+					value={tab}
+				/>
 			</header>
 
 			<div className="mt-6 flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -309,6 +265,7 @@ function MembershipPanel({ tab }: MembershipPanelProps) {
 						{currentTab === "benefits" ? (
 							<BenefitsTabBody
 								data={data}
+								view={activeView}
 								isLoading={false}
 								isError={isError}
 							/>

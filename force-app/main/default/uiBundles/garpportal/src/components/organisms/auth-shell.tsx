@@ -49,8 +49,10 @@ function AuthShell({ children }: { children: ReactNode }) {
 					<AuthLocalTools />
 				</Suspense>
 			) : null}
-			{/* Pinned to knockout: the backdrop image is dark in either theme. */}
-			<GarpLogoFull className="h-auto w-full max-w-sm text-toolbar-foreground" />
+			{/* Pinned to knockout: the backdrop image is dark in either theme, so
+			    the tint comes from the mode-invariant corporate-navy pairing, not
+			    from `--toolbar-foreground` (which follows the light nav now). */}
+			<GarpLogoFull className="h-auto w-full max-w-sm text-corporate-navy-foreground" />
 			{children}
 			<footer className="flex flex-col items-center gap-3 text-caption text-corporate-navy-foreground">
 				<ul className="flex flex-wrap justify-center gap-4">

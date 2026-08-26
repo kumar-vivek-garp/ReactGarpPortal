@@ -170,9 +170,9 @@
 	--surface-gradient-start: oklch(0.9583 0.0214 291.7); /* live-verified: #F1EFFF, top stop of the sidebar/footer chrome gradient */
 	--surface-gradient-end: oklch(0.9649 0.0116 197); /* live-verified: #EBF6F6, bottom stop of the same gradient */
 
-	--background: oklch(1 0 0); /* live-verified */
+	--background: oklch(0.973 0.006 291.7); /* inferred: dulled canvas in www.garp.org's tinted-section family (#F7FBFB/#F1EEFF, chroma dialled down), so the white chrome and cards read as raised surfaces */
 	--foreground: oklch(0 0 0); /* live-verified: true black, not a softened designer-black */
-	--card: oklch(1 0 0); /* live-verified: identical to background; separation is via elevation shadow */
+	--card: oklch(1 0 0); /* live-verified: www.garp.org cards/sections are white; now one step above the dulled canvas */
 	--card-foreground: oklch(0 0 0);
 	--popover: oklch(1 0 0); /* inferred */
 	--popover-foreground: oklch(0 0 0);
@@ -202,8 +202,8 @@
 	--sidebar-accent-foreground: oklch(0.521 0.2355 283.8); /* AA-safe, same decision as --accent-foreground */
 	--sidebar-border: oklch(0.8684 0.0109 197);
 	--sidebar-ring: oklch(0.5836 0.2367 283.6);
-	--toolbar: oklch(0 0 0); /* live-verified: solid black mat-toolbar */
-	--toolbar-foreground: oklch(1 0 0); /* live-verified */
+	--toolbar: oklch(1 0 0); /* live-verified: www.garp.org scrolled nav is solid #FFFFFF (transparent at top of page; the scroll swap lives in the components) */
+	--toolbar-foreground: oklch(0 0 0); /* live-verified: www.garp.org nav links are black on the white bar */
 	/* shadcn Base UI dialog overlay: bg-black/10 + supports-backdrop-filter:backdrop-blur-xs */
 	--overlay: oklch(0 0 0 / 0.1);
 	/* inferred: mega-menu scrim — heavier than --overlay so the dimmed page reads as inert */
@@ -238,7 +238,7 @@
 	--chart-3: oklch(0.769 0.188 70.08);
 	--chart-4: oklch(0.627 0.265 303.9);
 	--chart-5: oklch(0.645 0.246 16.439);
-	--sidebar: oklch(0.18 0.025 283.6);
+	--sidebar: oklch(0.21 0.03 283.6); /* one chrome surface with the toolbar and footer */
 	--sidebar-foreground: oklch(0.985 0 0);
 	--sidebar-primary: oklch(0.5836 0.2367 283.6);
 	--sidebar-primary-foreground: oklch(1 0 0);
@@ -246,8 +246,8 @@
 	--sidebar-accent-foreground: oklch(0.9 0.03 283.8);
 	--sidebar-border: oklch(1 0 0 / 10%);
 	--sidebar-ring: oklch(0.5836 0.2367 283.6);
-	--toolbar: oklch(0 0 0); /* mode-invariant brand hue */
-	--toolbar-foreground: oklch(1 0 0);
+	--toolbar: oklch(0.21 0.03 283.6); /* our own scheme — garp.org ships no dark mode; matches the dark card surface */
+	--toolbar-foreground: oklch(0.985 0 0);
 	--overlay: oklch(0 0 0 / 0.1);
 	/* Darker still on dark chrome — 0.5 black over a near-black page reads as nothing. */
 	--nav-scrim: oklch(0 0 0 / 0.68);

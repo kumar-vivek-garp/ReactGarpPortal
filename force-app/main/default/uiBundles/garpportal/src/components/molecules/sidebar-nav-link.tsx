@@ -54,13 +54,20 @@ function SidebarNavLink({
 	const { pathname } = useLocation()
 	const isActive = isRouteActive(pathname, to)
 
+	/*
+	 * Inactive icons are bare — no fill, no ring. A row of filled circles
+	 * outweighs the one active puck, and a primary-coloured ring on every item
+	 * would spend the brand colour on rows that are not selected. The 44px
+	 * container itself stays: the collapse geometry, the tooltip anchor, and
+	 * the active fill all hang off it.
+	 */
 	const puck = (
 		<span
 			className={cn(
 				"flex size-11 shrink-0 items-center justify-center rounded-full transition-colors",
 				isActive
 					? "bg-primary text-primary-foreground"
-					: "bg-border text-muted-foreground",
+					: "text-muted-foreground",
 			)}
 		>
 			<Icon className="size-[22px]" aria-hidden />

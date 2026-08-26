@@ -25,15 +25,15 @@ type SidebarCollapseToggleProps = {
  * half. Its positioned ancestor is the rail wrapper, which animates width, so
  * the pill rides the edge for free instead of needing a spring of its own.
  *
- * 44px wide, with `-right-[22px]` putting exactly half of it past the rail edge.
+ * 32px wide, with `-right-4` putting exactly half of it past the rail edge.
  * The offset is deliberately half the width: any other value reads as a button
  * placed *near* the edge rather than one straddling it.
  *
- * Vertically it lands on the profile avatar's centre: container `p-3` (12) +
- * half the 44px avatar's `py-4` row (38) = 50px, with `-translate-y-1/2`
- * centring the pill on that line. The avatar is the only landmark at that height
- * that never moves, so it is what makes the pill read as deliberate on routes
- * whose headers all start at different places.
+ * Vertically it sits flush against the navbar. The rail wrapper is
+ * `sticky top-20` under a `fixed h-20` navbar, so the wrapper's own y=0 *is*
+ * the navbar's bottom edge — centring the 24px pill on `top-3` puts its top
+ * edge exactly on that line. Do not push it to `top-0` to straddle the seam:
+ * the navbar is `z-[1000]` and would cover the overlapping half.
  *
  * The icon crossfades on a spring rather than swapping, so a fast double-toggle
  * reads as one control changing its mind, not a flicker.
@@ -65,7 +65,7 @@ function SidebarCollapseToggle({
 					aria-expanded={!collapsed}
 					aria-controls={controls}
 					aria-label={hint}
-					className="absolute top-[50px] -right-[22px] z-10 flex h-8 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-2xl border-2 border-primary/50 bg-background text-primary shadow-md transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+					className="absolute top-3 -right-4 z-10 flex h-6 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-2xl border-2 border-primary/50 bg-sidebar text-primary shadow-md transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
 				>
 					<animated.span
 						className="absolute inset-0 flex items-center justify-center"
@@ -75,7 +75,7 @@ function SidebarCollapseToggle({
 						}}
 						aria-hidden
 					>
-						<PanelLeftClose className="size-[18px]" strokeWidth={2.25} />
+						<PanelLeftClose className="size-3.5" strokeWidth={2.25} />
 					</animated.span>
 					<animated.span
 						className="absolute inset-0 flex items-center justify-center"
@@ -85,7 +85,7 @@ function SidebarCollapseToggle({
 						}}
 						aria-hidden
 					>
-						<PanelLeftOpen className="size-[18px]" strokeWidth={2.25} />
+						<PanelLeftOpen className="size-3.5" strokeWidth={2.25} />
 					</animated.span>
 				</button>
 			</TooltipTrigger>

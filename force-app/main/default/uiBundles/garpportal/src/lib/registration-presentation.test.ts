@@ -9,6 +9,7 @@ import {
 	defaultPaymentType,
 	idFormatError,
 	isComplianceCountry,
+	isExamKind,
 	isOfflinePayment,
 	isOstaRequired,
 	isPaymentAllowed,
@@ -18,6 +19,7 @@ import {
 	resolvePartSelection,
 	showAddresses,
 	showAutorenew,
+	showCandidateAcknowledgements,
 	showSubtotal,
 	sortAdmins,
 	sortFeeLines,
@@ -338,14 +340,23 @@ describe("payment rules", () => {
 })
 
 describe("showAutorenew", () => {
-	it("needs a card order AND a complimentary membership in the cart", () => {
+	it("needs a card order AND a membership in the cart", () => {
 		expect(showAutorenew(false, "Stripe", true)).toBe(true)
 		expect(showAutorenew(false, "Wire Transfer", true)).toBe(false)
 		expect(showAutorenew(false, "Stripe", false)).toBe(false)
 	})
 
+	it("counts a course's membership upsell as a membership", () => {
+		// GarpAppv1's `form.membership` branch: adding the MEMI upsell on a
+		// card order asks about auto-renew exactly as a comp membership does.
+		expect(showAutorenew(false, "Stripe", false, true)).toBe(true)
+		expect(showAutorenew(false, "Wire Transfer", false, true)).toBe(false)
+		expect(showAutorenew(false, "Stripe", false, false)).toBe(false)
+	})
+
 	it("does not ask someone who already has it on", () => {
 		expect(showAutorenew(true, "Stripe", true)).toBe(false)
+		expect(showAutorenew(true, "Stripe", false, true)).toBe(false)
 	})
 })
 
@@ -534,3 +545,30 @@ describe("address + phone translation", () => {
 		expect(toRegistrationPhoneCode("+999", "Nowhere", countries)).toBe("")
 	})
 })
+
+describe("programme kind", () => {
+	it("treats an absent kind as an exam", () => {
+		// The conservative default: the exam path asks for more, rather than
+		// skipping a card the server then demands at submit.
+		expect(isExamKind(undefined)).toBe(true)
+		expect(isExamKind(null)).toBe(true)
+		expect(isExamKind("exam")).toBe(true)
+	})
+
+	it("knows a course and a membership are not exams", () => {
+		expect(isExamKind("course")).toBe(false)
+		expect(isExamKind("membership")).toBe(false)
+	})
+})
+
+describe("showCandidateAcknowledgements", () => {
+	it("asks an exam candidate, and nobody else", () => {
+		// GARP_ExamReg_RegService requires consent.examPolicy for kind == 'exam'
+		// only; a course has no exam policy to agree to.
+		expect(showCandidateAcknowledgements("exam")).toBe(true)
+		expect(showCandidateAcknowledgements("course")).toBe(false)
+		expect(showCandidateAcknowledgements("membership")).toBe(false)
+	})
+})
+
+

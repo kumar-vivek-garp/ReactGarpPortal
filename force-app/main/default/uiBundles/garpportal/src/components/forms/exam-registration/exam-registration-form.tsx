@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react"
 import { useForm, useWatch } from "react-hook-form"
+import { useQuery } from "@tanstack/react-query"
 import { Link, useRouterState } from "@tanstack/react-router"
 
 import { AppError } from "@/api/client"
@@ -9,43 +10,62 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/atoms/alert"
 import { Button } from "@/components/atoms/button"
 import { MegaMenuHeadingText } from "@/components/molecules/mega-menu-heading"
 import { ProgramsSubpageHeader } from "@/components/molecules/programs-subpage-header"
-import { AnimatedAmount } from "@/components/forms/frm/animated-amount"
+import { AnimatedAmount } from "@/components/forms/exam-registration/animated-amount"
 import {
-	toFrmFormValues,
-	type FrmFormValues,
-} from "@/components/forms/frm/frm-form-values"
-import { AcknowledgementsSection } from "@/components/forms/frm/sections/acknowledgements-section"
-import { AddressesSection } from "@/components/forms/frm/sections/addresses-section"
-import { ConfirmRegistrationDialog } from "@/components/forms/frm/sections/confirm-registration-dialog"
-import { OstaSection } from "@/components/forms/frm/sections/osta-section"
-import { PaymentSection } from "@/components/forms/frm/sections/payment-section"
-import { RegistrationRail } from "@/components/forms/frm/sections/registration-rail"
-import { YourDetailsSection } from "@/components/forms/frm/sections/your-details-section"
-import { YourExamSection } from "@/components/forms/frm/sections/your-exam-section"
+	toExamFormValues,
+	type ExamFormValues,
+} from "@/components/forms/exam-registration/exam-form-values"
+import { AcknowledgementsSection } from "@/components/forms/exam-registration/sections/acknowledgements-section"
+import { AddressesSection } from "@/components/forms/exam-registration/sections/addresses-section"
+import { ConfirmRegistrationDialog } from "@/components/forms/exam-registration/sections/confirm-registration-dialog"
+import { OstaSection } from "@/components/forms/exam-registration/sections/osta-section"
+import { PaymentSection } from "@/components/forms/exam-registration/sections/payment-section"
+import {
+	REGISTRATION_BAR_CONTROL_HEIGHT,
+	REGISTRATION_GRID,
+	REGISTRATION_MAIN_COLUMN,
+	REGISTRATION_RAIL_COLUMN,
+	REGISTRATION_STICKY_BAR,
+} from "@/components/forms/registration-shell"
+import { MembershipOfferSection } from "@/components/forms/exam-registration/sections/membership-offer-section"
+import { RegistrationRail } from "@/components/forms/exam-registration/sections/registration-rail"
+import { YourDetailsSection } from "@/components/forms/exam-registration/sections/your-details-section"
+import { YourExamSection } from "@/components/forms/exam-registration/sections/your-exam-section"
 import { useExamRegistrationState } from "@/hooks/use-exam-registration"
 import {
 	MustSignInError,
 	useExamRegistrationSubmit,
+	useVerifyExamCustomer,
 	type ExamSubmitInput,
 	type ExamSubmitOutcome,
 } from "@/hooks/use-exam-registration-submit"
+import { registrationOptionsQueryOptions } from "@/api/registration/query-options"
 import { buildRegisterRequest } from "@/lib/registration-payloads"
 import {
 	defaultPaymentType,
 	isComplianceCountry as isComplianceCountryFor,
+	isExamKind,
 	showAddresses as showAddressesFor,
 	showAutorenew as showAutorenewFor,
+	showCandidateAcknowledgements as showCandidateAcknowledgementsFor,
 	submitLabel as submitLabelFor,
 } from "@/lib/registration-presentation"
-import {
-	FRM_REGISTRATION_BYLINE,
-	FRM_REGISTRATION_HEADING,
-} from "@/config/registration"
+import { EMAIL_PATTERN, type ExamProgramConfig } from "@/config/registration"
 import { LOGIN_PATH } from "@/auth/constants"
 import { getReturnPath } from "@/auth/return-path"
+import { cn } from "@/lib/utils"
 
-type FrmRegistrationFormProps = {
+type ExamRegistrationFormProps = {
 	load: ExamRegistrationLoad
+	/**
+	 * The programme's own copy — title, guest byline, exam policies.
+	 *
+	 * Everything else on this form comes from the load payload, which is why
+	 * one form serves every exam programme: these three are the only values
+	 * the registration module does not send. Not to be confused with
+	 * `load.program`, which is the server's view of the same programme.
+	 */
+	program: ExamProgramConfig
 	programType: string
 	/** The member's own record, used to seed the form. Null while loading. */
 	profile: PersonalInfoEditData | null
@@ -81,16 +101,18 @@ type FrmRegistrationFormProps = {
  * the Radix selects, which would keep their placeholder and post empty strings
  * over prefilled values.
  */
-function FrmRegistrationForm({
+function ExamRegistrationForm({
 	load,
+	program,
 	programType,
 	profile,
 	regCode,
 	isAuthenticated,
 	onNavigateBack,
 	onRegistered,
-}: FrmRegistrationFormProps) {
+}: ExamRegistrationFormProps) {
 	const submit = useExamRegistrationSubmit()
+	const verifyEmail = useVerifyExamCustomer()
 	const [submitError, setSubmitError] = useState<string | null>(null)
 	/** Built and validated, waiting on the confirmation dialog. */
 	const [pendingSubmit, setPendingSubmit] = useState<ExamSubmitInput | null>(
@@ -105,9 +127,10 @@ function FrmRegistrationForm({
 		handleSubmit,
 		getValues,
 		setValue,
+		trigger,
 		formState: { errors, isValid },
-	} = useForm<FrmFormValues>({
-		defaultValues: toFrmFormValues(profile, load.countries),
+	} = useForm<ExamFormValues>({
+		defaultValues: toExamFormValues(profile, load.countries),
 		/*
 		 * `onTouched`, not `onChange`: Register stays disabled until the form is
 		 * valid, which needs validity recomputed as fields change — but `isValid`
@@ -134,6 +157,7 @@ function FrmRegistrationForm({
 	const shipping = useWatch({ control, name: "shipping" })
 	const sameAsBilling = useWatch({ control, name: "billingAndShippingSame" })
 	const autoRenew = useWatch({ control, name: "autoRenew" })
+	const membershipSelected = useWatch({ control, name: "membershipSelected" })
 	const ostaIdType = useWatch({ control, name: "osta.idType" })
 	const ostaWorkStatus = useWatch({ control, name: "osta.workStatus" })
 	const ostaStudentStatus = useWatch({ control, name: "osta.studentStatus" })
@@ -149,11 +173,20 @@ function FrmRegistrationForm({
 		shippingAddress: shipping,
 		billingAndShippingSame: sameAsBilling,
 		autoRenew,
+		membershipSelected,
 	})
 
 	const { fees } = state
 	const currency = fees?.currencyCode || "USD"
 	const hasBilling = fees?.hasBilling === true
+	/*
+	 * Which sections apply at all. The server's `kind` decides, not our config:
+	 * `GARP_ExamReg_RegService` requires a selection and the exam-policy
+	 * attestation for `kind == 'exam'` and for nothing else, and
+	 * `LoadService` only builds a membership offer for a course.
+	 */
+	const isExam = isExamKind(load.program.kind)
+	const membershipOffer = load.membershipOffer ?? null
 	const showAddresses = showAddressesFor(paymentType)
 	const label = submitLabelFor(hasBilling, paymentType)
 
@@ -174,6 +207,9 @@ function FrmRegistrationForm({
 		load.contact?.isAutoRenewEnabled,
 		paymentType,
 		fees?.hasCompMembership,
+		// A course's membership upsell is also a membership worth renewing —
+		// GarpAppv1's `form.membership` branch, lost once and re-wired.
+		membershipSelected,
 	)
 
 	/*
@@ -186,12 +222,23 @@ function FrmRegistrationForm({
 	 * one-entry select, and `state.selection` is the resolved view, so this
 	 * reads true for those without the candidate having to click anything.
 	 */
+	/*
+	 * The OSTA typeahead lists — fetched only once the card is actually on
+	 * screen (a second, ~2,000-row request the page should not wait for), and
+	 * the load payload's own lists cover any org that inlines them instead.
+	 */
+	const ostaOptions = useQuery({
+		...registrationOptionsQueryOptions,
+		enabled: isExam && state.ostaRequired,
+	})
+
 	const examChosen =
-		Boolean(state.selection.partSelected) &&
-		(!state.part1Active ||
-			Boolean(state.selection.part1.rateId && state.selection.part1.siteId)) &&
-		(!state.part2Active ||
-			Boolean(state.selection.part2.rateId && state.selection.part2.siteId))
+		!isExam ||
+		(Boolean(state.selection.partSelected) &&
+			(!state.part1Active ||
+				Boolean(state.selection.part1.rateId && state.selection.part1.siteId)) &&
+			(!state.part2Active ||
+				Boolean(state.selection.part2.rateId && state.selection.part2.siteId)))
 
 	/*
 	 * Changing the billing country has three consequences, all of which the
@@ -215,6 +262,14 @@ function FrmRegistrationForm({
 			 */
 			setValue("billing.country", countryCode, { shouldDirty: true })
 			setValue("billing.province", "", { shouldDirty: true })
+			/*
+			 * Re-run the rules the new country changes: a postal-code or province
+			 * error raised under the old country would otherwise survive the
+			 * switch (validate closures only run when triggered) and hold submit
+			 * disabled against a requirement that no longer exists. No-ops while
+			 * the address card is unmounted.
+			 */
+			void trigger(["billing.province", "billing.postalCode"])
 			const country = load.countries.find(
 				(candidate) => candidate.countryCode === countryCode,
 			)
@@ -229,8 +284,29 @@ function FrmRegistrationForm({
 				{ shouldDirty: true, shouldValidate: true },
 			)
 		},
-		[getValues, setValue, load.countries, load.stripe?.useStripe],
+		[getValues, setValue, trigger, load.countries, load.stripe?.useStripe],
 	)
+
+	/**
+	 * The identity check GarpAppv1 runs on blur, so a guest who already has an
+	 * account is told before filling the rest of the form rather than at
+	 * submit. Skipped for members (their email IS the account), while the
+	 * address is not yet a valid email, and when this exact address was
+	 * already checked — the result doubles as the registration's session, so
+	 * a normal fill-and-submit makes one identity call, not two.
+	 */
+	const handleIdentityBlur = () => {
+		if (isAuthenticated) return
+		const email = getValues("email").trim()
+		if (!EMAIL_PATTERN.test(email)) return
+		if (verifyEmail.data?.email === email) return
+		verifyEmail.mutate({
+			type: programType,
+			email,
+			firstName: getValues("firstName"),
+			lastName: getValues("lastName"),
+		})
+	}
 
 	const onSubmit = handleSubmit(async (values) => {
 		setSubmitError(null)
@@ -255,7 +331,8 @@ function FrmRegistrationForm({
 				: values.shipping,
 			billingAndShippingSame: values.billingAndShippingSame,
 			autoRenew: values.autoRenew,
-			membershipSelected: false,
+			membershipSelected: values.membershipSelected,
+			/* See the note in `use-exam-registration` — `mem` is not served here. */
 			riskNetSelected: false,
 			mobilePhoneCode: values.mobilePhoneCode,
 			firstName: values.firstName,
@@ -263,6 +340,11 @@ function FrmRegistrationForm({
 			email: values.email,
 			mobilePhone: values.mobilePhone,
 			smsPromotionalUpdates: values.smsPromotionalUpdates,
+			// No controls behind these — they ride through from the member's own
+			// record, exactly as the legacy carries them. Posting `""` instead
+			// would blank the contact's stored values on an OSTA registration.
+			title: load.contact?.title ?? "",
+			company: load.contact?.company ?? "",
 			// Sent only when a chosen exam centre demands it — Apex writes the
 			// block whenever an ID number is present, so an unwanted one would
 			// silently overwrite the member's stored identity.
@@ -283,10 +365,12 @@ function FrmRegistrationForm({
 						schoolName: values.osta.schoolName,
 						studentStatus: values.osta.studentStatus,
 						degreeName: values.osta.degreeName,
-						businessEmail: "",
-						professionalLevel: "",
-						jobFunction: "",
-						riskSpecialty: "",
+						// From the contact record, not "" — Apex writes this block
+						// whenever it arrives, and the legacy prefills all four.
+						businessEmail: load.contact?.businessEmail ?? "",
+						professionalLevel: load.contact?.professionalLevel ?? "",
+						jobFunction: load.contact?.jobFunction ?? "",
+						riskSpecialty: load.contact?.riskSpecialty ?? "",
 					}
 				: null,
 			isComplianceCountry,
@@ -307,6 +391,8 @@ function FrmRegistrationForm({
 			request,
 			checkAddress:
 				showAddresses && load.program.addressVerificationDisabled !== true,
+			// The blur check's answer, reused when it covered this same email.
+			session: verifyEmail.data ?? null,
 		})
 	})
 
@@ -326,7 +412,12 @@ function FrmRegistrationForm({
 		}
 	}
 
-	const mustSignIn = submit.error instanceof MustSignInError
+	// Either leg can say it: the blur check is advisory, the submit check binds.
+	const mustSignIn =
+		submit.error instanceof MustSignInError ||
+		verifyEmail.data?.mustSignIn === true
+	const existingCustomer =
+		!mustSignIn && verifyEmail.data?.isExistingCustomer === true
 	const isBusy = submit.isPending
 	const canSubmit =
 		isValid && examChosen && !state.outOfOrder && Boolean(fees)
@@ -345,7 +436,7 @@ function FrmRegistrationForm({
 			 * wider than its scroll parent, which buys a few pixels of horizontal
 			 * scroll and clips the back arrow.
 			 */}
-			<div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 bg-background py-3">
+			<div className={REGISTRATION_STICKY_BAR}>
 				<div className="flex min-w-0 items-center gap-4">
 					{/*
 					 * No back link for a guest. Every in-app parent is behind the
@@ -376,7 +467,7 @@ function FrmRegistrationForm({
 					 * would now just repeat the title.
 					 */}
 					<h1 className="truncate font-heading text-2xl font-semibold">
-						<MegaMenuHeadingText heading={FRM_REGISTRATION_HEADING} />
+						<MegaMenuHeadingText heading={program.heading} />
 					</h1>
 				</div>
 
@@ -386,7 +477,10 @@ function FrmRegistrationForm({
 					 * neither the arrival of a price nor a longer figure moves the bar.
 					 */}
 					<div
-						className="flex h-10 shrink-0 flex-col items-end justify-center text-right"
+						className={cn(
+							REGISTRATION_BAR_CONTROL_HEIGHT,
+							"flex shrink-0 flex-col items-end justify-center text-right",
+						)}
 						aria-live="polite"
 						aria-busy={state.isPricing}
 					>
@@ -436,7 +530,7 @@ function FrmRegistrationForm({
 			{isAuthenticated ? null : (
 				<Alert>
 					<AlertDescription>
-						{FRM_REGISTRATION_BYLINE}{" "}
+						{program.publicByLine}{" "}
 						<Link
 							to={LOGIN_PATH}
 							search={{ startUrl: getReturnPath(location) }}
@@ -483,6 +577,14 @@ function FrmRegistrationForm({
 						</Button>
 					</AlertDescription>
 				</Alert>
+			) : existingCustomer ? (
+				<Alert>
+					<AlertTitle>We found your record</AlertTitle>
+					<AlertDescription>
+						This email is already in our system, so your registration will be
+						added to your existing record.
+					</AlertDescription>
+				</Alert>
 			) : submitError ? (
 				<Alert variant="destructive">
 					<AlertTitle>Unable to complete your registration</AlertTitle>
@@ -490,8 +592,8 @@ function FrmRegistrationForm({
 				</Alert>
 			) : null}
 
-			<div className="grid grid-cols-1 gap-6 lg:grid-cols-10">
-				<div className="flex flex-col gap-6 lg:col-span-6">
+			<div className={REGISTRATION_GRID}>
+				<div className={REGISTRATION_MAIN_COLUMN}>
 					<YourDetailsSection
 						register={register}
 						control={control}
@@ -500,27 +602,43 @@ function FrmRegistrationForm({
 						isAuthenticated={isAuthenticated}
 						showLocation={!showAddresses}
 						onCountryChange={handleCountryChange}
+						onIdentityBlur={handleIdentityBlur}
 						disabled={isBusy}
 					/>
 
-					<YourExamSection
-						partsAvailable={load.examSelection?.partsAvailable ?? []}
-						partSelected={state.selection.partSelected}
-						onSelectPart={state.selectPart}
-						part1Title={state.part1?.title || "Part I"}
-						part2Title={state.part2?.title || "Part II"}
-						part1Admins={state.part1Admins}
-						part2Admins={state.part2Admins}
-						selection={state.selection}
-						part1Active={state.part1Active}
-						part2Active={state.part2Active}
-						onSelectAdmin={state.selectAdmin}
-						onSelectSite={state.selectSite}
-						outOfOrder={state.outOfOrder}
-						disabled={isBusy}
-					/>
+					{isExam ? (
+						<YourExamSection
+							partsAvailable={load.examSelection?.partsAvailable ?? []}
+							partSelected={state.selection.partSelected}
+							onSelectPart={state.selectPart}
+							part1Title={state.part1?.title || "Part I"}
+							part2Title={state.part2?.title || "Part II"}
+							part1Admins={state.part1Admins}
+							part2Admins={state.part2Admins}
+							selection={state.selection}
+							part1Active={state.part1Active}
+							part2Active={state.part2Active}
+							onSelectAdmin={state.selectAdmin}
+							onSelectSite={state.selectSite}
+							outOfOrder={state.outOfOrder}
+							disabled={isBusy}
+						/>
+					) : null}
 
-					{state.ostaRequired ? (
+					{/*
+					 * A course sells membership alongside it. Not cosmetic: the same
+					 * flag re-prices the course itself, because `courseMainLine`
+					 * reads it to choose the member or non-member product.
+					 */}
+					{membershipOffer ? (
+						<MembershipOfferSection
+							control={control}
+							amount={membershipOffer.amount}
+							disabled={isBusy}
+						/>
+					) : null}
+
+					{isExam && state.ostaRequired ? (
 						<OstaSection
 							register={register}
 							control={control}
@@ -529,6 +647,16 @@ function FrmRegistrationForm({
 							idType={ostaIdType}
 							workStatus={ostaWorkStatus}
 							studentStatus={ostaStudentStatus}
+							companies={
+								ostaOptions.data?.companies?.length
+									? ostaOptions.data.companies
+									: (load.companies ?? [])
+							}
+							schools={
+								ostaOptions.data?.schools?.length
+									? ostaOptions.data.schools
+									: (load.schools ?? [])
+							}
 							disabled={isBusy}
 						/>
 					) : null}
@@ -550,6 +678,7 @@ function FrmRegistrationForm({
 						<AddressesSection
 							register={register}
 							control={control}
+							getValues={getValues}
 							errors={errors}
 							countries={load.countries}
 							onCountryChange={handleCountryChange}
@@ -565,21 +694,28 @@ function FrmRegistrationForm({
 						/>
 					) : null}
 
+					{/*
+					 * Never gated away: the card is never actually empty. An exam adds
+					 * the candidate acknowledgements, a compliance country adds the
+					 * three ticks, and everyone else still gets the implicit "by
+					 * selecting Register you agree…" paragraph — which the legacy
+					 * shows for every kind, and which is the only agreement a course
+					 * registrant outside a GDPR/CASL country ever sees.
+					 */}
 					<AcknowledgementsSection
 						control={control}
 						errors={errors}
-						examPolicyUrl="https://www.garp.org/frm/exam-policies"
+						examPolicyUrl={program.examPolicyUrl}
+						showCandidateAcknowledgements={showCandidateAcknowledgementsFor(
+							load.program.kind,
+						)}
 						isComplianceCountry={isComplianceCountry}
 						submitLabel={label}
 						disabled={isBusy}
 					/>
 				</div>
 
-				{/*
-				 * `h-fit` + `sticky` is what pins the rail: it sizes to its content
-				 * and stays put while the main column scrolls past it.
-				 */}
-				<aside className="lg:sticky lg:top-22 lg:col-span-4 lg:h-fit">
+				<aside className={REGISTRATION_RAIL_COLUMN}>
 					<RegistrationRail
 						materials={state.visibleMaterials}
 						onToggleMaterial={state.toggleMaterial}
@@ -593,4 +729,4 @@ function FrmRegistrationForm({
 	)
 }
 
-export { FrmRegistrationForm }
+export { ExamRegistrationForm }

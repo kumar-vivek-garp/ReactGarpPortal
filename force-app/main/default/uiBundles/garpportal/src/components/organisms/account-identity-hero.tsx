@@ -1,12 +1,12 @@
-import { useState } from "react"
-import { animated, useSpring, useTrail, useTransition } from "@react-spring/web"
-import { Check, ChevronRight, CircleUser, Copy, Pencil } from "lucide-react"
+import { animated, useSpring, useTrail } from "@react-spring/web"
+import { ChevronRight, CircleUser, Pencil } from "lucide-react"
 
 import type { AccountView } from "@/api/account/types"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar"
 import { Badge } from "@/components/atoms/badge"
 import { Button } from "@/components/atoms/button"
 import { CompletionRing } from "@/components/molecules/completion-ring"
+import { GarpIdChip } from "@/components/molecules/garp-id-chip"
 import { MetaLines } from "@/components/molecules/meta-lines"
 import { StatusBadge } from "@/components/molecules/status-badge"
 import { useSpringPress } from "@/hooks/use-spring-press"
@@ -22,10 +22,6 @@ import { cn } from "@/lib/utils"
 const HERO_SPRING = { mass: 0.9, tension: 320, friction: 26 }
 /** Same cascade as `StaggerReveal`, so the chips feel like the cards below. */
 const CHIP_TRAIL_SPRING = { mass: 0.8, tension: 340, friction: 26 }
-const COPY_SPRING = { mass: 0.8, tension: 380, friction: 28 }
-
-/** How long the copied-to-clipboard tick stays up. */
-const COPIED_HOLD_MS = 1600
 
 type AccountIdentityHeroProps = {
 	account: AccountView
@@ -36,59 +32,6 @@ type AccountIdentityHeroProps = {
 	/** Scrolls to the card that owns the missing fields, for context first. */
 	onReviewMissing: () => void
 	className?: string
-}
-
-function GarpIdChip({ garpId }: { garpId: string }) {
-	const [copied, setCopied] = useState(false)
-	const { bind, style } = useSpringPress<HTMLButtonElement>()
-
-	const iconTransitions = useTransition(copied, {
-		from: { opacity: 0, transform: "scale(0.6)" },
-		enter: { opacity: 1, transform: "scale(1)" },
-		leave: { opacity: 0, transform: "scale(0.6)" },
-		config: COPY_SPRING,
-		exitBeforeEnter: true,
-	})
-
-	const copy = () => {
-		void navigator.clipboard?.writeText(garpId).then(() => {
-			setCopied(true)
-			window.setTimeout(() => setCopied(false), COPIED_HOLD_MS)
-		})
-	}
-
-	return (
-		<button
-			type="button"
-			onClick={copy}
-			aria-label={`Copy GARP ID ${garpId}`}
-			className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-0.5 text-xs font-semibold text-foreground hover:bg-accent hover:text-accent-foreground"
-			{...bind}
-		>
-			<animated.span
-				className="inline-flex items-center gap-1.5 will-change-transform"
-				style={{ scale: style.scale }}
-			>
-				<span className="text-muted-foreground">GARP ID</span>
-				{garpId}
-				<span className="relative inline-flex size-3.5 items-center justify-center">
-					{iconTransitions((iconStyle, isCopied) => (
-						<animated.span
-							className="absolute inline-flex"
-							style={iconStyle}
-							aria-hidden
-						>
-							{isCopied ? (
-								<Check className="size-3.5 text-success-green" />
-							) : (
-								<Copy className="size-3.5 text-muted-foreground" />
-							)}
-						</animated.span>
-					))}
-				</span>
-			</animated.span>
-		</button>
-	)
 }
 
 function MissingChipButton({

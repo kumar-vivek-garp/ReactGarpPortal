@@ -12,6 +12,7 @@ import {
 	AFFILIATE_REGISTRATION_ROUTE,
 	publicRegistrationFallback,
 } from "@/lib/registration-paths"
+import { resolveExamProgram } from "@/lib/registration-programs"
 
 type RedirectTarget = {
 	to?: string
@@ -55,11 +56,12 @@ function clientWith(user: CurrentUser | null) {
 function run(
 	user: CurrentUser | null,
 	search: Partial<RegistrationSearch> = {},
+	programType = "frm",
 ) {
 	try {
 		redirectMemberToPortalForm({
 			context: { queryClient: clientWith(user) },
-			params: { programType: "frm" },
+			params: { programType },
 			search: { ...NO_SEARCH, ...search },
 		})
 	} catch (thrown) {
@@ -176,5 +178,25 @@ describe("the affiliate route is static", () => {
 		expect(publicRegistrationFallback("/programs/affiliate/register")).toEqual({
 			programType: "affiliate",
 		})
+	})
+})
+
+describe("legacy slug aliases survive both guards", () => {
+	it("keeps the slug the visitor arrived on", () => {
+		// The guards route; they do not translate. `rai` is a live public
+		// address, and rewriting it here would put the payment return through an
+		// extra hop for no gain.
+		const target = run(MEMBER, {}, "rai")
+		expect(target?.params).toEqual({ programType: "rai" })
+		expect(publicRegistrationFallback("/programs/rai/register")).toEqual({
+			programType: "rai",
+		})
+	})
+
+	it("hands that slug to a programme the module actually accepts", () => {
+		// `load('rai')` throws `Unsupported registration type: rai`. Whichever
+		// route the visitor lands on, the dispatcher resolves the alias before
+		// the type reaches the wire.
+		expect(resolveExamProgram("rai")?.registrationType).toBe("riskai")
 	})
 })

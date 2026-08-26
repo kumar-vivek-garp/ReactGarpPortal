@@ -46,6 +46,16 @@ export type RegistrationCountry = {
 	 * "by registering you agree…" notice.
 	 */
 	compliance?: boolean | null
+	/**
+	 * The address rules, and the one place they come from. A country with
+	 * entries here gets a province *select* instead of free text, and
+	 * `provinceRequired` / `postalCodeRequired` decide requiredness — asking
+	 * for either in a country that does not use them would block a perfectly
+	 * valid address (Hong Kong has no postal codes; France has no provinces).
+	 */
+	provinces?: Array<{ name: string; code?: string | null }> | null
+	provinceRequired?: boolean | null
+	postalCodeRequired?: boolean | null
 }
 
 /** Prefilled contact, present only when a session is already signed in. */
@@ -59,6 +69,15 @@ export type RegistrationContact = {
 	phone?: string | null
 	title?: string | null
 	company?: string | null
+	/**
+	 * Carried through `register` untouched — none has a control, but Apex
+	 * writes the personal block whenever it arrives, so sending `""` where the
+	 * contact holds a value would blank the member's own record.
+	 */
+	businessEmail?: string | null
+	professionalLevel?: string | null
+	jobFunction?: string | null
+	riskSpecialty?: string | null
 	isMember?: boolean | null
 	/** Already renewing — do not offer auto-renew a second time. */
 	isAutoRenewEnabled?: boolean | null

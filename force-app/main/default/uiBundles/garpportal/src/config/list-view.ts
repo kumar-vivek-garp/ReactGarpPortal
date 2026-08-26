@@ -4,7 +4,7 @@ export const LIST_VIEWS = ["grid", "list"] as const
 export type ListView = (typeof LIST_VIEWS)[number]
 
 /** Pages that offer a layout toggle. One remembered choice per page. */
-export type ListViewScope = "programs" | "study-materials"
+export type ListViewScope = "programs" | "study-materials" | "membership"
 
 /** localStorage key for remembered layout choices. */
 export const LIST_VIEW_STORAGE_KEY = "garp-portal:list-view"

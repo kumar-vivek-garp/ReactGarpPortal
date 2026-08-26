@@ -17,6 +17,6 @@ export const Route = createFileRoute("/_appLayout/membership/")({
 })
 
 function Membership() {
-	const { tab } = Route.useSearch()
-	return <MembershipPanel tab={tab} />
+	const { tab, view } = Route.useSearch()
+	return <MembershipPanel tab={tab} view={view} />
 }

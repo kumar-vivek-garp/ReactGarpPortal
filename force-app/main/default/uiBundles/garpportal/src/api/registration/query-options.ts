@@ -4,6 +4,7 @@ import { fetchAffiliateRegistration } from "@/api/registration/affiliate"
 import {
 	calculateFees,
 	fetchExamRegistration,
+	fetchRegistrationOptions,
 } from "@/api/registration/exam-registration"
 import type { FeesRequest } from "@/api/registration/exam-types"
 
@@ -21,6 +22,8 @@ export const registrationQueryKeys = {
 		] as const,
 	/** The priced cart. The request itself is the key — see below. */
 	fees: (request: unknown) => ["registration", "fees", request] as const,
+	/** Company/school typeahead lists — one static payload per session. */
+	options: ["registration", "options"] as const,
 }
 
 /**
@@ -42,6 +45,19 @@ export const affiliateRegistrationQueryOptions = queryOptions({
 })
 
 /* ===================== exam registration ===================== */
+
+/**
+ * The OSTA company/school suggestion lists — ~2,000 rows, so a second request
+ * on purpose, made only once the OSTA card is actually on screen. No error
+ * toast: the fields are plain inputs without it, and the legacy swallows this
+ * failure the same way — autocomplete just stays empty.
+ */
+export const registrationOptionsQueryOptions = queryOptions({
+	queryKey: registrationQueryKeys.options,
+	queryFn: fetchRegistrationOptions,
+	staleTime: Infinity,
+	retry: false,
+})
 
 /**
  * The form's own load. Keyed by programme AND reg code, because a code changes

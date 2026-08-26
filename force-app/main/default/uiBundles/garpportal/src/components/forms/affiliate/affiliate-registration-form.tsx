@@ -10,11 +10,19 @@ import {
 	EMPTY_AFFILIATE_VALUES,
 	type AffiliateFormValues,
 } from "@/components/forms/affiliate/affiliate-form-values"
+import {
+	REGISTRATION_BAR_CONTROL_HEIGHT,
+	REGISTRATION_GRID,
+	REGISTRATION_MAIN_COLUMN,
+	REGISTRATION_RAIL_COLUMN,
+	REGISTRATION_STICKY_BAR,
+} from "@/components/forms/registration-shell"
 import { AffiliateRail } from "@/components/forms/affiliate/sections/affiliate-rail"
 import { ConsentSection } from "@/components/forms/affiliate/sections/consent-section"
 import { YourDetailsSection } from "@/components/forms/affiliate/sections/your-details-section"
 import { LOGIN_PATH } from "@/auth/constants"
 import { getReturnPath } from "@/auth/return-path"
+import { cn } from "@/lib/utils"
 import {
 	AFFILIATE_REGISTRATION,
 	AFFILIATE_REGISTRATION_HEADING,
@@ -171,7 +179,7 @@ function AffiliateRegistrationForm({
 			 * "back" available is off to garp.org — which is leaving, not going
 			 * back, and not what a back arrow promises mid-form.
 			 */}
-			<div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 bg-background py-3">
+			<div className={REGISTRATION_STICKY_BAR}>
 				{/*
 				 * An `h1`, not an `h2`: this is the page's only heading, and the page
 				 * is linked from marketing email and from the Login card.
@@ -189,7 +197,12 @@ function AffiliateRegistrationForm({
 					 * block, so the two bars line up. Nothing arrives late here — the
 					 * figure is a constant — but the geometry is shared.
 					 */}
-					<div className="flex h-10 shrink-0 flex-col items-end justify-center text-right">
+					<div
+						className={cn(
+							REGISTRATION_BAR_CONTROL_HEIGHT,
+							"flex shrink-0 flex-col items-end justify-center text-right",
+						)}
+					>
 						<p className="text-caption leading-none text-muted-foreground">
 							Total
 						</p>
@@ -279,8 +292,8 @@ function AffiliateRegistrationForm({
 				</Alert>
 			) : null}
 
-			<div className="grid grid-cols-1 gap-6 lg:grid-cols-10">
-				<div className="flex flex-col gap-6 lg:col-span-6">
+			<div className={REGISTRATION_GRID}>
+				<div className={REGISTRATION_MAIN_COLUMN}>
 					<YourDetailsSection
 						register={register}
 						control={control}
@@ -305,7 +318,7 @@ function AffiliateRegistrationForm({
 				 * the sticky bar (4rem) plus the grid gap (1.5rem) — a larger `top`
 				 * pushes the rail down below the column beside it on first paint.
 				 */}
-				<aside className="lg:sticky lg:top-22 lg:col-span-4 lg:h-fit">
+				<aside className={REGISTRATION_RAIL_COLUMN}>
 					<AffiliateRail />
 				</aside>
 			</div>

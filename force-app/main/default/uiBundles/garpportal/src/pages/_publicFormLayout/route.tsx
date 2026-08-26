@@ -15,7 +15,9 @@ import { ThemeToggle } from "@/components/molecules/theme-toggle"
 import { Footer } from "@/components/organisms/footer"
 import { LOGIN_PATH } from "@/auth/constants"
 import { getReturnPath } from "@/auth/return-path"
+import { useScrolledNav } from "@/hooks/use-scrolled-nav"
 import { dismissBootSplash } from "@/lib/boot-splash"
+import { cn } from "@/lib/utils"
 
 /**
  * Chrome for forms served to someone with no session.
@@ -40,10 +42,18 @@ export const Route = createFileRoute("/_publicFormLayout")({
 
 function PublicFormHeader() {
 	const location = useRouterState({ select: (state) => state.location })
+	const scrolled = useScrolledNav()
 
 	return (
 		<>
-			<header className="fixed top-0 right-0 left-0 z-[1000] box-border flex h-16 max-w-[100vw] items-center bg-toolbar text-toolbar-foreground app:h-20">
+			{/* Same solid white chrome as `Navbar`: hairline below, shadow lift
+			    once content scrolls beneath it. */}
+			<header
+				className={cn(
+					"fixed top-0 right-0 left-0 z-[1000] box-border flex h-16 max-w-[100vw] items-center border-b border-border bg-toolbar text-toolbar-foreground transition-shadow duration-200 app:h-20",
+					scrolled && "shadow-xs",
+				)}
+			>
 				<a
 					href="https://www.garp.org/"
 					className="flex shrink-0 items-center pl-shell-inset"

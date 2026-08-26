@@ -2,6 +2,7 @@ import type { Identity } from "@/api/account/types"
 import type { Benefit, PortalCard } from "@/api/membership/types"
 import { formatLongDate } from "@/lib/account-format"
 import { daysUntil } from "@/lib/days-until"
+import type { MetaLine } from "@/lib/meta-line"
 import type { StatusTone } from "@/lib/status-tone"
 
 /** Keeps every card in a row a similar height without hiding content behind a scrollbar. */
@@ -22,6 +23,12 @@ export type BenefitPresentation = {
 	bullets: string[]
 	/** How many bullets were trimmed, so the card can say so honestly. */
 	hiddenBulletCount: number
+	/** Full, untrimmed paragraphs for the details dialog. */
+	paragraphs: string[]
+	/** Every bullet, untrimmed, for the details dialog. */
+	allBullets: string[]
+	/** Whether there is any copy worth opening a details dialog for. */
+	hasDetails: boolean
 	promoCode: string | null
 	imageUrl: string | null
 	locked: boolean
@@ -77,6 +84,9 @@ export function buildBenefitPresentation(benefit: Benefit): BenefitPresentation 
 		body: paragraphs.length > 0 ? paragraphs.join(" ") : null,
 		bullets,
 		hiddenBulletCount: allBullets.length - bullets.length,
+		paragraphs,
+		allBullets,
+		hasDetails: paragraphs.length > 0 || allBullets.length > 0,
 		promoCode: benefit.promoCode?.trim() || null,
 		imageUrl: benefit.imageUrl?.trim() || null,
 		locked: benefit.locked,
@@ -125,12 +135,16 @@ const RENEWAL_SOON_DAYS = 60
 export type MembershipIdentityPresentation = {
 	statusLabel: string | null
 	statusTone: StatusTone | null
-	/** "Member since August 2026", when Apex supplies the date. */
-	memberSinceLabel: string | null
 	/** Either a plain expiry date or a countdown once renewal is near. */
 	expiryLabel: string | null
 	expiryTone: StatusTone | null
 	autoRenewLabel: string | null
+	/**
+	 * Icon-keyed facts for the hero's meta row: member-since, plus the renewal
+	 * date while it carries no tone. A toned expiry (warning/danger) is a chip,
+	 * not a meta line — the same fact must never render twice.
+	 */
+	metaLines: MetaLine[]
 }
 
 /**
@@ -176,13 +190,21 @@ export function buildMembershipIdentityPresentation(
 		expiryTone = "warning"
 	}
 
+	const metaLines: MetaLine[] = []
+	if (since) {
+		metaLines.push({ icon: "memberSince", text: `Member since ${since}` })
+	}
+	if (expiryLabel && expiryTone === null) {
+		metaLines.push({ icon: "renews", text: expiryLabel })
+	}
+
 	return {
 		statusLabel: status,
 		statusTone,
-		memberSinceLabel: since ? `Member since ${since}` : null,
 		expiryLabel,
 		expiryTone,
 		// Only worth saying when it is on — "off" is the state a renewal notice covers.
 		autoRenewLabel: identity.autoRenew ? "Auto-renew on" : null,
+		metaLines,
 	}
 }

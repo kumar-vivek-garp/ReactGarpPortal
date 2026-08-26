@@ -10,6 +10,7 @@ import { MobileNavPanel } from "@/components/molecules/mobile-nav-panel"
 import { ThemeToggle } from "@/components/molecules/theme-toggle"
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock"
 import { useCloseMobileNavOnNavigate } from "@/hooks/use-close-mobile-nav-on-navigate"
+import { useScrolledNav } from "@/hooks/use-scrolled-nav"
 import { TOP_NAV_ITEMS } from "@/config/navigation/top-nav-items"
 import { NAV_PANEL_SPRING } from "@/lib/nav-spring"
 import { cn } from "@/lib/utils"
@@ -39,6 +40,7 @@ function MobileNavBar() {
 
 	useCloseMobileNavOnNavigate()
 	useBodyScrollLock(isOpen)
+	const scrolled = useScrolledNav()
 
 	const panelTransitions = useTransition(isOpen, {
 		from: { opacity: 0, y: -12 },
@@ -68,11 +70,19 @@ function MobileNavBar() {
 	}, [isOpen, selectedItem, closeMobileNav, backToMobileRoot])
 
 	return (
-		<div className="fixed top-0 right-0 left-0 z-[1000] box-border w-full max-w-[100vw] bg-background pt-[env(safe-area-inset-top)] app:hidden">
+		<div className="fixed top-0 right-0 left-0 z-[1000] box-border w-full max-w-[100vw] bg-toolbar pt-[env(safe-area-inset-top)] app:hidden">
 			<header
 				className={cn(
-					"relative z-[1001] flex h-16 w-full items-center justify-between px-5",
-					isOpen ? "bg-background text-foreground" : "bg-toolbar text-toolbar-foreground",
+					"relative z-[1001] flex h-16 w-full items-center justify-between border-b px-5 transition-shadow duration-200",
+					// Same solid chrome as the desktop bar; the border yields to
+					// `border-transparent` while the menu is open so the bar and its
+					// full-screen panel read as one surface.
+					isOpen
+						? "border-transparent bg-popover text-popover-foreground"
+						: cn(
+								"border-border bg-toolbar text-toolbar-foreground",
+								scrolled && "shadow-xs",
+							),
 				)}
 			>
 				{/* Inherits the bar's own text colour, so it works black-on-white and
@@ -107,7 +117,7 @@ function MobileNavBar() {
 			{panelTransitions((style, show) =>
 				show ? (
 					<animated.div
-						className="fixed right-0 bottom-0 left-0 z-[1000] overflow-hidden bg-background"
+						className="fixed right-0 bottom-0 left-0 z-[1000] overflow-hidden bg-popover"
 						style={{
 							opacity: style.opacity,
 							transform: style.y.to((y) => `translateY(${y}px)`),
@@ -124,7 +134,7 @@ function MobileNavBar() {
 
 								return (
 									<animated.div
-										className="absolute inset-0 overflow-x-hidden overflow-y-auto bg-background"
+										className="absolute inset-0 overflow-x-hidden overflow-y-auto bg-popover"
 										style={{
 											opacity: drillStyle.opacity,
 											transform: drillStyle.x.to((x) => `translateX(${x}%)`),
@@ -132,7 +142,7 @@ function MobileNavBar() {
 									>
 										{item ? (
 											<>
-												<div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background px-3 py-2.5">
+												<div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-popover px-3 py-2.5">
 													<button
 														type="button"
 														className="inline-flex cursor-pointer items-center gap-1 rounded-xl px-2 py-1.5 text-body font-bold text-primary hover:bg-accent hover:text-accent-foreground"

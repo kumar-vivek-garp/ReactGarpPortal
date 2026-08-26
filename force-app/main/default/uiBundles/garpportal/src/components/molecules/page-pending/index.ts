@@ -52,7 +52,6 @@ export {
 export {
 	HelpCenterPending,
 	HelpCenterPendingShell,
-	HelpCenterRequestsSkeleton,
 } from "./help-center-pending"
 export {
 	ExamSetupContentSkeleton,

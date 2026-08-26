@@ -11,7 +11,7 @@ import {
 import { Checkbox } from "@/components/atoms/checkbox"
 import { Label } from "@/components/atoms/label"
 import { FieldError } from "@/components/molecules/form-field"
-import type { FrmFormValues } from "@/components/forms/frm/frm-form-values"
+import type { ExamFormValues } from "@/components/forms/exam-registration/exam-form-values"
 import { OFFLINE_PAYMENT_COPY, PAYMENT_TILES } from "@/config/registration"
 import { isPaymentAllowed } from "@/lib/registration-presentation"
 import { cn } from "@/lib/utils"
@@ -23,8 +23,8 @@ const TILE_ICON = {
 } as const
 
 type PaymentSectionProps = {
-	control: Control<FrmFormValues>
-	errors: FieldErrors<FrmFormValues>
+	control: Control<ExamFormValues>
+	errors: FieldErrors<ExamFormValues>
 	/** The chosen billing country, which decides what is on offer. */
 	country: RegistrationCountry | null
 	/** Org-level Stripe switch from the load payload. */

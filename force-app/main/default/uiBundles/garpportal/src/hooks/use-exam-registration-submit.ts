@@ -39,6 +39,38 @@ export class AddressRejectedError extends AppError {
 	}
 }
 
+export type VerifyExamEmailInput = {
+	/** The programme slug — `verifyCustomer` resolves against it. */
+	type: string
+	courseCode?: string | null
+	email: string
+	firstName: string
+	lastName: string
+}
+
+/**
+ * The identity check on blur, as GarpAppv1 runs it — so a guest whose email
+ * already belongs to an account learns that before filling the rest of the
+ * form rather than at submit. The tagged result doubles as the registration's
+ * session: the submit mutation reuses it when the email still matches, so a
+ * normal fill-and-submit makes one identity call, not two.
+ */
+export function useVerifyExamCustomer() {
+	return useMutation<VerifiedSession, unknown, VerifyExamEmailInput>({
+		mutationFn: async (input) => {
+			const email = input.email.trim()
+			const result = await verifyExamCustomer({
+				type: input.type,
+				courseCode: input.courseCode ?? null,
+				email,
+				firstName: input.firstName.trim(),
+				lastName: input.lastName.trim(),
+			})
+			return { ...result, email }
+		},
+	})
+}
+
 export type ExamSubmitInput = {
 	/** The body for both `verifyAddress` and `register` — identical shapes. */
 	request: ExamRegisterRequest

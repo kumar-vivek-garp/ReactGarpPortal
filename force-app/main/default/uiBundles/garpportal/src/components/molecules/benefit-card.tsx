@@ -8,6 +8,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/atoms/card"
+import { BenefitDetailsDialog } from "@/components/molecules/benefit-details-dialog"
 import { CardCta } from "@/components/molecules/card-cta"
 import { StatusBadge } from "@/components/molecules/status-badge"
 import { buildBenefitPresentation } from "@/lib/membership-presentation"
@@ -91,7 +92,7 @@ function BenefitCard({ benefit, className }: BenefitCardProps) {
 
 			{item.locked ? (
 				<div
-					className="pointer-events-none absolute inset-x-0 top-0 bottom-14 z-10 flex items-center justify-center bg-background/65 backdrop-blur-[2px]"
+					className="pointer-events-none absolute inset-x-0 top-0 bottom-14 z-10 flex items-center justify-center bg-card/65 backdrop-blur-[2px]"
 					aria-hidden
 				>
 					<div className="flex flex-col items-center gap-2 px-4 text-center">
@@ -108,7 +109,9 @@ function BenefitCard({ benefit, className }: BenefitCardProps) {
 				</div>
 			) : null}
 
-			<CardFooter className="relative z-20 mt-auto shrink-0 border-t border-border/60 bg-card px-5 py-4">
+			{/* z-20 keeps the footer above the locked overlay, so a locked benefit
+			    can still be read via Details — that is the upgrade pitch. */}
+			<CardFooter className="relative z-20 mt-auto shrink-0 gap-3 border-t border-border/60 bg-card px-5 py-4">
 				<CardCta
 					label={item.cta?.label ?? null}
 					url={item.cta?.url ?? null}
@@ -116,6 +119,9 @@ function BenefitCard({ benefit, className }: BenefitCardProps) {
 					locked={item.locked}
 					newWindow={item.cta?.newWindow}
 				/>
+				{item.hasDetails ? (
+					<BenefitDetailsDialog item={item} className="-my-2 -mr-2 ml-auto" />
+				) : null}
 			</CardFooter>
 		</Card>
 	)

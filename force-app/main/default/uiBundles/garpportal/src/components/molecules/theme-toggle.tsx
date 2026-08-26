@@ -9,7 +9,7 @@ const TOGGLE_SPRING = { mass: 0.85, tension: 340, friction: 22 }
 
 type ThemeToggleProps = {
 	className?: string
-	/** Ghost on dark toolbar; sheet when mobile panel uses light chrome. */
+	/** Ghost on the toolbar surface; sheet when mobile panel uses light chrome. */
 	variant?: "toolbar" | "sheet"
 }
 

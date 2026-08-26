@@ -1,4 +1,11 @@
-import { BookOpen, CircleHelp, Inbox, LifeBuoy, Mail } from "lucide-react"
+import {
+	BookOpen,
+	CircleHelp,
+	Inbox,
+	LifeBuoy,
+	Mail,
+	TriangleAlert,
+} from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { z } from "zod"
 
@@ -24,13 +31,11 @@ export type HelpCenterBucketMeta = {
 	label: string
 	heading: string
 	icon: LucideIcon
-	emptyTitle: string
-	emptyMessage: string
 }
 
 /**
- * One definition per tab, shared by the pills, the section headings and the
- * empty states — the same pattern Programs / Study Materials / Events use.
+ * One definition per tab, shared by the pills and the section headings — the
+ * same pattern Programs / Study Materials / Events use.
  */
 export const HELP_CENTER_BUCKET_META: Record<
 	HelpCenterTab,
@@ -40,18 +45,28 @@ export const HELP_CENTER_BUCKET_META: Record<
 		label: "Get Help",
 		heading: "Open a support case",
 		icon: LifeBuoy,
-		emptyTitle: "",
-		emptyMessage: "",
 	},
 	requests: {
 		label: "My Requests",
 		heading: "My Requests",
 		icon: Inbox,
-		emptyTitle: "You haven't raised any requests yet",
-		emptyMessage:
-			"Anything you send using the form will be listed here with its status.",
 	},
 }
+
+/** Requests tab with zero cases — rendered through the shared `EmptyState`. */
+export const HELP_REQUESTS_EMPTY = {
+	icon: Inbox,
+	title: "You haven't raised any requests yet",
+	message:
+		"Anything you send using the form will be listed here with its status.",
+} as const
+
+/** Requests tab when the cases call fails — `EmptyState` with `tone="error"`. */
+export const HELP_REQUESTS_ERROR = {
+	icon: TriangleAlert,
+	title: "We couldn't load your requests",
+	message: "Please try again later.",
+} as const
 
 /** Tab bar items — derived from the bucket meta so labels/icons cannot drift. */
 export const HELP_CENTER_TAB_ITEMS: Array<{

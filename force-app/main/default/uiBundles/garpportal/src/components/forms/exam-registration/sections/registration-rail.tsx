@@ -10,7 +10,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/atoms/card"
-import { AnimatedAmount } from "@/components/forms/frm/animated-amount"
+import { AnimatedAmount } from "@/components/forms/exam-registration/animated-amount"
 import { StaggerReveal } from "@/components/molecules/stagger-reveal"
 import { formatMoney } from "@/lib/account-format"
 import {

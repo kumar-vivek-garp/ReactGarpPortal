@@ -4,10 +4,16 @@ import type { FooterNavSection } from "./types"
  * Mirrors the live garpApp footer accordion 1:1 (labels + hrefs captured directly
  * from https://my.garp.org/garpapp's rendered footer) — keep entries and order in sync
  * with production rather than reordering for local taste.
+ *
+ * `accentToken` is ours, not the live footer's. Three families share a hue so
+ * the colour means something instead of being nine arbitrary swatches: the
+ * three certifications keep their own mega-menu colours, everything to learn
+ * from or attend is one purple, and the organisation itself is the neutral.
  */
 export const FOOTER_NAV_SECTIONS: FooterNavSection[] = [
 	{
 		key: "frm",
+		accentToken: "garp-cyan",
 		label: "FRM",
 		links: [
 			{ title: "Overview", url: "https://www.garp.org/frm" },
@@ -22,6 +28,7 @@ export const FOOTER_NAV_SECTIONS: FooterNavSection[] = [
 	},
 	{
 		key: "scr",
+		accentToken: "garp-saffron",
 		label: "SCR",
 		links: [
 			{ title: "Overview", url: "https://www.garp.org/scr" },
@@ -36,6 +43,7 @@ export const FOOTER_NAV_SECTIONS: FooterNavSection[] = [
 	},
 	{
 		key: "rai",
+		accentToken: "rai-orange",
 		label: "RAI",
 		links: [
 			{ title: "Overview", url: "https://www.garp.org/rai" },
@@ -50,6 +58,7 @@ export const FOOTER_NAV_SECTIONS: FooterNavSection[] = [
 	},
 	{
 		key: "membership",
+		accentToken: "deep-purple",
 		label: "Membership",
 		links: [
 			{ title: "Membership Overview", url: "https://www.garp.org/membership" },
@@ -61,6 +70,7 @@ export const FOOTER_NAV_SECTIONS: FooterNavSection[] = [
 	},
 	{
 		key: "resources",
+		accentToken: "bright-purple",
 		label: "Resources",
 		links: [
 			{ title: "Risk Intelligence", url: "https://www.garp.org/risk-intelligence" },
@@ -70,6 +80,7 @@ export const FOOTER_NAV_SECTIONS: FooterNavSection[] = [
 	},
 	{
 		key: "events",
+		accentToken: "bright-purple",
 		label: "Events",
 		links: [
 			{ title: "Chapter Meetings", url: "https://www.garp.org/events/all?type=chapter_meeting" },
@@ -79,6 +90,7 @@ export const FOOTER_NAV_SECTIONS: FooterNavSection[] = [
 	},
 	{
 		key: "additional-education",
+		accentToken: "bright-purple",
 		label: "Additional Education",
 		links: [
 			{ title: "Foundations of Financial Risk (FFR)", url: "https://www.garp.org/courses/foundations-of-financial-risk" },
@@ -87,6 +99,7 @@ export const FOOTER_NAV_SECTIONS: FooterNavSection[] = [
 	},
 	{
 		key: "about-us",
+		accentToken: "dark-blue-gray",
 		label: "About Us",
 		links: [
 			{ title: "About GARP", url: "https://www.garp.org/about" },
@@ -99,6 +112,7 @@ export const FOOTER_NAV_SECTIONS: FooterNavSection[] = [
 	},
 	{
 		key: "industry-engagement",
+		accentToken: "dark-blue-gray",
 		label: "Industry Engagement",
 		links: [
 			{ title: "GARP for Students", url: "https://www.garp.org/students" },

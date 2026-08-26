@@ -21,7 +21,7 @@ import {
 	SelectValue,
 } from "@/components/atoms/select"
 import { FieldError, FormField } from "@/components/molecules/form-field"
-import type { FrmFormValues } from "@/components/forms/frm/frm-form-values"
+import type { ExamFormValues } from "@/components/forms/exam-registration/exam-form-values"
 import {
 	EMAIL_PATTERN,
 	PHONE_PATTERN,
@@ -31,9 +31,9 @@ import {
 } from "@/config/registration"
 
 type YourDetailsSectionProps = {
-	register: UseFormRegister<FrmFormValues>
-	control: Control<FrmFormValues>
-	errors: FieldErrors<FrmFormValues>
+	register: UseFormRegister<ExamFormValues>
+	control: Control<ExamFormValues>
+	errors: FieldErrors<ExamFormValues>
 	countries: RegistrationCountry[]
 	/** False on the public form — nothing has been prefilled. */
 	isAuthenticated?: boolean
@@ -51,6 +51,12 @@ type YourDetailsSectionProps = {
 	 * what was already chosen.
 	 */
 	onCountryChange: (countryCode: string) => void
+	/**
+	 * The identity check GarpAppv1 runs on blur — wired to first name, last
+	 * name and email because the check sends all three. The fields only render
+	 * for guests, so members never trigger it.
+	 */
+	onIdentityBlur?: () => void
 	disabled?: boolean
 }
 
@@ -73,6 +79,7 @@ function YourDetailsSection({
 	isAuthenticated = true,
 	showLocation = true,
 	onCountryChange,
+	onIdentityBlur,
 	disabled,
 }: YourDetailsSectionProps) {
 	const sortedCountries = useMemo(
@@ -133,6 +140,7 @@ function YourDetailsSection({
 								},
 								validate: (value) =>
 									isEnglishName(value) || "Please enter only English characters.",
+								onBlur: onIdentityBlur,
 							})}
 						/>
 					</FormField>
@@ -157,6 +165,7 @@ function YourDetailsSection({
 								},
 								validate: (value) =>
 									isEnglishName(value) || "Please enter only English characters.",
+								onBlur: onIdentityBlur,
 							})}
 						/>
 					</FormField>
@@ -180,6 +189,7 @@ function YourDetailsSection({
 									value: EMAIL_PATTERN,
 									message: "Please enter a valid email address.",
 								},
+								onBlur: onIdentityBlur,
 							})}
 						/>
 					</FormField>

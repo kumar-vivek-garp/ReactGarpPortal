@@ -6,6 +6,13 @@ export const NAV_OVERFLOW_KEY = "__more__"
 type UseNavOverflowOptions<T> = {
 	items: T[]
 	getKey: (item: T) => string
+	/**
+	 * The row's flex `gap`, in px. Measuring copies are absolutely positioned
+	 * individuals, so their offsetWidths can never include the live row's gaps —
+	 * the caller must declare the same value it styles the row with, or items
+	 * overflow the container before "More" collapses them.
+	 */
+	gapPx?: number
 }
 
 /**
@@ -19,7 +26,7 @@ type UseNavOverflowOptions<T> = {
  * children, so changing the visible count cannot feed back into the available
  * width and oscillate.
  */
-export function useNavOverflow<T>({ items, getKey }: UseNavOverflowOptions<T>) {
+export function useNavOverflow<T>({ items, getKey, gapPx = 0 }: UseNavOverflowOptions<T>) {
 	const containerRef = useRef<HTMLDivElement | null>(null)
 	const measureRefs = useRef(new Map<string, HTMLElement>())
 	const [visibleCount, setVisibleCount] = useState(items.length)
@@ -44,22 +51,27 @@ export function useNavOverflow<T>({ items, getKey }: UseNavOverflowOptions<T>) {
 		const widths = list.map((key) => measureRefs.current.get(key)?.offsetWidth ?? 0)
 		if (widths.some((width) => width === 0)) return
 
-		const total = widths.reduce((sum, width) => sum + width, 0)
+		const total =
+			widths.reduce((sum, width) => sum + width, 0) +
+			gapPx * Math.max(0, widths.length - 1)
 		if (total <= available) {
 			setVisibleCount(list.length)
 			return
 		}
 
-		const budget = available - (measureRefs.current.get(NAV_OVERFLOW_KEY)?.offsetWidth ?? 0)
+		// One extra gap reserved for the seam before "More" itself.
+		const budget =
+			available - (measureRefs.current.get(NAV_OVERFLOW_KEY)?.offsetWidth ?? 0) - gapPx
 		let used = 0
 		let count = 0
 		for (const width of widths) {
-			if (used + width > budget) break
-			used += width
+			const needed = count === 0 ? width : gapPx + width
+			if (used + needed > budget) break
+			used += needed
 			count += 1
 		}
 		setVisibleCount(count)
-	}, [itemsKey])
+	}, [itemsKey, gapPx])
 
 	useLayoutEffect(() => {
 		measure()

@@ -25,7 +25,7 @@ import {
 	SelectValue,
 } from "@/components/atoms/select"
 import { FieldError, FormField } from "@/components/molecules/form-field"
-import type { FrmFormValues } from "@/components/forms/frm/frm-form-values"
+import type { ExamFormValues } from "@/components/forms/exam-registration/exam-form-values"
 import {
 	EXAM_SETUP_GENDERS,
 	EXAM_SETUP_ID_LOCATIONS,
@@ -81,14 +81,17 @@ function OptionSelect({
 }
 
 type OstaSectionProps = {
-	register: UseFormRegister<FrmFormValues>
-	control: Control<FrmFormValues>
-	errors: FieldErrors<FrmFormValues>
-	getValues: UseFormGetValues<FrmFormValues>
+	register: UseFormRegister<ExamFormValues>
+	control: Control<ExamFormValues>
+	errors: FieldErrors<ExamFormValues>
+	getValues: UseFormGetValues<ExamFormValues>
 	/** Watched so the labels track the current choices. */
 	idType: string
 	workStatus: string
 	studentStatus: string
+	/** Typeahead suggestions from the load payload — free text still submits. */
+	companies?: string[]
+	schools?: string[]
 	disabled?: boolean
 }
 
@@ -113,6 +116,8 @@ function OstaSection({
 	idType,
 	workStatus,
 	studentStatus,
+	companies = [],
+	schools = [],
 	disabled,
 }: OstaSectionProps) {
 	const osta = errors.osta
@@ -368,12 +373,21 @@ function OstaSection({
 				>
 					<Input
 						id="osta-company"
+						list={companies.length > 0 ? "osta-company-options" : undefined}
 						disabled={disabled}
 						aria-invalid={osta?.company ? true : undefined}
 						{...register("osta.company", {
 							required: "Please enter a company name.",
 						})}
 					/>
+					{/* The legacy typeahead, as the platform's own control. */}
+					{companies.length > 0 ? (
+						<datalist id="osta-company-options">
+							{companies.map((name) => (
+								<option key={name} value={name} />
+							))}
+						</datalist>
+					) : null}
 				</FormField>
 
 				<FormField
@@ -408,12 +422,20 @@ function OstaSection({
 				>
 					<Input
 						id="osta-schoolName"
+						list={schools.length > 0 ? "osta-school-options" : undefined}
 						disabled={disabled}
 						aria-invalid={osta?.schoolName ? true : undefined}
 						{...register("osta.schoolName", {
 							required: "Please enter a school name.",
 						})}
 					/>
+					{schools.length > 0 ? (
+						<datalist id="osta-school-options">
+							{schools.map((name) => (
+								<option key={name} value={name} />
+							))}
+						</datalist>
+					) : null}
 				</FormField>
 
 				<FormField
