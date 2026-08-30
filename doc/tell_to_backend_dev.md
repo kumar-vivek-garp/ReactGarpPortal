@@ -315,6 +315,44 @@ in-app.
 
 ---
 
+## A13. 🔴 Event registration never returns the on-demand / join URL — the "register → watch" flow cannot be built
+
+**Classes:** `GARP_ExamReg_EventDto`, `GARP_ExamReg_EventLoad`, `GARP_ExamReg_EventReg`
+**Found:** 2026-08-30, while mapping event registration for the React portal.
+**Scope:** blocks only the on-demand/replay branch. Registration for upcoming
+events, webcasts and chapter meetings is fully unblocked — this is **not** a
+blocker for building the event registration forms.
+
+The legacy portal's one-click flow for a past webcast or a started/past chapter
+meeting was: silently create a free registration, then open the recording —
+`window.open(Webcast__r.On_Demand_URL__c)` / `window.open(ON24_URL__c)`. The
+fields exist and are populated (`Webcast__c.On_Demand_URL__c`,
+`Chapter_Meeting__c.ON24_URL__c`, `Event__c.ON24_URL__c`).
+
+The new API carries the *flag* but never the *URL*:
+
+- `GET examreg/event/info` → `EventView` has `isOnDemand: boolean` — and no
+  URL field.
+- `POST examreg/event/register` → `RegisterResult` has
+  `registrationId / orderId / message / amountDue` — and no URL field.
+
+So after a member registers for an on-demand webcast we can only say "you are
+registered" with nothing to open. There is no client-side workaround: the URL
+is the paywalled asset, and querying `Webcast__c` directly from the client
+would bypass the registration gate the module exists to enforce.
+
+**Ask:** return the join/replay URL from the API — for example on
+`RegisterResult` after a successful registration, and/or on `event/info` when
+`alreadyRegistered` is true. Returning it **only to registered callers** keeps
+the gate intact; putting it on the unauthenticated `info` payload would leak
+the recording to anyone with the event id.
+
+**Meanwhile:** the React portal will ship registration for all three kinds and
+show the confirmation without a watch link; the on-demand branch stays pointed
+at the legacy behaviour until the field lands.
+
+---
+
 # B. Needs data seeded in `devjuly25a`
 
 These are **verification** blockers, not bugs. In each case the code is written

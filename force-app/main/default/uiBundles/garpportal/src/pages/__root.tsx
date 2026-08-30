@@ -6,6 +6,7 @@ import { preconnect, preload } from "react-dom"
 
 import { Toaster } from "@/components/atoms/sonner"
 import { TooltipProvider } from "@/components/atoms/tooltip"
+import { NotFoundPage } from "@/components/organisms/not-found-page"
 import { COMMON_PROGRAM_LOGO_URLS, GARP_HUB_ORIGIN } from "@/config/program-logos"
 import klinicBook from "@/assets/fonts/KlinicSlabBook.woff2?url"
 import klinicBold from "@/assets/fonts/KlinicSlabBold.woff2?url"
@@ -65,6 +66,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 		],
 	}),
 	component: RootComponent,
+	// Unknown URLs land here (notFoundMode: "root" in app.tsx). Session-aware:
+	// portal chrome for members, public chrome for guests — and it dismisses
+	// the boot splash, which no layout would otherwise do on a missed URL.
+	notFoundComponent: NotFoundPage,
 })
 
 function RootComponent() {
