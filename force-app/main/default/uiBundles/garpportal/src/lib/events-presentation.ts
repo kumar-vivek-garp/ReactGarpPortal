@@ -26,6 +26,8 @@ export type EventPresentation = {
 	timingTone: StatusTone | null
 	/** Month/day block for the card's date tile. */
 	dateBadge: { month: string; day: string } | null
+	/** Short blurb for the card body; null when absent or just the title again. */
+	description: string | null
 	metaLines: MetaLine[]
 	eventUrl: string | null
 	attendanceUrl: string | null
@@ -80,14 +82,15 @@ export function eventDateBadge(
 }
 
 /**
- * Start time rendered in the event's own timezone with its abbreviation, e.g.
- * "2:00 PM EDT".
+ * Time rendered in the event's own timezone with its abbreviation — a range
+ * ("2:00 – 4:00 PM EDT") when the payload carries a distinct end, otherwise
+ * the start alone ("2:00 PM EDT").
  *
  * The organiser publishes a specific zone (`addToCalTimeZone`), so showing that
  * zone — labelled — matches what a member sees everywhere else GARP advertises
  * the event, rather than silently re-basing it to the browser's locale.
  */
-export function eventStartTimeLabel(event: MemberEvent): string | null {
+export function eventTimeLabel(event: MemberEvent): string | null {
 	if (!hasCalendarPayload(event)) return null
 	const input = calendarEventFromMember(event)
 	if (!input) return null
@@ -95,16 +98,34 @@ export function eventStartTimeLabel(event: MemberEvent): string | null {
 	if (!parsed) return null
 
 	try {
-		return new Intl.DateTimeFormat(undefined, {
+		const format = new Intl.DateTimeFormat(undefined, {
 			hour: "numeric",
 			minute: "2-digit",
 			timeZone: input.timeZone,
 			timeZoneName: "short",
-		}).format(parsed.start)
+		})
+		// Range only within a single day — across days formatRange pulls full
+		// dates into a line that already sits next to the date, saying it twice.
+		// parseLocal defaults a missing end to the start, so "later than" also
+		// covers "absent"; a zero-length range would just repeat the start.
+		const sameDay = !input.endDate || input.endDate === input.startDate
+		return sameDay && parsed.end.getTime() > parsed.start.getTime()
+			? format.formatRange(parsed.start, parsed.end)
+			: format.format(parsed.start)
 	} catch {
 		// An unrecognised IANA zone would throw; a missing time beats a wrong one.
 		return null
 	}
+}
+
+/** Weekday name for the hero's date block, e.g. "Wednesday". */
+export function eventWeekday(iso: string | null | undefined): string | null {
+	if (!iso) return null
+	const [year, month, day] = iso.split("-").map(Number)
+	if (!year || !month || !day) return null
+	return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+		weekday: "long",
+	})
 }
 
 /** Relative timing for imminent events only. */
@@ -133,8 +154,9 @@ export function buildEventPresentation(
 ): EventPresentation {
 	const kind = eventKind(event.eventType)
 	const typeLabel = event.eventType?.trim() || "Event"
+	const title = event.eventName?.trim() || "Event"
 	const dateLabel = formatLongDate(event.eventStartDate?.slice(0, 10))
-	const timeLabel = eventStartTimeLabel(event)
+	const timeLabel = eventTimeLabel(event)
 	const timing = eventTiming(event.eventStartDate?.slice(0, 10))
 
 	const metaLines: MetaLine[] = []
@@ -145,14 +167,20 @@ export function buildEventPresentation(
 		})
 	}
 
-	// Location ships in the calendar payload as HTML; the calendar builder is
-	// where it gets cleaned, so reuse that rather than re-stripping tags here.
-	const location = calendarEventFromMember(event)?.location.trim()
+	// Location and description ship in the calendar payload as HTML; the
+	// calendar builder is where they get cleaned, so reuse that rather than
+	// re-stripping tags here.
+	const calendar = calendarEventFromMember(event)
+	const location = calendar?.location.trim()
 	if (location) metaLines.push({ icon: "location", text: location })
+
+	const blurb = calendar?.description.trim() ?? ""
+	const description =
+		blurb && blurb.toLowerCase() !== title.toLowerCase() ? blurb : null
 
 	return {
 		id: event.eventId,
-		title: event.eventName?.trim() || "Event",
+		title,
 		kind,
 		typeLabel,
 		statusLabel: options.isAttending ? "Attending" : null,
@@ -160,6 +188,7 @@ export function buildEventPresentation(
 		timingLabel: timing?.label ?? null,
 		timingTone: timing?.tone ?? null,
 		dateBadge: eventDateBadge(event.eventStartDate?.slice(0, 10)),
+		description,
 		metaLines,
 		eventUrl: eventPageUrl(event.eventURL),
 		attendanceUrl: event.canManageAttendance

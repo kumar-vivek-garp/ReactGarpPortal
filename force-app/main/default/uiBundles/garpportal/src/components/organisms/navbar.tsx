@@ -47,13 +47,15 @@ function Navbar() {
 					scrolled && "shadow-xs",
 				)}
 			>
-				{/* Inset to the sidebar avatar; width is the toolbar's own, not the rail's. */}
-				<a
-					href="https://www.garp.org/"
-					className="flex w-toolbar-logo shrink-0 items-center pl-shell-inset"
-				>
-					<GarpLogoMark className="h-auto w-[125px]" />
-				</a>
+				{/* Inset to the sidebar avatar; width is the toolbar's own, not the rail's.
+				    The slot is a plain div and only the logo is the link — an anchor
+				    spanning the whole slot puts a clickable dead zone between the
+				    wordmark and the first nav trigger. */}
+				<div className="flex w-toolbar-logo shrink-0 items-center pl-shell-inset">
+					<a href="https://www.garp.org/" className="flex items-center">
+						<GarpLogoMark className="h-auto w-[125px]" />
+					</a>
+				</div>
 
 				<NavMegaMenu />
 

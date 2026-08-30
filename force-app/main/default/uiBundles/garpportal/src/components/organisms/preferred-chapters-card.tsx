@@ -142,7 +142,7 @@ function PreferredChaptersCard({
 			<div className="mt-auto pt-1">
 				<CardCta
 					label="View Upcoming Meetings"
-					url="/events?tab=chapter-meetings"
+					url="/events?type=chapter"
 					isExternal={false}
 				/>
 			</div>

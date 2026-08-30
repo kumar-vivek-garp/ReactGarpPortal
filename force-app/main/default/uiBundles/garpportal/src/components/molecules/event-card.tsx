@@ -1,6 +1,3 @@
-import { CalendarDays, MonitorPlay, Users } from "lucide-react"
-import type { LucideIcon } from "lucide-react"
-
 import type { MemberEvent } from "@/api/events"
 import { Badge } from "@/components/atoms/badge"
 import {
@@ -14,10 +11,8 @@ import { AddToCalendarButton } from "@/components/molecules/add-to-calendar-butt
 import { CardCta } from "@/components/molecules/card-cta"
 import { MetaLines } from "@/components/molecules/meta-lines"
 import { StatusBadge } from "@/components/molecules/status-badge"
-import {
-	buildEventPresentation,
-	type EventKind,
-} from "@/lib/events-presentation"
+import { EVENT_TYPE_META } from "@/config/events"
+import { buildEventPresentation } from "@/lib/events-presentation"
 import { cn } from "@/lib/utils"
 
 type EventCardProps = {
@@ -27,15 +22,10 @@ type EventCardProps = {
 	className?: string
 }
 
-const KIND_ICON: Record<EventKind, LucideIcon> = {
-	chapter: Users,
-	webcast: MonitorPlay,
-	event: CalendarDays,
-}
-
 function EventCard({ event, isAttending = false, className }: EventCardProps) {
 	const item = buildEventPresentation(event, { isAttending })
-	const KindIcon = KIND_ICON[item.kind]
+	const typeMeta = EVENT_TYPE_META[item.kind]
+	const KindIcon = typeMeta.icon
 	const showFooter = Boolean(
 		item.eventUrl || item.attendanceUrl || item.hasCalendar,
 	)
@@ -69,7 +59,12 @@ function EventCard({ event, isAttending = false, className }: EventCardProps) {
 
 					<div className="min-w-0 space-y-2">
 						<div className="flex flex-wrap items-center gap-2">
-							<Badge variant="outline" className="rounded-md font-semibold">
+							{/* border-transparent in the chip suppresses the outline border,
+							    matching the program code chips' tinted look. */}
+							<Badge
+								variant="outline"
+								className={cn("rounded-md font-semibold", typeMeta.chip)}
+							>
 								<KindIcon className="size-3" aria-hidden />
 								{item.typeLabel}
 							</Badge>
@@ -93,14 +88,19 @@ function EventCard({ event, isAttending = false, className }: EventCardProps) {
 				</div>
 			</CardHeader>
 
-			<CardContent className="flex-1 px-5">
+			<CardContent className="flex-1 space-y-3 px-5">
+				{item.description ? (
+					<p className="line-clamp-2 text-sm text-muted-foreground">
+						{item.description}
+					</p>
+				) : null}
 				{item.metaLines.length > 0 ? (
 					<MetaLines lines={item.metaLines} />
-				) : (
+				) : !item.description ? (
 					<p className="text-sm text-muted-foreground">
 						Details will be available closer to the date.
 					</p>
-				)}
+				) : null}
 			</CardContent>
 
 			{showFooter ? (

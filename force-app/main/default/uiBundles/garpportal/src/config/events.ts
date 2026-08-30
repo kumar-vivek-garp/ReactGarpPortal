@@ -1,82 +1,85 @@
-import { CalendarCheck, CalendarDays, Sparkles, Users } from "lucide-react"
+import { CalendarDays, MonitorPlay, Users } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { z } from "zod"
 
-export const EVENTS_TABS = [
-	"all",
-	"attending",
-	"chapter-meetings",
-	"featured",
-] as const
+// Type-only: a runtime import here would close a cycle, since
+// events-presentation.ts imports manageAttendanceHref from this file.
+import type { EventKind } from "@/lib/events-presentation"
 
-export type EventsTab = (typeof EVENTS_TABS)[number]
+/**
+ * Values deliberately equal `EventKind`, so applying the filter is
+ * `eventKind(event.eventType) === type` with no mapping layer between.
+ */
+export const EVENT_TYPE_FILTERS = ["event", "webcast", "chapter"] as const
 
-export const DEFAULT_EVENTS_TAB: EventsTab = "all"
+export type EventTypeFilter = (typeof EVENT_TYPE_FILTERS)[number]
 
+/**
+ * The page has no tabs: an "up next" hero plus one grid, narrowed by `?type=`.
+ * Legacy `?tab=` URLs still resolve — zod strips the unknown key silently.
+ * Optional so an absent value stays distinguishable from an explicit one —
+ * absent means "all types", and never appears in the URL.
+ */
 export const eventsSearchSchema = z.object({
-	tab: z.enum(EVENTS_TABS).catch(DEFAULT_EVENTS_TAB),
+	type: z.enum(EVENT_TYPE_FILTERS).optional().catch(undefined),
 })
 
 export type EventsSearch = z.infer<typeof eventsSearchSchema>
 
 
-export type EventBucketMeta = {
+export type EventTypeMeta = {
+	/** Filter-bar label (plural). */
 	label: string
-	heading: string
+	/** Lowercase noun for filtered-empty copy: "No webcasts here". */
+	noun: string
 	icon: LucideIcon
-	emptyTitle: string
-	emptyMessage: string
+	/**
+	 * Tinted chip for the card's type badge. Written out in full because
+	 * Tailwind's scanner cannot see composed class names (see program-brand.ts).
+	 */
+	chip: string
 }
 
 /**
- * One definition per bucket, shared by the tab pills, the "All" section
- * headings and the empty states — the same pattern Programs and Study Materials
- * use, so a bucket looks the same wherever it appears.
+ * One identity per event type, shared by the card badge, the type dropdown
+ * and the filtered-empty state, so a type looks the same wherever it appears.
+ *
+ * Hues are the brand tokens the program map leaves unclaimed: corporate-navy
+ * for flagship GARP events, vermillion's "on-air" warmth for webcasts, and
+ * green's community connotation for chapter meetings. All are /15 washes with
+ * `text-foreground`, so type is never encoded by color alone — the icon and
+ * label carry it too.
  */
-export const EVENT_BUCKET_META: Record<EventsTab, EventBucketMeta> = {
-	all: {
-		label: "All",
-		heading: "All Events",
+export const EVENT_TYPE_META: Record<EventKind, EventTypeMeta> = {
+	event: {
+		label: "Events",
+		noun: "events",
 		icon: CalendarDays,
-		emptyTitle: "No events to show",
-		emptyMessage:
-			"Your registrations and upcoming GARP events will appear here.",
+		chip: "border-transparent bg-corporate-navy/15 text-foreground",
 	},
-	attending: {
-		label: "Attending",
-		heading: "Attending",
-		icon: CalendarCheck,
-		emptyTitle: "You're not attending anything yet",
-		emptyMessage:
-			"Events you register for will show up here so you can keep track of what's next.",
+	webcast: {
+		label: "Webcasts",
+		noun: "webcasts",
+		icon: MonitorPlay,
+		chip: "border-transparent bg-accent-vermillion/15 text-foreground",
 	},
-	"chapter-meetings": {
+	chapter: {
 		label: "Chapter Meetings",
-		heading: "Upcoming Chapter Meetings",
+		noun: "chapter meetings",
 		icon: Users,
-		emptyTitle: "No upcoming chapter meetings",
-		emptyMessage:
-			"Meetings from your chapters will appear here when they are scheduled.",
-	},
-	featured: {
-		label: "Featured Events",
-		heading: "Featured Events",
-		icon: Sparkles,
-		emptyTitle: "No featured events right now",
-		emptyMessage:
-			"Browse the full GARP calendar for conferences, webcasts, and more.",
+		chip: "border-transparent bg-erp-green/15 text-foreground",
 	},
 }
 
-/** Tab bar items — derived from the bucket meta so labels/icons cannot drift. */
-export const EVENT_TAB_ITEMS: Array<{
-	value: EventsTab
+/** Type-filter bar items — broadest first, mirroring the eventKind fallback. */
+export const EVENT_TYPE_FILTER_ITEMS: Array<{
+	value: EventTypeFilter
 	label: string
 	icon: LucideIcon
-}> = EVENTS_TABS.map((value) => ({
+}> = EVENT_TYPE_FILTERS.map((value) => ({
 	value,
-	label: EVENT_BUCKET_META[value].label,
-	icon: EVENT_BUCKET_META[value].icon,
+	label: EVENT_TYPE_META[value].label,
+	icon: EVENT_TYPE_META[value].icon,
 }))
 
 /**

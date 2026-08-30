@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils"
 
 function HelpCenterResources({ className }: { className?: string }) {
 	return (
-		<Card className={cn("h-full gap-4 bg-muted/40 py-5 shadow-none", className)}>
+		<Card className={cn("h-full gap-4 bg-card py-5", className)}>
 			<CardHeader className="gap-1.5">
 				<CardTitle className="font-heading text-lg tracking-wide">
 					Other ways to get help

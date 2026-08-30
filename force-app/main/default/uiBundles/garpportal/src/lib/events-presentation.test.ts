@@ -6,13 +6,14 @@ vi.mock("@/auth/sfdc-env", () => ({
 }))
 
 import type { MemberEvent } from "@/api/events"
-import { EVENT_BUCKET_META, EVENT_TAB_ITEMS } from "@/config/events"
+import { EVENT_TYPE_FILTER_ITEMS, EVENT_TYPE_META } from "@/config/events"
 import {
 	buildEventPresentation,
 	eventDateBadge,
 	eventKind,
 	eventPageUrl,
-	eventStartTimeLabel,
+	eventTimeLabel,
+	eventWeekday,
 	eventTiming,
 } from "./events-presentation"
 
@@ -42,10 +43,11 @@ afterEach(() => {
 
 describe("events config", () => {
 	it("initialises without a temporal dead zone error", () => {
-		// EVENT_TAB_ITEMS is derived from EVENT_BUCKET_META at module scope, so a
-		// declaration-order regression would throw on import rather than fail a type check.
-		expect(EVENT_TAB_ITEMS).toHaveLength(4)
-		expect(EVENT_TAB_ITEMS[0].label).toBe(EVENT_BUCKET_META.all.label)
+		// EVENT_TYPE_FILTER_ITEMS is derived from EVENT_TYPE_META at module scope,
+		// so a declaration-order regression would throw on import rather than fail
+		// a type check.
+		expect(EVENT_TYPE_FILTER_ITEMS).toHaveLength(3)
+		expect(EVENT_TYPE_FILTER_ITEMS[0].label).toBe(EVENT_TYPE_META.event.label)
 	})
 })
 
@@ -88,31 +90,66 @@ describe("eventDateBadge", () => {
 	})
 })
 
-describe("eventStartTimeLabel", () => {
-	it("renders the time in the event's own zone with its abbreviation", () => {
-		const label = eventStartTimeLabel(memberEvent())
-		// September is daylight time in New York.
-		expect(label).toBe("2:00 PM EDT")
+describe("eventTimeLabel", () => {
+	it("renders a range in the event's own zone with its abbreviation", () => {
+		const label = eventTimeLabel(memberEvent())
+		// September is daylight time in New York. ICU picks the separator spacing
+		// and may use narrow no-break spaces, so every gap is matched as \s.
+		expect(label).toMatch(/^2:00\s*–\s*4:00\sPM\sEDT$/)
+	})
+
+	it("falls back to the start alone when the end is missing", () => {
+		expect(
+			eventTimeLabel(memberEvent({ addToCalEndDateTime: null })),
+		).toBe("2:00 PM EDT")
+	})
+
+	it("falls back to the start alone when the end equals the start", () => {
+		expect(
+			eventTimeLabel(
+				memberEvent({ addToCalEndDateTime: "2026-09-28 2:00 PM" }),
+			),
+		).toBe("2:00 PM EDT")
+	})
+
+	it("falls back to the start alone across days — the date line already carries the date", () => {
+		expect(
+			eventTimeLabel(
+				memberEvent({ addToCalEndDateTime: "2026-10-02 5:30 PM" }),
+			),
+		).toBe("2:00 PM EDT")
 	})
 
 	it("respects a different published timezone", () => {
-		const label = eventStartTimeLabel(
+		const label = eventTimeLabel(
 			memberEvent({ addToCalTimeZone: "Europe/London" }),
 		)
-		expect(label).toContain("2:00 PM")
+		expect(label).toContain("2:00")
 		expect(label).not.toContain("EDT")
 	})
 
 	it("returns null when there is no calendar stamp", () => {
 		expect(
-			eventStartTimeLabel(memberEvent({ addToCalStartDateTime: null })),
+			eventTimeLabel(memberEvent({ addToCalStartDateTime: null })),
 		).toBeNull()
 	})
 
 	it("returns null rather than a wrong time for an unparseable stamp", () => {
 		expect(
-			eventStartTimeLabel(memberEvent({ addToCalStartDateTime: "garbage" })),
+			eventTimeLabel(memberEvent({ addToCalStartDateTime: "garbage" })),
 		).toBeNull()
+	})
+})
+
+describe("eventWeekday", () => {
+	it("names the weekday for the hero's date block", () => {
+		// 2026-09-28 is a Monday.
+		expect(eventWeekday("2026-09-28")).toBe("Monday")
+	})
+
+	it("returns null for missing or malformed dates", () => {
+		expect(eventWeekday(null)).toBeNull()
+		expect(eventWeekday("garbage")).toBeNull()
 	})
 })
 
@@ -149,7 +186,7 @@ describe("buildEventPresentation", () => {
 	it("surfaces the start time and location that were previously calendar-only", () => {
 		const result = buildEventPresentation(memberEvent())
 		const when = result.metaLines.find((line) => line.icon === "when")
-		expect(when?.text).toContain("2:00 PM EDT")
+		expect(when?.text).toMatch(/2:00\s*–\s*4:00\sPM\sEDT/)
 		// Location arrives as HTML and must be rendered as plain text.
 		expect(result.metaLines).toContainEqual({
 			icon: "location",
@@ -188,6 +225,26 @@ describe("buildEventPresentation", () => {
 		expect(when?.text).not.toContain("·")
 		expect(result.hasCalendar).toBe(false)
 		expect(result.metaLines.some((l) => l.icon === "location")).toBe(false)
+	})
+
+	it("exposes the calendar description as a plain-text blurb", () => {
+		// The fixture ships it as HTML; it must come out stripped.
+		expect(buildEventPresentation(memberEvent()).description).toBe("Join us")
+	})
+
+	it("drops a blurb that is empty or just the title again", () => {
+		expect(
+			buildEventPresentation(memberEvent({ addToCalDescription: "  " }))
+				.description,
+		).toBeNull()
+		expect(
+			buildEventPresentation(
+				memberEvent({
+					addToCalDescription:
+						"Budapest Chapter: Navigating Market Risks",
+				}),
+			).description,
+		).toBeNull()
 	})
 
 	it("has no meta lines at all when the date is missing", () => {

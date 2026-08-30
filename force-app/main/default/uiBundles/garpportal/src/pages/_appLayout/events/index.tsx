@@ -21,6 +21,6 @@ export const Route = createFileRoute("/_appLayout/events/")({
 })
 
 function Events() {
-	const { tab } = Route.useSearch()
-	return <EventsPanel tab={tab} />
+	const { type } = Route.useSearch()
+	return <EventsPanel type={type} />
 }

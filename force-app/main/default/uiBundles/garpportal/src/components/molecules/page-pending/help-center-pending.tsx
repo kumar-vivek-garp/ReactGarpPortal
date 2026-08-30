@@ -1,5 +1,10 @@
 import { getRouteApi } from "@tanstack/react-router"
 
+import {
+	Card,
+	CardContent,
+	CardHeader,
+} from "@/components/atoms/card"
 import { Skeleton } from "@/components/atoms/skeleton"
 import { Tabs } from "@/components/atoms/tabs"
 import { HelpCenterRequestsSkeleton } from "@/components/molecules/help-center-requests"
@@ -8,7 +13,7 @@ import {
 	HELP_CENTER_SCROLL,
 	HELP_CENTER_SHELL,
 	HelpCenterHeader,
-} from "@/components/organisms/help-center-panel"
+} from "@/components/organisms/help-center-chrome"
 import type { HelpCenterTab } from "@/config/help-center"
 
 const routeApi = getRouteApi("/_appLayout/help-center/")
@@ -32,12 +37,16 @@ function HelpCenterPendingShell({ tab }: { tab: HelpCenterTab }) {
 					<HelpCenterRequestsSkeleton />
 				) : (
 					<div className={GET_HELP_GRID}>
-						<section className="min-w-0 space-y-5">
-							<div className="space-y-2">
-								<Skeleton className="h-6 w-52" />
+						{/* Mirrors the carded form in GetHelpTabBody. */}
+						<Card className="min-w-0 gap-4 bg-card py-5">
+							<CardHeader className="gap-1.5">
+								<div className="flex items-center gap-2">
+									<Skeleton className="size-8 rounded-lg" />
+									<Skeleton className="h-6 w-44" />
+								</div>
 								<Skeleton className="h-3.5 w-full max-w-md" />
-							</div>
-							<div className="space-y-5">
+							</CardHeader>
+							<CardContent className="space-y-5">
 								<div className="space-y-1.5">
 									<Skeleton className="h-3.5 w-16" />
 									<Skeleton className="h-9 w-full rounded-md" />
@@ -49,8 +58,8 @@ function HelpCenterPendingShell({ tab }: { tab: HelpCenterTab }) {
 								<div className="flex justify-end">
 									<Skeleton className="h-9 w-24 rounded-xl" />
 								</div>
-							</div>
-						</section>
+							</CardContent>
+						</Card>
 						<Skeleton className="h-64 w-full rounded-xl lg:h-full" />
 					</div>
 				)}

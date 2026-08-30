@@ -6,12 +6,10 @@ import { Tabs } from "@/components/atoms/tabs"
 import {
 	AccountInformationError,
 	AccountInformationPanel,
-	AccountInformationSkeleton,
 } from "@/components/organisms/account-information-panel"
-import {
-	ContactPreferencesPanel,
-	ContactPreferencesSkeleton,
-} from "@/components/organisms/contact-preferences-panel"
+import { AccountInformationSkeleton } from "@/components/organisms/account-information-skeleton"
+import { ContactPreferencesPanel } from "@/components/organisms/contact-preferences-panel"
+import { ContactPreferencesSkeleton } from "@/components/organisms/contact-preferences-skeleton"
 import { OrderHistoryPanel } from "@/components/organisms/order-history-panel"
 import { useAccount } from "@/hooks/use-account"
 import { useCurrentUser } from "@/hooks/use-current-user"

@@ -446,12 +446,14 @@ function NavMegaMenu() {
 
 			{panelTransitions((style, show) =>
 				show ? (
-					<div
-						ref={panelRef}
-						id={panelId}
-						className="fixed top-20 left-0 z-10"
-						style={{ pointerEvents: openTitle ? "auto" : "none" }}
-					>
+					/*
+					 * The wrapper's own box stays at the viewport's left edge — only the
+					 * child is translated into place — so it must be click-transparent:
+					 * it sits above the scrim, and catching clicks here leaves a dead
+					 * zone below the navbar where the menu refuses to close. Pointer
+					 * events are re-enabled on the panel surface itself.
+					 */
+					<div ref={panelRef} id={panelId} className="pointer-events-none fixed top-20 left-0 z-10">
 						<animated.div
 							className="relative pt-3"
 							style={{ transform: geometry.x.to((x) => `translateX(${x}px)`) }}
@@ -465,6 +467,9 @@ function NavMegaMenu() {
 							<animated.div
 								className="origin-top overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg"
 								style={{
+									// Inline, not a class: an explicit `auto` would defeat the
+									// wrapper's pointer-events-none while the panel fades out.
+									pointerEvents: openTitle ? "auto" : "none",
 									width: geometry.width,
 									height: geometry.height,
 									opacity: style.opacity,

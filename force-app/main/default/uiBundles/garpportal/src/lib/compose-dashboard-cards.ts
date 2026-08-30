@@ -269,7 +269,7 @@ export function composeDashboardCards({
 					rank,
 					title: "My Events",
 					ctaLabel: "See all my events",
-					ctaUrl: "/events?tab=attending",
+					ctaUrl: "/events",
 					meta: { upcomingEvents: upcoming },
 				})
 

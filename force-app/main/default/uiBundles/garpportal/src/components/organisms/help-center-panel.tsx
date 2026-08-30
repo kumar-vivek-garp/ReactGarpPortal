@@ -2,7 +2,13 @@ import { animated, useTransition } from "@react-spring/web"
 import { useNavigate } from "@tanstack/react-router"
 
 import type { CaseSummary } from "@/api/help-center"
-import { PillTabs } from "@/components/atoms/pill-tabs"
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/atoms/card"
 import { Tabs } from "@/components/atoms/tabs"
 import { SupportCaseForm } from "@/components/forms/support-case/support-case-form"
 import { EmptyState } from "@/components/molecules/empty-state"
@@ -12,8 +18,13 @@ import {
 } from "@/components/molecules/help-center-requests"
 import { HelpCenterResources } from "@/components/molecules/help-center-resources"
 import {
+	GET_HELP_GRID,
+	HELP_CENTER_SCROLL,
+	HELP_CENTER_SHELL,
+	HelpCenterHeader,
+} from "@/components/organisms/help-center-chrome"
+import {
 	HELP_CENTER_BUCKET_META,
-	HELP_CENTER_TAB_ITEMS,
 	HELP_REQUESTS_ERROR,
 	type HelpCenterTab,
 } from "@/config/help-center"
@@ -21,52 +32,9 @@ import { useCases } from "@/hooks/use-cases"
 import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
 import { cn } from "@/lib/utils"
 
-/**
- * Full-height panel shell shared with the pending skeleton so the chrome
- * cannot drift — same shape as Programs / My Account / Events.
- */
-const HELP_CENTER_SHELL =
-	"-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
-const HELP_CENTER_SCROLL =
-	"mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-const GET_HELP_GRID =
-	"grid items-start gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)] lg:gap-10"
-
 type HelpCenterPanelProps = {
 	tab: HelpCenterTab
 	className?: string
-}
-
-/** Fixed chrome above the scroll region — also rendered by the pending shell. */
-function HelpCenterHeader({
-	tab,
-	requestCount,
-}: {
-	tab: HelpCenterTab
-	requestCount?: number
-}) {
-	return (
-		<header className="shrink-0 space-y-4">
-			<div>
-				<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
-					Help Center
-				</h1>
-				<p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-					Open a support case with Member Services, track requests you have
-					already raised, or use the links for FAQs and other contact options.
-				</p>
-			</div>
-
-			<PillTabs
-				items={HELP_CENTER_TAB_ITEMS.map((item) =>
-					item.value === "requests" && requestCount !== undefined
-						? { ...item, count: requestCount }
-						: item,
-				)}
-				value={tab}
-			/>
-		</header>
-	)
 }
 
 function GetHelpTabBody({ onSubmitted }: { onSubmitted: () => void }) {
@@ -74,20 +42,26 @@ function GetHelpTabBody({ onSubmitted }: { onSubmitted: () => void }) {
 
 	return (
 		<div className={GET_HELP_GRID}>
-			<section className="min-w-0 space-y-5">
-				<div>
-					<h2 className="flex items-center gap-2 font-heading text-xl font-semibold tracking-wide text-foreground">
-						<Icon className="size-5 shrink-0 text-primary" aria-hidden />
-						{heading}
-					</h2>
-					<p className="mt-1 text-sm text-muted-foreground">
+			{/* Same card grammar as AccountSectionCard so the form surface reads
+			    like the rest of the portal's section cards. */}
+			<Card className="min-w-0 gap-4 bg-card py-5">
+				<CardHeader className="gap-1.5">
+					<CardTitle className="flex min-w-0 items-center gap-2 font-heading text-lg tracking-wide">
+						<span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+							<Icon className="size-4.5" aria-hidden />
+						</span>
+						<span className="min-w-0 truncate">{heading}</span>
+					</CardTitle>
+					<CardDescription>
 						Tell us what you need help with. A representative from Member
 						Services will follow up.
-					</p>
-				</div>
+					</CardDescription>
+				</CardHeader>
 
-				<SupportCaseForm onSubmitted={onSubmitted} />
-			</section>
+				<CardContent>
+					<SupportCaseForm onSubmitted={onSubmitted} />
+				</CardContent>
+			</Card>
 
 			<HelpCenterResources className="lg:h-full" />
 		</div>
@@ -164,10 +138,4 @@ function HelpCenterPanel({ tab, className }: HelpCenterPanelProps) {
 	)
 }
 
-export {
-	GET_HELP_GRID,
-	HELP_CENTER_SCROLL,
-	HELP_CENTER_SHELL,
-	HelpCenterHeader,
-	HelpCenterPanel,
-}
+export { HelpCenterPanel }

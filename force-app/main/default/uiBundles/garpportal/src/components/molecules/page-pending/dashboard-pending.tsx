@@ -13,7 +13,7 @@ function DashboardCardSkeleton({
 	return (
 		<Skeleton
 			className={cn(
-				"flex flex-col overflow-hidden rounded-xl border border-border bg-muted/40",
+				"flex flex-col overflow-hidden rounded-xl border border-primary/20 bg-card shadow-sm",
 			)}
 		>
 			{withImage ? <Skeleton className="h-40 w-full rounded-none" /> : null}

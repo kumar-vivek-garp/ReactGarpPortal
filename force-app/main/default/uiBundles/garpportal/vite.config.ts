@@ -120,6 +120,28 @@ export default defineConfig(() => {
             if (id.includes('node_modules/zod')) {
               return 'zod'
             }
+
+            /**
+             * Always-eager UI runtime: the shell chrome imports all of these
+             * at startup (springs/gestures for nav, Sonner's toaster, Zustand
+             * stores, cn()'s tailwind-merge/clsx/cva). Grouping them adds no
+             * eager bytes — it only moves them out of the entry chunk, which
+             * changes every deploy, into one that stays byte-identical and
+             * cached. Do NOT add Radix or Lucide here: those are only partly
+             * eager, and grouping them would load route-only primitives on
+             * every page.
+             */
+            if (
+              id.includes('node_modules/@react-spring/') ||
+              id.includes('node_modules/@use-gesture/') ||
+              id.includes('node_modules/sonner/') ||
+              id.includes('node_modules/zustand/') ||
+              id.includes('node_modules/tailwind-merge/') ||
+              id.includes('node_modules/clsx/') ||
+              id.includes('node_modules/class-variance-authority/')
+            ) {
+              return 'ui-runtime'
+            }
           },
         },
       },
