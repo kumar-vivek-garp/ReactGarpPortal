@@ -77,3 +77,39 @@ export const REGISTRATION_STICKY_BAR =
  * A skeleton that guesses `h-11` here makes the header jump by 4px on load.
  */
 export const REGISTRATION_BAR_CONTROL_HEIGHT = "h-10"
+
+/*
+ * The bar's two inner groups. On a phone the bar cannot be one line — the
+ * title alone nearly fills the width — so it becomes exactly two rows: the
+ * title group takes the first (back link + title), and the control group takes
+ * the second full-width (total on the left, the submit growing to fill the
+ * rest). From `sm` up both collapse back into the single strip. Shared by
+ * every form *and its skeleton* so the two cannot wrap differently.
+ */
+export const REGISTRATION_BAR_TITLE_GROUP =
+	"flex w-full min-w-0 items-center gap-4 sm:w-auto sm:flex-1"
+
+export const REGISTRATION_BAR_CONTROL_GROUP =
+	"flex w-full items-center gap-4 sm:w-auto"
+
+/** Left-aligned under the title on mobile, right-aligned beside the submit on sm+. */
+export const REGISTRATION_BAR_TOTAL_BLOCK =
+	"flex shrink-0 flex-col items-start justify-center text-left sm:items-end sm:text-right"
+
+/** The submit fills the mobile row; sm+ returns it to its natural width. */
+export const REGISTRATION_BAR_SUBMIT = "flex-1 sm:flex-none"
+
+/** Full title on desktop, one size down on a phone so less of it truncates. */
+export const REGISTRATION_BAR_TITLE =
+	"truncate font-heading text-xl font-semibold sm:text-2xl"
+
+/**
+ * The event forms' main column — single, centred, no rail.
+ *
+ * Events carry at most one fixed fee, so there is no order summary to pin
+ * beside the form; reusing `REGISTRATION_GRID` with a full-width column would
+ * keep a 10-column grid alive for nothing. Shared by the form, its skeleton
+ * and every eligibility/outcome screen so nothing shifts when data lands.
+ */
+export const REGISTRATION_SINGLE_COLUMN =
+	"mx-auto flex w-full max-w-3xl flex-col gap-6"

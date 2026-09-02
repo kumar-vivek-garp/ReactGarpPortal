@@ -383,8 +383,11 @@ export const PUBLIC_REGISTRATION_EXIT = {
  *
  * Every param here can legitimately be all digits (an order number, a team
  * code), so each accepts both shapes and is coerced back to a string.
+ *
+ * Exported for the event registration schema, which carries the same
+ * all-digit-capable params (`oid`, `on`, `checkout_cancelled`).
  */
-const looseSearchString = () =>
+export const looseSearchString = () =>
 	z
 		.union([z.string(), z.number()])
 		.optional()

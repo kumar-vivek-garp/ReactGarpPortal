@@ -19,19 +19,19 @@ function DashboardPanel({ className }: { className?: string }) {
 		return <DashboardPending />
 	}
 
-	if (isError) {
-		return (
-			<p className="text-sm text-muted-foreground">
-				We couldn&apos;t load your dashboard. Please try again later.
-			</p>
-		)
-	}
-
 	const cards = composedCards.filter((card) => !hiddenKeys.includes(card.key))
 
 	return (
-		<PageEnterFade className={cn("space-y-6", className)}>
-			<header className="space-y-2">
+		// Same fixed-height, internally-scrolling shell as programs/events: the
+		// header stays put and only the card area scrolls, so every module
+		// scrolls the same way.
+		<PageEnterFade
+			className={cn(
+				"-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]",
+				className,
+			)}
+		>
+			<header className="shrink-0 space-y-2">
 				<p className="text-xs font-semibold tracking-wider text-primary uppercase">
 					Member home
 				</p>
@@ -43,29 +43,35 @@ function DashboardPanel({ className }: { className?: string }) {
 				</p>
 			</header>
 
-			{cards.length === 0 ? (
-				<div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
-					<p className="font-heading text-lg font-semibold tracking-wide text-foreground">
-						You&apos;re all caught up
+			<div className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+				{isError ? (
+					<p className="text-sm text-muted-foreground">
+						We couldn&apos;t load your dashboard. Please try again later.
 					</p>
-					<p className="mt-2 text-sm text-muted-foreground">
-						There is nothing that needs your attention right now.
-					</p>
-				</div>
-			) : (
-				<StaggerReveal
-					className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3"
-					itemClassName="h-full"
-				>
-					{cards.map((card) => (
-						<DashboardCard
-							key={card.key}
-							card={card}
-							onDismiss={dismiss}
-						/>
-					))}
-				</StaggerReveal>
-			)}
+				) : cards.length === 0 ? (
+					<div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
+						<p className="font-heading text-lg font-semibold tracking-wide text-foreground">
+							You&apos;re all caught up
+						</p>
+						<p className="mt-2 text-sm text-muted-foreground">
+							There is nothing that needs your attention right now.
+						</p>
+					</div>
+				) : (
+					<StaggerReveal
+						className="grid gap-6 pb-2 sm:grid-cols-2 xl:grid-cols-3"
+						itemClassName="h-full"
+					>
+						{cards.map((card) => (
+							<DashboardCard
+								key={card.key}
+								card={card}
+								onDismiss={dismiss}
+							/>
+						))}
+					</StaggerReveal>
+				)}
+			</div>
 		</PageEnterFade>
 	)
 }

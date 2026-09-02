@@ -4,7 +4,4 @@
 		@apply w-full px-shell-gutter;
 	}
 
-	.footer-container {
-		@apply mx-auto w-full max-w-footer;
-	}
 }

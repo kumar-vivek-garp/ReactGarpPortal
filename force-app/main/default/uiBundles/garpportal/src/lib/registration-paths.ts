@@ -1,3 +1,5 @@
+import type { EventVariant } from "@/api/registration/event-types"
+import type { EventRegistrationSearch } from "@/config/event-registration"
 import type { RegistrationSearch } from "@/config/registration"
 
 /**
@@ -41,6 +43,33 @@ export const AFFILIATE_REGISTRATION_ROUTE = "/registration/affiliate" as const
 export const LEGACY_AFFILIATE_ROUTE = "/affiliate" as const
 
 /**
+ * Event registration route pairs, one per object family.
+ *
+ * The public shapes are the LEGACY addresses already in GARP marketing email —
+ * they must not change. Each is a **static** sibling chain
+ * (`registration/webcast/…`) that outranks the dynamic
+ * `/registration/$programType/$regCode` pair, the same specificity mechanism
+ * `AFFILIATE_REGISTRATION_ROUTE` relies on; without that ranking,
+ * `/registration/event/<id>` would fold the event id into `regCode` on the
+ * exam form.
+ *
+ * The member twins carry the kind in the path deliberately: the layout guard
+ * has to translate a guest's member URL into the right public twin, and only
+ * the URL can tell it which object family that is.
+ */
+export const PUBLIC_EVENT_REGISTRATION_ROUTES = {
+	event: "/registration/event/$eventId",
+	webcast: "/registration/webcast/$eventId",
+	chaptermeeting: "/registration/chaptermeeting/$eventId",
+} as const satisfies Record<EventVariant, string>
+
+export const MEMBER_EVENT_REGISTRATION_ROUTES = {
+	event: "/events/event/$eventId/register",
+	webcast: "/events/webcast/$eventId/register",
+	chaptermeeting: "/events/chaptermeeting/$eventId/register",
+} as const satisfies Record<EventVariant, string>
+
+/**
  * True when this load is the payment provider returning.
  *
  * Neither guard may redirect on a payment return. The checkout success URL is
@@ -66,9 +95,39 @@ export function isPaymentReturn(
  * navigated in or out of it: a full-screen flash, and the alert bar refetching
  * on a query that is supposed to be mounted once.
  */
+export type PublicRegistrationFallback =
+	| { kind: "program"; programType: string }
+	| { kind: "event"; variant: EventVariant; eventId: string }
+
 export function publicRegistrationFallback(
 	pathname: string,
-): { programType: string } | null {
-	const match = /^\/programs\/([^/]+)\/register\/?$/.exec(pathname)
-	return match ? { programType: match[1] } : null
+): PublicRegistrationFallback | null {
+	const program = /^\/programs\/([^/]+)\/register\/?$/.exec(pathname)
+	if (program) return { kind: "program", programType: program[1] }
+
+	const event =
+		/^\/events\/(event|webcast|chaptermeeting)\/([^/]+)\/register\/?$/.exec(
+			pathname,
+		)
+	if (event) {
+		return {
+			kind: "event",
+			variant: event[1] as EventVariant,
+			eventId: event[2],
+		}
+	}
+
+	return null
+}
+
+/**
+ * True when this load is the payment provider returning from a CANCELLED
+ * checkout. Suppresses guard redirects for the same reason `isPaymentReturn`
+ * does — this leg carries the `oid` the rollback needs, and a bounce drops it,
+ * leaving an orphaned registration that reports `alreadyRegistered` forever.
+ */
+export function isCheckoutCancelled(
+	search: Pick<EventRegistrationSearch, "checkout_cancelled">,
+): boolean {
+	return search.checkout_cancelled === "1"
 }

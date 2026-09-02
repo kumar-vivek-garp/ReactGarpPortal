@@ -12,6 +12,7 @@ import {
 	eventDateBadge,
 	eventKind,
 	eventPageUrl,
+	eventRegisterPath,
 	eventTimeLabel,
 	eventWeekday,
 	eventTiming,
@@ -137,6 +138,35 @@ describe("eventTimeLabel", () => {
 	it("returns null rather than a wrong time for an unparseable stamp", () => {
 		expect(
 			eventTimeLabel(memberEvent({ addToCalStartDateTime: "garbage" })),
+		).toBeNull()
+	})
+})
+
+describe("eventRegisterPath", () => {
+	it("maps the card kind to the registration route segment", () => {
+		// The one place "chapter" (listing) and "chaptermeeting" (routes) meet.
+		expect(eventRegisterPath("chapter", "a1")).toBe(
+			"/events/chaptermeeting/a1/register",
+		)
+		expect(eventRegisterPath("webcast", "a2")).toBe(
+			"/events/webcast/a2/register",
+		)
+		expect(eventRegisterPath("event", "a3")).toBe("/events/event/a3/register")
+	})
+
+	it("returns null without an id", () => {
+		expect(eventRegisterPath("event", null)).toBeNull()
+		expect(eventRegisterPath("event", "  ")).toBeNull()
+	})
+})
+
+describe("buildEventPresentation register CTA", () => {
+	it("offers registration only for events the member has not booked", () => {
+		expect(buildEventPresentation(memberEvent()).registerUrl).toBe(
+			"/events/chaptermeeting/e1/register",
+		)
+		expect(
+			buildEventPresentation(memberEvent(), { isAttending: true }).registerUrl,
 		).toBeNull()
 	})
 })

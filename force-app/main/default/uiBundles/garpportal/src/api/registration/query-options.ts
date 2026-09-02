@@ -2,6 +2,11 @@ import { queryOptions } from "@tanstack/react-query"
 
 import { fetchAffiliateRegistration } from "@/api/registration/affiliate"
 import {
+	fetchEventOptions,
+	fetchEventRegistration,
+} from "@/api/registration/event-registration"
+import type { EventVariant } from "@/api/registration/event-types"
+import {
 	calculateFees,
 	fetchExamRegistration,
 	fetchRegistrationOptions,
@@ -24,6 +29,11 @@ export const registrationQueryKeys = {
 	fees: (request: unknown) => ["registration", "fees", request] as const,
 	/** Company/school typeahead lists — one static payload per session. */
 	options: ["registration", "options"] as const,
+	/** One event's registration load — variant + id name the record family. */
+	event: (variant: EventVariant, eventId: string) =>
+		["registration", "event", variant, eventId.trim()] as const,
+	/** Country list for the webcast address card — static per session. */
+	eventOptions: ["registration", "event-options"] as const,
 }
 
 /**
@@ -77,6 +87,40 @@ export function examRegistrationQueryOptions(
 		meta: { toastError: true, errorTitle: "Unable to open registration" },
 	})
 }
+
+/* ===================== event registration ===================== */
+
+/**
+ * One event's registration load. Not-found and ineligible both arrive as data
+ * (200 with `event_x: null` / `eligibility`), so an actual error here is
+ * transport or configuration — `retry: false` for the same reason as the
+ * affiliate load above.
+ */
+export function eventRegistrationQueryOptions(
+	variant: EventVariant,
+	eventId: string,
+) {
+	return queryOptions({
+		queryKey: registrationQueryKeys.event(variant, eventId),
+		queryFn: () => fetchEventRegistration(eventId, variant),
+		enabled: Boolean(eventId.trim()),
+		staleTime: 5 * 60_000,
+		retry: false,
+		meta: { toastError: true, errorTitle: "Unable to open registration" },
+	})
+}
+
+/**
+ * Countries for the webcast address card — static reference data. No toast:
+ * the card renders its selects empty-but-usable text fields without it, and
+ * the submit-side validation still holds.
+ */
+export const eventOptionsQueryOptions = queryOptions({
+	queryKey: registrationQueryKeys.eventOptions,
+	queryFn: fetchEventOptions,
+	staleTime: Infinity,
+	retry: false,
+})
 
 /**
  * Prices the cart.

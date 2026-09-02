@@ -51,7 +51,7 @@ function OutstandingValue({ summary }: { summary: OrdersSummary }) {
 		// No currency context exists when nothing is owed, so a bare "0.00" would
 		// be both meaningless and faintly alarming. Say it plainly.
 		return (
-			<p className="font-heading text-3xl text-success-green">Nothing due</p>
+			<p className="font-heading text-2xl text-success-green">Nothing due</p>
 		)
 	}
 
@@ -59,14 +59,14 @@ function OutstandingValue({ summary }: { summary: OrdersSummary }) {
 	// adding them together would fabricate a total that does not exist.
 	if (summary.outstanding.length === 1) {
 		return (
-			<p className="font-heading text-3xl text-destructive">
+			<p className="font-heading text-2xl text-destructive">
 				<AnimatedTotal entry={summary.outstanding[0]} />
 			</p>
 		)
 	}
 
 	return (
-		<div className="flex flex-col gap-0.5">
+		<div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
 			{summary.outstanding.map((entry) => (
 				<p
 					key={entry.currency ?? "none"}
@@ -80,11 +80,29 @@ function OutstandingValue({ summary }: { summary: OrdersSummary }) {
 }
 
 /**
+ * Label + value side by side — the strip stays one text-line tall. On mobile
+ * each stat is its own row, label left and value right.
+ */
+function Stat({ label, value }: { label: string; value: number }) {
+	return (
+		<div className="flex items-center justify-between gap-2.5 sm:flex-1 sm:justify-start">
+			<StatLabel>{label}</StatLabel>
+			<p className="font-heading text-2xl tabular-nums text-foreground">
+				{value}
+			</p>
+		</div>
+	)
+}
+
+/**
  * Balance-forward header for Order History.
  *
  * "What do I owe?" is the question this tab exists to answer, and scanning a
  * list of rows for it is work. Outstanding is payable-only (see
  * `summarizeOrders`) so the figure is money the member can actually settle.
+ *
+ * One slim strip, not stat columns: three short facts don't earn a tall
+ * three-column card, and every pixel it gives up goes to the order list.
  */
 function OrderSummaryBar({ summary, className }: OrderSummaryBarProps) {
 	const showPay = summary.hasPayable && summary.outstanding.length > 0
@@ -92,15 +110,17 @@ function OrderSummaryBar({ summary, className }: OrderSummaryBarProps) {
 	return (
 		<Card
 			className={cn(
-				"grid gap-5 p-5 sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-border",
+				// Mobile stacks the stats as label/value rows; sm+ is one slim strip
+				// of three equal segments.
+				"gap-y-3 px-5 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:py-3.5",
 				className,
 			)}
 		>
-			<div className="space-y-1.5 sm:pr-5">
+			<div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sm:flex-1 sm:justify-start">
 				<StatLabel>Outstanding</StatLabel>
 				<OutstandingValue summary={summary} />
 				{showPay ? (
-					<Button asChild size="sm" className="mt-1 w-fit">
+					<Button asChild size="sm" className="w-full sm:w-auto">
 						<Link
 							to="/my-account"
 							search={{ tab: "order-history", orders: "unpaid" }}
@@ -111,19 +131,13 @@ function OrderSummaryBar({ summary, className }: OrderSummaryBarProps) {
 				) : null}
 			</div>
 
-			<div className="space-y-1.5 sm:px-5">
-				<StatLabel>Unpaid</StatLabel>
-				<p className="font-heading text-3xl tabular-nums text-foreground">
-					{summary.unpaidCount}
-				</p>
-			</div>
+			<div className="hidden w-px self-stretch bg-border sm:block" aria-hidden />
 
-			<div className="space-y-1.5 sm:pl-5">
-				<StatLabel>Orders</StatLabel>
-				<p className="font-heading text-3xl tabular-nums text-foreground">
-					{summary.totalCount}
-				</p>
-			</div>
+			<Stat label="Unpaid" value={summary.unpaidCount} />
+
+			<div className="hidden w-px self-stretch bg-border sm:block" aria-hidden />
+
+			<Stat label="Orders" value={summary.totalCount} />
 		</Card>
 	)
 }

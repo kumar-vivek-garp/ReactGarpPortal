@@ -36,12 +36,21 @@ import { Route as AppLayoutStudyMaterialsArchiveIndexRouteImport } from './pages
 import { Route as PublicFormLayoutRegistrationProgramTypeIndexRouteImport } from './pages/_publicFormLayout/registration/$programType/index'
 import { Route as PublicFormLayoutRegistrationProgramTypeRegCodeRouteImport } from './pages/_publicFormLayout/registration/$programType/$regCode'
 import { Route as PublicFormLayoutRegistrationAffiliateIndexRouteImport } from './pages/_publicFormLayout/registration/affiliate/index'
+import { Route as PublicFormLayoutRegistrationChaptermeetingIndexRouteImport } from './pages/_publicFormLayout/registration/chaptermeeting/index'
+import { Route as PublicFormLayoutRegistrationEventIndexRouteImport } from './pages/_publicFormLayout/registration/event/index'
+import { Route as PublicFormLayoutRegistrationWebcastIndexRouteImport } from './pages/_publicFormLayout/registration/webcast/index'
 import { Route as AppLayoutMyAccountOrdersOrderNumberIndexRouteImport } from './pages/_appLayout/my-account/orders/$orderNumber/index'
 import { Route as AppLayoutProgramsProgramTypeErrataIndexRouteImport } from './pages/_appLayout/programs/$programType/errata/index'
 import { Route as AppLayoutProgramsProgramTypeExamSetupIndexRouteImport } from './pages/_appLayout/programs/$programType/exam-setup/index'
 import { Route as AppLayoutProgramsProgramTypeRegisterIndexRouteImport } from './pages/_appLayout/programs/$programType/register/index'
 import { Route as AppLayoutProgramsProgramTypeResultsIndexRouteImport } from './pages/_appLayout/programs/$programType/results/index'
 import { Route as AppLayoutProgramsProgramTypeWorkExperienceIndexRouteImport } from './pages/_appLayout/programs/$programType/work-experience/index'
+import { Route as PublicFormLayoutRegistrationChaptermeetingEventIdIndexRouteImport } from './pages/_publicFormLayout/registration/chaptermeeting/$eventId/index'
+import { Route as PublicFormLayoutRegistrationEventEventIdIndexRouteImport } from './pages/_publicFormLayout/registration/event/$eventId/index'
+import { Route as PublicFormLayoutRegistrationWebcastEventIdIndexRouteImport } from './pages/_publicFormLayout/registration/webcast/$eventId/index'
+import { Route as AppLayoutEventsChaptermeetingEventIdRegisterIndexRouteImport } from './pages/_appLayout/events/chaptermeeting/$eventId/register/index'
+import { Route as AppLayoutEventsEventEventIdRegisterIndexRouteImport } from './pages/_appLayout/events/event/$eventId/register/index'
+import { Route as AppLayoutEventsWebcastEventIdRegisterIndexRouteImport } from './pages/_appLayout/events/webcast/$eventId/register/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -190,6 +199,24 @@ const PublicFormLayoutRegistrationAffiliateIndexRoute =
     path: '/registration/affiliate/',
     getParentRoute: () => PublicFormLayoutRouteRoute,
   } as any)
+const PublicFormLayoutRegistrationChaptermeetingIndexRoute =
+  PublicFormLayoutRegistrationChaptermeetingIndexRouteImport.update({
+    id: '/registration/chaptermeeting/',
+    path: '/registration/chaptermeeting/',
+    getParentRoute: () => PublicFormLayoutRouteRoute,
+  } as any)
+const PublicFormLayoutRegistrationEventIndexRoute =
+  PublicFormLayoutRegistrationEventIndexRouteImport.update({
+    id: '/registration/event/',
+    path: '/registration/event/',
+    getParentRoute: () => PublicFormLayoutRouteRoute,
+  } as any)
+const PublicFormLayoutRegistrationWebcastIndexRoute =
+  PublicFormLayoutRegistrationWebcastIndexRouteImport.update({
+    id: '/registration/webcast/',
+    path: '/registration/webcast/',
+    getParentRoute: () => PublicFormLayoutRouteRoute,
+  } as any)
 const AppLayoutMyAccountOrdersOrderNumberIndexRoute =
   AppLayoutMyAccountOrdersOrderNumberIndexRouteImport.update({
     id: '/my-account/orders/$orderNumber/',
@@ -226,6 +253,42 @@ const AppLayoutProgramsProgramTypeWorkExperienceIndexRoute =
     path: '/programs/$programType/work-experience/',
     getParentRoute: () => AppLayoutRouteRoute,
   } as any)
+const PublicFormLayoutRegistrationChaptermeetingEventIdIndexRoute =
+  PublicFormLayoutRegistrationChaptermeetingEventIdIndexRouteImport.update({
+    id: '/registration/chaptermeeting/$eventId/',
+    path: '/registration/chaptermeeting/$eventId/',
+    getParentRoute: () => PublicFormLayoutRouteRoute,
+  } as any)
+const PublicFormLayoutRegistrationEventEventIdIndexRoute =
+  PublicFormLayoutRegistrationEventEventIdIndexRouteImport.update({
+    id: '/registration/event/$eventId/',
+    path: '/registration/event/$eventId/',
+    getParentRoute: () => PublicFormLayoutRouteRoute,
+  } as any)
+const PublicFormLayoutRegistrationWebcastEventIdIndexRoute =
+  PublicFormLayoutRegistrationWebcastEventIdIndexRouteImport.update({
+    id: '/registration/webcast/$eventId/',
+    path: '/registration/webcast/$eventId/',
+    getParentRoute: () => PublicFormLayoutRouteRoute,
+  } as any)
+const AppLayoutEventsChaptermeetingEventIdRegisterIndexRoute =
+  AppLayoutEventsChaptermeetingEventIdRegisterIndexRouteImport.update({
+    id: '/events/chaptermeeting/$eventId/register/',
+    path: '/events/chaptermeeting/$eventId/register/',
+    getParentRoute: () => AppLayoutRouteRoute,
+  } as any)
+const AppLayoutEventsEventEventIdRegisterIndexRoute =
+  AppLayoutEventsEventEventIdRegisterIndexRouteImport.update({
+    id: '/events/event/$eventId/register/',
+    path: '/events/event/$eventId/register/',
+    getParentRoute: () => AppLayoutRouteRoute,
+  } as any)
+const AppLayoutEventsWebcastEventIdRegisterIndexRoute =
+  AppLayoutEventsWebcastEventIdRegisterIndexRouteImport.update({
+    id: '/events/webcast/$eventId/register/',
+    path: '/events/webcast/$eventId/register/',
+    getParentRoute: () => AppLayoutRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -252,12 +315,21 @@ export interface FileRoutesByFullPath {
   '/study-materials/archive/': typeof AppLayoutStudyMaterialsArchiveIndexRoute
   '/registration/$programType/': typeof PublicFormLayoutRegistrationProgramTypeIndexRoute
   '/registration/affiliate/': typeof PublicFormLayoutRegistrationAffiliateIndexRoute
+  '/registration/chaptermeeting/': typeof PublicFormLayoutRegistrationChaptermeetingIndexRoute
+  '/registration/event/': typeof PublicFormLayoutRegistrationEventIndexRoute
+  '/registration/webcast/': typeof PublicFormLayoutRegistrationWebcastIndexRoute
   '/my-account/orders/$orderNumber/': typeof AppLayoutMyAccountOrdersOrderNumberIndexRoute
   '/programs/$programType/errata/': typeof AppLayoutProgramsProgramTypeErrataIndexRoute
   '/programs/$programType/exam-setup/': typeof AppLayoutProgramsProgramTypeExamSetupIndexRoute
   '/programs/$programType/register/': typeof AppLayoutProgramsProgramTypeRegisterIndexRoute
   '/programs/$programType/results/': typeof AppLayoutProgramsProgramTypeResultsIndexRoute
   '/programs/$programType/work-experience/': typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
+  '/registration/chaptermeeting/$eventId/': typeof PublicFormLayoutRegistrationChaptermeetingEventIdIndexRoute
+  '/registration/event/$eventId/': typeof PublicFormLayoutRegistrationEventEventIdIndexRoute
+  '/registration/webcast/$eventId/': typeof PublicFormLayoutRegistrationWebcastEventIdIndexRoute
+  '/events/chaptermeeting/$eventId/register/': typeof AppLayoutEventsChaptermeetingEventIdRegisterIndexRoute
+  '/events/event/$eventId/register/': typeof AppLayoutEventsEventEventIdRegisterIndexRoute
+  '/events/webcast/$eventId/register/': typeof AppLayoutEventsWebcastEventIdRegisterIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -284,12 +356,21 @@ export interface FileRoutesByTo {
   '/study-materials/archive': typeof AppLayoutStudyMaterialsArchiveIndexRoute
   '/registration/$programType': typeof PublicFormLayoutRegistrationProgramTypeIndexRoute
   '/registration/affiliate': typeof PublicFormLayoutRegistrationAffiliateIndexRoute
+  '/registration/chaptermeeting': typeof PublicFormLayoutRegistrationChaptermeetingIndexRoute
+  '/registration/event': typeof PublicFormLayoutRegistrationEventIndexRoute
+  '/registration/webcast': typeof PublicFormLayoutRegistrationWebcastIndexRoute
   '/my-account/orders/$orderNumber': typeof AppLayoutMyAccountOrdersOrderNumberIndexRoute
   '/programs/$programType/errata': typeof AppLayoutProgramsProgramTypeErrataIndexRoute
   '/programs/$programType/exam-setup': typeof AppLayoutProgramsProgramTypeExamSetupIndexRoute
   '/programs/$programType/register': typeof AppLayoutProgramsProgramTypeRegisterIndexRoute
   '/programs/$programType/results': typeof AppLayoutProgramsProgramTypeResultsIndexRoute
   '/programs/$programType/work-experience': typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
+  '/registration/chaptermeeting/$eventId': typeof PublicFormLayoutRegistrationChaptermeetingEventIdIndexRoute
+  '/registration/event/$eventId': typeof PublicFormLayoutRegistrationEventEventIdIndexRoute
+  '/registration/webcast/$eventId': typeof PublicFormLayoutRegistrationWebcastEventIdIndexRoute
+  '/events/chaptermeeting/$eventId/register': typeof AppLayoutEventsChaptermeetingEventIdRegisterIndexRoute
+  '/events/event/$eventId/register': typeof AppLayoutEventsEventEventIdRegisterIndexRoute
+  '/events/webcast/$eventId/register': typeof AppLayoutEventsWebcastEventIdRegisterIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -320,12 +401,21 @@ export interface FileRoutesById {
   '/_appLayout/study-materials/archive/': typeof AppLayoutStudyMaterialsArchiveIndexRoute
   '/_publicFormLayout/registration/$programType/': typeof PublicFormLayoutRegistrationProgramTypeIndexRoute
   '/_publicFormLayout/registration/affiliate/': typeof PublicFormLayoutRegistrationAffiliateIndexRoute
+  '/_publicFormLayout/registration/chaptermeeting/': typeof PublicFormLayoutRegistrationChaptermeetingIndexRoute
+  '/_publicFormLayout/registration/event/': typeof PublicFormLayoutRegistrationEventIndexRoute
+  '/_publicFormLayout/registration/webcast/': typeof PublicFormLayoutRegistrationWebcastIndexRoute
   '/_appLayout/my-account/orders/$orderNumber/': typeof AppLayoutMyAccountOrdersOrderNumberIndexRoute
   '/_appLayout/programs/$programType/errata/': typeof AppLayoutProgramsProgramTypeErrataIndexRoute
   '/_appLayout/programs/$programType/exam-setup/': typeof AppLayoutProgramsProgramTypeExamSetupIndexRoute
   '/_appLayout/programs/$programType/register/': typeof AppLayoutProgramsProgramTypeRegisterIndexRoute
   '/_appLayout/programs/$programType/results/': typeof AppLayoutProgramsProgramTypeResultsIndexRoute
   '/_appLayout/programs/$programType/work-experience/': typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
+  '/_publicFormLayout/registration/chaptermeeting/$eventId/': typeof PublicFormLayoutRegistrationChaptermeetingEventIdIndexRoute
+  '/_publicFormLayout/registration/event/$eventId/': typeof PublicFormLayoutRegistrationEventEventIdIndexRoute
+  '/_publicFormLayout/registration/webcast/$eventId/': typeof PublicFormLayoutRegistrationWebcastEventIdIndexRoute
+  '/_appLayout/events/chaptermeeting/$eventId/register/': typeof AppLayoutEventsChaptermeetingEventIdRegisterIndexRoute
+  '/_appLayout/events/event/$eventId/register/': typeof AppLayoutEventsEventEventIdRegisterIndexRoute
+  '/_appLayout/events/webcast/$eventId/register/': typeof AppLayoutEventsWebcastEventIdRegisterIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -354,12 +444,21 @@ export interface FileRouteTypes {
     | '/study-materials/archive/'
     | '/registration/$programType/'
     | '/registration/affiliate/'
+    | '/registration/chaptermeeting/'
+    | '/registration/event/'
+    | '/registration/webcast/'
     | '/my-account/orders/$orderNumber/'
     | '/programs/$programType/errata/'
     | '/programs/$programType/exam-setup/'
     | '/programs/$programType/register/'
     | '/programs/$programType/results/'
     | '/programs/$programType/work-experience/'
+    | '/registration/chaptermeeting/$eventId/'
+    | '/registration/event/$eventId/'
+    | '/registration/webcast/$eventId/'
+    | '/events/chaptermeeting/$eventId/register/'
+    | '/events/event/$eventId/register/'
+    | '/events/webcast/$eventId/register/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -386,12 +485,21 @@ export interface FileRouteTypes {
     | '/study-materials/archive'
     | '/registration/$programType'
     | '/registration/affiliate'
+    | '/registration/chaptermeeting'
+    | '/registration/event'
+    | '/registration/webcast'
     | '/my-account/orders/$orderNumber'
     | '/programs/$programType/errata'
     | '/programs/$programType/exam-setup'
     | '/programs/$programType/register'
     | '/programs/$programType/results'
     | '/programs/$programType/work-experience'
+    | '/registration/chaptermeeting/$eventId'
+    | '/registration/event/$eventId'
+    | '/registration/webcast/$eventId'
+    | '/events/chaptermeeting/$eventId/register'
+    | '/events/event/$eventId/register'
+    | '/events/webcast/$eventId/register'
   id:
     | '__root__'
     | '/'
@@ -421,12 +529,21 @@ export interface FileRouteTypes {
     | '/_appLayout/study-materials/archive/'
     | '/_publicFormLayout/registration/$programType/'
     | '/_publicFormLayout/registration/affiliate/'
+    | '/_publicFormLayout/registration/chaptermeeting/'
+    | '/_publicFormLayout/registration/event/'
+    | '/_publicFormLayout/registration/webcast/'
     | '/_appLayout/my-account/orders/$orderNumber/'
     | '/_appLayout/programs/$programType/errata/'
     | '/_appLayout/programs/$programType/exam-setup/'
     | '/_appLayout/programs/$programType/register/'
     | '/_appLayout/programs/$programType/results/'
     | '/_appLayout/programs/$programType/work-experience/'
+    | '/_publicFormLayout/registration/chaptermeeting/$eventId/'
+    | '/_publicFormLayout/registration/event/$eventId/'
+    | '/_publicFormLayout/registration/webcast/$eventId/'
+    | '/_appLayout/events/chaptermeeting/$eventId/register/'
+    | '/_appLayout/events/event/$eventId/register/'
+    | '/_appLayout/events/webcast/$eventId/register/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -628,6 +745,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicFormLayoutRegistrationAffiliateIndexRouteImport
       parentRoute: typeof PublicFormLayoutRouteRoute
     }
+    '/_publicFormLayout/registration/chaptermeeting/': {
+      id: '/_publicFormLayout/registration/chaptermeeting/'
+      path: '/registration/chaptermeeting'
+      fullPath: '/registration/chaptermeeting/'
+      preLoaderRoute: typeof PublicFormLayoutRegistrationChaptermeetingIndexRouteImport
+      parentRoute: typeof PublicFormLayoutRouteRoute
+    }
+    '/_publicFormLayout/registration/event/': {
+      id: '/_publicFormLayout/registration/event/'
+      path: '/registration/event'
+      fullPath: '/registration/event/'
+      preLoaderRoute: typeof PublicFormLayoutRegistrationEventIndexRouteImport
+      parentRoute: typeof PublicFormLayoutRouteRoute
+    }
+    '/_publicFormLayout/registration/webcast/': {
+      id: '/_publicFormLayout/registration/webcast/'
+      path: '/registration/webcast'
+      fullPath: '/registration/webcast/'
+      preLoaderRoute: typeof PublicFormLayoutRegistrationWebcastIndexRouteImport
+      parentRoute: typeof PublicFormLayoutRouteRoute
+    }
     '/_appLayout/my-account/orders/$orderNumber/': {
       id: '/_appLayout/my-account/orders/$orderNumber/'
       path: '/my-account/orders/$orderNumber'
@@ -670,6 +808,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRouteImport
       parentRoute: typeof AppLayoutRouteRoute
     }
+    '/_publicFormLayout/registration/chaptermeeting/$eventId/': {
+      id: '/_publicFormLayout/registration/chaptermeeting/$eventId/'
+      path: '/registration/chaptermeeting/$eventId'
+      fullPath: '/registration/chaptermeeting/$eventId/'
+      preLoaderRoute: typeof PublicFormLayoutRegistrationChaptermeetingEventIdIndexRouteImport
+      parentRoute: typeof PublicFormLayoutRouteRoute
+    }
+    '/_publicFormLayout/registration/event/$eventId/': {
+      id: '/_publicFormLayout/registration/event/$eventId/'
+      path: '/registration/event/$eventId'
+      fullPath: '/registration/event/$eventId/'
+      preLoaderRoute: typeof PublicFormLayoutRegistrationEventEventIdIndexRouteImport
+      parentRoute: typeof PublicFormLayoutRouteRoute
+    }
+    '/_publicFormLayout/registration/webcast/$eventId/': {
+      id: '/_publicFormLayout/registration/webcast/$eventId/'
+      path: '/registration/webcast/$eventId'
+      fullPath: '/registration/webcast/$eventId/'
+      preLoaderRoute: typeof PublicFormLayoutRegistrationWebcastEventIdIndexRouteImport
+      parentRoute: typeof PublicFormLayoutRouteRoute
+    }
+    '/_appLayout/events/chaptermeeting/$eventId/register/': {
+      id: '/_appLayout/events/chaptermeeting/$eventId/register/'
+      path: '/events/chaptermeeting/$eventId/register'
+      fullPath: '/events/chaptermeeting/$eventId/register/'
+      preLoaderRoute: typeof AppLayoutEventsChaptermeetingEventIdRegisterIndexRouteImport
+      parentRoute: typeof AppLayoutRouteRoute
+    }
+    '/_appLayout/events/event/$eventId/register/': {
+      id: '/_appLayout/events/event/$eventId/register/'
+      path: '/events/event/$eventId/register'
+      fullPath: '/events/event/$eventId/register/'
+      preLoaderRoute: typeof AppLayoutEventsEventEventIdRegisterIndexRouteImport
+      parentRoute: typeof AppLayoutRouteRoute
+    }
+    '/_appLayout/events/webcast/$eventId/register/': {
+      id: '/_appLayout/events/webcast/$eventId/register/'
+      path: '/events/webcast/$eventId/register'
+      fullPath: '/events/webcast/$eventId/register/'
+      preLoaderRoute: typeof AppLayoutEventsWebcastEventIdRegisterIndexRouteImport
+      parentRoute: typeof AppLayoutRouteRoute
+    }
   }
 }
 
@@ -698,6 +878,9 @@ interface AppLayoutRouteRouteChildren {
   AppLayoutProgramsProgramTypeRegisterIndexRoute: typeof AppLayoutProgramsProgramTypeRegisterIndexRoute
   AppLayoutProgramsProgramTypeResultsIndexRoute: typeof AppLayoutProgramsProgramTypeResultsIndexRoute
   AppLayoutProgramsProgramTypeWorkExperienceIndexRoute: typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
+  AppLayoutEventsChaptermeetingEventIdRegisterIndexRoute: typeof AppLayoutEventsChaptermeetingEventIdRegisterIndexRoute
+  AppLayoutEventsEventEventIdRegisterIndexRoute: typeof AppLayoutEventsEventEventIdRegisterIndexRoute
+  AppLayoutEventsWebcastEventIdRegisterIndexRoute: typeof AppLayoutEventsWebcastEventIdRegisterIndexRoute
 }
 
 const AppLayoutRouteRouteChildren: AppLayoutRouteRouteChildren = {
@@ -735,6 +918,12 @@ const AppLayoutRouteRouteChildren: AppLayoutRouteRouteChildren = {
     AppLayoutProgramsProgramTypeResultsIndexRoute,
   AppLayoutProgramsProgramTypeWorkExperienceIndexRoute:
     AppLayoutProgramsProgramTypeWorkExperienceIndexRoute,
+  AppLayoutEventsChaptermeetingEventIdRegisterIndexRoute:
+    AppLayoutEventsChaptermeetingEventIdRegisterIndexRoute,
+  AppLayoutEventsEventEventIdRegisterIndexRoute:
+    AppLayoutEventsEventEventIdRegisterIndexRoute,
+  AppLayoutEventsWebcastEventIdRegisterIndexRoute:
+    AppLayoutEventsWebcastEventIdRegisterIndexRoute,
 }
 
 const AppLayoutRouteRouteWithChildren = AppLayoutRouteRoute._addFileChildren(
@@ -757,6 +946,12 @@ interface PublicFormLayoutRouteRouteChildren {
   PublicFormLayoutRegistrationProgramTypeRegCodeRoute: typeof PublicFormLayoutRegistrationProgramTypeRegCodeRoute
   PublicFormLayoutRegistrationProgramTypeIndexRoute: typeof PublicFormLayoutRegistrationProgramTypeIndexRoute
   PublicFormLayoutRegistrationAffiliateIndexRoute: typeof PublicFormLayoutRegistrationAffiliateIndexRoute
+  PublicFormLayoutRegistrationChaptermeetingIndexRoute: typeof PublicFormLayoutRegistrationChaptermeetingIndexRoute
+  PublicFormLayoutRegistrationEventIndexRoute: typeof PublicFormLayoutRegistrationEventIndexRoute
+  PublicFormLayoutRegistrationWebcastIndexRoute: typeof PublicFormLayoutRegistrationWebcastIndexRoute
+  PublicFormLayoutRegistrationChaptermeetingEventIdIndexRoute: typeof PublicFormLayoutRegistrationChaptermeetingEventIdIndexRoute
+  PublicFormLayoutRegistrationEventEventIdIndexRoute: typeof PublicFormLayoutRegistrationEventEventIdIndexRoute
+  PublicFormLayoutRegistrationWebcastEventIdIndexRoute: typeof PublicFormLayoutRegistrationWebcastEventIdIndexRoute
 }
 
 const PublicFormLayoutRouteRouteChildren: PublicFormLayoutRouteRouteChildren = {
@@ -766,6 +961,18 @@ const PublicFormLayoutRouteRouteChildren: PublicFormLayoutRouteRouteChildren = {
     PublicFormLayoutRegistrationProgramTypeIndexRoute,
   PublicFormLayoutRegistrationAffiliateIndexRoute:
     PublicFormLayoutRegistrationAffiliateIndexRoute,
+  PublicFormLayoutRegistrationChaptermeetingIndexRoute:
+    PublicFormLayoutRegistrationChaptermeetingIndexRoute,
+  PublicFormLayoutRegistrationEventIndexRoute:
+    PublicFormLayoutRegistrationEventIndexRoute,
+  PublicFormLayoutRegistrationWebcastIndexRoute:
+    PublicFormLayoutRegistrationWebcastIndexRoute,
+  PublicFormLayoutRegistrationChaptermeetingEventIdIndexRoute:
+    PublicFormLayoutRegistrationChaptermeetingEventIdIndexRoute,
+  PublicFormLayoutRegistrationEventEventIdIndexRoute:
+    PublicFormLayoutRegistrationEventEventIdIndexRoute,
+  PublicFormLayoutRegistrationWebcastEventIdIndexRoute:
+    PublicFormLayoutRegistrationWebcastEventIdIndexRoute,
 }
 
 const PublicFormLayoutRouteRouteWithChildren =

@@ -27,16 +27,20 @@ function OrderRowSkeleton() {
 function OrderHistorySkeleton() {
 	return (
 		<div className="space-y-6" aria-busy aria-label="Loading orders">
-			{/* Summary bar — three stat columns. */}
-			<Skeleton className="grid gap-5 rounded-xl border border-primary/20 bg-card p-5 sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-border">
-				{[0, 1, 2].map((column) => (
+			{/* Summary bar — one slim strip of inline stats. */}
+			<Skeleton className="flex flex-col gap-y-3 rounded-xl border border-primary/20 bg-card px-5 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:py-3.5">
+				<div className="flex flex-wrap items-center justify-between gap-3 sm:flex-1 sm:justify-start">
+					<Skeleton className="h-3 w-24 rounded-sm" />
+					<Skeleton className="h-7 w-24 rounded-sm" />
+					<Skeleton className="h-8 w-full rounded-xl sm:w-20" />
+				</div>
+				{[0, 1].map((stat) => (
 					<div
-						key={column}
-						className="space-y-1.5 sm:first:pr-5 sm:[&:nth-child(2)]:px-5 sm:last:pl-5"
+						key={stat}
+						className="flex items-center justify-between gap-2.5 sm:flex-1 sm:justify-start"
 					>
-						<Skeleton className="h-3 w-24 rounded-sm" />
-						<Skeleton className="h-8 w-28 rounded-sm" />
-						{column === 0 ? <Skeleton className="h-8 w-20 rounded-xl" /> : null}
+						<Skeleton className="h-3 w-16 rounded-sm" />
+						<Skeleton className="h-7 w-10 rounded-sm" />
 					</div>
 				))}
 			</Skeleton>

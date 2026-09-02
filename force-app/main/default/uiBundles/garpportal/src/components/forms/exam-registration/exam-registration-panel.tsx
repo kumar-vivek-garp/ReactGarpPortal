@@ -8,13 +8,17 @@ import { Button } from "@/components/atoms/button"
 import { Skeleton } from "@/components/atoms/skeleton"
 import { ExamRegistrationForm } from "@/components/forms/exam-registration/exam-registration-form"
 import {
+	REGISTRATION_BAR_CONTROL_GROUP,
 	REGISTRATION_BAR_CONTROL_HEIGHT,
+	REGISTRATION_BAR_SUBMIT,
+	REGISTRATION_BAR_TITLE_GROUP,
 	REGISTRATION_GRID,
 	REGISTRATION_MAIN_COLUMN,
 	REGISTRATION_RAIL_COLUMN,
 	REGISTRATION_STICKY_BAR,
 } from "@/components/forms/registration-shell"
-import { EmptyState, type EmptyStateTone } from "@/components/molecules/empty-state"
+import { type EmptyStateTone } from "@/components/molecules/empty-state"
+import { RegistrationStatusPanel } from "@/components/forms/registration-status-panel"
 import {
 	SkeletonCard,
 	SkeletonField,
@@ -90,21 +94,26 @@ function RegistrationSkeleton({
 
 			{/* The header bar: back link, title, total, submit. */}
 			<div className={REGISTRATION_STICKY_BAR}>
-				<div className="flex min-w-0 items-center gap-4">
+				<div className={REGISTRATION_BAR_TITLE_GROUP}>
 					{hasBackLink ? (
 						<>
-							<Skeleton className="h-6 w-28" />
+							{/* Arrow-only below `sm`, like the real back link. */}
+							<Skeleton className="h-6 w-6 shrink-0 sm:w-28" />
 							<div className="hidden h-6 w-px shrink-0 bg-border sm:block" />
 						</>
 					) : null}
-					<Skeleton className="h-8 w-64" />
+					<Skeleton className="h-8 w-64 max-w-full" />
 				</div>
-				<div className="flex items-center gap-4">
+				<div className={REGISTRATION_BAR_CONTROL_GROUP}>
 					<Skeleton
 						className={cn(REGISTRATION_BAR_CONTROL_HEIGHT, "w-24 shrink-0")}
 					/>
 					<Skeleton
-						className={cn(REGISTRATION_BAR_CONTROL_HEIGHT, "w-40 rounded-xl")}
+						className={cn(
+							REGISTRATION_BAR_CONTROL_HEIGHT,
+							REGISTRATION_BAR_SUBMIT,
+							"rounded-xl sm:w-40",
+						)}
 					/>
 				</div>
 			</div>
@@ -201,7 +210,7 @@ function RegistrationNotice({
 				</h1>
 			)}
 
-			<EmptyState
+			<RegistrationStatusPanel
 				icon={icon}
 				tone={tone}
 				title={title}

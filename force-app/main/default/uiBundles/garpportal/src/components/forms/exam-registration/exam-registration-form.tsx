@@ -21,7 +21,12 @@ import { ConfirmRegistrationDialog } from "@/components/forms/exam-registration/
 import { OstaSection } from "@/components/forms/exam-registration/sections/osta-section"
 import { PaymentSection } from "@/components/forms/exam-registration/sections/payment-section"
 import {
+	REGISTRATION_BAR_CONTROL_GROUP,
 	REGISTRATION_BAR_CONTROL_HEIGHT,
+	REGISTRATION_BAR_SUBMIT,
+	REGISTRATION_BAR_TITLE,
+	REGISTRATION_BAR_TITLE_GROUP,
+	REGISTRATION_BAR_TOTAL_BLOCK,
 	REGISTRATION_GRID,
 	REGISTRATION_MAIN_COLUMN,
 	REGISTRATION_RAIL_COLUMN,
@@ -437,7 +442,7 @@ function ExamRegistrationForm({
 			 * scroll and clips the back arrow.
 			 */}
 			<div className={REGISTRATION_STICKY_BAR}>
-				<div className="flex min-w-0 items-center gap-4">
+				<div className={REGISTRATION_BAR_TITLE_GROUP}>
 					{/*
 					 * No back link for a guest. Every in-app parent is behind the
 					 * session guard, and sending them out to garp.org is not "back" —
@@ -450,6 +455,7 @@ function ExamRegistrationForm({
 							<ProgramsSubpageHeader
 								onNavigateBack={onNavigateBack}
 								back={{ kind: "programs" }}
+								iconOnlyBackOnMobile
 							/>
 							<div
 								className="hidden h-6 w-px shrink-0 bg-border sm:block"
@@ -466,12 +472,12 @@ function ExamRegistrationForm({
 					 * full, so the supporting line a guest used to get underneath it
 					 * would now just repeat the title.
 					 */}
-					<h1 className="truncate font-heading text-2xl font-semibold">
+					<h1 className={REGISTRATION_BAR_TITLE}>
 						<MegaMenuHeadingText heading={program.heading} />
 					</h1>
 				</div>
 
-				<div className="flex items-center gap-4">
+				<div className={REGISTRATION_BAR_CONTROL_GROUP}>
 					{/*
 					 * Always rendered, and pinned to the button's own height, so
 					 * neither the arrival of a price nor a longer figure moves the bar.
@@ -479,7 +485,7 @@ function ExamRegistrationForm({
 					<div
 						className={cn(
 							REGISTRATION_BAR_CONTROL_HEIGHT,
-							"flex shrink-0 flex-col items-end justify-center text-right",
+							REGISTRATION_BAR_TOTAL_BLOCK,
 						)}
 						aria-live="polite"
 						aria-busy={state.isPricing}
@@ -510,6 +516,7 @@ function ExamRegistrationForm({
 					<Button
 						type="submit"
 						size="lg"
+						className={REGISTRATION_BAR_SUBMIT}
 						disabled={isBusy || !canSubmit}
 						title={
 							canSubmit || isBusy

@@ -9,6 +9,8 @@ import { AffiliateOutcome } from "@/components/forms/affiliate/sections/affiliat
 import {
 	REGISTRATION_BAR_CONTROL_HEIGHT,
 	REGISTRATION_GRID,
+	REGISTRATION_BAR_CONTROL_GROUP,
+	REGISTRATION_BAR_SUBMIT,
 	REGISTRATION_MAIN_COLUMN,
 	REGISTRATION_RAIL_COLUMN,
 	REGISTRATION_SCROLL,
@@ -41,13 +43,17 @@ function AffiliateRegistrationSkeleton() {
 
 			{/* The header bar: title, total, submit. */}
 			<div className={REGISTRATION_STICKY_BAR}>
-				<Skeleton className="h-8 w-80" />
-				<div className="flex items-center gap-4">
+				<Skeleton className="h-8 w-80 max-w-full" />
+				<div className={REGISTRATION_BAR_CONTROL_GROUP}>
 					<Skeleton
 						className={cn(REGISTRATION_BAR_CONTROL_HEIGHT, "w-16 shrink-0")}
 					/>
 					<Skeleton
-						className={cn(REGISTRATION_BAR_CONTROL_HEIGHT, "w-32 rounded-xl")}
+						className={cn(
+							REGISTRATION_BAR_CONTROL_HEIGHT,
+							REGISTRATION_BAR_SUBMIT,
+							"rounded-xl sm:w-32",
+						)}
 					/>
 				</div>
 			</div>

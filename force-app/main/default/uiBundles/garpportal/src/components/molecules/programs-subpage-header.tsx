@@ -17,6 +17,7 @@ type ProgramsSubpageBack =
 	  }
 	/** Any other in-app parent — study materials, CPD, and so on. */
 	| { kind: "studyMaterials"; label?: string }
+	| { kind: "events"; label?: string }
 
 type ProgramsSubpageHeaderProps = {
 	/**
@@ -39,6 +40,12 @@ type ProgramsSubpageHeaderProps = {
 	 * changes. Receives the navigation to run once the animation settles.
 	 */
 	onNavigateBack?: (run: () => void) => void
+	/**
+	 * Collapse the back link to its arrow below `sm` — for bars where the
+	 * label's width is better spent on the title beside it. The label stays in
+	 * the accessibility tree (`sr-only`), so the link keeps its name.
+	 */
+	iconOnlyBackOnMobile?: boolean
 }
 
 /**
@@ -52,6 +59,7 @@ function ProgramsSubpageHeader({
 	className,
 	back = { kind: "programs" },
 	onNavigateBack,
+	iconOnlyBackOnMobile = false,
 }: ProgramsSubpageHeaderProps) {
 	const nudge = useSpringNudge({ direction: "backward" })
 	const navigate = useNavigate()
@@ -80,7 +88,16 @@ function ProgramsSubpageHeader({
 					"Program")
 			: back.kind === "studyMaterials"
 				? back.label?.trim() || "Study Materials"
+				: back.kind === "events"
+					? back.label?.trim() || "Events"
 				: "Programs"
+
+	// `sr-only`, not `hidden`: the collapsed link must keep its accessible name.
+	const backLabelNode = iconOnlyBackOnMobile ? (
+		<span className="sr-only sm:not-sr-only">{backLabel}</span>
+	) : (
+		backLabel
+	)
 
 	return (
 		<header className={cn("shrink-0 space-y-3", className)}>
@@ -108,7 +125,7 @@ function ProgramsSubpageHeader({
 						iconPosition="leading"
 						className="gap-3"
 					>
-						{backLabel}
+						{backLabelNode}
 					</SpringNudge>
 				</Link>
 			) : back.kind === "studyMaterials" ? (
@@ -134,7 +151,27 @@ function ProgramsSubpageHeader({
 						iconPosition="leading"
 						className="gap-3"
 					>
-						{backLabel}
+						{backLabelNode}
+					</SpringNudge>
+				</Link>
+			) : back.kind === "events" ? (
+				<Link
+					to="/events"
+					className="inline-flex text-lg font-bold text-foreground hover:text-primary"
+					onClick={(event) =>
+						interceptBack(event, () => {
+							void navigate({ to: "/events" })
+						})
+					}
+					{...nudge.bind}
+				>
+					<SpringNudge
+						nudge={nudge}
+						icon={<ArrowLeft className="size-6" strokeWidth={2.5} />}
+						iconPosition="leading"
+						className="gap-3"
+					>
+						{backLabelNode}
 					</SpringNudge>
 				</Link>
 			) : (
@@ -154,7 +191,7 @@ function ProgramsSubpageHeader({
 						iconPosition="leading"
 						className="gap-3"
 					>
-						Programs
+						{backLabelNode}
 					</SpringNudge>
 				</Link>
 			)}

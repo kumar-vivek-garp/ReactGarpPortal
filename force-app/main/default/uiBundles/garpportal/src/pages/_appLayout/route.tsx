@@ -6,9 +6,11 @@ import { AppRoutePending } from "@/components/molecules/route-pending-fallback"
 import { AppLayoutShell } from "@/components/organisms/app-layout-shell"
 import { LOGIN_PATH } from "@/auth/constants"
 import { getReturnPath } from "@/auth/return-path"
+import type { EventRegistrationSearch } from "@/config/event-registration"
 import type { RegistrationSearch } from "@/config/registration"
 import {
 	publicRegistrationFallback,
+	PUBLIC_EVENT_REGISTRATION_ROUTES,
 	PUBLIC_REGISTRATION_ROUTE,
 } from "@/lib/registration-paths"
 
@@ -36,11 +38,18 @@ type GuardLocation = {
  */
 function redirectUnauthenticated(location: GuardLocation) {
 	const fallback = publicRegistrationFallback(location.pathname)
-	if (fallback) {
+	if (fallback?.kind === "program") {
 		throw redirect({
 			to: PUBLIC_REGISTRATION_ROUTE,
 			params: { programType: fallback.programType },
 			search: location.search as RegistrationSearch,
+		})
+	}
+	if (fallback?.kind === "event") {
+		throw redirect({
+			to: PUBLIC_EVENT_REGISTRATION_ROUTES[fallback.variant],
+			params: { eventId: fallback.eventId },
+			search: location.search as EventRegistrationSearch,
 		})
 	}
 	throw redirect({

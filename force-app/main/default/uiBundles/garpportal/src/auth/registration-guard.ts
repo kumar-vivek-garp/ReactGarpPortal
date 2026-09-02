@@ -3,10 +3,14 @@ import { redirect } from "@tanstack/react-router"
 
 import type { CurrentUser } from "@/api/auth/current-user"
 import { authQueryKeys, ensureCurrentUser } from "@/api/auth/query-options"
+import type { EventVariant } from "@/api/registration/event-types"
 import { DEFAULT_POST_LOGIN_PATH } from "@/auth/constants"
+import type { EventRegistrationSearch } from "@/config/event-registration"
 import type { RegistrationSearch } from "@/config/registration"
 import {
+	isCheckoutCancelled,
 	isPaymentReturn,
+	MEMBER_EVENT_REGISTRATION_ROUTES,
 	MEMBER_REGISTRATION_ROUTE,
 } from "@/lib/registration-paths"
 
@@ -14,6 +18,12 @@ type GuardArgs = {
 	context: { queryClient: QueryClient }
 	params: { programType: string }
 	search: RegistrationSearch
+}
+
+type EventGuardArgs = {
+	context: { queryClient: QueryClient }
+	params: { eventId: string }
+	search: EventRegistrationSearch
 }
 
 /**
@@ -60,6 +70,33 @@ export function redirectMemberToPortalForm({
 			search,
 		})
 	})
+}
+
+/**
+ * Guard factory for the **public event** routes — one per object family,
+ * because the member twin's address carries the kind in its path.
+ *
+ * Suppressed on BOTH checkout return legs, not just the success one: the
+ * cancel return carries the `oid` the rollback depends on, and bouncing it to
+ * the member route drops the param — the abandoned order is then never rolled
+ * back and its orphaned registration row reports `alreadyRegistered` forever.
+ */
+export function redirectMemberToEventForm(variant: EventVariant) {
+	return ({
+		context,
+		params,
+		search,
+	}: EventGuardArgs): void | Promise<void> =>
+		withSession(context.queryClient, (user) => {
+			if (!user || isPaymentReturn(search) || isCheckoutCancelled(search)) {
+				return
+			}
+			throw redirect({
+				to: MEMBER_EVENT_REGISTRATION_ROUTES[variant],
+				params: { eventId: params.eventId },
+				search,
+			})
+		})
 }
 
 /**

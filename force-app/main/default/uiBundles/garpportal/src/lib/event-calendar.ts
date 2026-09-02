@@ -229,7 +229,12 @@ function zonedDateTime(
 	}
 }
 
-function calendarPlainText(html: string | null | undefined): string {
+/**
+ * HTML → readable plain text. Exported for the event registration rail, whose
+ * `description` arrives as the same rich-text HTML the calendar fields carry —
+ * this codebase renders no raw HTML, so tags are stripped, never injected.
+ */
+export function calendarPlainText(html: string | null | undefined): string {
 	if (!html) return ""
 	return html
 		.replace(/<br\s*\/?>/gi, "\n")

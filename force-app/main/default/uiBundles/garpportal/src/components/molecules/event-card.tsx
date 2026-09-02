@@ -27,7 +27,7 @@ function EventCard({ event, isAttending = false, className }: EventCardProps) {
 	const typeMeta = EVENT_TYPE_META[item.kind]
 	const KindIcon = typeMeta.icon
 	const showFooter = Boolean(
-		item.eventUrl || item.attendanceUrl || item.hasCalendar,
+		item.registerUrl || item.eventUrl || item.attendanceUrl || item.hasCalendar,
 	)
 
 	return (
@@ -106,6 +106,11 @@ function EventCard({ event, isAttending = false, className }: EventCardProps) {
 			{showFooter ? (
 				<CardFooter className="mt-auto flex flex-wrap items-center justify-between gap-3 px-5">
 					<div className="flex flex-wrap items-center gap-4">
+						<CardCta
+							label="Register"
+							url={item.registerUrl}
+							isExternal={false}
+						/>
 						<CardCta
 							label="View event"
 							url={item.eventUrl}

@@ -30,6 +30,8 @@ export type EventPresentation = {
 	description: string | null
 	metaLines: MetaLine[]
 	eventUrl: string | null
+	/** In-portal registration route; null for events the member already booked. */
+	registerUrl: string | null
 	attendanceUrl: string | null
 	hasCalendar: boolean
 }
@@ -65,6 +67,23 @@ export function eventKind(type: string | null | undefined): EventKind {
 	if (normalized.includes("chapter")) return "chapter"
 	if (normalized.includes("webcast")) return "webcast"
 	return "event"
+}
+
+/**
+ * The in-portal registration route for one listing row.
+ *
+ * The card kind and the route segment disagree on one name — the listing says
+ * "chapter", the registration routes say "chaptermeeting" — and this is the
+ * one place that mapping lives.
+ */
+export function eventRegisterPath(
+	kind: EventKind,
+	eventId: string | null | undefined,
+): string | null {
+	const id = eventId?.trim()
+	if (!id) return null
+	const segment = kind === "chapter" ? "chaptermeeting" : kind
+	return `/events/${segment}/${id}/register`
 }
 
 export function eventDateBadge(
@@ -191,6 +210,9 @@ export function buildEventPresentation(
 		description,
 		metaLines,
 		eventUrl: eventPageUrl(event.eventURL),
+		registerUrl: options.isAttending
+			? null
+			: eventRegisterPath(kind, event.eventId),
 		attendanceUrl: event.canManageAttendance
 			? manageAttendanceHref(event.eventId)
 			: null,

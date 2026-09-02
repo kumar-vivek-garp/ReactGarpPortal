@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import { animated, useSpring } from "@react-spring/web"
 import { ChevronDown } from "lucide-react"
 
@@ -29,6 +29,12 @@ const REVEAL_SPRING = { mass: 0.9, tension: 300, friction: 30 }
  * curve, never the resting layout.
  */
 const OPEN_MAX_HEIGHT = 2600
+/**
+ * The mobile estimate must cover the accordion with every section expanded —
+ * the outer disclosure keeps clipping at its resting `maxHeight`, so an
+ * under-estimate here would crop sections opened later.
+ */
+const MOBILE_OPEN_MAX_HEIGHT = 4800
 const SECTION_MAX_HEIGHT = 600
 
 function useDisclosure(open: boolean, maxHeight: number, immediate: boolean) {
@@ -111,7 +117,10 @@ function FooterSitemapAccordionItem({
  *
  * - Below `lg` the columns can only stack, and nine expanded sections made the
  *   footer roughly 2,470px — five or six phone screens of links under every
- *   page. Each section collapses into its own card instead.
+ *   page. The same single disclosure hides everything, and what it reveals is
+ *   an accordion — one card per section, each individually collapsible —
+ *   because even the closed cards were half a phone screen of secondary
+ *   marketing links under every page.
  * - At `lg` the columns fit side by side and are short enough to read, but the
  *   grid still cost ~430px on every page in an app whose real navigation is
  *   the top nav and sidebar. Every link here points at www.garp.org, so this
@@ -131,73 +140,100 @@ function FooterSitemapAccordionItem({
  * CSS multi-column — the obvious replacement — balances this particular set
  * badly. See that function for the measurement.
  */
-function FooterSitemap({ sections }: { sections: FooterNavSection[] }) {
+function FooterSitemap({
+	sections,
+	renderBar,
+}: {
+	sections: FooterNavSection[]
+	/**
+	 * Places the trigger pill into a row the footer owns — how the pill shares
+	 * a band with the brand and contact groups instead of costing a band of its
+	 * own. The reveal panel stays a full-width sibling *below* whatever this
+	 * returns, which is the whole reason trigger and panel are split: a panel
+	 * rendered inside the bar's centre cell would be clipped to that cell's
+	 * width. Omitted, the pill gets a centred row to itself.
+	 */
+	renderBar?: (trigger: ReactNode) => ReactNode
+}) {
 	const isDesktop = useMediaQuery(DESKTOP_QUERY)
 	const reduceMotion = usePrefersReducedMotion()
 	const [open, setOpen] = useState(false)
-	const { body, chevron } = useDisclosure(open, OPEN_MAX_HEIGHT, reduceMotion)
+	const { body, chevron } = useDisclosure(
+		open,
+		isDesktop ? OPEN_MAX_HEIGHT : MOBILE_OPEN_MAX_HEIGHT,
+		reduceMotion,
+	)
 	const { bind, style } = useSpringPress()
 	const columns = useMemo(
 		() => packFooterColumns(sections, SITEMAP_COLUMNS),
 		[sections],
 	)
 
-	if (!isDesktop) {
-		return (
-			<nav aria-label="Site map" className="flex flex-col gap-2">
-				{sections.map((section) => (
-					<FooterSitemapAccordionItem
-						key={section.key}
-						section={section}
-						immediate={reduceMotion}
-					/>
-				))}
-			</nav>
-		)
-	}
+	/* One trigger at every width — the sitemap is closed by default on mobile
+	   too, where nine always-visible cards were still half a screen of
+	   secondary marketing links. */
+	const trigger = (
+		<animated.button
+			type="button"
+			{...bind}
+			style={style}
+			onClick={() => setOpen((wasOpen) => !wasOpen)}
+			aria-expanded={open}
+			aria-controls="footer-sitemap-content"
+			className="flex cursor-pointer items-center gap-3 rounded-full border border-border bg-card/60 py-1.5 pr-1.5 pl-5 font-sans text-section font-bold text-foreground hover:bg-card"
+		>
+			{open ? "Hide site map" : "Site map"}
+			<DisclosureChevron style={chevron} />
+		</animated.button>
+	)
 
 	return (
-		<nav aria-label="Site map">
-			<div className="flex justify-center">
-				<animated.button
-					type="button"
-					{...bind}
-					style={style}
-					onClick={() => setOpen((wasOpen) => !wasOpen)}
-					aria-expanded={open}
-					aria-controls="footer-sitemap-columns"
-					className="flex cursor-pointer items-center gap-3 rounded-full border border-border bg-card/60 py-1.5 pr-1.5 pl-5 font-sans text-section font-bold text-foreground hover:bg-card"
-				>
-					{open ? "Hide site map" : "Site map"}
-					<DisclosureChevron style={chevron} />
-				</animated.button>
-			</div>
+		<>
+			{renderBar ? (
+				renderBar(trigger)
+			) : (
+				<div className="flex justify-center">{trigger}</div>
+			)}
 
 			<animated.div
-				id="footer-sitemap-columns"
+				id="footer-sitemap-content"
 				className="overflow-hidden"
 				style={body}
 			>
-				{/*
-				 * Keyed on `open` so the trail replays on every reveal. Left
-				 * unkeyed it would run once, on the first render — while the
-				 * panel is still closed — and every actual opening after that
-				 * would be a plain curtain.
-				 */}
-				<StaggerReveal
-					key={open ? "open" : "closed"}
-					className="grid grid-cols-5 items-start gap-x-6 pt-8 pb-2"
-				>
-					{columns.map((column) => (
-						<div key={column[0].key} className="flex flex-col gap-7">
-							{column.map((section) => (
-								<FooterNavSectionView key={section.key} section={section} />
+				<nav aria-label="Site map">
+					{isDesktop ? (
+						/*
+						 * Keyed on `open` so the trail replays on every reveal. Left
+						 * unkeyed it would run once, on the first render — while the
+						 * panel is still closed — and every actual opening after that
+						 * would be a plain curtain.
+						 */
+						<StaggerReveal
+							key={open ? "open" : "closed"}
+							className="grid grid-cols-5 items-start gap-x-6 pt-8 pb-2"
+						>
+							{columns.map((column) => (
+								<div key={column[0].key} className="flex flex-col gap-7">
+									{column.map((section) => (
+										<FooterNavSectionView key={section.key} section={section} />
+									))}
+								</div>
+							))}
+						</StaggerReveal>
+					) : (
+						<div className="flex flex-col gap-2 pt-6 pb-2">
+							{sections.map((section) => (
+								<FooterSitemapAccordionItem
+									key={section.key}
+									section={section}
+									immediate={reduceMotion}
+								/>
 							))}
 						</div>
-					))}
-				</StaggerReveal>
+					)}
+				</nav>
 			</animated.div>
-		</nav>
+		</>
 	)
 }
 

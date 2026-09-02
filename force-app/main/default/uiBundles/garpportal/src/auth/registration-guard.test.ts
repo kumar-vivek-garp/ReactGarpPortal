@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest"
 
 import type { CurrentUser } from "@/api/auth/current-user"
 import { authQueryKeys } from "@/api/auth/query-options"
+import type { EventRegistrationSearch } from "@/config/event-registration"
 import type { RegistrationSearch } from "@/config/registration"
 import {
 	redirectMemberToDashboard,
+	redirectMemberToEventForm,
 	redirectMemberToPortalForm,
 } from "@/auth/registration-guard"
 import {
@@ -74,12 +76,26 @@ function run(
 describe("publicRegistrationFallback", () => {
 	it("offers the public form for a member registration path", () => {
 		expect(publicRegistrationFallback("/programs/frm/register")).toEqual({
+			kind: "program",
 			programType: "frm",
 		})
 		// Trailing slash is the same route.
 		expect(publicRegistrationFallback("/programs/scr/register/")).toEqual({
+			kind: "program",
 			programType: "scr",
 		})
+	})
+
+	it("offers the public twin for each member event registration path", () => {
+		expect(
+			publicRegistrationFallback("/events/webcast/a2h5d000/register"),
+		).toEqual({ kind: "event", variant: "webcast", eventId: "a2h5d000" })
+		expect(
+			publicRegistrationFallback("/events/chaptermeeting/a2h5d001/register/"),
+		).toEqual({ kind: "event", variant: "chaptermeeting", eventId: "a2h5d001" })
+		expect(
+			publicRegistrationFallback("/events/event/a2h5d002/register"),
+		).toEqual({ kind: "event", variant: "event", eventId: "a2h5d002" })
 	})
 
 	it("offers nothing for any other member path", () => {
@@ -93,6 +109,9 @@ describe("publicRegistrationFallback", () => {
 			"/dashboard",
 			"/registration/frm",
 			"/programs/frm/register/extra",
+			"/events",
+			"/events/webcast/a2h5d000",
+			"/events/seminar/a2h5d000/register",
 		]) {
 			expect(publicRegistrationFallback(path)).toBeNull()
 		}
@@ -139,6 +158,65 @@ describe("the two directions together", () => {
 	})
 })
 
+describe("redirectMemberToEventForm (public event routes)", () => {
+	const NO_EVENT_SEARCH: EventRegistrationSearch = {
+		stripe_return: undefined,
+		oid: undefined,
+		on: undefined,
+		checkout_cancelled: undefined,
+	}
+
+	function runEvent(
+		variant: "event" | "webcast" | "chaptermeeting",
+		user: CurrentUser | null,
+		search: Partial<EventRegistrationSearch> = {},
+	) {
+		try {
+			redirectMemberToEventForm(variant)({
+				context: { queryClient: clientWith(user) },
+				params: { eventId: "a2h5d000" },
+				search: { ...NO_EVENT_SEARCH, ...search },
+			})
+		} catch (thrown) {
+			return (thrown as { options: RedirectTarget }).options
+		}
+		return null
+	}
+
+	it("sends a signed-in member to the matching member twin", () => {
+		expect(runEvent("event", MEMBER)?.to).toBe(
+			"/events/event/$eventId/register",
+		)
+		expect(runEvent("webcast", MEMBER)?.to).toBe(
+			"/events/webcast/$eventId/register",
+		)
+		expect(runEvent("chaptermeeting", MEMBER)?.to).toBe(
+			"/events/chaptermeeting/$eventId/register",
+		)
+		expect(runEvent("webcast", MEMBER)?.params).toEqual({
+			eventId: "a2h5d000",
+		})
+	})
+
+	it("leaves a guest on the public form", () => {
+		expect(runEvent("webcast", null)).toBeNull()
+	})
+
+	it("never redirects a payment return, even for a member", () => {
+		expect(
+			runEvent("webcast", MEMBER, { stripe_return: "1", oid: "801", on: "12345" }),
+		).toBeNull()
+	})
+
+	it("never redirects a cancelled-checkout return either", () => {
+		// This leg carries the `oid` the rollback needs; a bounce drops it and
+		// the orphaned order reports alreadyRegistered forever.
+		expect(
+			runEvent("event", MEMBER, { checkout_cancelled: "1", oid: "801" }),
+		).toBeNull()
+	})
+})
+
 describe("redirectMemberToDashboard (affiliate route)", () => {
 	function runAffiliate(user: CurrentUser | null) {
 		try {
@@ -176,6 +254,7 @@ describe("the affiliate route is static", () => {
 		expect(AFFILIATE_REGISTRATION_ROUTE).toBe("/registration/affiliate")
 		expect(publicRegistrationFallback(AFFILIATE_REGISTRATION_ROUTE)).toBeNull()
 		expect(publicRegistrationFallback("/programs/affiliate/register")).toEqual({
+			kind: "program",
 			programType: "affiliate",
 		})
 	})
@@ -189,6 +268,7 @@ describe("legacy slug aliases survive both guards", () => {
 		const target = run(MEMBER, {}, "rai")
 		expect(target?.params).toEqual({ programType: "rai" })
 		expect(publicRegistrationFallback("/programs/rai/register")).toEqual({
+			kind: "program",
 			programType: "rai",
 		})
 	})

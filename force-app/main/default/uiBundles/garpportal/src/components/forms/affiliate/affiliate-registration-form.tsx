@@ -11,7 +11,11 @@ import {
 	type AffiliateFormValues,
 } from "@/components/forms/affiliate/affiliate-form-values"
 import {
+	REGISTRATION_BAR_CONTROL_GROUP,
 	REGISTRATION_BAR_CONTROL_HEIGHT,
+	REGISTRATION_BAR_SUBMIT,
+	REGISTRATION_BAR_TITLE,
+	REGISTRATION_BAR_TOTAL_BLOCK,
 	REGISTRATION_GRID,
 	REGISTRATION_MAIN_COLUMN,
 	REGISTRATION_RAIL_COLUMN,
@@ -184,14 +188,19 @@ function AffiliateRegistrationForm({
 				 * An `h1`, not an `h2`: this is the page's only heading, and the page
 				 * is linked from marketing email and from the Login card.
 				 */}
-				<h1 className="min-w-0 truncate font-heading text-2xl font-semibold">
+				<h1
+					className={cn(
+						"w-full min-w-0 sm:w-auto sm:flex-1",
+						REGISTRATION_BAR_TITLE,
+					)}
+				>
 					<span className="text-garp-cyan">
 						{AFFILIATE_REGISTRATION_HEADING.highlight}
 					</span>
 					{AFFILIATE_REGISTRATION_HEADING.suffix}
 				</h1>
 
-				<div className="flex items-center gap-4">
+				<div className={REGISTRATION_BAR_CONTROL_GROUP}>
 					{/*
 					 * Pinned to the button's own height, matching the exam forms' total
 					 * block, so the two bars line up. Nothing arrives late here — the
@@ -200,7 +209,7 @@ function AffiliateRegistrationForm({
 					<div
 						className={cn(
 							REGISTRATION_BAR_CONTROL_HEIGHT,
-							"flex shrink-0 flex-col items-end justify-center text-right",
+							REGISTRATION_BAR_TOTAL_BLOCK,
 						)}
 					>
 						<p className="text-caption leading-none text-muted-foreground">
@@ -221,6 +230,7 @@ function AffiliateRegistrationForm({
 					<Button
 						type="submit"
 						size="lg"
+						className={REGISTRATION_BAR_SUBMIT}
 						disabled={isBusy || !isValid}
 						title={
 							isValid || isBusy

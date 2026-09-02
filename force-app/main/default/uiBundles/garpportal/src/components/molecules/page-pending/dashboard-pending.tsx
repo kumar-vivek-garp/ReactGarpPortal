@@ -61,19 +61,31 @@ function DashboardCardSkeleton({
 	)
 }
 
-/** Matches dashboard panel React Query loading UI. */
+/** Matches dashboard panel React Query loading UI — real header, skeleton cards. */
 function DashboardPending() {
 	return (
-		<div className="space-y-6" aria-busy aria-label="Loading dashboard">
-			<div className="space-y-2">
-				<Skeleton className="h-3 w-24" />
-				<Skeleton className="h-9 w-48 max-w-full" />
-				<Skeleton className="h-4 w-80 max-w-full" />
-			</div>
-			<div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-				<DashboardCardSkeleton body="lines" />
-				<DashboardCardSkeleton body="lines" />
-				<DashboardCardSkeleton body="search" />
+		<div
+			className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
+			aria-busy
+			aria-label="Loading dashboard"
+		>
+			<header className="shrink-0 space-y-2">
+				<p className="text-xs font-semibold tracking-wider text-primary uppercase">
+					Member home
+				</p>
+				<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+					Dashboard
+				</h1>
+				<p className="max-w-2xl text-sm text-muted-foreground">
+					Your next steps, programs, and events — in one place.
+				</p>
+			</header>
+			<div className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+				<div className="grid gap-6 pb-2 sm:grid-cols-2 xl:grid-cols-3">
+					<DashboardCardSkeleton body="lines" />
+					<DashboardCardSkeleton body="lines" />
+					<DashboardCardSkeleton body="search" />
+				</div>
 			</div>
 		</div>
 	)

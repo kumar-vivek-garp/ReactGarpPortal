@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
     <classAccesses>
+        <apexClass>GARP_ExamReg_API</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
+    <classAccesses>
         <apexClass>GARP_Portal_API</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -18,10 +22,6 @@
     </classAccesses>
     <classAccesses>
         <apexClass>GARP_Portal_DashboardService</apexClass>
-        <enabled>true</enabled>
-    </classAccesses>
-    <classAccesses>
-        <apexClass>GARP_Portal_DismissCardService</apexClass>
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
@@ -65,10 +65,6 @@
         <enabled>true</enabled>
     </classAccesses>
     <classAccesses>
-        <apexClass>GARP_Portal_SubmitCaseService</apexClass>
-        <enabled>true</enabled>
-    </classAccesses>
-    <classAccesses>
         <apexClass>GARP_Portal_Util</apexClass>
         <enabled>true</enabled>
     </classAccesses>
@@ -76,6 +72,10 @@
         <enabled>true</enabled>
         <name>GARP_Portal_Program__mdt</name>
     </customMetadataTypeAccesses>
+    <customPermissions>
+        <enabled>true</enabled>
+        <name>ARPM_Program_Registration</name>
+    </customPermissions>
     <description>Apex Class Access the React member portal needs. Without this (or the same entry on the community member profile), /services/apexrest/memberportal/* returns 403 for signed-in members.</description>
     <fieldPermissions>
         <editable>true</editable>
