@@ -1,16 +1,17 @@
-import { render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import type { ReactNode } from "react"
 
 // The panel only needs a link renderer and the history pair from the router —
 // mocking them keeps the test free of a full memory-router harness.
 const canGoBack = vi.hoisted(() => ({ value: true }))
+const historyBack = vi.hoisted(() => vi.fn())
 vi.mock("@tanstack/react-router", () => ({
 	Link: ({ to, children }: { to: unknown; children: ReactNode }) => (
 		<a href={String(to)}>{children}</a>
 	),
 	useCanGoBack: () => canGoBack.value,
-	useRouter: () => ({ history: { back: vi.fn() } }),
+	useRouter: () => ({ history: { back: historyBack } }),
 }))
 
 import { NotFoundPanel } from "./not-found-panel"
@@ -34,6 +35,15 @@ describe("NotFoundPanel", () => {
 		).toHaveAttribute("href", "/dashboard")
 		expect(screen.getByRole("button", { name: "Go back" })).toBeInTheDocument()
 		expect(screen.queryByRole("link", { name: /sign in/i })).toBeNull()
+	})
+
+	it("walks the history back when Go back is pressed", () => {
+		historyBack.mockClear()
+		render(<NotFoundPanel variant="member" />)
+
+		fireEvent.click(screen.getByRole("button", { name: "Go back" }))
+
+		expect(historyBack).toHaveBeenCalledTimes(1)
 	})
 
 	it("hides Go back when there is no history to go back to", () => {

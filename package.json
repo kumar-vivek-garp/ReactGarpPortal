@@ -23,7 +23,14 @@
     "setup": "node scripts/org-setup.mjs",
     "dev:sf": "sf ui-bundle dev --target-org devjuly25a --name garpportal",
     "local-sf": "node tools/local-dev/server.mjs",
-    "local-ui": "npm run dev --prefix force-app/main/default/uiBundles/garpportal"
+    "local-ui": "npm run dev --prefix force-app/main/default/uiBundles/garpportal",
+    "ui:test": "npm run test:run --prefix force-app/main/default/uiBundles/garpportal",
+    "ui:test:watch": "npm run test --prefix force-app/main/default/uiBundles/garpportal",
+    "ui:test:coverage": "npm run test:coverage --prefix force-app/main/default/uiBundles/garpportal",
+    "ui:e2e": "npm run e2e --prefix force-app/main/default/uiBundles/garpportal",
+    "ui:e2e:ui": "npm run e2e:ui --prefix force-app/main/default/uiBundles/garpportal",
+    "ui:e2e:headed": "npm run e2e:headed --prefix force-app/main/default/uiBundles/garpportal",
+    "ui:e2e:report": "npm run e2e:report --prefix force-app/main/default/uiBundles/garpportal"
   },
   "devDependencies": {
     "@lwc/eslint-plugin-lwc": "^3.3.0",

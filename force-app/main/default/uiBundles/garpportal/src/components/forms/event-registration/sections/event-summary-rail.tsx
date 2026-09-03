@@ -112,12 +112,12 @@ function EventSummaryRail({ event, rates }: EventSummaryRailProps) {
 						</span>
 					</div>
 					{event.cancellationPolicy?.trim() ? (
-						<p className="text-caption leading-relaxed text-muted-foreground">
+						<p className="text-caption leading-relaxed whitespace-pre-line text-muted-foreground">
 							{event.cancellationPolicy.trim()}
 						</p>
 					) : null}
 					{event.paymentPolicy?.trim() && amountDue > 0 ? (
-						<p className="text-caption leading-relaxed text-muted-foreground">
+						<p className="text-caption leading-relaxed whitespace-pre-line text-muted-foreground">
 							{event.paymentPolicy.trim()}
 						</p>
 					) : null}

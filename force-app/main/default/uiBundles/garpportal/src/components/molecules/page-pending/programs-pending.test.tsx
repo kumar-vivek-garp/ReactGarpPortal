@@ -1,7 +1,10 @@
+import { createFileRoute } from "@tanstack/react-router"
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
-import { ProgramsContentSkeleton } from "./programs-pending"
+import { renderFileRoute } from "@/testing/file-route"
+
+import { ProgramsContentSkeleton, ProgramsPending } from "./programs-pending"
 
 /**
  * The skeleton exists to hold the same geometry as the loaded page. These
@@ -66,5 +69,29 @@ describe("ProgramsContentSkeleton — default", () => {
 	it("defaults to the grid layout", () => {
 		render(<ProgramsContentSkeleton />)
 		expect(screen.getByLabelText("Loading programs")).toHaveClass("grid")
+	})
+})
+
+describe("ProgramsPending — route wrapper", () => {
+	it("reads the destination view so the skeleton matches what lands", async () => {
+		const ROUTE_ID = "/_appLayout/programs/"
+		const route = createFileRoute(ROUTE_ID)({
+			validateSearch: (search: Record<string, unknown>) => search,
+			component: ProgramsPending,
+		})
+		await renderFileRoute(route, {
+			id: ROUTE_ID,
+			path: "/programs/",
+			initialEntries: ["/programs/?view=list"],
+		})
+
+		expect(
+			screen.getByRole("heading", { level: 1, name: "My Programs" }),
+		).toBeInTheDocument()
+		expect(screen.getByLabelText("Loading programs")).toHaveClass(
+			"flex",
+			"flex-col",
+			"gap-3",
+		)
 	})
 })

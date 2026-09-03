@@ -26,13 +26,13 @@ export function getPostLogoutReturnUrl(): string {
  * path 404s. Do not use `startURL` — on this shared domain it forwards through
  * My GARP’s `/Login`.
  */
-function buildExperienceLogoutUrl(retURL: string): string {
+export function buildExperienceLogoutUrl(retURL: string): string {
 	const url = new URL(LOGOUT_URL, window.location.origin)
 	url.searchParams.set("retURL", retURL)
 	return `${url.pathname}${url.search}`
 }
 
-function resolveReturnUrl(override?: string): string {
+export function resolveReturnUrl(override?: string): string {
 	if (!override) return getPostLogoutReturnUrl()
 	if (override.startsWith("https://") || override.startsWith("http://")) {
 		return override
@@ -49,6 +49,8 @@ function resolveReturnUrl(override?: string): string {
  * - Experience: `/secur/logout.jsp?retURL=<absolute public site home>`.
  * - Local Vite: clear client auth cache / local flag and go to Login.
  */
+/* v8 ignore start -- navigation glue: ends in window.location.replace, which
+   jsdom exposes as LegacyUnforgeable (unspyable); verified by e2e smoke. */
 export function logoutToSalesforce(returnUrl?: string) {
 	queryClient.removeQueries({ queryKey: authQueryKeys.all })
 
@@ -61,3 +63,4 @@ export function logoutToSalesforce(returnUrl?: string) {
 
 	window.location.replace(buildExperienceLogoutUrl(resolveReturnUrl(returnUrl)))
 }
+/* v8 ignore stop */

@@ -87,10 +87,10 @@ export type ExamSubmitOutcome =
 	| { kind: "redirecting" }
 
 /** Three tries, ~1.5s apart — the webhook is usually quicker than that. */
-const STATUS_POLL_ATTEMPTS = 3
-const STATUS_POLL_DELAY_MS = 1500
+export const STATUS_POLL_ATTEMPTS = 3
+export const STATUS_POLL_DELAY_MS = 1500
 
-async function pollPaymentStatus(orderId: string): Promise<void> {
+export async function pollPaymentStatus(orderId: string): Promise<void> {
 	for (let attempt = 0; attempt < STATUS_POLL_ATTEMPTS; attempt += 1) {
 		const status = await fetchExamPaymentStatus(orderId)
 		if (status.isOrderRolledback === true) {

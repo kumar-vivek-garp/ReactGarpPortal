@@ -11,6 +11,18 @@ Used for SFDX metadata tooling. Scripts here target LWC/Aura, not the React app.
 | `npm run test` | LWC Jest (passWithNoTests) |
 | `npm run prettier` | Format metadata files |
 | `npm run prettier:verify` | Check Prettier |
+| `npm run ui:test` | UI Bundle Vitest suite, one-shot (delegates via `--prefix`) |
+| `npm run ui:test:watch` | Same suite in watch mode |
+| `npm run ui:test:coverage` | Suite + coverage report (ratchets enforced) |
+| `npm run ui:e2e` | Build `dist/` for static serving + Playwright smoke |
+| `npm run ui:e2e:ui` | Same, in Playwright's live UI mode |
+| `npm run ui:e2e:headed` | Same, watching real Chrome windows |
+| `npm run ui:e2e:report` | Open the last Playwright HTML report |
+
+The `ui:*` rows only *delegate* into the UI Bundle package (npm chdirs there
+via `--prefix`) — they don't loosen the rule below. `ui:e2e*` always rebuild
+via `build:e2e` first, because a plain `build` leaves a `dist/` the static
+e2e server can't serve.
 
 **One-time org setup:** `node scripts/org-setup.mjs --target-org <alias>` runs login, deploy, permset assignment, data import, GraphQL schema/codegen, UI Bundle build, and optionally the dev server. Use `--help` for all flags.
 

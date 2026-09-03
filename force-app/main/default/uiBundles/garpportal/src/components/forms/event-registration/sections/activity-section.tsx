@@ -42,7 +42,7 @@ function ActivitySection({ register, control, event }: ActivitySectionProps) {
 					{event.rsvpActivityName}
 				</CardTitle>
 				{event.rsvpActivityDetails ? (
-					<p className="text-body text-muted-foreground">
+					<p className="text-body whitespace-pre-line text-muted-foreground">
 						{event.rsvpActivityDetails}
 					</p>
 				) : null}

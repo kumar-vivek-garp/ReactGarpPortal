@@ -9,6 +9,7 @@ import type {
 	EventRegistrationLoad,
 	EventVariant,
 } from "@/api/registration/event-types"
+import { plainTextEventView } from "@/lib/event-view-text"
 
 /**
  * Event / webcast / chapter-meeting registration endpoints.
@@ -36,11 +37,11 @@ function eventPath(
  * back 200 with `event_x: null`, so the caller renders not-found rather than
  * an error. Ineligibility likewise arrives as data (`eligibility`).
  */
-export function fetchEventRegistration(
+export async function fetchEventRegistration(
 	eventId: string,
 	variant: EventVariant,
 ): Promise<EventRegistrationLoad> {
-	return examregFetch<EventRegistrationLoad>(
+	const load = await examregFetch<EventRegistrationLoad>(
 		eventPath("info", variant, { eventId }),
 		{ method: "GET" },
 		{
@@ -48,6 +49,12 @@ export function fetchEventRegistration(
 			fallback: "Unable to open the registration form. Please try again.",
 		},
 	)
+	// Rich-text org fields arrive as HTML; converted once here so every
+	// render site downstream can stay a plain `{value}`.
+	return {
+		...load,
+		event_x: load.event_x ? plainTextEventView(load.event_x) : null,
+	}
 }
 
 /**

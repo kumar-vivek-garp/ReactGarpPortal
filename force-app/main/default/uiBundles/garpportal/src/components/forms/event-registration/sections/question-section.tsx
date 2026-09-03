@@ -25,7 +25,7 @@ function QuestionSection({ register, event }: QuestionSectionProps) {
 					{event.eventQuestionTitle}
 				</CardTitle>
 				{event.eventQuestionDetail ? (
-					<p className="text-body text-muted-foreground">
+					<p className="text-body whitespace-pre-line text-muted-foreground">
 						{event.eventQuestionDetail}
 					</p>
 				) : null}

@@ -4,35 +4,51 @@
  * Binds 127.0.0.1 only. Never deploy this to Experience / production.
  * Usage: npm run local-sf  (from repo root)
  *
+ * Which org it proxies follows the Salesforce CLI's own precedence:
+ *   1. SF_TARGET_ORG env var: explicit override for this process only
+ *   2. the CLI default org (`sf config get target-org`): the project-local
+ *      .sf/config.json when set, otherwise the global ~/.sf/config.json
+ * Resolved once at startup. After `sf config set target-org <alias>`,
+ * restart the gateway to pick the new org up.
+ *
  * Forwards browser header `X-GARP-Dev-Contact` (Contact Id) to Salesforce so
  * GARP_Portal_Core.currentContact() can override DEV_FALLBACK_CONTACT for
  * Standard (internal) sessions. See doc/local-dev-contact-picker.md.
  */
 import { spawnSync } from "node:child_process"
 import http from "node:http"
-import { URL } from "node:url"
+import { fileURLToPath, URL } from "node:url"
 
 const HOST = "127.0.0.1"
 const PORT = Number(process.env.LOCAL_SF_PORT || 8787)
-const TARGET_ORG = process.env.SF_TARGET_ORG || "devjuly25a"
+/** Same variable the Salesforce CLI itself honours as a target-org override. */
+const TARGET_ORG_OVERRIDE = process.env.SF_TARGET_ORG || ""
+/** Run `sf` from the repo root so the project-local .sf/config.json is found. */
+const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url))
+
+const SET_DEFAULT_HINT =
+	"Run: sf config set target-org <alias>  (or start with SF_TARGET_ORG=<alias>)"
+
+/** @type {{ alias: string, source: string } | null} */
+let resolvedTargetOrg = null
 
 /** @type {{ accessToken: string, instanceUrl: string, username?: string, orgId?: string, fetchedAt: number } | null} */
 let cachedAuth = null
 
-function readCliAuth() {
-	const env = {
-		...process.env,
-		SF_TEMP_SHOW_SECRETS: "true",
-	}
-	const result = spawnSync(
-		"sf",
-		["org", "display", "--target-org", TARGET_ORG, "--json"],
-		{
-			encoding: "utf8",
-			env,
-			shell: process.platform === "win32",
-		},
-	)
+/**
+ * Run an `sf` command with `--json` and return the parsed envelope.
+ * Throws on spawn failure, empty or non-JSON output, or a non-zero CLI status.
+ * @param {string[]} args
+ * @param {{ env?: Record<string, string> }} [options]
+ */
+function runSfJson(args, { env = {} } = {}) {
+	const label = `sf ${args.join(" ")}`
+	const result = spawnSync("sf", [...args, "--json"], {
+		cwd: REPO_ROOT,
+		encoding: "utf8",
+		env: { ...process.env, ...env },
+		shell: process.platform === "win32",
+	})
 
 	if (result.error) {
 		throw new Error(`Failed to run sf CLI: ${result.error.message}`)
@@ -41,7 +57,7 @@ function readCliAuth() {
 	const stdout = (result.stdout || "").trim()
 	if (!stdout) {
 		throw new Error(
-			`sf org display returned no output (exit ${result.status}). stderr: ${result.stderr || ""}`,
+			`${label} returned no output (exit ${result.status}). stderr: ${result.stderr || ""}`,
 		)
 	}
 
@@ -49,7 +65,7 @@ function readCliAuth() {
 	try {
 		parsed = JSON.parse(stdout)
 	} catch {
-		throw new Error(`sf org display did not return JSON: ${stdout.slice(0, 200)}`)
+		throw new Error(`${label} did not return JSON: ${stdout.slice(0, 200)}`)
 	}
 
 	if (parsed.status !== 0) {
@@ -57,15 +73,65 @@ function readCliAuth() {
 			parsed.message ||
 			parsed.warnings?.join("; ") ||
 			JSON.stringify(parsed)
-		throw new Error(`sf org display failed: ${msg}`)
+		throw new Error(`${label} failed: ${msg}`)
 	}
+
+	return parsed
+}
+
+/**
+ * The org this process proxies to. See the file header for precedence.
+ * Cached for the life of the process, like the CLI token.
+ * @returns {{ alias: string, source: string }}
+ */
+function getTargetOrg() {
+	if (resolvedTargetOrg) return resolvedTargetOrg
+
+	if (TARGET_ORG_OVERRIDE) {
+		resolvedTargetOrg = {
+			alias: TARGET_ORG_OVERRIDE,
+			source: "SF_TARGET_ORG env",
+		}
+		return resolvedTargetOrg
+	}
+
+	const parsed = runSfJson(["config", "get", "target-org"])
+	const entries = Array.isArray(parsed.result) ? parsed.result : []
+	const entry =
+		entries.find((e) => e?.key === "target-org" || e?.name === "target-org") ??
+		entries[0]
+	const alias = typeof entry?.value === "string" ? entry.value.trim() : ""
+	if (!alias) {
+		throw new Error(`No default org is set. ${SET_DEFAULT_HINT}`)
+	}
+
+	resolvedTargetOrg = {
+		alias,
+		source: `CLI default, ${String(entry.location ?? "config").toLowerCase()} config`,
+	}
+	return resolvedTargetOrg
+}
+
+/** What to tell the user when the CLI side is not ready. */
+function recoveryHint() {
+	try {
+		return `Run: sf org login web --alias ${getTargetOrg().alias}`
+	} catch {
+		return SET_DEFAULT_HINT
+	}
+}
+
+function readCliAuth() {
+	const { alias } = getTargetOrg()
+	const parsed = runSfJson(["org", "display", "--target-org", alias], {
+		env: { SF_TEMP_SHOW_SECRETS: "true" },
+	})
 
 	const accessToken = parsed.result?.accessToken
 	const instanceUrl = parsed.result?.instanceUrl
 	if (!accessToken || !instanceUrl) {
 		throw new Error(
-			"sf org display missing accessToken/instanceUrl. Run: sf org login web --alias " +
-				TARGET_ORG,
+			`sf org display missing accessToken/instanceUrl. Run: sf org login web --alias ${alias}`,
 		)
 	}
 
@@ -167,19 +233,21 @@ const server = http.createServer(async (req, res) => {
 
 		if (req.method === "GET" && url.pathname === "/health") {
 			try {
+				const target = getTargetOrg()
 				const auth = getAuth()
 				return sendJson(res, 200, {
 					ok: true,
 					username: auth.username ?? null,
 					orgId: auth.orgId ?? null,
-					targetOrg: TARGET_ORG,
+					targetOrg: target.alias,
+					targetOrgSource: target.source,
 					instanceUrl: auth.instanceUrl,
 				})
 			} catch (error) {
 				return sendJson(res, 503, {
 					ok: false,
 					error: error instanceof Error ? error.message : String(error),
-					hint: `Run: sf org login web --alias ${TARGET_ORG}`,
+					hint: recoveryHint(),
 				})
 			}
 		}
@@ -209,16 +277,17 @@ const server = http.createServer(async (req, res) => {
 })
 
 server.listen(PORT, HOST, () => {
-	console.log(
-		`[local-sf] listening on http://${HOST}:${PORT} (org alias: ${TARGET_ORG})`,
-	)
+	console.log(`[local-sf] listening on http://${HOST}:${PORT}`)
 	console.log(`[local-sf] health: http://${HOST}:${PORT}/health`)
 	try {
+		const { alias, source } = getTargetOrg()
+		console.log(`[local-sf] target org: ${alias} (${source})`)
 		const auth = getAuth()
 		console.log(`[local-sf] authenticated as ${auth.username}`)
 	} catch (error) {
 		console.warn(
-			`[local-sf] CLI auth not ready yet: ${error instanceof Error ? error.message : error}`,
+			`[local-sf] CLI not ready yet: ${error instanceof Error ? error.message : error}`,
 		)
+		console.warn(`[local-sf] ${recoveryHint()}`)
 	}
 })

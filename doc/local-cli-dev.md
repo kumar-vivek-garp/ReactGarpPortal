@@ -9,11 +9,16 @@ Use your Salesforce CLI admin session to call real sandbox APIs from localhost w
 ## Prerequisites
 
 1. Salesforce CLI (`sf`)
-2. Org login:
+2. Org login, then make that org the CLI default:
 
 ```bash
-sf org login web --alias devjuly25a
+sf org login web --alias preprod
+sf config set target-org preprod
 ```
+
+The gateway proxies the CLI default org (`sf config get target-org`), so
+switching between sandboxes is `sf config set target-org <alias>` plus a
+gateway restart. The startup banner prints which org it resolved.
 
 ## Run (two terminals)
 
@@ -23,7 +28,7 @@ sf org login web --alias devjuly25a
 npm run local-sf
 ```
 
-Expect: `listening on http://127.0.0.1:8787` and `authenticated as …`
+Expect: `listening on http://127.0.0.1:8787`, `target org: <alias> (…)` and `authenticated as …`
 
 **Terminal 2 — UI Bundle (repo root):**
 
@@ -56,7 +61,7 @@ Real Sign In / Sign Out / shared session with other apps: still test on
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `SF_TARGET_ORG` | `devjuly25a` | CLI alias |
+| `SF_TARGET_ORG` | CLI default (`sf config get target-org`) | One-off override of the org alias for this process |
 | `LOCAL_SF_PORT` | `8787` | Gateway port |
 
 ## No Apex required for basic Continue

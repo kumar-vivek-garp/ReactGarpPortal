@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
-import { CpdCreditBars } from "./cpd-credit-bars"
+import { CpdCreditBars, CpdCreditBarsSkeleton } from "./cpd-credit-bars"
 
 /**
  * Pins the two things that would silently misstate a member's CPD position:
@@ -43,6 +43,17 @@ describe("CpdCreditBars", () => {
 			<CpdCreditBars rows={[{ designation: "FRM", approved: 10, required: 40 }]} />,
 		)
 		expect(container.querySelectorAll("rect")).toHaveLength(2)
+	})
+
+	it("stands in with one skeleton bar per expected row, hidden from AT", () => {
+		const { container } = render(<CpdCreditBarsSkeleton rows={3} />)
+
+		expect(container.firstElementChild).toHaveAttribute("aria-hidden")
+		expect(
+			container.querySelectorAll('[data-slot="skeleton"]'),
+		).toHaveLength(3)
+		// Nothing announceable — the loaded bars' labels must not be faked.
+		expect(screen.queryByText(/\d+ \/ \d+/)).not.toBeInTheDocument()
 	})
 
 	it("paints from brand tokens, never a stock palette class", () => {

@@ -208,7 +208,7 @@ function LocalDevContactPanel({ onEntered }: { onEntered?: () => void }) {
 				setErrors([
 					"CLI session is up, but identity checks failed.",
 					`Gateway user: ${health.username ?? "unknown"}`,
-					"Try: sf org login web --alias devjuly25a",
+					`Try: sf org login web --alias ${health.targetOrg ?? "<alias>"}`,
 				])
 				return
 			}

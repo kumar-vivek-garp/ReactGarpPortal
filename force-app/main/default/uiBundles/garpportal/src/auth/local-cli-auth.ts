@@ -25,6 +25,9 @@ export type LocalSfHealth = {
 	ok: boolean
 	username?: string | null
 	orgId?: string | null
+	/** CLI org alias the gateway resolved (env override or `sf config get target-org`). */
+	targetOrg?: string | null
+	targetOrgSource?: string | null
 	error?: string
 	hint?: string
 }
