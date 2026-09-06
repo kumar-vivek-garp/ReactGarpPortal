@@ -21,6 +21,9 @@
     "e2e:ui": "npm run build:e2e && playwright test --ui",
     "e2e:headed": "npm run build:e2e && playwright test --headed --workers=1",
     "e2e:report": "playwright show-report",
+    "e2e:live": "npm run build && playwright test -c playwright.live.config.ts",
+    "e2e:live:ui": "npm run build && playwright test -c playwright.live.config.ts --ui",
+    "e2e:live:report": "playwright show-report playwright-report-live",
     "graphql:codegen": "graphql-codegen",
     "graphql:schema": "node scripts/get-graphql-schema.mjs"
   },

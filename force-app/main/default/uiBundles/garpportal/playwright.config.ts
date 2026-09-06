@@ -2,8 +2,14 @@ import { defineConfig, devices } from '@playwright/test';
 
 const E2E_PORT = 5175;
 
+/**
+ * The DEFAULT Playwright config: the `mocked` project only — the built
+ * dist/ served statically, every org call answered by e2e/support/mock-org.
+ * No Salesforce org is ever contacted. The live (real-API, read-only)
+ * suite is a deliberate, explicit-run-only sibling: playwright.live.config.ts.
+ */
 export default defineConfig({
-  testDir: './e2e',
+  testDir: './e2e/mocked',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -13,7 +19,7 @@ export default defineConfig({
     baseURL: `http://localhost:${E2E_PORT}`,
     trace: 'on-first-retry',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [{ name: 'mocked', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
     // Serve built dist/ with static server so e2e works in CI without SF org (vite preview runs plugin and can fail)
     command: `npx serve dist -l ${E2E_PORT}`,

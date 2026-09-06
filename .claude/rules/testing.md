@@ -19,11 +19,27 @@ component test must not become an e2e test.
 | 2 — Component / hook | Vitest + Testing Library | jsdom | forms, behavioral molecules/organisms, React Query hooks (`renderHook`) |
 | 3 — E2E smoke | Playwright | real Chromium against built `dist/` | app boots, routing, guard redirects, 404, both themes |
 
-Layer 3 stays **thin** (order of ~10 specs, not ~100). It exists to catch
-"the built app is broken in a real browser", not to re-verify behavior that
-layer 2 already covers. It runs against a static `dist/` build with Playwright
-route interception — **never against a live org**; org-dependent e2e is not
-part of the automated suite.
+Layer 3 has **two segregated Playwright suites** (user decision, Sep 2026):
+
+- **`mocked`** (`playwright.config.ts`, `e2e/mocked/`, default `npm run
+  e2e`): the built `dist/` with EVERY org call answered by
+  `e2e/support/mock-org.ts` (page.route + the typed factories). This is the
+  automated suite — full route coverage including the write flows
+  (registration, payment legs, RSVP) — and it never contacts an org.
+- **`live`** (`playwright.live.config.ts`, `e2e/live/`, EXPLICIT-run-only
+  `npm run e2e:live`): READ-only journeys against a real org through the
+  local CLI gateway. Three hard safeties, all in code: the org gate
+  (`live-gate.ts` — refuses to run unless the gateway is pinned to the
+  expected org), the mutation guard (`live-guard.ts` — non-GET requests
+  abort in the browser except a verified DML-free allow-list; the results
+  page's auto-fired `examResultViewed` write is neutralized), and a
+  negative spec proving the guard. Live is NEVER part of the default
+  invocation or CI; org-data failures are findings, not regressions.
+
+Assertion discipline is unchanged: e2e catches "the built app is broken in
+a real browser", not behavior layer 2 already covers — the mocked suite
+asserts wire contracts (call order, bodies, exactly-once) and screen
+outcomes, one thin spec per behavior.
 
 ## Placement — where test files live
 
