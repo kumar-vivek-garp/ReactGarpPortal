@@ -19,9 +19,7 @@ function HelpCenterResources({ className }: { className?: string }) {
 				<CardTitle className="font-heading text-lg tracking-wide">
 					Other ways to get help
 				</CardTitle>
-				<CardDescription>
-					Email Member Services or browse public FAQs.
-				</CardDescription>
+				<CardDescription>Browse the public FAQs for each programme.</CardDescription>
 			</CardHeader>
 			<CardContent className="flex flex-col gap-6">
 				{HELP_RESOURCE_GROUPS.map((group) => {

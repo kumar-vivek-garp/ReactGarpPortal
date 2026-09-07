@@ -37,7 +37,7 @@ describe("buildOrderDetailPresentation — headline", () => {
 
 	it("formats the money and date and keeps the raw order id", () => {
 		const presentation = buildOrderDetailPresentation(order())
-		expect(presentation.amountLabel).toBe("$300.00")
+		expect(presentation.amountLabel).toBe("USD 300.00")
 		expect(presentation.dateLabel).toBe("March 1, 2026")
 		expect(presentation.orderId).toBe("006xx0000001")
 	})

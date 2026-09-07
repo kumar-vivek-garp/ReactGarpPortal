@@ -64,7 +64,7 @@ const searchBox = () =>
 	screen.getByRole("textbox", { name: "Search the member directory" })
 
 async function mountSettled(org: ReturnType<typeof pagedOrg>) {
-	renderWithProviders(<MemberDirectoryPanel />)
+	renderWithProviders(<MemberDirectoryPanel initialTerm="lovelace" />)
 	await screen.findByRole("button", { name: "View Ada Lovelace" })
 	expect(org.spy.hits).toBe(1)
 	fakeTimers()
@@ -107,7 +107,11 @@ describe("search debounce", () => {
 		await advance(1)
 		await settle()
 		expect(org.spy.hits).toBe(2)
-		expect(org.spy.bodies.map((body) => body.searchText)).toEqual([null, "smith"])
+		// The seeded term is the first request; "smi" never became one.
+		expect(org.spy.bodies.map((body) => body.searchText)).toEqual([
+			"lovelace",
+			"smith",
+		])
 	})
 
 	it("returns to page 1 when the term changes", async () => {
@@ -129,7 +133,7 @@ describe("search debounce", () => {
 		})
 	})
 
-	it("restores the everyone list from cache when the term is emptied", async () => {
+	it("asks for nothing once the term is emptied, and says so", async () => {
 		const org = pagedOrg()
 		await mountSettled(org)
 
@@ -141,12 +145,15 @@ describe("search debounce", () => {
 		fireEvent.change(searchBox(), { target: { value: "" } })
 		await advance(350)
 		await settle()
-		// The emptied term is the mount key again — still fresh, so the full
-		// list comes back without another wire hit.
+
+		// An empty box is not a search for everyone: the request is never made,
+		// and the panel invites criteria rather than showing a stale list or
+		// reading as though the directory were empty.
 		expect(org.spy.hits).toBe(2)
 		expect(searchBox()).toHaveValue("")
+		expect(screen.getByText("Results will display here")).toBeInTheDocument()
 		expect(
-			screen.getByRole("button", { name: "View Ada Lovelace" }),
-		).toBeInTheDocument()
+			screen.queryByRole("button", { name: "View Ada Lovelace" }),
+		).not.toBeInTheDocument()
 	})
 })

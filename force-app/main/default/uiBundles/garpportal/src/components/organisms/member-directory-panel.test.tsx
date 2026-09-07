@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react"
+import { fireEvent, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { http, HttpResponse } from "msw"
 import { describe, expect, it } from "vitest"
@@ -20,7 +20,7 @@ describe("access", () => {
 			respond: () => directorySearchResults({ members: [directoryMember()] }),
 		})
 		server.use(...org.handlers)
-		await renderWithRouterProviders(<MemberDirectoryPanel />)
+		await renderWithRouterProviders(<MemberDirectoryPanel initialTerm="lovelace" />)
 
 		expect(
 			screen.getByRole("heading", { name: "Member Directory" }),
@@ -30,13 +30,17 @@ describe("access", () => {
 		).toBeInTheDocument()
 		expect(screen.getByText("Head of Risk · Analytical Engines · United Kingdom")).toBeInTheDocument()
 		expect(screen.getByText("1–1 of 1")).toBeInTheDocument()
-		expect(org.spy.bodies[0]).toMatchObject({ searchText: null, pageCurrent: 1, pageSize: 10 })
+		expect(org.spy.bodies[0]).toMatchObject({
+			searchText: "lovelace",
+			pageCurrent: 1,
+			pageSize: 10,
+		})
 	})
 
 	it("hides the heading when the membership tab owns it", async () => {
 		const org = directoryOrg()
 		server.use(...org.handlers)
-		await renderWithRouterProviders(<MemberDirectoryPanel showHeading={false} />)
+		await renderWithRouterProviders(<MemberDirectoryPanel showHeading={false} initialTerm="lovelace" />)
 
 		await screen.findByRole("button", { name: "View Ada Lovelace" })
 		// The rows carry their own h3s — only the page-level h1 must be gone.
@@ -63,7 +67,7 @@ describe("access", () => {
 			}),
 		})
 		server.use(...org.handlers)
-		await renderWithRouterProviders(<MemberDirectoryPanel />)
+		await renderWithRouterProviders(<MemberDirectoryPanel initialTerm="lovelace" />)
 
 		expect(
 			await screen.findByText("The directory is not available on your membership"),
@@ -88,7 +92,7 @@ describe("access", () => {
 			}),
 		})
 		server.use(...org.handlers)
-		await renderWithRouterProviders(<MemberDirectoryPanel />)
+		await renderWithRouterProviders(<MemberDirectoryPanel initialTerm="lovelace" />)
 
 		expect(
 			await screen.findByRole("link", { name: "Renew Now" }),
@@ -104,7 +108,7 @@ describe("access", () => {
 			}),
 		})
 		server.use(...org.handlers)
-		await renderWithRouterProviders(<MemberDirectoryPanel />)
+		await renderWithRouterProviders(<MemberDirectoryPanel initialTerm="lovelace" />)
 
 		expect(
 			await screen.findByRole("link", { name: "View Order" }),
@@ -118,7 +122,7 @@ describe("results", () => {
 			respond: () => directorySearchResults({ members: [], total: 0, pages: 0 }),
 		})
 		server.use(...org.handlers)
-		await renderWithRouterProviders(<MemberDirectoryPanel />)
+		await renderWithRouterProviders(<MemberDirectoryPanel initialTerm="lovelace" />)
 
 		expect(await screen.findByText("No members found")).toBeInTheDocument()
 		expect(
@@ -134,7 +138,7 @@ describe("results", () => {
 				HttpResponse.json(memberPortalError(500, "boom"), { status: 500 }),
 			),
 		)
-		await renderWithRouterProviders(<MemberDirectoryPanel />)
+		await renderWithRouterProviders(<MemberDirectoryPanel initialTerm="lovelace" />)
 
 		expect(
 			await screen.findByText(
@@ -155,7 +159,7 @@ describe("results", () => {
 				}),
 		})
 		server.use(...org.handlers)
-		await renderWithRouterProviders(<MemberDirectoryPanel />)
+		await renderWithRouterProviders(<MemberDirectoryPanel initialTerm="lovelace" />)
 
 		expect(await screen.findByText("Page 1 of 3")).toBeInTheDocument()
 		expect(screen.getByText("1–10 of 25")).toBeInTheDocument()
@@ -177,7 +181,7 @@ describe("results", () => {
 	it("hides the pager for a single page", async () => {
 		const org = directoryOrg()
 		server.use(...org.handlers)
-		await renderWithRouterProviders(<MemberDirectoryPanel />)
+		await renderWithRouterProviders(<MemberDirectoryPanel initialTerm="lovelace" />)
 
 		await screen.findByRole("button", { name: "View Ada Lovelace" })
 		expect(screen.queryByRole("button", { name: "Next" })).not.toBeInTheDocument()
@@ -194,7 +198,7 @@ describe("member dialog", () => {
 				}),
 		})
 		server.use(...org.handlers)
-		await renderWithRouterProviders(<MemberDirectoryPanel />)
+		await renderWithRouterProviders(<MemberDirectoryPanel initialTerm="lovelace" />)
 
 		// The interactive Card defers onActivate past its press-spring settle.
 		await user.click(
@@ -217,7 +221,7 @@ describe("member dialog", () => {
 		expect(org.spy.hits).toBe(1)
 	})
 
-	it("clears the search box back to the full list", async () => {
+	it("clears the search box back to the invitation, without searching again", async () => {
 		const user = userEvent.setup()
 		const org = directoryOrg()
 		server.use(...org.handlers)
@@ -228,8 +232,12 @@ describe("member dialog", () => {
 		expect(
 			screen.getByRole("textbox", { name: "Search the member directory" }),
 		).toHaveValue("")
-		await waitFor(() => expect(org.spy.hits).toBe(2))
-		expect(org.spy.bodies[1]).toMatchObject({ searchText: null, pageCurrent: 1 })
+
+		// Clearing asks for nothing rather than asking for everyone.
+		await waitFor(() =>
+			expect(screen.getByText("Results will display here")).toBeInTheDocument(),
+		)
+		expect(org.spy.hits).toBe(1)
 	})
 })
 
@@ -240,7 +248,46 @@ describe("member dialog", () => {
 it("flashes the zero state, not the skeleton, while access is still loading", async () => {
 	const org = directoryOrg()
 	server.use(...org.handlers)
-	await renderWithRouterProviders(<MemberDirectoryPanel />)
+	await renderWithRouterProviders(<MemberDirectoryPanel initialTerm="lovelace" />)
 
 	expect(screen.getByText("No members found")).toBeInTheDocument()
+})
+
+describe("before any criteria are entered", () => {
+	/*
+	 * An untouched directory used to run a blank search and list everyone, and
+	 * an empty answer read as "No members found" — a directory with nobody in
+	 * it, rather than a question nobody had asked (UI/UX request, Sep 2026).
+	 */
+	it("invites criteria instead of searching, and asks the org for nothing", async () => {
+		const org = directoryOrg()
+		server.use(...org.handlers)
+		await renderWithRouterProviders(<MemberDirectoryPanel />)
+
+		expect(
+			await screen.findByText("Results will display here"),
+		).toBeInTheDocument()
+		expect(screen.getByText("Please enter search criteria above.")).toBeInTheDocument()
+		expect(screen.queryByText("No members found")).not.toBeInTheDocument()
+		expect(org.spy.hits).toBe(0)
+	})
+
+	it("searches as soon as a term is typed", async () => {
+		const org = directoryOrg({
+			respond: () => directorySearchResults({ members: [directoryMember()] }),
+		})
+		server.use(...org.handlers)
+		await renderWithRouterProviders(<MemberDirectoryPanel />)
+		await screen.findByText("Results will display here")
+
+		fireEvent.change(
+			screen.getByRole("textbox", { name: "Search the member directory" }),
+			{ target: { value: "lovelace" } },
+		)
+
+		expect(
+			await screen.findByRole("button", { name: "View Ada Lovelace" }),
+		).toBeInTheDocument()
+		expect(screen.queryByText("Results will display here")).not.toBeInTheDocument()
+	})
 })

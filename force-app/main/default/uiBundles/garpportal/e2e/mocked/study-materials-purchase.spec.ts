@@ -44,9 +44,9 @@ test.describe("study material purchase", () => {
 		await expect(page.getByRole("heading", { name: "2026 SCR Book" })).toBeVisible()
 		// The item price reads on the item card and in the rail; the total in
 		// the sticky bar and in the rail.
-		await expect(page.getByText("$100.00", { exact: true })).toHaveCount(2)
-		await expect(page.getByText("$15.00", { exact: true })).toBeVisible()
-		await expect(page.getByText("$115.00", { exact: true })).toHaveCount(2)
+		await expect(page.getByText("USD 100.00", { exact: true })).toHaveCount(2)
+		await expect(page.getByText("USD 15.00", { exact: true })).toBeVisible()
+		await expect(page.getByText("USD 115.00", { exact: true })).toHaveCount(2)
 		await expect(page.getByText(/Tax is calculated/)).toBeVisible()
 		await expect(page.getByRole("button", { name: "Continue to Payment" })).toBeEnabled()
 		await expect.poll(() => org.hits("materialQuote")).toBe(1)

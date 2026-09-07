@@ -25,6 +25,7 @@ import { DirectoryMemberRow } from "@/components/molecules/directory-member-row"
 import { StaggerReveal } from "@/components/molecules/stagger-reveal"
 import {
 	DIRECTORY_NO_ACCESS,
+	DIRECTORY_PRE_SEARCH_STATE,
 	DIRECTORY_PAGE_SIZE,
 	DIRECTORY_ZERO_STATE,
 	MEMBER_DIRECTORY_TITLE,
@@ -46,7 +47,10 @@ function EmptyState({
 	state,
 	action,
 }: {
-	state: typeof DIRECTORY_ZERO_STATE | typeof DIRECTORY_NO_ACCESS
+	state:
+		| typeof DIRECTORY_ZERO_STATE
+		| typeof DIRECTORY_NO_ACCESS
+		| typeof DIRECTORY_PRE_SEARCH_STATE
 	action?: React.ReactNode
 }) {
 	const Icon = state.icon
@@ -122,7 +126,17 @@ function MemberDirectoryPanel({
 	)
 
 	const canSearch = access.data?.hasDirectoryAccess === true
-	const results = useDirectorySearch(params, canSearch)
+	/*
+	 * Any criteria at all, not just the name box — a filter on its own is a
+	 * perfectly good search. Read off the DEBOUNCED term so the pre-search
+	 * state does not blink away on the first keystroke, before the query it
+	 * gates has been asked.
+	 */
+	const hasCriteria =
+		debouncedTerm.trim().length > 0 || activeFilterCount(filters) > 0
+	// Not merely hidden: with nothing asked there is nothing to ask for, so the
+	// request is never made either.
+	const results = useDirectorySearch(params, canSearch && hasCriteria)
 	const paging = directoryPageState(results.data)
 	const upsell = directoryUpsell(access.data)
 	const advanced = access.data?.hasDirectoryAdvancedSearchAccess === true
@@ -257,7 +271,18 @@ function MemberDirectoryPanel({
 				</p>
 			) : null}
 
-			{!results.isLoading && !results.isError ? (
+			{/*
+			 * Nothing asked yet is not the same as nothing found. The search runs
+			 * on any criteria — the name box or any filter — so the pre-search
+			 * state is keyed on the whole set being untouched, not on the term
+			 * alone, or applying a filter with an empty box would still read as
+			 * "enter something above".
+			 */}
+			{!results.isLoading && !results.isError && !hasCriteria ? (
+				<EmptyState state={DIRECTORY_PRE_SEARCH_STATE} />
+			) : null}
+
+			{!results.isLoading && !results.isError && hasCriteria ? (
 				members.length === 0 ? (
 					<EmptyState
 						state={DIRECTORY_ZERO_STATE}

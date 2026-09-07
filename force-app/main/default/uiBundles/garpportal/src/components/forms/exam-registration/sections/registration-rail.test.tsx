@@ -47,7 +47,7 @@ describe("RegistrationRail — the offer list", () => {
 		const user = userEvent.setup()
 		const { onToggleMaterial } = renderRail({ materials: [material()] })
 
-		expect(screen.getByText("$295.00")).toBeInTheDocument()
+		expect(screen.getByText("USD 295.00")).toBeInTheDocument()
 		const add = screen.getByRole("button", { name: /Add/ })
 		expect(add).toHaveAttribute("aria-pressed", "false")
 

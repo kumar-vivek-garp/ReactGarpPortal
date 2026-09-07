@@ -34,8 +34,14 @@ function HelpCenterHeader({
 					Help Center
 				</h1>
 				<p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+					{/*
+					 * No longer offers "other contact options": the links that were
+					 * those opened the same case this page's own form submits, and
+					 * went with the Contact Member Services section (UI/UX request,
+					 * Sep 2026).
+					 */}
 					Open a support case with Member Services, track requests you have
-					already raised, or use the links for FAQs and other contact options.
+					already raised, or browse the FAQs.
 				</p>
 			</div>
 

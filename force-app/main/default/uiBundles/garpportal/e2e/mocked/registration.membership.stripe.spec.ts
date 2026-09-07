@@ -102,7 +102,7 @@ test.describe("membership stripe leg", () => {
 		const org = await installMockOrg(page, stripeOptions())
 		await page.goto("/membership/register")
 
-		await expect(page.getByText("$195.00").first()).toBeVisible()
+		await expect(page.getByText("USD 195.00").first()).toBeVisible()
 		await page.getByRole("radio", { name: "Card", exact: true }).click()
 		await expect(page.getByText("Billing & shipping")).toHaveCount(0)
 

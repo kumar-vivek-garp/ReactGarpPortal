@@ -66,7 +66,7 @@ test.describe("guest membership registration", () => {
 		// The membership is the main line, priced with nothing chosen.
 		await expect.poll(() => org.hits("fees")).toBeGreaterThan(0)
 		await expect(page.getByText("Individual Membership").first()).toBeVisible()
-		await expect(page.getByText("$195.00").first()).toBeVisible()
+		await expect(page.getByText("USD 195.00").first()).toBeVisible()
 		expect(org.hits("info")).toBe(1)
 		expect(parse(org.of("fees")[0].postData).type).toBe("mem")
 	})
@@ -95,7 +95,7 @@ test.describe("guest membership registration", () => {
 			)
 			.toBe(true)
 		await expect(page.getByText("Risk.net Membership")).toBeVisible()
-		await expect(page.getByText("$295.00").first()).toBeVisible()
+		await expect(page.getByText("USD 295.00").first()).toBeVisible()
 		await expect(page.getByRole("button", { name: /Remove/ })).toBeVisible()
 
 		// The identity check on blur carries the attribution tag...

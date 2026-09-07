@@ -148,11 +148,11 @@ test.describe("member membership registration", () => {
 		await expect(page.getByRole("combobox", { name: "Exam part" })).toHaveCount(0)
 
 		// Priced with nothing chosen, then the offline method adds its fee.
-		await expect(page.getByText("$195.00").first()).toBeVisible()
+		await expect(page.getByText("USD 195.00").first()).toBeVisible()
 		await page.getByRole("radio", { name: "Wire transfer" }).click()
 		await expect(page.getByText("Billing & shipping")).toBeVisible()
 		await expect(page.getByText("Processing Fee")).toBeVisible()
-		await expect(page.getByText("$245.00").first()).toBeVisible()
+		await expect(page.getByText("USD 245.00").first()).toBeVisible()
 		await expect(
 			page.getByRole("checkbox", { name: /Membership Automatic Renewal/ }),
 		).toHaveCount(0)

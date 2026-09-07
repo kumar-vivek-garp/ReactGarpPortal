@@ -69,35 +69,36 @@ test.describe("member directory", () => {
 			page.getByRole("heading", { name: "Member Directory", level: 1 }),
 		).toBeVisible()
 
-		// The first (empty-term) page renders the rows the org returned.
+		// Nothing is asked for until criteria are entered: no rows, no request.
+		await expect(page.getByText("Results will display here")).toBeVisible()
+		await expect(
+			page.getByRole("button", { name: "View Ada Lovelace" }),
+		).toHaveCount(0)
+		await page.waitForTimeout(600)
+		expect(org.hits("directorySearch")).toBe(0)
+
+		// A burst of 6 keystrokes inside the 350ms debounce window buys exactly
+		// ONE POST, carrying the settled term, the first page and a clamped size.
+		await page
+			.getByRole("textbox", { name: "Search the member directory" })
+			.pressSequentially("hopper", { delay: 40 })
+		await expect.poll(() => org.hits("directorySearch")).toBe(1)
+		await page.waitForTimeout(600)
+		expect(org.hits("directorySearch")).toBe(1)
+
+		const searchCalls = org.of("directorySearch")
+		const searched = parse(searchCalls[searchCalls.length - 1].postData)
+		expect(searched.searchText).toBe("hopper")
+		expect(searched.pageCurrent).toBe(1)
+		expect(searched.pageSize).toBe(10)
+
+		// The rows the org returned land once the search has been made.
 		await expect(
 			page.getByRole("button", { name: "View Ada Lovelace" }),
 		).toBeVisible()
 		await expect(
 			page.getByRole("button", { name: "View Grace Hopper" }),
 		).toBeVisible()
-
-		// The mount search is a real search: empty term (sent as null — the
-		// server's "everyone I may see"), first page, clamped size.
-		await expect.poll(() => org.hits("directorySearch")).toBeGreaterThan(0)
-		const first = parse(org.of("directorySearch")[0].postData)
-		expect(first.searchText).toBeNull()
-		expect(first.pageCurrent).toBe(1)
-		expect(first.pageSize).toBe(10)
-
-		// Let the mount settle fully, then type a burst: 6 keystrokes inside the
-		// 350ms debounce window must buy exactly ONE more POST, carrying the term.
-		await page.waitForTimeout(600)
-		const baseline = org.hits("directorySearch")
-		await page
-			.getByRole("textbox", { name: "Search the member directory" })
-			.pressSequentially("hopper", { delay: 40 })
-		await expect.poll(() => org.hits("directorySearch")).toBe(baseline + 1)
-		await page.waitForTimeout(600)
-		expect(org.hits("directorySearch")).toBe(baseline + 1)
-		const searchCalls = org.of("directorySearch")
-		const searched = parse(searchCalls[searchCalls.length - 1].postData)
-		expect(searched.searchText).toBe("hopper")
 		expect(searched.pageCurrent).toBe(1)
 
 		// A row opens the member dialog with the redacted entry.

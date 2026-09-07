@@ -134,7 +134,7 @@ describe("resolveMaterialAction — the chain", () => {
 			resolveMaterialAction(studyItem({ canPurchase: true, price: 295, productCode: "FRM2H" })),
 		).toEqual({
 			kind: "purchase",
-			priceLabel: "$295",
+			priceLabel: "USD 295",
 			path: "/study-materials/purchase/FRM2H",
 		})
 		expect(

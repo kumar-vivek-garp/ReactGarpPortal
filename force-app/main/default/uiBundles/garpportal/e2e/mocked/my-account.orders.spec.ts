@@ -59,7 +59,7 @@ test.describe("order history list", () => {
 		).toBeVisible()
 		await expect(page.getByText("INV-0001")).toBeVisible()
 		await expect(page.getByText("INV-0002")).toBeVisible()
-		await expect(page.getByText("$750.00")).toBeVisible()
+		await expect(page.getByText("USD 750.00")).toBeVisible()
 
 		await page
 			.getByRole("link", { name: "View order FRM Part I Exam" })

@@ -1,6 +1,7 @@
 import type { DirectoryMember } from "@/api/directory"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar"
 import { Badge } from "@/components/atoms/badge"
+import { programBrandSurface } from "@/config/program-brand"
 import { Card } from "@/components/atoms/card"
 import {
 	directoryCredentials,
@@ -63,8 +64,21 @@ function DirectoryMemberRow({
 
 			{credentials.length > 0 ? (
 				<span className="hidden shrink-0 gap-1 sm:flex">
+					{/*
+					 * Tinted with the programme's own brand surface, the same one
+					 * the Study Materials chips use, so FRM reads as FRM wherever
+					 * it appears (UI/UX request, Sep 2026). An unrecognised
+					 * credential falls back to the neutral surface rather than
+					 * borrowing another programme's hue.
+					 */}
 					{credentials.slice(0, 3).map((code) => (
-						<Badge key={code} variant="secondary" className="text-xs">
+						<Badge
+							key={code}
+							className={cn(
+								"text-xs font-bold tracking-wider",
+								programBrandSurface(code).chip,
+							)}
+						>
 							{code}
 						</Badge>
 					))}

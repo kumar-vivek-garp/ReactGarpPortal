@@ -80,7 +80,7 @@ describe("the price line", () => {
 	it("shows the server-priced amount", () => {
 		renderWithProviders(<Harness amount={100} />)
 		expect(
-			screen.getByText((text) => text.includes("$100.00")),
+			screen.getByText((text) => text.includes("USD 100.00")),
 		).toBeInTheDocument()
 	})
 

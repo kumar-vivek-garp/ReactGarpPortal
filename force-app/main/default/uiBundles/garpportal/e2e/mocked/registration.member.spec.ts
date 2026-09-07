@@ -158,7 +158,7 @@ test.describe("member exam registration", () => {
 			)
 			.toBe(true)
 		// ...and the priced total reaches the bar (AnimatedAmount settles there).
-		await expect(page.getByText("$750.00").first()).toBeVisible()
+		await expect(page.getByText("USD 750.00").first()).toBeVisible()
 
 		// Offline payment: the Wire Transfer tile, which raises the address card
 		// (prefilled from the member's record) and relabels submit.

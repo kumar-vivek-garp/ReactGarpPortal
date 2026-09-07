@@ -152,7 +152,7 @@ describe("buildMembershipPresentation — pending order outranks everything", ()
 		expect(presentation.statusTone).toBe("warning")
 		expect(presentation.pendingOrderId).toBe("006x")
 		expect(presentation.pendingOrderText).toBe(
-			"Order INV-42 — $195.00 is waiting to be paid.",
+			"Order INV-42 — USD 195.00 is waiting to be paid.",
 		)
 		expect(presentation.action).toBe("viewOrder")
 		expect(presentation.showOnCallout).toBe(false)

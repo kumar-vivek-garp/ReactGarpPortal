@@ -250,49 +250,14 @@ function StudyMaterialsPanel({ tab, view }: StudyMaterialsPanelProps) {
 						{STUDY_MATERIALS_TITLE}
 					</h1>
 
-					<ToggleGroup
-						variant="outline"
-						type="single"
-						value={activeView}
-						onValueChange={(value) => {
-							// Radix allows deselecting the active item; ignore that.
-							if (!value) return
-							selectView(value as ListView)
-						}}
-						aria-label="Study materials layout"
-					>
-						<ToggleGroupItem value="grid" aria-label="Grid view">
-							<LayoutGrid aria-hidden />
-						</ToggleGroupItem>
-						<ToggleGroupItem value="list" aria-label="List view">
-							<List aria-hidden />
-						</ToggleGroupItem>
-					</ToggleGroup>
-				</div>
-
-				{showProgramTabs || hasArchive ? (
-					<div className="flex flex-wrap items-center justify-between gap-3">
-						{showProgramTabs ? (
-							<PillTabs
-								items={[
-									{ value: DEFAULT_STUDY_MATERIALS_TAB, label: "All" },
-									...programs.map((entry) => ({
-										value: entry.key,
-										label: entry.label,
-										badge: studyCodeLabel(entry.key),
-										badgeClassName: programBrandSurface(entry.key).chip,
-									})),
-								]}
-								value={tab}
-							/>
-						) : (
-							<span />
-						)}
+					<div className="flex items-center gap-3">
 						{/*
-						 * The archive lists eBook KEYS by edition year, which this
-						 * catalogue does not — a member with several years of purchases
-						 * has no other way to reach the older ones. Offered only to
-						 * members who hold a key, as the legacy gates it.
+						 * Beside the page heading rather than down on the filter row
+						 * (UI/UX request, Sep 2026). The archive lists eBook KEYS by
+						 * edition year, which this catalogue does not — a member with
+						 * several years of purchases has no other way to reach the older
+						 * ones. Shown only to members who hold a key, as the legacy gates
+						 * it, so a member with no eBook never sees it.
 						 */}
 						{hasArchive ? (
 							<Button asChild variant="outline" size="sm">
@@ -302,7 +267,41 @@ function StudyMaterialsPanel({ tab, view }: StudyMaterialsPanelProps) {
 								</Link>
 							</Button>
 						) : null}
+
+						<ToggleGroup
+							variant="outline"
+							type="single"
+							value={activeView}
+							onValueChange={(value) => {
+								// Radix allows deselecting the active item; ignore that.
+								if (!value) return
+								selectView(value as ListView)
+							}}
+							aria-label="Study materials layout"
+						>
+							<ToggleGroupItem value="grid" aria-label="Grid view">
+								<LayoutGrid aria-hidden />
+							</ToggleGroupItem>
+							<ToggleGroupItem value="list" aria-label="List view">
+								<List aria-hidden />
+							</ToggleGroupItem>
+						</ToggleGroup>
 					</div>
+				</div>
+
+				{showProgramTabs ? (
+					<PillTabs
+						items={[
+							{ value: DEFAULT_STUDY_MATERIALS_TAB, label: "All" },
+							...programs.map((entry) => ({
+								value: entry.key,
+								label: entry.label,
+								badge: studyCodeLabel(entry.key),
+								badgeClassName: programBrandSurface(entry.key).chip,
+							})),
+						]}
+						value={tab}
+					/>
 				) : null}
 			</header>
 

@@ -42,10 +42,18 @@ export function accessExpiryLine(
 	return date ? { icon: "accessUntil", text: `Access until ${date}` } : null
 }
 
-/** `$295`, `$12.50` — the legacy's own rendering, whole dollars unadorned. */
+/**
+ * `USD 295`, `USD 12.50` — whole dollars unadorned, as the legacy renders them.
+ *
+ * The code rather than a bare `$`: GARP sits candidates worldwide and `$` is
+ * ambiguous across the dollar currencies (UI/UX request, Sep 2026). The catalogue
+ * is priced in USD only — Apex sends a bare number with no currency beside it —
+ * so the code is fixed here rather than passed in. The moment a second currency
+ * appears this has to take one, and `formatMoney` is the function to reach for.
+ */
 export function formatPrice(amount: number | null | undefined): string | null {
 	if (amount == null) return null
-	return `$${amount.toFixed(2).replace(/\.00$/, "")}`
+	return `USD ${amount.toFixed(2).replace(/\.00$/, "")}`
 }
 
 /** The in-app purchase page for one product. */

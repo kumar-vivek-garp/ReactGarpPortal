@@ -47,10 +47,10 @@ describe("StudyMaterialAction — links", () => {
 	it("renders the price beside an in-app Purchase link", async () => {
 		await renderWithRouterProviders(
 			<StudyMaterialAction
-				action={{ kind: "purchase", priceLabel: "$295", path: "/study-materials/purchase/FRM2H" }}
+				action={{ kind: "purchase", priceLabel: "USD 295", path: "/study-materials/purchase/FRM2H" }}
 			/>,
 		)
-		expect(screen.getByText("$295")).toBeInTheDocument()
+		expect(screen.getByText("USD 295")).toBeInTheDocument()
 		expect(screen.getByRole("link", { name: /Purchase/ })).toHaveAttribute(
 			"href",
 			"/study-materials/purchase/FRM2H",

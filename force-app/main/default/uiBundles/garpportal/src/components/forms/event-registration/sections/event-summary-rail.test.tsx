@@ -13,7 +13,7 @@ describe("the money", () => {
 				rates={eventRates({ amountDue: 250 })}
 			/>,
 		)
-		expect(screen.getAllByText("$250.00")).toHaveLength(2)
+		expect(screen.getAllByText("USD 250.00")).toHaveLength(2)
 		expect(screen.queryByText("Free")).not.toBeInTheDocument()
 	})
 

@@ -45,7 +45,7 @@ test.describe("study materials catalogue", () => {
 		)
 		await expect(learning).toHaveAttribute("target", "_blank")
 		await expect(page.getByText("Upgrade for Additional Content")).toBeVisible()
-		await expect(page.getByText("$75")).toBeVisible()
+		await expect(page.getByText("USD 75")).toBeVisible()
 		await expect(
 			page.getByRole("link", { name: /Order awaiting payment/ }),
 		).toHaveAttribute("href", "/my-account/orders/006ADDON0000000001")
@@ -58,7 +58,7 @@ test.describe("study materials catalogue", () => {
 
 		// 8. For sale: price and the in-app purchase page (asserted by href —
 		//    the page itself has its own spec).
-		await expect(page.getByText("$295")).toBeVisible()
+		await expect(page.getByText("USD 295")).toBeVisible()
 		await expect(page.getByRole("link", { name: /Purchase/ })).toHaveAttribute(
 			"href",
 			"/study-materials/purchase/FRM2H",
@@ -86,7 +86,7 @@ test.describe("study materials catalogue", () => {
 		])
 
 		// The archive entry point, because this member holds a key.
-		await expect(page.getByRole("link", { name: /My Access Links/ })).toBeVisible()
+		await expect(page.getByRole("link", { name: /My eBook links/ })).toBeVisible()
 
 		await expect(page.getByText(/unable to load/i)).toHaveCount(0)
 		await expect.poll(() => org.hits("studyMaterials")).toBe(1)

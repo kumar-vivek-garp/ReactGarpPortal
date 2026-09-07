@@ -47,8 +47,8 @@ describe("formatDateTime", () => {
 
 describe("formatMoney", () => {
 	it("formats a recognised currency with its symbol", () => {
-		expect(formatMoney(1234.5, "USD")).toBe("$1,234.50")
-		expect(formatMoney(0, "USD")).toBe("$0.00")
+		expect(formatMoney(1234.5, "USD")).toBe("USD 1,234.50")
+		expect(formatMoney(0, "USD")).toBe("USD 0.00")
 	})
 
 	it("is null with no amount — zero is an amount", () => {

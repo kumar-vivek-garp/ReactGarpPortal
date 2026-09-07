@@ -46,7 +46,7 @@ test.describe("study materials — eBooks and the archive", () => {
 		await expect(popup).toHaveURL(/\/e2e-reader-stub/)
 	})
 
-	test("My Access Links appears only for a member who holds an eBook key", async ({
+	test("My eBook links appears only for a member who holds an eBook key", async ({
 		page,
 	}) => {
 		await installMockOrg(page, {
@@ -54,11 +54,11 @@ test.describe("study materials — eBooks and the archive", () => {
 		})
 		await page.goto("/study-materials")
 		await expect(page.getByText("2026 SCR Book")).toBeVisible()
-		await expect(page.getByRole("link", { name: /My Access Links/ })).toHaveCount(0)
+		await expect(page.getByRole("link", { name: /My eBook links/ })).toHaveCount(0)
 
 		await installMockOrg(page, { actions: studyMaterialsActions() })
 		await page.goto("/study-materials")
-		await page.getByRole("link", { name: /My Access Links/ }).click()
+		await page.getByRole("link", { name: /My eBook links/ }).click()
 		await expect(page).toHaveURL(/\/study-materials\/archive/)
 	})
 })

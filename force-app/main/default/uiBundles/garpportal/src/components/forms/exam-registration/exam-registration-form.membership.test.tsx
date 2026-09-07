@@ -95,7 +95,7 @@ describe("ExamRegistrationForm — the membership kind", () => {
 		expect(screen.queryByRole("link", { name: "Programs" })).not.toBeInTheDocument()
 
 		// The membership is the main line, priced without anything chosen.
-		expect((await screen.findAllByText("$195.00")).length).toBeGreaterThan(0)
+		expect((await screen.findAllByText("USD 195.00")).length).toBeGreaterThan(0)
 	})
 
 	it("Add prices the Risk.net line into the rail; Remove drops it again", async () => {

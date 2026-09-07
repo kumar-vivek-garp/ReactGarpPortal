@@ -28,7 +28,7 @@ describe("one more look at the money", () => {
 			screen.getByRole("dialog", { name: "Confirm your registration" }),
 		).toBeInTheDocument()
 		expect(screen.getByText("Risk Summit 2026")).toBeInTheDocument()
-		expect(screen.getByText("$250.00")).toBeInTheDocument()
+		expect(screen.getByText("USD 250.00")).toBeInTheDocument()
 	})
 
 	it("fires the mutation only from Confirm, and Back cancels", async () => {

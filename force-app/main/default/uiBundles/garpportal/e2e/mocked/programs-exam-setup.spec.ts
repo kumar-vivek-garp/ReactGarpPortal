@@ -155,7 +155,7 @@ test.describe("exam setup", () => {
 		await page.getByRole("button", { name: SAVE }).click()
 
 		await expect(page.getByText("There's a fee for this change")).toBeVisible()
-		await expect(page.getByText("$250.00").first()).toBeVisible()
+		await expect(page.getByText("USD 250.00").first()).toBeVisible()
 
 		// Priced from the modification the write raised — one call, no polling.
 		await expect.poll(() => org.hits("examSetupFees")).toBe(1)

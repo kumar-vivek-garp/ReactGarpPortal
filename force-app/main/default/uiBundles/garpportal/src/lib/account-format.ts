@@ -43,7 +43,24 @@ export function formatMoney(
 			return new Intl.NumberFormat(undefined, {
 				style: "currency",
 				currency: currencyCode,
-			}).format(amount)
+				/*
+				 * "USD 300.00", not "$300.00". GARP sits candidates worldwide and
+				 * a bare $ is ambiguous across the dollar currencies (UI/UX
+				 * request, Sep 2026). Applied here rather than per screen so a
+				 * price and the order that charges it never disagree.
+				 */
+				currencyDisplay: "code",
+			})
+				.format(amount)
+				/*
+				 * Intl joins the code to the amount with a NON-BREAKING space.
+				 * Normalised to an ordinary one so the value is predictable —
+				 * an invisible U+00A0 makes `formatMoney(…) === "USD 300.00"`
+				 * quietly false, and every caller comparing or matching on this
+				 * string has to know. Keeping the two on one line is a layout
+				 * job, so it belongs in CSS, not in the value.
+				 */
+				.replace(/\u00a0/g, " ")
 		} catch {
 			// Unrecognised currency code — fall through.
 		}

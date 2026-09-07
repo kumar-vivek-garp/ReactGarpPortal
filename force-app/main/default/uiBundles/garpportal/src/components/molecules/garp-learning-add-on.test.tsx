@@ -22,7 +22,7 @@ describe("GarpLearningAddOnCard", () => {
 		expect(
 			screen.getByText("Purchase a third full-length practice exam for the FRM Part I."),
 		).toBeInTheDocument()
-		expect(screen.getByText("$75")).toBeInTheDocument()
+		expect(screen.getByText("USD 75")).toBeInTheDocument()
 		expect(screen.queryByRole("link")).not.toBeInTheDocument()
 	})
 

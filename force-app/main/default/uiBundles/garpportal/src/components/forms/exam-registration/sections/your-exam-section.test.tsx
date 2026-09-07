@@ -111,7 +111,7 @@ describe("YourExamSection — sittings inside a part", () => {
 	it("multiple sittings become radios labelled with window and price", () => {
 		renderSection()
 
-		const early = /May 8 - 14, 2027.*Early registration · \$600\.00/
+		const early = /May 8 - 14, 2027.*Early registration · USD 600\.00/
 		expect(screen.getByRole("radio", { name: early })).toBeInTheDocument()
 		expect(
 			screen.getByRole("radio", { name: /November 14 - 20, 2027/ }),
@@ -132,7 +132,7 @@ describe("YourExamSection — sittings inside a part", () => {
 
 		expect(screen.queryByRole("radio")).not.toBeInTheDocument()
 		expect(screen.getByText("May 8 - 14, 2027")).toBeInTheDocument()
-		expect(screen.getByText(/Early registration · \$600\.00/)).toBeInTheDocument()
+		expect(screen.getByText(/Early registration · USD 600\.00/)).toBeInTheDocument()
 	})
 
 	it("an unpriced, unnamed sitting degrades to the generic label, no amount", () => {

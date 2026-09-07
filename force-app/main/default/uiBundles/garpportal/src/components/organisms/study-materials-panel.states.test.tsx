@@ -91,7 +91,7 @@ describe("StudyMaterialsPanel — the archive entry point", () => {
 		await mount()
 
 		expect(
-			await screen.findByRole("link", { name: /My Access Links/ }),
+			await screen.findByRole("link", { name: /My eBook links/ }),
 		).toHaveAttribute("href", "/study-materials/archive")
 	})
 
@@ -103,7 +103,7 @@ describe("StudyMaterialsPanel — the archive entry point", () => {
 		)
 		const { unmount } = await mount()
 		await screen.findByText("2026 FRM Exam Part II Books")
-		expect(screen.queryByRole("link", { name: /My Access Links/ })).not.toBeInTheDocument()
+		expect(screen.queryByRole("link", { name: /My eBook links/ })).not.toBeInTheDocument()
 		unmount()
 
 		server.use(
@@ -113,7 +113,7 @@ describe("StudyMaterialsPanel — the archive entry point", () => {
 		)
 		await mount()
 		await screen.findByText("2026 FRM Exam Part II Books")
-		expect(screen.queryByRole("link", { name: /My Access Links/ })).not.toBeInTheDocument()
+		expect(screen.queryByRole("link", { name: /My eBook links/ })).not.toBeInTheDocument()
 		// The catalogue itself is untouched by the archive failing.
 		expect(screen.queryByText(/couldn't load/)).not.toBeInTheDocument()
 	})

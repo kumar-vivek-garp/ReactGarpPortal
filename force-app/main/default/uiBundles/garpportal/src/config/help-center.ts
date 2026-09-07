@@ -1,11 +1,4 @@
-import {
-	BookOpen,
-	CircleHelp,
-	Inbox,
-	LifeBuoy,
-	Mail,
-	TriangleAlert,
-} from "lucide-react"
+import { BookOpen, Inbox, LifeBuoy, TriangleAlert } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { z } from "zod"
 
@@ -83,23 +76,11 @@ export type HelpResourceLink = {
 	title: string
 	url: string
 	icon: LucideIcon
-	/** Grouped so contact routes read separately from self-serve reading. */
-	group: "contact" | "faq"
+	/** Grouped so a future second kind of resource reads separately. */
+	group: "faq"
 }
 
 export const HELP_RESOURCE_LINKS: readonly HelpResourceLink[] = [
-	{
-		title: "Email Member Services",
-		url: MEMBER_SERVICES_MAILTO,
-		icon: Mail,
-		group: "contact",
-	},
-	{
-		title: "Contact Us",
-		url: CONTACT_US_URL,
-		icon: CircleHelp,
-		group: "contact",
-	},
 	{
 		title: "FRM FAQs",
 		url: "https://www.garp.org/frm/frequently-asked-questions",
@@ -120,7 +101,11 @@ export const HELP_RESOURCE_LINKS: readonly HelpResourceLink[] = [
 	},
 ] as const
 
+/*
+ * "Contact Member Services" was removed with its two links: both opened the
+ * same request the form beside this card already submits, so the card offered
+ * a longer route to a control that is on screen (UI/UX request, Sep 2026).
+ */
 export const HELP_RESOURCE_GROUPS = [
-	{ key: "contact" as const, heading: "Contact Member Services" },
 	{ key: "faq" as const, heading: "Browse FAQs" },
 ] as const

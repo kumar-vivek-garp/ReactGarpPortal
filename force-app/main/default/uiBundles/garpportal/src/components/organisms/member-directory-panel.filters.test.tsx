@@ -29,7 +29,7 @@ function filtersOrg(options: Parameters<typeof directoryOrg>[0] = {}) {
 const filtersButton = () => screen.getByRole("button", { name: /^Filters/ })
 
 async function mounted(org: ReturnType<typeof filtersOrg>) {
-	renderWithProviders(<MemberDirectoryPanel />)
+	renderWithProviders(<MemberDirectoryPanel initialTerm="lovelace" />)
 	await waitFor(() => expect(org.spy.hits).toBe(1))
 }
 

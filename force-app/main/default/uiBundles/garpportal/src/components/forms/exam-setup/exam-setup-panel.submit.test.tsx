@@ -167,8 +167,8 @@ describe("ExamSetupPanel — the save and what follows", () => {
 		expect(await screen.findByText("There's a fee for this change")).toBeInTheDocument()
 		expect(spy.feeCalls).toEqual([{ modificationId: "a0M999" }])
 		// A refund counts against the total rather than reading as a charge.
-		expect(await screen.findByText("−$40.00")).toBeInTheDocument()
-		expect(screen.getByText("$210.00")).toBeInTheDocument()
+		expect(await screen.findByText("−USD 40.00")).toBeInTheDocument()
+		expect(screen.getByText("USD 210.00")).toBeInTheDocument()
 		expect(screen.getByRole("link", { name: /Pay Fees/ })).toHaveAttribute(
 			"href",
 			expect.stringContaining("myprograms/setup/feescheckout/a0M999"),

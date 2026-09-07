@@ -7,7 +7,7 @@ import { renderWithRouterProviders } from "@/testing/router"
 
 function summary(overrides: Partial<OrdersSummary> = {}): OrdersSummary {
 	return {
-		outstanding: [{ currency: "USD", total: 750, formatted: "$750.00" }],
+		outstanding: [{ currency: "USD", total: 750, formatted: "USD 750.00" }],
 		hasPayable: true,
 		unpaidCount: 2,
 		paidCount: 5,
@@ -22,7 +22,7 @@ describe("what do I owe?", () => {
 
 		// The balance counts up via a spring; wait for it to settle.
 		await waitFor(() => {
-			expect(screen.getByText("$750.00")).toBeInTheDocument()
+			expect(screen.getByText("USD 750.00")).toBeInTheDocument()
 		})
 		const pay = screen.getByRole("link", { name: "Pay now" })
 		expect(pay.getAttribute("href")).toContain("orders=unpaid")
@@ -52,15 +52,15 @@ describe("what do I owe?", () => {
 			<OrderSummaryBar
 				summary={summary({
 					outstanding: [
-						{ currency: "USD", total: 100, formatted: "$100.00" },
-						{ currency: "EUR", total: 50, formatted: "€50.00" },
+						{ currency: "USD", total: 100, formatted: "USD 100.00" },
+						{ currency: "EUR", total: 50, formatted: "EUR 50.00" },
 					],
 				})}
 			/>,
 		)
 		await waitFor(() => {
-			expect(screen.getByText("$100.00")).toBeInTheDocument()
-			expect(screen.getByText("€50.00")).toBeInTheDocument()
+			expect(screen.getByText("USD 100.00")).toBeInTheDocument()
+			expect(screen.getByText("EUR 50.00")).toBeInTheDocument()
 		})
 	})
 

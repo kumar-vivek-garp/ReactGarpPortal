@@ -1,3 +1,5 @@
+import { useState } from "react"
+
 import type { StudyMaterialItem } from "@/api/study-materials/types"
 import { Badge } from "@/components/atoms/badge"
 import { Card } from "@/components/atoms/card"
@@ -6,6 +8,7 @@ import { GarpLearningAddOnCard } from "@/components/molecules/garp-learning-add-
 import { MetaLines } from "@/components/molecules/meta-lines"
 import { StatusBadge } from "@/components/molecules/status-badge"
 import { StudyMaterialAction } from "@/components/molecules/study-material-action"
+import { StudyMaterialDetailsDialog } from "@/components/molecules/study-material-details-dialog"
 import { programBrandSurface } from "@/config/program-brand"
 import {
 	materialMetaLines,
@@ -38,6 +41,7 @@ function StudyMaterialRow({
 	const action = resolveMaterialAction(item)
 	const badge = materialStatusBadge(item)
 	const metaLines = materialMetaLines(item)
+	const [detailsOpen, setDetailsOpen] = useState(false)
 
 	return (
 		<Card
@@ -87,15 +91,30 @@ function StudyMaterialRow({
 					) : null}
 				</div>
 
-				<h3 className="font-heading text-base leading-snug tracking-wide text-foreground">
-					{item.title}
-				</h3>
+				{/*
+				 * Title and blurb open the full description. A plain button rather
+				 * than an overlay: this column also holds the eBook list and the
+				 * add-on card, both of which have buttons an overlay would cover.
+				 */}
+				<button
+					type="button"
+					onClick={() => setDetailsOpen(true)}
+					aria-label={`View details for ${item.title}`}
+					className={cn(
+						"block w-full cursor-pointer space-y-2 rounded-md text-left",
+						"focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+					)}
+				>
+					<h3 className="font-heading text-base leading-snug tracking-wide text-foreground">
+						{item.title}
+					</h3>
 
-				{item.description ? (
-					<p className="line-clamp-1 text-sm text-muted-foreground">
-						{item.description}
-					</p>
-				) : null}
+					{item.description ? (
+						<p className="line-clamp-1 text-sm text-muted-foreground">
+							{item.description}
+						</p>
+					) : null}
+				</button>
 
 				<MetaLines lines={metaLines} className="space-y-1" />
 
@@ -109,6 +128,12 @@ function StudyMaterialRow({
 			<div className="flex shrink-0 flex-wrap items-center gap-x-5 gap-y-2 sm:flex-col sm:items-end">
 				<StudyMaterialAction action={action} />
 			</div>
+
+			<StudyMaterialDetailsDialog
+				item={item}
+				open={detailsOpen}
+				onOpenChange={setDetailsOpen}
+			/>
 		</Card>
 	)
 }

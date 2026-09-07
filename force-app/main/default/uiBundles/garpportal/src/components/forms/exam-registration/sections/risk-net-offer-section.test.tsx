@@ -73,7 +73,7 @@ describe("RiskNetOfferSection", () => {
 
 	it("shows the server's price and the months it buys, and a dash without one", () => {
 		const { unmount } = renderWithProviders(<Harness amount={200.4} months={24} />)
-		expect(screen.getByText("$200.40")).toBeInTheDocument()
+		expect(screen.getByText("USD 200.40")).toBeInTheDocument()
 		expect(screen.getByText("for 24 months")).toBeInTheDocument()
 		unmount()
 

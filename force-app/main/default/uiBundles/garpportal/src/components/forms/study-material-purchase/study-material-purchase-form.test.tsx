@@ -42,9 +42,9 @@ describe("StudyMaterialPurchaseForm — the quote", () => {
 		expect(screen.getByRole("heading", { name: "2026 SCR Book" })).toBeInTheDocument()
 		expect(screen.getByText(/posted to the address below/)).toBeInTheDocument()
 		expect(screen.getByText("Shipping")).toBeInTheDocument()
-		expect(screen.getByText("$15.00")).toBeInTheDocument()
+		expect(screen.getByText("USD 15.00")).toBeInTheDocument()
 		// The total reads twice: the sticky bar and the rail.
-		expect(screen.getAllByText("$115.00")).toHaveLength(2)
+		expect(screen.getAllByText("USD 115.00")).toHaveLength(2)
 		expect(screen.getByText(/Tax is calculated/)).toBeInTheDocument()
 		// `isValid` settles after react-hook-form's mount-time validation pass.
 		await waitFor(() =>

@@ -1,3 +1,5 @@
+import { useState } from "react"
+
 import type { StudyMaterialItem } from "@/api/study-materials/types"
 import { Badge } from "@/components/atoms/badge"
 import {
@@ -12,6 +14,7 @@ import { GarpLearningAddOnCard } from "@/components/molecules/garp-learning-add-
 import { MetaLines } from "@/components/molecules/meta-lines"
 import { StatusBadge } from "@/components/molecules/status-badge"
 import { StudyMaterialAction } from "@/components/molecules/study-material-action"
+import { StudyMaterialDetailsDialog } from "@/components/molecules/study-material-details-dialog"
 import { programBrandSurface } from "@/config/program-brand"
 import {
 	materialMetaLines,
@@ -45,6 +48,7 @@ function StudyMaterialCard({
 	const action = resolveMaterialAction(item)
 	const badge = materialStatusBadge(item)
 	const metaLines = materialMetaLines(item)
+	const [detailsOpen, setDetailsOpen] = useState(false)
 
 	return (
 		<Card
@@ -53,12 +57,30 @@ function StudyMaterialCard({
 				className,
 			)}
 		>
-			<div
-				className={cn(
-					"flex h-36 shrink-0 items-center justify-center p-4",
-					brand.surface,
-				)}
-			>
+			{/*
+			 * The details trigger covers the artwork, the title and the blurb —
+			 * not the whole card. Below this region sit the eBook list and the
+			 * action, which have buttons of their own that an overlay would
+			 * swallow. It is a SIBLING laid over the region rather than a
+			 * wrapper, because a <button> may not contain one.
+			 */}
+			<div className="relative">
+				<button
+					type="button"
+					onClick={() => setDetailsOpen(true)}
+					aria-label={`View details for ${item.title}`}
+					className={cn(
+						"absolute inset-0 z-10 cursor-pointer rounded-t-xl",
+						"focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+					)}
+				/>
+
+				<div
+					className={cn(
+						"flex h-36 shrink-0 items-center justify-center p-4",
+						brand.surface,
+					)}
+				>
 				{item.imageUrl ? (
 					<img
 						src={item.imageUrl}
@@ -71,10 +93,10 @@ function StudyMaterialCard({
 							event.currentTarget.style.display = "none"
 						}}
 					/>
-				) : null}
-			</div>
+					) : null}
+				</div>
 
-			<CardHeader className="gap-2 px-5 pt-1">
+				<CardHeader className="gap-2 px-5 pt-4">
 				<div className="flex flex-wrap items-center gap-2">
 					<Badge className={cn("rounded-md font-bold tracking-wider", brand.chip)}>
 						{studyCodeLabel(item.programKey)}
@@ -86,18 +108,19 @@ function StudyMaterialCard({
 						</Badge>
 					) : null}
 				</div>
-				<CardTitle className="font-heading text-lg leading-snug tracking-wide text-foreground">
-					{item.title}
-				</CardTitle>
-			</CardHeader>
+					<CardTitle className="font-heading text-lg leading-snug tracking-wide text-foreground">
+						{item.title}
+					</CardTitle>
+
+					{item.description ? (
+						<p className="line-clamp-3 text-sm text-muted-foreground">
+							{item.description}
+						</p>
+					) : null}
+				</CardHeader>
+			</div>
 
 			<CardContent className="flex-1 space-y-3 px-5">
-				{item.description ? (
-					<p className="line-clamp-3 text-sm text-muted-foreground">
-						{item.description}
-					</p>
-				) : null}
-
 				<MetaLines lines={metaLines} />
 
 				{item.eBookSet ? (
@@ -117,6 +140,12 @@ function StudyMaterialCard({
 			) : (
 				<div className="pb-5" />
 			)}
+
+			<StudyMaterialDetailsDialog
+				item={item}
+				open={detailsOpen}
+				onOpenChange={setDetailsOpen}
+			/>
 		</Card>
 	)
 }

@@ -76,7 +76,7 @@ export const STUDY_MATERIALS_DENIED = {
 export const STUDY_MATERIALS_ERRATA_LABEL = "Report an error"
 
 /** The archive entry point, shown only to members who hold an eBook key. */
-export const STUDY_MATERIALS_ARCHIVE_LABEL = "My Access Links"
+export const STUDY_MATERIALS_ARCHIVE_LABEL = "My eBook links"
 
 /** Toasted once when the provider returns to the listing with `?purchased=1`. */
 export const PURCHASE_SUCCESS_NOTICE = {

@@ -113,7 +113,7 @@ describe("MembershipAccountCard — transitional states", () => {
 
 		expect(screen.getByText("Payment Pending")).toBeInTheDocument()
 		expect(
-			screen.getByText("Order ORD-9 — $195.00 is waiting to be paid."),
+			screen.getByText("Order ORD-9 — USD 195.00 is waiting to be paid."),
 		).toBeInTheDocument()
 		expect(screen.getByRole("link", { name: "View Order" })).toHaveAttribute(
 			"href",

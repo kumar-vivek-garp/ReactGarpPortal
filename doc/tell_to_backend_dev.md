@@ -14,6 +14,11 @@ GarpAppv1 source on 2026-08-24.** A8–A12 were added the same day, from buildin
 the exam-setup wizard against the live sandbox. Resolved items are kept rather
 than deleted so the history is readable; see the summary at the bottom.
 
+**A15–A17 added 2026-09-07**, from a UI/UX review of the built portal. A15 and
+A16 each block a requested feature. A17 is the opposite — a suspected backend
+gap that was checked and found sound — and is recorded only so nobody spends a
+second afternoon on it.
+
 ---
 
 # A. Needs an Apex change
@@ -365,6 +370,124 @@ the Stripe charge all omit the add-on the candidate added. The portal sends the
 flag on both calls, as GarpAppv1 does; the fix is one DTO field and one
 assignment.
 
+
+---
+
+## A15. 🔴 A case can be listed but never opened — `cases` returns no detail, and there is no detail action
+
+**Class:** `GARP_Portal_CasesService` — `cases()` (line 59) and its SOQL (line 65)
+**Found:** 2026-09-07 · from a UI/UX review of Help Center → My Requests
+
+The ask is to let a member click a row in **My Requests** and read the case:
+what they wrote, and what Member Services replied. Neither is reachable.
+
+The service exposes exactly two actions, `cases()` and `submit()`. There is no
+`caseDetail`, and the list query selects five fields:
+
+```apex
+SELECT Id, CaseNumber, Subject, Status, CreatedDate
+```
+
+`CaseSummary` carries the same five and nothing else. So the payload has no
+`Description`, no `CaseComment`, no `EmailMessage` — nothing a detail view could
+show that the row does not already show. Opening one today would be a dialog
+repeating the line the member just clicked.
+
+### What is needed
+
+A `caseDetail` action taking a case id and returning at least the member's own
+`Description`, plus the correspondence — `CaseComment` (public only) and/or
+`EmailMessage`, newest last. Ownership must be enforced server-side against the
+calling contact rather than trusting the id, the same way the other per-record
+actions do.
+
+**Meanwhile:** My Requests stays a read-only list. The React portal is not
+guessing at a detail view from five fields.
+
+---
+
+## A16. 🔴 The programs listing cannot tell a lapsed enrolment from a live one — everything not `Completed` is "in progress"
+
+**Class:** `GARP_Portal_ProgramsService` — `enrolledTwoPart()` (line 320), `addCourse()`, `addMicroCourses()`
+**Found:** 2026-09-07 · from a UI/UX review of the Programs list page
+
+The ask is a **Lapsed** section on `/programs`: a registration that expires
+before the candidate completes it should move out of *In Progress* rather than
+sitting there for ever. Today it sits there for ever, and the listing payload
+carries nothing the client could use to move it.
+
+Every bucket decision in this service turns on one comparison:
+
+```apex
+if (con.Status == 'Completed') { return null; }   // -> completedPrograms
+// anything else falls through to enrolledPrograms
+```
+
+A contract with `Status = 'Expired'` is not `'Completed'`, so it lands in
+`enrolledPrograms` and renders as in progress.
+
+### The org already knows
+
+`GARP_Portal_ProgramDetailService` reads the very same field and names the state
+(line 293):
+
+```apex
+if (con.Status == 'Expired') {
+    d.programState = 'EnrollmentExpired';
+}
+```
+
+So this is not missing data or a new query — `ProgramsService` already holds the
+contract in memory and simply never tests for `'Expired'`.
+
+### What is needed
+
+Either is fine, whichever fits the payload's shape better:
+
+- a fourth bucket, `lapsedPrograms`, alongside the existing three; or
+- an `isExpired` (or `programState`) flag on `EnrolledProgramInfo`, leaving the
+  client to file it.
+
+The second is the smaller change and keeps the bucket count stable.
+
+**Why not do it client-side:** the listing payload carries only `programType`
+and the administration names — no status at all. The only way to learn that a
+programme lapsed is one `programDetail` call **per enrolled programme**, purely
+to decide which tab a card belongs in. That is several extra round trips on a
+list page, so the portal is not doing it.
+
+**Meanwhile:** lapsed registrations keep showing under *In Progress*. The tab is
+built the day the flag appears.
+
+---
+
+## A17. ⚪ Study-material artwork — checked end to end, NOT a backend item
+
+**Found:** 2026-09-07 · recorded so it is not investigated twice. **No action.**
+
+A UI/UX review asked why study-material cards show no product photo. Every layer
+was checked and every one is correct, so nothing here is the backend's to fix:
+
+| Checked | Result |
+|---|---|
+| `StudyMaterial.imageURL` on the wire | Populated on **every** material, owned ones included — `GARP_Portal_StudyMaterialsService.build()` run for 6 real contacts, `noImg=0` each time |
+| The value itself | An absolute URL, e.g. `https://www.garp.org/hubfs/GARP%20Design/frm/image/study-materials/2025/eBook-part1.png` |
+| Does it resolve? | Yes — `200`, `image/png`, on every URL tried |
+| Catalogue coverage | All active study-material products have a `Content__c`, and all of those carry an `Image__c` (35/35 in `devjuly25a`, 27/27 in `preprod`) |
+| CSP | `www.garp.org` is an active trusted site with `IsApplicableToImgSrc = true`, `Context = All`, in **both** orgs |
+
+Two things worth knowing, neither of them defects:
+
+- A **bare filename** does appear in `Content__c.Image__c` on other content
+  (`May17_CyberRisk.jpg` on webcast rows). Those records are not study materials
+  and never reach this page, but anything new reading `Image__c` should not
+  assume the value is a URL.
+- The images are **large** — 400KB to 740KB for artwork drawn at about 144px.
+  Worth resizing at some point, for page weight rather than correctness.
+
+So if a card is genuinely blank in a given environment, the cause is in front of
+the payload, not behind it, and the environment and programme need naming before
+anyone digs further.
 
 # B. Needs data seeded in `devjuly25a`
 

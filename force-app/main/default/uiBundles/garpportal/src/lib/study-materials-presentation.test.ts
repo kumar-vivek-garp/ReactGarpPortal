@@ -66,9 +66,9 @@ describe("accessExpiryLine", () => {
 
 describe("formatPrice / purchasePath", () => {
 	it("renders whole dollars bare and cents when there are any", () => {
-		expect(formatPrice(295)).toBe("$295")
-		expect(formatPrice(12.5)).toBe("$12.50")
-		expect(formatPrice(0)).toBe("$0")
+		expect(formatPrice(295)).toBe("USD 295")
+		expect(formatPrice(12.5)).toBe("USD 12.50")
+		expect(formatPrice(0)).toBe("USD 0")
 		expect(formatPrice(null)).toBeNull()
 		expect(formatPrice(undefined)).toBeNull()
 	})

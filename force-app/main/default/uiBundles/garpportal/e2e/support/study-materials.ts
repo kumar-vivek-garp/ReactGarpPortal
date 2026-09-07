@@ -17,7 +17,7 @@ import { programsListData } from "./payloads"
  *
  *   FRM  — GARP Learning (access + a pending practice-exam add-on, Part 1),
  *          owned Part I eBooks with two vendor titles (Part 1),
- *          the Part II books for sale at $295 (Part 2)
+ *          the Part II books for sale at USD 295 (Part 2)
  *   SCR  — an unpaid order for the printed book
  *   RAI  — a coming-soon book with a Notify me link
  *   FRR  — an out-of-stock handbook

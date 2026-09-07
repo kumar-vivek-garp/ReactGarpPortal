@@ -1,4 +1,4 @@
-import { Users } from "lucide-react"
+import { Search, Users } from "lucide-react"
 import { z } from "zod"
 
 /**
@@ -38,6 +38,17 @@ export const DIRECTORY_ZERO_STATE = {
 	title: "No members found",
 	message:
 		"Try a different name, company or country — or clear a filter to widen the search.",
+} as const
+
+/**
+ * Before any criteria are entered. Distinct from the zero state on purpose:
+ * "No members found" on an untouched page reads as a directory with nobody in
+ * it, when in fact nothing has been asked yet (UI/UX request, Sep 2026).
+ */
+export const DIRECTORY_PRE_SEARCH_STATE = {
+	icon: Search,
+	title: "Results will display here",
+	message: "Please enter search criteria above.",
 } as const
 
 export const DIRECTORY_NO_ACCESS = {
