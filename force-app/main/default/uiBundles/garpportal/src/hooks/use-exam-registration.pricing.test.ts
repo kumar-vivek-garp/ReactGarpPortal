@@ -28,6 +28,7 @@ function stateProps(
 		billingAndShippingSame: true,
 		autoRenew: false,
 		membershipSelected: false,
+		riskNetSelected: false,
 		...overrides,
 	}
 }
@@ -174,5 +175,18 @@ describe("useExamRegistrationState — debounced re-pricing", () => {
 		await settle()
 		expect(fees.spy.hits).toBe(2)
 		expect(fees.spy.bodies[1].materials).toEqual(["SM-P2", "SM-GEN"])
+	})
+
+	it("carries the Risk.net add-on into the priced request", async () => {
+		const fees = examregPost<FeesRequest>("fees", () => feesResult(295))
+		server.use(fees.handler)
+
+		renderState({ riskNetSelected: true })
+
+		await vi.waitFor(() => {
+			expect(fees.spy.hits).toBeGreaterThan(0)
+		})
+		expect(fees.spy.bodies[0].riskNetSelected).toBe(true)
+		expect(fees.spy.bodies[0].membershipSelected).toBe(false)
 	})
 })

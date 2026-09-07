@@ -1,5 +1,8 @@
+import { X } from "lucide-react"
+
 import type { AccountView, ChapterOption } from "@/api/account/types"
 import { Label } from "@/components/atoms/label"
+import { cn } from "@/lib/utils"
 import {
 	Select,
 	SelectContent,
@@ -62,23 +65,63 @@ function ChapterSelect({
 			<Label htmlFor={id} className="font-heading font-semibold">
 				{label}
 			</Label>
-			<Select
-				value={value ?? NONE_VALUE}
-				onValueChange={(next) => onChange(next === NONE_VALUE ? null : next)}
-				disabled={disabled}
-			>
-				<SelectTrigger id={id} className="w-full">
-					<SelectValue placeholder="Select Chapter" />
-				</SelectTrigger>
-				<SelectContent>
-					<SelectItem value={NONE_VALUE}>Select Chapter</SelectItem>
-					{options.map((option) => (
-						<SelectItem key={option.value} value={option.value}>
-							{option.label}
-						</SelectItem>
-					))}
-				</SelectContent>
-			</Select>
+			{/*
+			 * The clear button is a SIBLING of the trigger laid over it, never a
+			 * child: the trigger is itself a `<button>`, and nesting one inside
+			 * another is invalid markup that assistive tech reads unpredictably.
+			 * It therefore needs to out-rank the trigger's own `z-10`.
+			 */}
+			<div className="relative">
+				<Select
+					value={value ?? NONE_VALUE}
+					onValueChange={(next) => onChange(next === NONE_VALUE ? null : next)}
+					disabled={disabled}
+				>
+					<SelectTrigger
+						id={id}
+						// The margin reserves the clear button's slot out of the
+						// VALUE's width rather than the trigger's padding — padding
+						// would push the chevron left as well, landing it on the
+						// wrong side of the button.
+						className={cn(
+							"w-full",
+							value && "*:data-[slot=select-value]:me-6",
+						)}
+					>
+						<SelectValue placeholder="Select Chapter" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value={NONE_VALUE}>Select Chapter</SelectItem>
+						{options.map((option) => (
+							<SelectItem key={option.value} value={option.value}>
+								{option.label}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+
+				{/*
+				 * Only once there is something to clear. Named for the field it
+				 * clears, because the page carries two of these and "Clear" alone
+				 * would announce both identically.
+				 */}
+				{value ? (
+					<button
+						type="button"
+						onClick={() => onChange(null)}
+						disabled={disabled}
+						aria-label={`Clear ${label}`}
+						className={cn(
+							"absolute inset-y-0 end-7 z-20 my-auto grid size-6 cursor-pointer place-items-center rounded-full",
+							"text-muted-foreground hover:bg-muted hover:text-foreground",
+							"focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+							"disabled:cursor-not-allowed disabled:opacity-50",
+						)}
+					>
+						<X className="size-3.5" aria-hidden />
+					</button>
+				) : null}
+			</div>
 		</div>
 	)
 }
@@ -87,9 +130,9 @@ function PreferredChaptersCard({
 	account,
 	handle,
 }: PreferredChaptersCardProps) {
-	const { identity, chapters } = account
+	const { chapters } = account
 	const optionsQuery = useAccountOptions(true)
-	const saveMutation = useSavePreferredChapters(identity.contactId)
+	const saveMutation = useSavePreferredChapters()
 	const chapterOptions = optionsQuery.data?.chapters ?? []
 	const busy = saveMutation.isPending || optionsQuery.isPending
 	const saveState = useSaveState(saveMutation)

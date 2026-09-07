@@ -353,6 +353,19 @@ at the legacy behaviour until the field lands.
 
 ---
 
+## A14. 🔴 `register()` drops `riskNetSelected` on the membership form — the Risk.net line is quoted but never ordered
+
+**Class:** `GARP_ExamReg_Dto.RegisterRequest`, `GARP_ExamReg_RegService.feesRequestFrom`
+**Found:** 2026-09-07 · full write-up in `doc/backend-request-membership-risknet.md`
+
+`riskNetSelected` exists on `FeesRequest` only. The register request has no such
+field and `feesRequestFrom` never copies it, so a cart quoted at 295 (MEMI +
+MEMR) is re-priced to 195 at `register()` — the Opportunity, the staged row and
+the Stripe charge all omit the add-on the candidate added. The portal sends the
+flag on both calls, as GarpAppv1 does; the fix is one DTO field and one
+assignment.
+
+
 # B. Needs data seeded in `devjuly25a`
 
 These are **verification** blockers, not bugs. In each case the code is written

@@ -1,47 +1,18 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import type { CatalogueItem, StudyMaterial } from "@/api/study-materials/types"
-import { resolveStudyMaterialsView } from "@/config/study-materials"
+import { formatLongDate } from "@/lib/account-format"
+import { studyItem } from "@/testing/factories/study-materials"
+
 import {
 	accessExpiryLine,
-	buildCatalogueItemPresentation,
-	buildOwnedItemPresentation,
+	comingSoonLine,
+	formatPrice,
+	materialMetaLines,
+	materialStatusBadge,
+	ownedLine,
+	purchasePath,
 	studyCodeLabel,
 } from "./study-materials-presentation"
-
-function owned(overrides: Partial<StudyMaterial> = {}): StudyMaterial {
-	return {
-		id: "scr-0",
-		programKey: "scr",
-		name: "2026 SCR Book",
-		type: "eBook",
-		accessUrl: "https://example.com/read",
-		status: "Taken",
-		expirationDate: "2027-08-11",
-		isAvailable: true,
-		unavailableReason: null,
-		lastAccessed: null,
-		invoiceNumber: null,
-		...overrides,
-	}
-}
-
-function catalogue(overrides: Partial<CatalogueItem> = {}): CatalogueItem {
-	return {
-		id: "frm-1",
-		programKey: "frm",
-		title: "2026 FRM Study Guide",
-		paragraphs: ["Primary topics and required readings."],
-		imageUrl: null,
-		downloadUrl: "https://example.com/guide.pdf",
-		purchaseUrl: null,
-		costNote: null,
-		materialType: "Guide",
-		isDownload: true,
-		sortOrder: 1,
-		...overrides,
-	}
-}
 
 afterEach(() => {
 	vi.useRealTimers()
@@ -93,113 +64,84 @@ describe("accessExpiryLine", () => {
 	})
 })
 
-describe("buildOwnedItemPresentation", () => {
-	it("carries program identity, status and an open action", () => {
+describe("formatPrice / purchasePath", () => {
+	it("renders whole dollars bare and cents when there are any", () => {
+		expect(formatPrice(295)).toBe("$295")
+		expect(formatPrice(12.5)).toBe("$12.50")
+		expect(formatPrice(0)).toBe("$0")
+		expect(formatPrice(null)).toBeNull()
+		expect(formatPrice(undefined)).toBeNull()
+	})
+
+	it("builds the encoded in-app purchase path", () => {
+		expect(purchasePath("FRM2H")).toBe("/study-materials/purchase/FRM2H")
+		expect(purchasePath(" a/b ")).toBe("/study-materials/purchase/a%2Fb")
+		expect(purchasePath("")).toBeNull()
+		expect(purchasePath(null)).toBeNull()
+	})
+})
+
+describe("ownedLine / comingSoonLine", () => {
+	it("says how the material was acquired, with the date when there is one", () => {
+		const on = formatLongDate("2026-02-11")
+		expect(
+			ownedLine({ wasOrderedWithReg: true, registrationDate: "2026-02-11", orderedDate: null }),
+		).toBe(`Included with your registration · ${on}`)
+		expect(
+			ownedLine({ wasOrderedWithReg: false, registrationDate: null, orderedDate: "2026-02-11" }),
+		).toBe(`Purchased · ${on}`)
+		expect(
+			ownedLine({ wasOrderedWithReg: false, registrationDate: null, orderedDate: null }),
+		).toBe("Purchased")
+	})
+
+	it("dates a coming-soon item, or says soon", () => {
+		expect(comingSoonLine("2026-12-01")).toBe(`Available ${formatLongDate("2026-12-01")}`)
+		expect(comingSoonLine(null)).toBe("Available soon")
+	})
+})
+
+describe("materialStatusBadge", () => {
+	it("chips the first fact that applies, in the chain's order", () => {
+		expect(materialStatusBadge(studyItem({ isUnPaidOrder: true, isOwned: true }))).toEqual({
+			label: "Unpaid order",
+			tone: "warning",
+		})
+		expect(materialStatusBadge(studyItem({ isOwned: true }))).toEqual({
+			label: "Owned",
+			tone: "success",
+		})
+		expect(
+			materialStatusBadge(studyItem({ garpLearningAccessUrl: "https://l.example" })),
+		).toEqual({ label: "Access granted", tone: "success" })
+		expect(materialStatusBadge(studyItem({ accessUrl: "https://r.example" }))).toEqual({
+			label: "Access granted",
+			tone: "success",
+		})
+		expect(materialStatusBadge(studyItem({ isComingSoon: true }))).toEqual({
+			label: "Coming soon",
+			tone: "info",
+		})
+		expect(materialStatusBadge(studyItem({ isOutOfStock: true }))).toEqual({
+			label: "Out of stock",
+			tone: "neutral",
+		})
+	})
+
+	it("chips nothing for a material that is simply for sale", () => {
+		expect(materialStatusBadge(studyItem({ canPurchase: true, price: 295 }))).toBeNull()
+	})
+})
+
+describe("materialMetaLines", () => {
+	it("carries the eBook key's expiry and nothing else", () => {
 		vi.useFakeTimers()
 		vi.setSystemTime(new Date(2026, 7, 18))
-		const result = buildOwnedItemPresentation(owned())
-		expect(result.variant).toBe("owned")
-		expect(result.codeLabel).toBe("SCR")
-		expect(result.typeLabel).toBe("eBook")
-		// Apex `keyStatus` wins the label when present.
-		expect(result.statusLabel).toBe("Taken")
-		expect(result.statusTone).toBe("info")
-		expect(result.primaryAction).toEqual({
-			label: "Open material",
-			url: "https://example.com/read",
-			isExternal: true,
-			newWindow: true,
-		})
-		expect(result.secondaryAction).toBeNull()
-	})
-
-	it("falls back to Available when Apex sends no status", () => {
-		const result = buildOwnedItemPresentation(owned({ status: null }))
-		expect(result.statusLabel).toBe("Available")
-		expect(result.statusTone).toBe("success")
-	})
-
-	it("warns and offers help when the material is unavailable", () => {
-		const result = buildOwnedItemPresentation(
-			owned({ isAvailable: false, unavailableReason: "Coming soon" }),
-		)
-		expect(result.statusLabel).toBe("Unavailable")
-		expect(result.statusTone).toBe("warning")
-		expect(result.metaLines).toContainEqual({
-			icon: "unavailable",
-			text: "Coming soon",
-		})
-		expect(result.primaryAction).toBeNull()
-		expect(result.secondaryAction?.label).toBe("Ask about access")
-	})
-
-	it("offers help rather than a dead link when there is no access url", () => {
-		const result = buildOwnedItemPresentation(owned({ accessUrl: "   " }))
-		expect(result.primaryAction).toBeNull()
-		expect(result.secondaryAction?.url).toContain("mailto:")
-	})
-
-	it("tolerates a missing name", () => {
-		expect(buildOwnedItemPresentation(owned({ name: null })).title).toBe(
-			"Study material",
-		)
-	})
-})
-
-describe("buildCatalogueItemPresentation", () => {
-	it("prefers a download over a purchase", () => {
-		const result = buildCatalogueItemPresentation(
-			catalogue({ purchaseUrl: "https://example.com/buy" }),
-		)
-		expect(result.primaryAction?.label).toBe("Download now")
-	})
-
-	it("offers purchase when the item is not a download", () => {
-		const result = buildCatalogueItemPresentation(
-			catalogue({
-				isDownload: false,
-				downloadUrl: null,
-				purchaseUrl: "https://example.com/buy",
-				costNote: "$300",
-			}),
-		)
-		expect(result.primaryAction?.label).toBe("Purchase")
-		expect(result.metaLines).toContainEqual({ icon: "price", text: "$300" })
-	})
-
-	it("has no action when neither url is present", () => {
-		const result = buildCatalogueItemPresentation(
-			catalogue({ isDownload: false, downloadUrl: null, purchaseUrl: null }),
-		)
-		expect(result.primaryAction).toBeNull()
-	})
-
-	it("never carries a status — catalogue entries are not owned", () => {
-		const result = buildCatalogueItemPresentation(catalogue())
-		expect(result.statusLabel).toBeNull()
-		expect(result.statusTone).toBeNull()
-	})
-
-	it("drops blank paragraphs", () => {
-		const result = buildCatalogueItemPresentation(
-			catalogue({ paragraphs: ["Real copy", "   ", ""] }),
-		)
-		expect(result.paragraphs).toEqual(["Real copy"])
-	})
-})
-
-describe("resolveStudyMaterialsView", () => {
-	it("honours an explicit view above everything else", () => {
-		expect(resolveStudyMaterialsView("list")).toBe("list")
-		expect(resolveStudyMaterialsView("list", "grid")).toBe("list")
-	})
-
-	it("prefers a remembered choice over the grid default", () => {
-		expect(resolveStudyMaterialsView(undefined, "list")).toBe("list")
-	})
-
-	it("defaults to grid — this page is primarily a catalogue", () => {
-		expect(resolveStudyMaterialsView(undefined)).toBe("grid")
-		expect(resolveStudyMaterialsView(undefined, null)).toBe("grid")
+		expect(
+			materialMetaLines(
+				studyItem({ eBookSet: { titles: [], expireDate: "2027-08-11" } }),
+			),
+		).toEqual([{ icon: "accessUntil", text: expect.stringContaining("Access until") }])
+		expect(materialMetaLines(studyItem())).toEqual([])
 	})
 })

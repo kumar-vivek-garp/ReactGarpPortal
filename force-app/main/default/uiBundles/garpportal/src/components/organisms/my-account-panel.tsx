@@ -114,10 +114,7 @@ function MyAccountPanel({ tab, status, orders }: MyAccountPanelProps) {
 									</p>
 								) : null}
 								{!prefsPending && contactId ? (
-									<ContactPreferencesPanel
-										contactId={contactId}
-										enabled={tab === "contact-preferences"}
-									/>
+									<ContactPreferencesPanel enabled={tab === "contact-preferences"} />
 								) : null}
 							</>
 						) : null}

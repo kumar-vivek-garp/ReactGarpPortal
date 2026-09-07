@@ -9,9 +9,11 @@ import type { EventRegistrationSearch } from "@/config/event-registration"
 import type { RegistrationSearch } from "@/config/registration"
 import {
 	isCheckoutCancelled,
+	isMembershipProgramSlug,
 	isPaymentReturn,
 	MEMBER_EVENT_REGISTRATION_ROUTES,
 	MEMBER_REGISTRATION_ROUTE,
+	MEMBERSHIP_MEMBER_REGISTRATION_ROUTE,
 } from "@/lib/registration-paths"
 
 type GuardArgs = {
@@ -56,6 +58,16 @@ function withSession(
  *
  * Note this is a deliberate departure from the legacy app, whose public route
  * has no guard at all and simply hides the guest-only fields for a member.
+ *
+ * Suppressed on BOTH checkout return legs: the cancel return carries the `oid`
+ * the rollback depends on, and a bounce would drop it. A bare `resume` is NOT
+ * suppressed — the redirect carries `search`, so the member route rebuilds
+ * the form from the same staged row.
+ *
+ * The membership programme's twin is not under `/programs`: a membership is
+ * not a programme, so its member form sits beside the Membership Benefits
+ * page instead. Same suppression, same `search` (which is how `regCode` and
+ * `track_cta` survive the bounce), different destination.
  */
 export function redirectMemberToPortalForm({
 	context,
@@ -63,7 +75,10 @@ export function redirectMemberToPortalForm({
 	search,
 }: GuardArgs): void | Promise<void> {
 	return withSession(context.queryClient, (user) => {
-		if (!user || isPaymentReturn(search)) return
+		if (!user || isPaymentReturn(search) || isCheckoutCancelled(search)) return
+		if (isMembershipProgramSlug(params.programType)) {
+			throw redirect({ to: MEMBERSHIP_MEMBER_REGISTRATION_ROUTE, search })
+		}
 		throw redirect({
 			to: MEMBER_REGISTRATION_ROUTE,
 			params: { programType: params.programType },

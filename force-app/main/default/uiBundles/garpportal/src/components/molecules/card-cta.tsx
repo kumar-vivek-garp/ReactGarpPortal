@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { CircleArrowRight, Lock } from "lucide-react"
 import { Link } from "@tanstack/react-router"
 
@@ -16,6 +17,8 @@ type CardCtaProps = {
 	newWindow?: boolean
 	/** When true, renders a non-interactive CTA (e.g. Register Now). */
 	disabled?: boolean
+	/** Trailing icon. Defaults to the circled arrow every card CTA carries. */
+	icon?: ReactNode
 	className?: string
 }
 
@@ -34,6 +37,7 @@ function CardCta({
 	locked = false,
 	newWindow = false,
 	disabled = false,
+	icon = <CircleArrowRight className="size-5" />,
 	className,
 }: CardCtaProps) {
 	const nudge = useSpringNudge({ direction: "forward", disabled })
@@ -43,7 +47,7 @@ function CardCta({
 	const inner = (
 		<SpringNudge
 			nudge={nudge}
-			icon={<CircleArrowRight className="size-5" />}
+			icon={icon}
 			iconPosition="trailing"
 		>
 			{locked ? <Lock className="size-4 shrink-0" aria-hidden /> : null}

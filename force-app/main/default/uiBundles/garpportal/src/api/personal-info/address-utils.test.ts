@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest"
 
 import {
-	addressesMatch,
 	copyAddress,
 	emptyAddress,
 	joinStreet,
 	splitStreet,
 	str,
+	toAddressInput,
 } from "@/api/personal-info/address-utils"
 
 describe("splitStreet", () => {
@@ -40,16 +40,28 @@ describe("joinStreet", () => {
 	})
 })
 
-describe("addressesMatch", () => {
-	it("ignores surrounding whitespace field by field", () => {
-		const base = { ...emptyAddress(), address1: "1 Main St", city: "Hoboken" }
-		const padded = { ...base, address1: " 1 Main St ", city: "Hoboken  " }
-		expect(addressesMatch(base, padded)).toBe(true)
-	})
-
-	it("detects a single differing field", () => {
-		const base = { ...emptyAddress(), city: "Hoboken" }
-		expect(addressesMatch(base, { ...base, postalCode: "07030" })).toBe(false)
+describe("toAddressInput", () => {
+	it("trims every field, sends blanks as null, and never a joined street", () => {
+		expect(
+			toAddressInput({
+				...emptyAddress(),
+				company: " GARP ",
+				address1: "1 Main St",
+				address2: "  ",
+				city: "Hoboken",
+				country: "United States",
+			}),
+		).toEqual({
+			company: "GARP",
+			street1: "1 Main St",
+			street2: null,
+			street3: null,
+			city: "Hoboken",
+			state: null,
+			postalCode: null,
+			country: "United States",
+			phone: null,
+		})
 	})
 })
 

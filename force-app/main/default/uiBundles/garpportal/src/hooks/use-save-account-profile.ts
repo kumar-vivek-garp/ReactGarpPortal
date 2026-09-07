@@ -13,10 +13,7 @@ type SaveProfileToast = {
 }
 
 /** Saves Contact profile fields via REST `/memberportal/profile`. */
-export function useSaveAccountProfile(
-	contactId: string,
-	toast?: SaveProfileToast,
-) {
+export function useSaveAccountProfile(toast?: SaveProfileToast) {
 	const queryClient = useQueryClient()
 
 	return useMutation({
@@ -26,13 +23,13 @@ export function useSaveAccountProfile(
 			errorTitle: toast?.errorTitle ?? "Unable to save career information",
 		},
 		onSuccess: async () => {
-			await invalidateAccountCaches(queryClient, contactId)
+			await invalidateAccountCaches(queryClient)
 		},
 	})
 }
 
 /** Preferred chapters — same profile POST, plus Events cache (meetings use these names). */
-export function useSavePreferredChapters(contactId: string) {
+export function useSavePreferredChapters() {
 	const queryClient = useQueryClient()
 
 	return useMutation({
@@ -43,7 +40,7 @@ export function useSavePreferredChapters(contactId: string) {
 		},
 		onSuccess: async () => {
 			await Promise.all([
-				invalidateAccountCaches(queryClient, contactId),
+				invalidateAccountCaches(queryClient),
 				queryClient.invalidateQueries({ queryKey: eventsQueryKeys.view }),
 			])
 		},
@@ -51,7 +48,7 @@ export function useSavePreferredChapters(contactId: string) {
 }
 
 /** Directory privacy flags — same profile POST as other Contact fields. */
-export function useSaveDirectorySettings(contactId: string) {
+export function useSaveDirectorySettings() {
 	const queryClient = useQueryClient()
 
 	return useMutation({
@@ -61,7 +58,7 @@ export function useSaveDirectorySettings(contactId: string) {
 			errorTitle: "Unable to save directory settings",
 		},
 		onSuccess: async () => {
-			await invalidateAccountCaches(queryClient, contactId)
+			await invalidateAccountCaches(queryClient)
 		},
 	})
 }

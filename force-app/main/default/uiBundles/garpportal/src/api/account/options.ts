@@ -39,5 +39,11 @@ export async function fetchAccountOptions(): Promise<AccountOptionsView> {
 	return {
 		picklists: data.picklists ?? {},
 		chapters: data.chapters ?? [],
+		mobilePhoneLocations: data.mobilePhoneLocations ?? [],
+		countries: data.countries ?? [],
+		schools: data.schools ?? [],
+		organizations: data.organizations ?? [],
+		workingYears: data.workingYears ?? [],
+		graduationYears: data.graduationYears ?? [],
 	}
 }

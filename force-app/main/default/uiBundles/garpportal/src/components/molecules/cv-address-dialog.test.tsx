@@ -4,10 +4,17 @@ import { http, HttpResponse } from "msw"
 import { describe, expect, it, vi } from "vitest"
 
 import type { CurrentUser } from "@/api/auth/current-user"
-import type { CountryOption } from "@/api/personal-info/types"
 import { memberPortalEnvelope } from "@/testing/factories/envelope"
-import { personalInfoEditData } from "@/testing/factories/personal-info"
-import { personalInfoGraphqlResolvers } from "@/testing/factories/personal-info-graphql"
+import {
+	accountViewFromPersonalInfo,
+	billingCompanyResolver,
+	personalInfoEditData,
+} from "@/testing/factories/personal-info"
+import {
+	accountOptionsView,
+	portalCountryOption,
+} from "@/testing/factories/account-options"
+import { myAccountOrg } from "@/testing/msw/handlers/account"
 import { cvView } from "@/testing/factories/work-experience"
 import { sdkGraphqlHandler } from "@/testing/msw/handlers/sdk-graphql"
 import { server } from "@/testing/msw/server"
@@ -25,15 +32,17 @@ const MEMBER: CurrentUser = {
 	photoUrl: null,
 }
 
-const COUNTRIES: CountryOption[] = [
-	{ label: "United Kingdom", value: "United Kingdom", phoneCode: "+44" },
+const COUNTRIES = [
+	portalCountryOption({ name: "United Kingdom", phoneCode: "44" }),
 ]
 
 function serveOrg() {
 	server.use(
-		sdkGraphqlHandler(
-			personalInfoGraphqlResolvers(personalInfoEditData(), COUNTRIES),
-		),
+		...myAccountOrg({
+			view: accountViewFromPersonalInfo(personalInfoEditData()),
+			options: accountOptionsView({ countries: COUNTRIES }),
+		}).handlers,
+		sdkGraphqlHandler(billingCompanyResolver(personalInfoEditData())),
 		http.post(CV_ADDRESS_PATH, () =>
 			HttpResponse.json(
 				memberPortalEnvelope({ statusMessage: null, statusCode: 200 }),

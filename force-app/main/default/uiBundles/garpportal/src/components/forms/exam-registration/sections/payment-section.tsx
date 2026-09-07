@@ -10,7 +10,7 @@ import {
 } from "@/components/atoms/card"
 import { Checkbox } from "@/components/atoms/checkbox"
 import { Label } from "@/components/atoms/label"
-import { FieldError } from "@/components/molecules/form-field"
+import { FieldError, RequiredMark } from "@/components/molecules/form-field"
 import type { ExamFormValues } from "@/components/forms/exam-registration/exam-form-values"
 import { OFFLINE_PAYMENT_COPY, PAYMENT_TILES } from "@/config/registration"
 import { isPaymentAllowed } from "@/lib/registration-presentation"
@@ -30,8 +30,14 @@ type PaymentSectionProps = {
 	/** Org-level Stripe switch from the load payload. */
 	useStripe: boolean
 	paymentType: string
-	/** Card orders with a complimentary membership can opt into auto-renew. */
+	/** Card orders with a membership in the cart can opt into auto-renew. */
 	showAutorenew: boolean
+	/**
+	 * The consent wording. Defaults to the complimentary-membership line the
+	 * exams and courses use; the membership programme passes its own, because
+	 * the membership it renews is the one being paid for, not a free one.
+	 */
+	autoRenewLabel?: string
 	disabled?: boolean
 }
 
@@ -54,6 +60,7 @@ function PaymentSection({
 	useStripe,
 	paymentType,
 	showAutorenew,
+	autoRenewLabel = OFFLINE_PAYMENT_COPY.autoRenew,
 	disabled,
 }: PaymentSectionProps) {
 	const isOffline = paymentType === "Wire Transfer" || paymentType === "ACH"
@@ -67,6 +74,10 @@ function PaymentSection({
 				</CardTitle>
 			</CardHeader>
 			<CardContent className="flex flex-col gap-4">
+				<Label id="paymentType-label" className="font-bold">
+					Payment method
+					<RequiredMark />
+				</Label>
 				<Controller
 					control={control}
 					name="paymentType"
@@ -148,7 +159,7 @@ function PaymentSection({
 							htmlFor="autoRenew"
 							className="text-body leading-5 font-normal"
 						>
-							{OFFLINE_PAYMENT_COPY.autoRenew}
+							{autoRenewLabel}
 						</Label>
 					</div>
 				) : null}

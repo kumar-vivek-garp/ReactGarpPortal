@@ -1,6 +1,8 @@
 import { act } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
+import { http, HttpResponse } from "msw"
+
 import { AppError } from "@/api/client"
 import {
 	useExamRegistrationSubmit,
@@ -12,7 +14,9 @@ import {
 	examRegisterResult,
 	verifyCustomerResult,
 } from "@/testing/factories/exam"
-import { examregPost } from "@/testing/msw/handlers/examreg"
+import { stagedRegisterResult } from "@/testing/factories/exam-payment"
+import { memberPortalError } from "@/testing/factories/envelope"
+import { EXAMREG_PATH, examregPost } from "@/testing/msw/handlers/examreg"
 import { server } from "@/testing/msw/server"
 import { renderHookWithProviders } from "@/testing/render"
 
@@ -47,11 +51,14 @@ describe("useExamRegistrationSubmit — payment", () => {
 				examRegisterResult({ orderId: "801-off" }),
 			)
 			const pay = examregPost("payOrder", () => ({}))
+			// Finance settles wire/ACH days later, so "no payment recorded" is
+			// the normal answer and the poll accepts it first time.
 			const status = examregPost("paymentStatus", () => ({
 				isOrderFound: true,
-				isPaymentFound: true,
+				isPaymentFound: false,
 			}))
-			server.use(register.handler, pay.handler, status.handler)
+			const rollback = examregPost("rollback", () => ({ success: true }))
+			server.use(register.handler, pay.handler, status.handler, rollback.handler)
 
 			const { outcome } = await submit({
 				request: examRegisterRequest({ paymentType }),
@@ -64,7 +71,9 @@ describe("useExamRegistrationSubmit — payment", () => {
 			expect(pay.spy.hits).toBe(1)
 			expect(pay.spy.bodies[0]).toEqual({ orderId: "801-off", paymentType })
 			expect(status.spy.hits).toBe(1)
-			expect(outcome?.kind).toBe("invoiced")
+			expect(outcome).toMatchObject({ kind: "invoiced", settlementId: "801-off" })
+			// A placed order is finance's now — nothing to roll back.
+			expect(rollback.spy.hits).toBe(0)
 		},
 	)
 
@@ -139,12 +148,67 @@ describe("useExamRegistrationSubmit — payment", () => {
 		const body = checkout.spy.bodies[0]
 		const base = `${window.location.origin}${window.location.pathname}`
 		expect(body.orderId).toBe("801-str")
-		expect(body.cancelUrl).toBe(base)
 		const success = new URL(body.successUrl)
 		expect(`${success.origin}${success.pathname}`).toBe(base)
 		expect(success.searchParams.get("stripe_return")).toBe("1")
 		expect(success.searchParams.get("oid")).toBe("801-str")
-		expect(success.searchParams.get("on")).toBe("ORD-77")
+		// The order NUMBER does not travel — the status poll answers with it,
+		// and under the deferred flow there is none yet anyway.
+		expect(success.searchParams.has("on")).toBe(false)
+		// The cancel leg carries the id the rollback depends on.
+		const cancel = new URL(body.cancelUrl)
+		expect(`${cancel.origin}${cancel.pathname}`).toBe(base)
+		expect(cancel.searchParams.get("checkout_cancelled")).toBe("1")
+		expect(cancel.searchParams.get("oid")).toBe("801-str")
+	})
+
+	it("DEFERRED FLOW: a staged register result goes to checkout under its staged id", async () => {
+		identityHandlers()
+		const register = examregPost("register", () => stagedRegisterResult())
+		const checkout = examregPost<{ orderId: string; successUrl: string }>(
+			"checkout",
+			() => ({ checkoutUrl: "https://checkout.stripe.com/c/pay/cs_staged" }),
+		)
+		const pay = examregPost("payOrder", () => ({}))
+		server.use(register.handler, checkout.handler, pay.handler)
+
+		const { outcome } = await submit({
+			request: examRegisterRequest({ paymentType: "Stripe" }),
+			checkAddress: false,
+			session: null,
+		})
+
+		// No orderId at all — the staged id is what names this registration
+		// from here on. Falling through to "registered" here is the live bug
+		// this test pins shut: an unpaid card registration shown as complete.
+		expect(outcome).toEqual({ kind: "redirecting" })
+		expect(checkout.spy.hits).toBe(1)
+		expect(checkout.spy.bodies[0].orderId).toBe("a0H-staged")
+		expect(new URL(checkout.spy.bodies[0].successUrl).searchParams.get("oid")).toBe(
+			"a0H-staged",
+		)
+		expect(pay.spy.hits).toBe(0)
+	})
+
+	it("echoes resumeStagedId in the register body so a retry reuses its row", async () => {
+		identityHandlers()
+		const register = examregPost<{ resumeStagedId: string | null }>(
+			"register",
+			() => stagedRegisterResult(),
+		)
+		const checkout = examregPost("checkout", () => ({
+			checkoutUrl: "https://checkout.stripe.com/c/pay/cs_retry",
+		}))
+		server.use(register.handler, checkout.handler)
+
+		await submit({
+			request: examRegisterRequest({ paymentType: "Stripe" }),
+			checkAddress: false,
+			session: null,
+			resumeStagedId: "a0H-staged",
+		})
+
+		expect(register.spy.bodies[0].resumeStagedId).toBe("a0H-staged")
 	})
 
 	it("Stripe without a checkoutUrl surfaces the server message, then the fallback", async () => {
@@ -156,7 +220,11 @@ describe("useExamRegistrationSubmit — payment", () => {
 			checkoutUrl: null,
 			msg: hits === 1 ? "Stripe is unavailable right now." : "  ",
 		}))
-		server.use(register.handler, checkout.handler)
+		const rollback = examregPost<{ orderId: string; reason: string }>(
+			"rollback",
+			() => ({ success: true }),
+		)
+		server.use(register.handler, checkout.handler, rollback.handler)
 
 		const first = await submit({
 			request: examRegisterRequest({ paymentType: "Stripe" }),
@@ -177,6 +245,36 @@ describe("useExamRegistrationSubmit — payment", () => {
 		expect((second.failure as AppError).messages).toEqual([
 			"Unable to start checkout.",
 		])
+		// Each failed attempt left an order behind that nobody will pay —
+		// each is rolled back, and the failure shown is still the checkout one.
+		expect(rollback.spy.hits).toBe(2)
+		expect(rollback.spy.bodies[0]).toEqual({
+			orderId: "801-str2",
+			reason: "Registration not completed",
+		})
+	})
+
+	it("a rollback that itself fails does not replace the checkout error", async () => {
+		identityHandlers()
+		const register = examregPost("register", () =>
+			examRegisterResult({ orderId: "801-str3" }),
+		)
+		const checkout = examregPost("checkout", () => ({ isError: true, msg: "Declined" }))
+		server.use(
+			register.handler,
+			checkout.handler,
+			http.post(`${EXAMREG_PATH}/rollback`, () =>
+				HttpResponse.json(memberPortalError(400, "Order not found"), { status: 400 }),
+			),
+		)
+
+		const { failure } = await submit({
+			request: examRegisterRequest({ paymentType: "Stripe" }),
+			checkAddress: false,
+			session: null,
+		})
+
+		expect((failure as AppError).messages).toEqual(["Declined"])
 	})
 
 	it("Stripe with nothing to bill settles server-side instead of checking out", async () => {
@@ -188,6 +286,7 @@ describe("useExamRegistrationSubmit — payment", () => {
 		const pay = examregPost("payOrder", () => ({}))
 		const status = examregPost("paymentStatus", () => ({
 			isPaymentFound: true,
+			isPaymentSuccess: true,
 		}))
 		server.use(register.handler, checkout.handler, pay.handler, status.handler)
 
@@ -199,7 +298,7 @@ describe("useExamRegistrationSubmit — payment", () => {
 
 		expect(checkout.spy.hits).toBe(0)
 		expect(pay.spy.hits).toBe(1)
-		expect(outcome?.kind).toBe("registered")
+		expect(outcome).toMatchObject({ kind: "registered", settlementId: "801-zero" })
 	})
 
 	it("VERIFIED QUIRK: a rolled-back order still resolves invoiced", async () => {

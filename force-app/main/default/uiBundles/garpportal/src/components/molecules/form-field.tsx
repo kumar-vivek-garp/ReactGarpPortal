@@ -19,6 +19,20 @@ function FieldError({
 	)
 }
 
+/**
+ * The asterisk a required control's label carries. Exported so labels that
+ * are not a `FormField` (a radio group's heading, an uppercase caption over a
+ * select) mark themselves the same way rather than each drawing their own.
+ */
+function RequiredMark() {
+	return (
+		<span className="text-destructive" aria-hidden>
+			{" "}
+			*
+		</span>
+	)
+}
+
 type FormFieldProps = {
 	/** Must match the control's `id` so the label actually targets it. */
 	id: string
@@ -54,12 +68,7 @@ function FormField({
 		<div className={cn("flex flex-col gap-2", className)}>
 			<Label htmlFor={id} className="font-bold">
 				{label}
-				{required ? (
-					<span className="text-destructive" aria-hidden>
-						{" "}
-						*
-					</span>
-				) : null}
+				{required ? <RequiredMark /> : null}
 			</Label>
 			{children}
 			{hint && !error ? (
@@ -70,4 +79,4 @@ function FormField({
 	)
 }
 
-export { FieldError, FormField }
+export { FieldError, FormField, RequiredMark }

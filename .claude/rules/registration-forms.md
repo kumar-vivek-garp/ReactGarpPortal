@@ -124,6 +124,8 @@ The same form is served to a signed-in member and to a visitor with no account.
 | Member | `/programs/$programType/register` | `_appLayout` (the normal portal layout) |
 | Guest | `/registration/$programType` | `_publicFormLayout` |
 | Affiliate (guest only) | `/registration/affiliate` | `_publicFormLayout` |
+| Individual membership — guest | `/registration/membership` (served by `$programType`; slug aliased to wire type `mem`) | `_publicFormLayout` |
+| Individual membership — member | `/membership/register` (NOT under `/programs`; `redirectMemberToPortalForm` consults `isMembershipProgramSlug`) | `_appLayout` |
 
 `/registration/<type>` is the legacy public address and is already in
 circulation in GARP marketing email — keep it.
@@ -187,13 +189,67 @@ Guards must:
 ### The payment return is sacred
 
 The checkout success URL is built from `window.location` at submit time, so the
-provider returns to **whichever route started the payment**, carrying `oid`/`on`
-and nothing else. At that moment the order is already charged.
+provider returns to **whichever route started the payment**, carrying
+`stripe_return=1&oid=<id>` and nothing else (the order NUMBER does not travel —
+the status poll answers with it). At that moment the order is already charged.
 
 - Guards resolve the session but **suppress the redirect** when
-  `isPaymentReturn(search)`.
-- The outcome screen renders **before any query runs** — re-rendering the form
-  behind a completed payment invites a second registration.
+  `isPaymentReturn(search)` or `isCheckoutCancelled(search)`. A bare `resume`
+  is NOT suppressed: the redirect carries `search`, so the member route
+  rebuilds the same staged registration.
+- The return screen renders **before any query runs** — the form's load is
+  gated off on both payment legs — and it POLLS `paymentStatus` before saying
+  anything is confirmed (`lib/payment-return-presentation.ts` holds the rules,
+  `hooks/use-payment-return-status.ts` the loop). Five outcomes, GarpAppv1's
+  order: confirming, issue (id refused / never seen), declined (Try again →
+  `?resume=`), succeeded (survey, then paid / finalising), failed (paid but
+  rolled back or `Failed` — needs a human).
+- The cancel URL is `?checkout_cancelled=1&oid=<id>`: the page rolls the order
+  back once and offers Start again. Which leg a load is — and the precedence
+  between them — is decided in ONE place, `registrationLegProps` in
+  `lib/registration-paths.ts`, spread into both routes.
+
+### The deferred card flow (`Is_Stripe_Order_History__c`)
+
+`Stripe_Auth_Configuration__mdt.Is_Stripe_Order_History__c` switches how
+`register` answers a CARD payment. OFF: the order exists — `orderId`. ON: only
+an `Order_History__c` row holding the payload is written — `stagedId` and a
+`REG-` `registrationRef`, no order until the Stripe webhook confirms payment.
+Wire/ACH are always immediate. **Measured 2026-09-07: ON in devjuly25a, OFF in
+preprod** — check before testing the card leg on any org.
+
+The client never branches on the flag; it uses whichever id came back
+(`resolveSettlementId`) and the server routes `checkout` / `paymentStatus` on
+the id's type. What the flag changes for the client:
+
+- The staged cancel URL carries `resume=<stagedId>` as well (the server appends
+  it). `resume` wins over `checkout_cancelled`: the form is rebuilt from
+  `GET resume?stagedId=` — nothing was created, so nothing is rolled back — and
+  the next `register` carries `resumeStagedId` so the retry reuses the row.
+- A rollback of a staged id answers 400 and is swallowed, as in GarpAppv1.
+- **Consents ARE restored on a resume** — a deliberate exception to §6's
+  "consents always start unticked": same registration, same session, same
+  candidate, who ticked them minutes ago. `toExamFormValuesFromRequest` is
+  the inverse of `buildRegisterRequest` for everything RHF owns; the exam
+  selection and cart go back into `useExamRegistrationState`'s initialisers.
+  The form must not mount before the resume query resolves (Radix Select
+  ignores a later reset).
+
+### The survey after success
+
+GarpAppv1 shows a "Complete Your Profile" demographics survey after EVERY
+successful registration — card return once payment confirms, wire/ACH/free
+straight after `payOrder` — before the closing copy. Ours is
+`components/forms/registration-survey/`, rendered in `RegistrationOutcome`'s
+`children` slot with the actions hidden until Skip or Submit. It is optional
+and says so. Two save paths, chosen from the CLIENT session inside the
+component: member → `memberportal/account` + `options` seed, save via
+`memberportal/profile`; guest → `GET examreg/demographics` + `examreg/options`,
+save via `POST examreg/demographics { key, values }` where `key` is the order
+or staged id the registration returned. No key, or a session with no member
+record → "fill it in later on My Account" + Continue. Never shown after a
+failure, rollback or decline. One payload builder (`toSurveyPayload`) serves
+both paths; its allow-list is `GARP_ExamReg_Demographics.WRITABLE_FIELDS`.
 
 ---
 
@@ -417,7 +473,9 @@ Follow `forms.md`. Registration forms add these, all learned the hard way:
   effect to pre-select a sole option trips `react-hooks/set-state-in-effect`
   and races the first pricing call. `resolvePartSelection` is the pattern.
 - **Consents always start unticked.** A tick recorded against a policy the
-  candidate did not read this time is worthless.
+  candidate did not read this time is worthless. The one exception is a form
+  rebuilt from a staged registration (`?resume=`) — see §2, "The deferred card
+  flow".
 
 ### Changing the billing country is not a field write
 

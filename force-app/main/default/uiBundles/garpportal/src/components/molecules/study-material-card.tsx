@@ -1,3 +1,4 @@
+import type { StudyMaterialItem } from "@/api/study-materials/types"
 import { Badge } from "@/components/atoms/badge"
 import {
 	Card,
@@ -6,26 +7,34 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/atoms/card"
-import { CardCta } from "@/components/molecules/card-cta"
+import { EBookTitleList } from "@/components/molecules/ebook-title-list"
+import { GarpLearningAddOnCard } from "@/components/molecules/garp-learning-add-on"
 import { MetaLines } from "@/components/molecules/meta-lines"
 import { StatusBadge } from "@/components/molecules/status-badge"
+import { StudyMaterialAction } from "@/components/molecules/study-material-action"
 import { programBrandSurface } from "@/config/program-brand"
-import type { StudyItemPresentation } from "@/lib/study-materials-presentation"
+import {
+	materialMetaLines,
+	materialStatusBadge,
+	resolveMaterialAction,
+	studyCodeLabel,
+} from "@/lib/study-materials-presentation"
 import { cn } from "@/lib/utils"
 
 type StudyMaterialCardProps = {
-	item: StudyItemPresentation
+	item: StudyMaterialItem
 	/** Mark above-the-fold artwork as an LCP candidate. */
 	priority?: boolean
 	className?: string
 }
 
 /**
- * Grid card for an owned material or a catalogue entry.
+ * Grid card for one material.
  *
  * Brand tint and code chip come from the item's program bucket, reusing the
  * programs palette — these materials *are* the FRM / SCR / RAI books, so they
- * should carry the same identity as the program cards.
+ * should carry the same identity as the program cards. What the card can DO
+ * is decided by `resolveMaterialAction`; the card only renders the answer.
  */
 function StudyMaterialCard({
 	item,
@@ -33,7 +42,9 @@ function StudyMaterialCard({
 	className,
 }: StudyMaterialCardProps) {
 	const brand = programBrandSurface(item.programKey)
-	const showFooter = Boolean(item.primaryAction || item.secondaryAction)
+	const action = resolveMaterialAction(item)
+	const badge = materialStatusBadge(item)
+	const metaLines = materialMetaLines(item)
 
 	return (
 		<Card
@@ -66,11 +77,9 @@ function StudyMaterialCard({
 			<CardHeader className="gap-2 px-5 pt-1">
 				<div className="flex flex-wrap items-center gap-2">
 					<Badge className={cn("rounded-md font-bold tracking-wider", brand.chip)}>
-						{item.codeLabel}
+						{studyCodeLabel(item.programKey)}
 					</Badge>
-					{item.statusLabel && item.statusTone ? (
-						<StatusBadge label={item.statusLabel} tone={item.statusTone} />
-					) : null}
+					{badge ? <StatusBadge label={badge.label} tone={badge.tone} /> : null}
 					{item.typeLabel ? (
 						<Badge variant="outline" className="rounded-md font-semibold">
 							{item.typeLabel}
@@ -83,32 +92,27 @@ function StudyMaterialCard({
 			</CardHeader>
 
 			<CardContent className="flex-1 space-y-3 px-5">
-				{item.paragraphs.length > 0 ? (
+				{item.description ? (
 					<p className="line-clamp-3 text-sm text-muted-foreground">
-						{item.paragraphs.join(" ")}
+						{item.description}
 					</p>
 				) : null}
 
-				<MetaLines lines={item.metaLines} />
+				<MetaLines lines={metaLines} />
+
+				{item.eBookSet ? (
+					<div className="space-y-1">
+						<p className="text-sm font-semibold text-foreground">Your eBooks</p>
+						<EBookTitleList titles={item.eBookSet.titles} />
+					</div>
+				) : null}
+
+				{item.addOn ? <GarpLearningAddOnCard addOn={item.addOn} /> : null}
 			</CardContent>
 
-			{showFooter ? (
+			{action.kind !== "none" ? (
 				<CardFooter className="mt-auto flex flex-wrap items-center gap-x-6 gap-y-2 px-5 pb-5">
-					{item.primaryAction ? (
-						<CardCta
-							label={item.primaryAction.label}
-							url={item.primaryAction.url}
-							isExternal={item.primaryAction.isExternal}
-							newWindow={item.primaryAction.newWindow}
-						/>
-					) : null}
-					{item.secondaryAction ? (
-						<CardCta
-							label={item.secondaryAction.label}
-							url={item.secondaryAction.url}
-							isExternal={item.secondaryAction.isExternal}
-						/>
-					) : null}
+					<StudyMaterialAction action={action} />
 				</CardFooter>
 			) : (
 				<div className="pb-5" />

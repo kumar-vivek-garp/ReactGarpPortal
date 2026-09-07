@@ -16,13 +16,19 @@ vi.mock(
 		ProgramRegistrationPanel: (props: {
 			programType: string
 			regCode?: string
-			paymentReturn?: { orderNumber?: string } | null
+			paymentReturn?: { statusId?: string; orderNumber?: string } | null
+			checkoutCancelled?: { orderId?: string } | null
+			resumeStagedId?: string
+			trackCta?: string
 		}) => (
 			<p>
 				panel {props.programType} code={props.regCode ?? "none"} paid=
 				{props.paymentReturn
-					? (props.paymentReturn.orderNumber ?? "return")
-					: "none"}
+					? `${props.paymentReturn.statusId ?? "?"}/${props.paymentReturn.orderNumber ?? "-"}`
+					: "none"}{" "}
+				cancelled={props.checkoutCancelled?.orderId ?? "none"} resume=
+				{props.resumeStagedId ?? "none"}
+				{props.trackCta ? ` cta=${props.trackCta}` : ""}
 			</p>
 		),
 	}),
@@ -41,7 +47,7 @@ describe("/programs/$programType/register page", () => {
 		await mount("/programs/frm/register")
 
 		expect(
-			screen.getByText("panel frm code=none paid=none"),
+			screen.getByText("panel frm code=none paid=none cancelled=none resume=none"),
 		).toBeInTheDocument()
 	})
 
@@ -49,7 +55,7 @@ describe("/programs/$programType/register page", () => {
 		await mount("/programs/frm/register?regCode=TEAM24&teamCode=OTHER")
 
 		expect(
-			screen.getByText("panel frm code=TEAM24 paid=none"),
+			screen.getByText("panel frm code=TEAM24 paid=none cancelled=none resume=none"),
 		).toBeInTheDocument()
 	})
 
@@ -57,7 +63,7 @@ describe("/programs/$programType/register page", () => {
 		await mount("/programs/scr/register?teamCode=2024")
 
 		expect(
-			screen.getByText("panel scr code=2024 paid=none"),
+			screen.getByText("panel scr code=2024 paid=none cancelled=none resume=none"),
 		).toBeInTheDocument()
 	})
 
@@ -65,7 +71,15 @@ describe("/programs/$programType/register page", () => {
 		await mount("/programs/frm/register?stripe_return=1&oid=801&on=8013")
 
 		expect(
-			screen.getByText("panel frm code=none paid=8013"),
+			screen.getByText("panel frm code=none paid=801/8013 cancelled=none resume=none"),
+		).toBeInTheDocument()
+	})
+
+	it("hands the attribution tag through — it rides verifyCustomer, nothing else", async () => {
+		await mount("/programs/frm/register?track_cta=PortalMyAccountPage")
+
+		expect(
+			screen.getByText("panel frm code=none paid=none cancelled=none resume=none cta=PortalMyAccountPage"),
 		).toBeInTheDocument()
 	})
 })

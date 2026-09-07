@@ -94,7 +94,7 @@ export function examNotificationsData(): ExamNotificationsView {
 /**
  * `GET alertBar` — one active alert. "Scheduling Incomplete" is the rung the
  * legacy raises most; urgent tone, deadline carried, in-app scheduling action.
- * Renders as: "FRM Part I · Book by 7 November 2026" + the copy below.
+ * Renders as: "FRM Part I" over "Schedule by 7 November 2026" + the copy below.
  */
 export function alertBarData(): AlertBarView {
 	return {

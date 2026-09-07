@@ -232,6 +232,7 @@ describe("buildProgramDetailPresentation", () => {
 			baseDetail({
 				programType: "SCR",
 				currentRegistrationIsOpen: true,
+				currentRegistrationCanRegPartI: true,
 				examPart1Info: basePart({
 					examPartState: "SchedulingClosedNeverScheduled",
 					isSchedulingOpen: false,
@@ -265,6 +266,7 @@ describe("buildProgramDetailPresentation", () => {
 					examPartState: "SchedulingClosedResultsAvailable",
 					isSchedulingOpen: false,
 					result: "Pass",
+					badgeURL: "https://badge.example/x.png",
 					badgePageURL: "https://badge.example/x",
 				}),
 			}),

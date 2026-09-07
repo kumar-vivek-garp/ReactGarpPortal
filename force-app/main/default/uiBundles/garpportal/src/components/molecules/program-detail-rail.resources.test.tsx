@@ -5,7 +5,11 @@ import { describe, expect, it } from "vitest"
 
 import { ProgramDetailRail } from "@/components/molecules/program-detail-rail"
 import { memberPortalEnvelope } from "@/testing/factories/envelope"
-import { examResources, programDetail } from "@/testing/factories/programs"
+import {
+	examPartInfo,
+	examResources,
+	programDetail,
+} from "@/testing/factories/programs"
 import { sdkGraphqlHandler } from "@/testing/msw/handlers/sdk-graphql"
 import { server } from "@/testing/msw/server"
 import { renderWithRouterProviders } from "@/testing/router"
@@ -50,37 +54,82 @@ describe("the exam resources block", () => {
 		).toContain("/programs/frm/errata")
 		unmount()
 
-		// FRR has no published curriculum to report against.
-		await renderRail(programDetail({ programType: "frr" }))
+		// FRR25 has no published curriculum to report against (FRR itself
+		// does — the errataForm action accepts it).
+		await renderRail(programDetail({ programType: "frr25" }))
 		expect(
 			screen.queryByRole("link", { name: "Submit Errata" }),
 		).not.toBeInTheDocument()
 	})
 
-	it("always offers study materials and the prep-provider hand-off", async () => {
-		await renderRail(programDetail())
+	it("filters study materials to the programme", async () => {
+		await renderRail(programDetail({ programType: "RiskAI" }))
 		expect(
 			screen.getByRole("link", { name: "Study Materials" }).getAttribute("href"),
-		).toContain("/study-materials")
+		).toBe("/study-materials?tab=rai")
+	})
+
+	it("offers the prep-provider opt-in until it is taken up, and never for ERP", async () => {
+		const user = userEvent.setup()
+		const { unmount } = await renderRail(programDetail({ programType: "FRM" }))
+		await user.click(screen.getByRole("button", { name: "Need Help Studying?" }))
 		expect(
-			screen.getByRole("link", { name: "Need Help Studying?" }),
-		).toHaveAttribute("href", "https://www.garp.org/exam-prep-providers")
+			await screen.findByRole("dialog", { name: "Need Help Studying?" }),
+		).toBeInTheDocument()
+		unmount()
+
+		const { unmount: unmountOpted } = await renderRail(
+			programDetail({
+				programType: "FRM",
+				examResources: examResources({ IsOptedIntoEPP: true }),
+			}),
+		)
+		expect(
+			screen.queryByRole("button", { name: "Need Help Studying?" }),
+		).not.toBeInTheDocument()
+		unmountOpted()
+
+		await renderRail(programDetail({ programType: "ERP" }))
+		expect(
+			screen.queryByRole("button", { name: "Need Help Studying?" }),
+		).not.toBeInTheDocument()
 	})
 })
 
 describe("the member details block", () => {
+	/** Identity is only shown while a sitting is in play — scheduling open here. */
+	const inPlay = (overrides = {}) =>
+		programDetail({ isAnyPartSchedulingOpen: true, ...overrides })
+
 	it("stays away entirely for a member with nothing on file and no OSTA duty", async () => {
-		await renderRail(programDetail())
+		await renderRail(inPlay())
 		expect(
 			screen.queryByRole("heading", { name: "Member details" }),
 		).not.toBeInTheDocument()
 	})
 
-	it("shows the ID on file, read-only, for a non-OSTA member", async () => {
+	it("stays away once no sitting is in play, whatever is on file", async () => {
 		await renderRail(
 			programDetail({
 				IDName: "ADA LOVELACE",
+				isOSTACandidate: true,
+				examPart1Info: examPartInfo({
+					examPartState: "SchedulingClosedResultsAvailable",
+				}),
+			}),
+		)
+		expect(
+			screen.queryByRole("heading", { name: "Member details" }),
+		).not.toBeInTheDocument()
+	})
+
+	it("shows the ID on file, read-only, masking the number until asked", async () => {
+		const user = userEvent.setup()
+		await renderRail(
+			inPlay({
+				IDName: "ADA LOVELACE",
 				IDType: "Passport",
+				IDNumber: "••••1234",
 				phoneCode: "+44",
 				phoneNumber: "2071234567",
 			}),
@@ -90,8 +139,18 @@ describe("the member details block", () => {
 		).toBeInTheDocument()
 		expect(screen.getByText("ADA LOVELACE")).toBeInTheDocument()
 		expect(screen.getByText("+44 2071234567")).toBeInTheDocument()
+		expect(screen.queryByText("••••1234")).not.toBeInTheDocument()
 		expect(
 			screen.queryByRole("button", { name: /Update ID|Add your ID/ }),
+		).not.toBeInTheDocument()
+		expect(
+			screen.getByRole("link", { name: "Contact Member Services" }),
+		).toHaveAttribute("href", expect.stringMatching(/^mailto:memberservices@garp\.com/))
+
+		await user.click(screen.getByRole("button", { name: "Show ID number" }))
+		expect(screen.getByText("••••1234")).toBeInTheDocument()
+		expect(
+			screen.queryByRole("button", { name: "Show ID number" }),
 		).not.toBeInTheDocument()
 	})
 
@@ -109,7 +168,7 @@ describe("the member details block", () => {
 			sdkGraphqlHandler({}),
 		)
 		const user = userEvent.setup()
-		await renderRail(programDetail({ isOSTACandidate: true }))
+		await renderRail(inPlay({ isOSTACandidate: true }))
 
 		const add = screen.getByRole("button", { name: /Add your ID/ })
 		expect(screen.getByText("No ID on file.")).toBeInTheDocument()
@@ -122,7 +181,7 @@ describe("the member details block", () => {
 
 	it("relabels to Update once an ID is stored, and lists the OSTA details", async () => {
 		await renderRail(
-			programDetail({
+			inPlay({
 				isOSTACandidate: true,
 				IDName: "ADA LOVELACE",
 				OSTANameInChinese: "阿达",
@@ -137,7 +196,7 @@ describe("the member details block", () => {
 
 	it("keeps the OSTA list read-only for a member no longer flagged", async () => {
 		await renderRail(
-			programDetail({
+			inPlay({
 				isOSTACandidate: false,
 				OSTANameInChinese: "阿达",
 			}),

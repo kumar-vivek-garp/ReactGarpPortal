@@ -8,7 +8,12 @@ export type ContactPreferencesData = {
 }
 
 export type UpdateSmsPreferencesInput = {
-	contactId: string
 	smsPromotional: boolean
 	smsRegistration: boolean
+}
+
+/** `POST /memberportal/emailPreferenceUpdate` payload. */
+export type EmailPreferenceResult = {
+	statusMessage: string | null
+	statusCode: number
 }

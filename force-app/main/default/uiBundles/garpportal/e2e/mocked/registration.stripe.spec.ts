@@ -2,14 +2,17 @@ import { expect, test } from "@playwright/test"
 
 import type { AlertBarView } from "@/api/alert-bar"
 import type { RegistrationCountry } from "@/api/registration/exam-types"
+import { accountOptionsView } from "@/testing/factories/account-options"
 import {
 	examLoad,
 	examRegisterResult,
 	feesResult,
 	verifyCustomerResult,
 } from "@/testing/factories/exam"
-import { contactEditNode } from "@/testing/factories/personal-info-graphql"
+import { demographicsOptions } from "@/testing/factories/exam-payment"
 import {
+	accountViewFromPersonalInfo,
+	billingCompanyGraphql,
 	personalInfoEditData,
 	portalAddressFields,
 } from "@/testing/factories/personal-info"
@@ -20,16 +23,19 @@ import { programsListData } from "../support/payloads"
  * The Stripe (billed card) leg. Three sacred properties, each its own test:
  *
  * 1. The checkout POST carries an honest return contract — a successUrl the
- *    provider can come back to (`stripe_return=1&oid&on` on the register
- *    page) and a cancelUrl that IS the register page — and a relative
- *    checkoutUrl actually navigates the browser away. No verifyAddress (card
- *    orders collect the address at Stripe), no payOrder, no paymentStatus.
- * 2. Coming back to the successUrl renders the paid confirmation without a
+ *    provider can come back to (`stripe_return=1&oid` on the register page,
+ *    NO order number: the status poll answers with it) and a cancelUrl that
+ *    carries `checkout_cancelled=1&oid` so the page can roll the order back
+ *    — and a relative checkoutUrl actually navigates the browser away. No
+ *    verifyAddress (card orders collect the address at Stripe), no payOrder,
+ *    no paymentStatus.
+ * 2. Coming back to the successUrl POLLS paymentStatus before confirming,
+ *    then shows the optional survey before the closing copy — without a
  *    second register and without payOrder ever firing.
  * 3. A COLD payment-return load (fresh page, no React state, all-numeric
  *    params that arrive as JSON numbers) shows the confirmation before any
- *    form and fires zero write calls — the order behind it is already
- *    charged.
+ *    form, and the status poll is the ONLY call it makes — the order behind
+ *    it is already charged.
  */
 
 const NO_ALERT = {
@@ -58,21 +64,10 @@ const UNITED_STATES: RegistrationCountry = {
 }
 
 /** Mailing mirrors billing so the loader derives same-as-billing = true. */
-const PROFILE_GRAPHQL = {
-	uiapi: {
-		query: {
-			Contact: {
-				edges: [
-					{
-						node: contactEditNode(
-							personalInfoEditData({ mailing: portalAddressFields() }),
-						),
-					},
-				],
-			},
-		},
-	},
-}
+const PROFILE = personalInfoEditData({
+	mailing: portalAddressFields(),
+	sameAsBilling: true,
+})
 
 const WRITE_KEYS = [
 	"verifyCustomer",
@@ -85,8 +80,14 @@ const WRITE_KEYS = [
 
 function stripeOptions(): MockOrgOptions {
 	return {
-		actions: { programs: programsListData(), alertBar: NO_ALERT },
-		graphql: { PersonalInfoEditContact: PROFILE_GRAPHQL },
+		actions: {
+			programs: programsListData(),
+			alertBar: NO_ALERT,
+			account: accountViewFromPersonalInfo(PROFILE),
+			// The member survey's picklists.
+			options: accountOptionsView(),
+		},
+		graphql: { BillingCompany: billingCompanyGraphql(PROFILE) },
 		examreg: {
 			info: examLoad({
 				isAuthenticated: true,
@@ -99,7 +100,16 @@ function stripeOptions(): MockOrgOptions {
 			// Relative on purpose: keeps the handoff on the static e2e server.
 			checkout: { checkoutUrl: "/e2e-checkout-stub", orderId: "801-order" },
 			payOrder: { completed: true },
-			paymentStatus: { isOrderFound: true, isPaymentFound: true },
+			// The order's own answer on the return leg — no order number here, so
+			// the cold-load test can prove the legacy `on` param still renders.
+			paymentStatus: {
+				isOrderFound: true,
+				isPaymentFound: true,
+				isPaymentSuccess: true,
+			},
+			// The guest survey's own picklists; the `options` lists are hints.
+			demographics: demographicsOptions(),
+			options: { companies: [], schools: [] },
 		},
 	}
 }
@@ -156,10 +166,11 @@ test.describe("stripe checkout leg", () => {
 		expect(successUrl).toContain("/programs/frm/register?")
 		expect(successUrl).toContain("stripe_return=1")
 		expect(successUrl).toContain("oid=801-order")
-		expect(successUrl).toContain("on=ORD-1001")
-		// Cancel goes back to the register page itself, param-free.
-		expect(String(checkoutBody.cancelUrl)).toMatch(
-			/\/programs\/frm\/register$/,
+		// The order NUMBER does not travel — the status poll answers with it.
+		expect(successUrl).not.toContain("on=")
+		// Cancel carries the oid the rollback depends on.
+		expect(String(checkoutBody.cancelUrl)).toContain(
+			"/programs/frm/register?checkout_cancelled=1&oid=801-order",
 		)
 
 		// Card sequence: verify → register → checkout. No verifyAddress (Stripe
@@ -175,10 +186,34 @@ test.describe("stripe checkout leg", () => {
 		).toEqual(["verifyCustomer", "register", "checkout"])
 		expect(org.hits("payOrder")).toBe(0)
 
-		// The provider comes back to the successUrl it was handed.
+		// The provider comes back to the successUrl it was handed. The order
+		// number arrives from the poll, not the URL.
+		org.use({
+			examreg: {
+				paymentStatus: {
+					isOrderFound: true,
+					isPaymentFound: true,
+					isPaymentSuccess: true,
+					orderNumber: "ORD-1001",
+				},
+			},
+		})
 		await page.goto(successUrl)
 		await expect(page.getByText("Thank you — payment received")).toBeVisible()
 		await expect(page.getByText("ORD-1001")).toBeVisible()
+		expect(parse(org.of("paymentStatus")[0].postData)).toEqual({
+			orderId: "801-order",
+		})
+
+		// The survey stands between the confirmation and the actions; Skip is a
+		// first-class way past it, and saves nothing.
+		await expect(
+			page.getByRole("heading", { name: /Help us tailor your/ }),
+		).toBeVisible()
+		await expect(page.getByRole("link", { name: "Go to dashboard" })).toHaveCount(0)
+		await page.getByRole("button", { name: "Skip for now" }).click()
+		await expect(page.getByRole("link", { name: "Go to dashboard" })).toBeVisible()
+		expect(org.hits("profile")).toBe(0)
 
 		// Nothing was written twice: still one register, still zero payOrder.
 		expect(org.hits("register")).toBe(1)
@@ -205,9 +240,15 @@ test.describe("stripe checkout leg", () => {
 			page.getByRole("button", { name: "Pay and Register" }),
 		).toHaveCount(0)
 
-		// Zero writes — and no pricing either, because the form never mounted.
-		for (const key of WRITE_KEYS) expect(org.hits(key)).toBe(0)
+		// The poll on the numeric id (coerced back to a string) is the ONLY
+		// registration call. Zero writes — and no pricing or form load either,
+		// because the form never mounted.
+		expect(parse(org.of("paymentStatus")[0].postData)).toEqual({ orderId: "801" })
+		for (const key of WRITE_KEYS) {
+			expect(org.hits(key)).toBe(key === "paymentStatus" ? 1 : 0)
+		}
 		expect(org.hits("fees")).toBe(0)
+		expect(org.hits("info")).toBe(0)
 	})
 
 	test("a GUEST's payment return is not bounced off the public route", async ({
@@ -225,6 +266,10 @@ test.describe("stripe checkout leg", () => {
 		// confirmation rendered, with GUEST-safe destinations only.
 		await expect(page).toHaveURL(/\/registration\/frm\?/)
 		await expect(page.getByText("Thank you — payment received")).toBeVisible()
+		// The guest survey reads the registration module's own picklists, and
+		// Skip gives way to the outcome's actions.
+		await page.getByRole("button", { name: "Skip for now" }).click()
+		expect(org.hits("demographics")).toBe(1)
 		// The outcome's own "Sign in" — the public chrome carries "Sign In" too.
 		await expect(
 			page.getByRole("link", { name: "Sign in", exact: true }),
@@ -232,6 +277,8 @@ test.describe("stripe checkout leg", () => {
 		await expect(
 			page.getByRole("link", { name: "Go to dashboard" }),
 		).toHaveCount(0)
-		for (const key of WRITE_KEYS) expect(org.hits(key)).toBe(0)
+		for (const key of WRITE_KEYS) {
+			expect(org.hits(key)).toBe(key === "paymentStatus" ? 1 : 0)
+		}
 	})
 })

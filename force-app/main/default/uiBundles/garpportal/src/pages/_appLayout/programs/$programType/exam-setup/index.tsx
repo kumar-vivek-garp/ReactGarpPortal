@@ -5,7 +5,7 @@ import {
 	PAGE_PENDING_MIN_MS,
 	PAGE_PENDING_MS,
 } from "@/components/molecules/page-pending"
-import { ExamSetupPanel } from "@/components/organisms/exam-setup-panel"
+import { ExamSetupPanel } from "@/components/forms/exam-setup/exam-setup-panel"
 import { EXAM_SETUP_TITLE } from "@/config/exam-setup"
 import { pageTitle } from "@/lib/document-title"
 

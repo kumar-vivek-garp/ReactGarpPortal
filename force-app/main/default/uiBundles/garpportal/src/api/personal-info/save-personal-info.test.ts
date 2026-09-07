@@ -1,104 +1,114 @@
 import { describe, expect, it } from "vitest"
 
-import { savePersonalInfo } from "@/api/personal-info/save-personal-info"
+import {
+	changedIdentityFields,
+	savePersonalInfo,
+} from "@/api/personal-info/save-personal-info"
 import type { PersonalInfoSaveInput } from "@/api/personal-info/types"
-import { portalAddressFields } from "@/testing/factories/personal-info"
-import { sdkGraphqlHandler } from "@/testing/msw/handlers/sdk-graphql"
+import {
+	personalInfoEditData,
+	portalAddressFields,
+} from "@/testing/factories/personal-info"
+import { myAccountOrg } from "@/testing/msw/handlers/account"
+import { personalInfoWriteHandlers } from "@/testing/msw/handlers/personal-info"
 import { server } from "@/testing/msw/server"
 
-function saveInput(
-	overrides: Partial<PersonalInfoSaveInput> = {},
-): PersonalInfoSaveInput {
+const BASELINE = personalInfoEditData()
+
+function input(overrides: Partial<PersonalInfoSaveInput> = {}): PersonalInfoSaveInput {
 	return {
-		contactId: "003xx1",
-		accountId: "001xx1",
-		firstName: "Ada",
-		lastName: "Lovelace",
-		email: "ada@example.com",
-		mobilePhoneCode: "+1",
-		mobilePhone: "5550199",
-		billing: portalAddressFields({ address2: "Suite 4" }),
-		mailing: portalAddressFields({
-			address1: "9 Other Rd",
-			address2: "",
-			city: "Jersey City",
-		}),
+		firstName: BASELINE.firstName,
+		lastName: BASELINE.lastName,
+		email: BASELINE.email,
+		mobilePhoneCode: BASELINE.mobilePhoneCode,
+		mobilePhone: BASELINE.mobilePhone,
+		billing: portalAddressFields(),
+		mailing: portalAddressFields({ address1: "2 Ship St", city: "Boston" }),
 		sameAsBilling: false,
 		...overrides,
 	}
 }
 
-function captureSave() {
-	const calls: Array<Record<string, unknown>> = []
-	const handler = sdkGraphqlHandler({
-		SavePersonalInfo: (variables) => {
-			calls.push(variables)
-			return {
-				data: {
-					uiapi: {
-						AccountUpdate: { success: true },
-						ContactUpdate: { success: true },
-					},
-				},
-			}
-		},
-	})
-	return { calls, handler }
+function serveOrg(options: Parameters<typeof myAccountOrg>[0] = {}) {
+	const account = myAccountOrg(options)
+	const writes = personalInfoWriteHandlers()
+	server.use(...account.handlers, ...writes.handlers)
+	return { profileSpy: account.profileSpy, addressesSpy: writes.addressesSpy }
 }
 
+describe("changedIdentityFields", () => {
+	it("posts only what differs from the baseline, blanks as null", () => {
+		expect(
+			changedIdentityFields(input({ firstName: " Grace ", email: " " }), BASELINE),
+		).toEqual({ FirstName: "Grace", Email: null })
+	})
+
+	it("posts every field when there is no baseline", () => {
+		expect(Object.keys(changedIdentityFields(input()))).toEqual([
+			"FirstName",
+			"LastName",
+			"Email",
+			"Mobile_Phone_Code__c",
+			"MobilePhone",
+		])
+	})
+})
+
 describe("savePersonalInfo", () => {
-	it("refuses blank ids before the network", async () => {
-		await expect(savePersonalInfo(saveInput({ contactId: " " }))).rejects.toMatchObject({
-			messages: ["Contact Id is required."],
-		})
-		await expect(savePersonalInfo(saveInput({ accountId: " " }))).rejects.toMatchObject({
-			messages: ["Account Id is required to update billing address."],
-		})
-	})
+	it("posts the changed identity fields, then both addresses", async () => {
+		const org = serveOrg()
 
-	it("joins street lines and nulls blank optionals", async () => {
-		const org = captureSave()
-		server.use(org.handler)
+		await savePersonalInfo(input({ firstName: "Grace" }), BASELINE)
 
-		await savePersonalInfo(saveInput())
-
-		expect(org.calls).toHaveLength(1)
-		expect(org.calls[0]).toMatchObject({
-			accountId: "001xx1",
-			contactId: "003xx1",
-			billingStreet: "1 Main St\nSuite 4",
-			mailingStreet: "9 Other Rd",
-			mailingCity: "Jersey City",
-			homePhone: "5551234",
-			// company is "" in the factory — sent as null, not "".
-			billingCompany: null,
+		expect(org.profileSpy.bodies).toEqual([{ FirstName: "Grace" }])
+		expect(org.addressesSpy.bodies[0]).toMatchObject({
+			isBillingAndMailingAddressSame: false,
+			billingAddress: { street1: "1 Main St", city: "Hoboken", phone: "5551234" },
+			mailingAddress: { street1: "2 Ship St", city: "Boston" },
 		})
 	})
 
-	it("writes the billing address into the mailing fields when same-as-billing", async () => {
-		const org = captureSave()
-		server.use(org.handler)
+	it("skips the profile write when nothing about the identity changed", async () => {
+		const org = serveOrg()
 
-		await savePersonalInfo(saveInput({ sameAsBilling: true }))
+		await savePersonalInfo(input(), BASELINE)
 
-		expect(org.calls[0]).toMatchObject({
-			mailingStreet: "1 Main St\nSuite 4",
-			mailingCity: "Hoboken",
-			mailingPostalCode: "07030",
-		})
+		expect(org.profileSpy.hits).toBe(0)
+		expect(org.addressesSpy.hits).toBe(1)
 	})
 
-	it("throws the GraphQL error messages", async () => {
-		server.use(
-			sdkGraphqlHandler({
-				SavePersonalInfo: () => ({
-					errors: [{ message: "Email invalid" }, { message: "Phone invalid" }],
-				}),
+	it("copies billing over mailing when same-as-billing is ticked", async () => {
+		const org = serveOrg()
+
+		await savePersonalInfo(input({ sameAsBilling: true }), BASELINE)
+
+		const body = org.addressesSpy.bodies[0]
+		expect(body.isBillingAndMailingAddressSame).toBe(true)
+		expect(body.mailingAddress).toEqual(body.billingAddress)
+	})
+
+	it("stops before the addresses when the profile write is refused", async () => {
+		const org = serveOrg({
+			profileRespond: () => ({
+				applied: [],
+				rejected: ["Email"],
+				completeness: {
+					percentComplete: 0,
+					earnedWeight: 0,
+					totalWeight: 11,
+					isComplete: false,
+					muted: false,
+					missing: [],
+					missingBySection: {},
+				},
 			}),
-		)
-
-		await expect(savePersonalInfo(saveInput())).rejects.toMatchObject({
-			messages: ["Email invalid", "Phone invalid"],
 		})
+
+		await expect(
+			savePersonalInfo(input({ email: "grace@example.org" }), BASELINE),
+		).rejects.toMatchObject({
+			messages: ["These fields could not be saved: Email."],
+		})
+		expect(org.addressesSpy.hits).toBe(0)
 	})
 })

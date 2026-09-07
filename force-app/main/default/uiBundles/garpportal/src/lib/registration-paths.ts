@@ -1,5 +1,4 @@
 import type { EventVariant } from "@/api/registration/event-types"
-import type { EventRegistrationSearch } from "@/config/event-registration"
 import type { RegistrationSearch } from "@/config/registration"
 
 /**
@@ -15,8 +14,40 @@ import type { RegistrationSearch } from "@/config/registration"
 /** Inside the portal shell, session required. */
 export const MEMBER_REGISTRATION_ROUTE = "/programs/$programType/register" as const
 
-/** Public — served to a visitor with no session. */
+/**
+ * Public — served to a visitor with no session.
+ *
+ * `/registration/membership` is served by this same dynamic route rather than
+ * as a static sibling like affiliate: it HAS a member twin, so the guard has
+ * to bounce a member somewhere — and that somewhere is not
+ * `/programs/membership/register` but `MEMBERSHIP_MEMBER_REGISTRATION_ROUTE`
+ * below. `isMembershipProgramSlug` is how the guard tells the two apart.
+ */
 export const PUBLIC_REGISTRATION_ROUTE = "/registration/$programType" as const
+
+/**
+ * Individual membership — the member twin of `/registration/membership`.
+ *
+ * Under `/membership`, beside the benefits page it is reached from, rather
+ * than under `/programs`: a membership is not a programme, and its Back link
+ * returns to Membership Benefits. The guest twin is the public exam route
+ * with the `membership` slug (aliased from the wire type `mem`).
+ */
+export const MEMBERSHIP_MEMBER_REGISTRATION_ROUTE = "/membership/register" as const
+
+/** The slugs that name the membership programme in a URL. */
+const MEMBERSHIP_PROGRAM_SLUGS = ["membership", "mem"] as const
+
+/**
+ * Whether a `$programType` param is the membership programme. Kept here, not
+ * in the registry, so the guard layer does not have to import the programme
+ * config to decide which twin a member belongs on.
+ */
+export function isMembershipProgramSlug(slug: string): boolean {
+	return (MEMBERSHIP_PROGRAM_SLUGS as readonly string[]).includes(
+		slug.trim().toLowerCase(),
+	)
+}
 
 /**
  * Affiliate membership sign-up — this app's "Create Account".
@@ -105,6 +136,12 @@ export function publicRegistrationFallback(
 	const program = /^\/programs\/([^/]+)\/register\/?$/.exec(pathname)
 	if (program) return { kind: "program", programType: program[1] }
 
+	// The membership twin lives under /membership, but its public form is the
+	// ordinary `/registration/$programType` route with the `membership` slug.
+	if (/^\/membership\/register\/?$/.test(pathname)) {
+		return { kind: "program", programType: "membership" }
+	}
+
 	const event =
 		/^\/events\/(event|webcast|chaptermeeting)\/([^/]+)\/register\/?$/.exec(
 			pathname,
@@ -126,8 +163,62 @@ export function publicRegistrationFallback(
  * does — this leg carries the `oid` the rollback needs, and a bounce drops it,
  * leaving an orphaned registration that reports `alreadyRegistered` forever.
  */
-export function isCheckoutCancelled(
-	search: Pick<EventRegistrationSearch, "checkout_cancelled">,
-): boolean {
+export function isCheckoutCancelled(search: {
+	checkout_cancelled?: string | undefined
+}): boolean {
 	return search.checkout_cancelled === "1"
+}
+
+/**
+ * True when the browser carries a staged registration to rebuild the form
+ * from (deferred flow). The server appends `resume=<stagedId>` to the Stripe
+ * cancel URL itself, so this arrives TOGETHER with `checkout_cancelled` on
+ * that leg — and takes precedence over it: nothing was created for a staged
+ * registration, so there is nothing to roll back and no dead end to show.
+ */
+export function isRegistrationResume(
+	search: Pick<RegistrationSearch, "resume">,
+): boolean {
+	return Boolean(search.resume)
+}
+
+/** The three ways a registration page can be entered other than fresh. */
+export type RegistrationLegProps = {
+	/** The provider's success leg — the order is already charged. */
+	paymentReturn: { statusId?: string; orderNumber?: string } | null
+	/** The provider's cancel leg for an ORDER — roll it back, offer a restart. */
+	checkoutCancelled: { orderId?: string } | null
+	/** The staged row to rebuild the form from, when there is one. */
+	resumeStagedId?: string
+}
+
+/**
+ * Which leg this load is, from the validated search — decided in one place
+ * so the member and public routes cannot disagree.
+ *
+ * Precedence, as GarpAppv1 applies it: a payment return first; then a resume,
+ * which wins over a cancelled checkout because the cancel URL of a staged
+ * checkout carries both and restoring the form is the better answer; then a
+ * plain cancelled checkout; else a fresh form.
+ */
+export function registrationLegProps(
+	search: RegistrationSearch,
+): RegistrationLegProps {
+	if (isPaymentReturn(search)) {
+		return {
+			paymentReturn: { statusId: search.oid, orderNumber: search.on },
+			checkoutCancelled: null,
+		}
+	}
+	if (isRegistrationResume(search)) {
+		return {
+			paymentReturn: null,
+			checkoutCancelled: null,
+			resumeStagedId: search.resume,
+		}
+	}
+	if (isCheckoutCancelled(search)) {
+		return { paymentReturn: null, checkoutCancelled: { orderId: search.oid } }
+	}
+	return { paymentReturn: null, checkoutCancelled: null }
 }

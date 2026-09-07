@@ -42,6 +42,16 @@ describe("where back goes", () => {
 		expect(link.getAttribute("href")).toContain("tab=")
 	})
 
+	it("sends the membership purchase back to the benefits page's default tab", async () => {
+		await renderWithRouterProviders(
+			<ProgramsSubpageHeader back={{ kind: "membership" }} />,
+		)
+		const link = screen.getByRole("link", { name: "Membership" })
+		expect(link.getAttribute("href")).toContain("/membership")
+		expect(link.getAttribute("href")).toContain("tab=")
+		expect(link.getAttribute("href")).not.toContain("/membership/register")
+	})
+
 	it("sends event subpages back to /events", async () => {
 		await renderWithRouterProviders(
 			<ProgramsSubpageHeader back={{ kind: "events" }} />,
@@ -91,6 +101,7 @@ describe("the exit-animation intercept", () => {
 			[{ kind: "program", programType: "frm" }, "/programs/frm"],
 			[{ kind: "studyMaterials" }, "/study-materials"],
 			[{ kind: "events" }, "/events"],
+			[{ kind: "membership" }, "/membership"],
 		] as const) {
 			const onNavigateBack = vi.fn<(run: () => void) => void>()
 			const { router, unmount } = await renderWithRouterProviders(

@@ -28,21 +28,13 @@ import { cn } from "@/lib/utils"
 
 const WESTERN_CHARACTERS = /^[a-zA-Z0-9().,&\-\s]*$/
 const YEAR_PATTERN = /^\d{4}$/
-const RISK_JOB_FUNCTION = "Risk Management"
+import {
+	DESIGNATION_CODES,
+	RISK_JOB_FUNCTION,
+} from "@/config/career-information"
 
-export const DESIGNATION_CODES = [
-	"ACCA",
-	"CA",
-	"CAIA",
-	"CFA",
-	"CFP",
-	"CIA",
-	"CMA",
-	"CMT",
-	"CPA",
-	"CQF",
-	"PMP",
-] as const
+/* Re-exported for existing importers; the constant now lives in config. */
+export { DESIGNATION_CODES }
 
 type DesignationCode = (typeof DESIGNATION_CODES)[number]
 
@@ -84,6 +76,25 @@ function FieldError({ message }: { message?: string }) {
 	)
 }
 
+/**
+ * One labelled control, laid out so a wrapping label cannot break the row.
+ *
+ * In the two-column grid, each field used to be its own vertical stack, so a
+ * label that wrapped to two lines pushed only its OWN control down: "What year
+ * did you start working in the industry?" wraps, and its input then sat a line
+ * below "What is your most recent company?" beside it.
+ *
+ * `grid-rows-subgrid` fixes that at the source. Each field adopts two of the
+ * parent grid's row tracks — one for the label, one for the control — so every
+ * label in a row is measured against the tallest of them and every control
+ * starts on the same line. Only from `sm:` up, since below that the grid is a
+ * single column and there is nothing to align against; outside a grid parent
+ * `subgrid` computes to `none` and this stays an ordinary stack.
+ *
+ * The control and its error share the second track. They must: with only two
+ * tracks to place into, a third child would be clamped into the last one and
+ * render on top of the control.
+ */
 function FormField({
 	label,
 	htmlFor,
@@ -98,10 +109,26 @@ function FormField({
 	className?: string
 }) {
 	return (
-		<div className={cn("flex flex-col gap-1.5", className)}>
-			<Label htmlFor={htmlFor}>{label}</Label>
-			{children}
-			<FieldError message={error} />
+		<div
+			className={cn("grid gap-1.5 sm:row-span-2 sm:grid-rows-subgrid", className)}
+		>
+			{/*
+			 * Sits at the BOTTOM of the label track, so a one-line label keeps
+			 * hugging its own input when the field beside it wraps to two — the
+			 * slack opens above the label rather than between it and the control
+			 * it belongs to.
+			 */}
+			<Label htmlFor={htmlFor} className="self-end">
+				{label}
+			</Label>
+			{/*
+			 * Top of the control track, so an error under one field lengthens
+			 * that track without dropping its neighbour's input to meet it.
+			 */}
+			<div className="flex flex-col gap-1.5 self-start">
+				{children}
+				<FieldError message={error} />
+			</div>
 		</div>
 	)
 }
@@ -222,7 +249,7 @@ function CareerInformationEditForm({
 }: CareerInformationEditFormProps) {
 	const formId = useId()
 	const optionsQuery = useAccountOptions(true)
-	const saveMutation = useSaveAccountProfile(account.identity.contactId)
+	const saveMutation = useSaveAccountProfile()
 	const {
 		control,
 		register,

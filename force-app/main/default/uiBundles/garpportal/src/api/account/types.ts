@@ -44,7 +44,12 @@ export type Completeness = {
 }
 
 export type PortalAddress = {
+	/** The whole street text area, as Salesforce stores it. */
 	street: string | null
+	/** The same street split into the three lines the address form edits. */
+	street1: string | null
+	street2: string | null
+	street3: string | null
 	city: string | null
 	state: string | null
 	postalCode: string | null
@@ -100,9 +105,40 @@ export type ChapterOption = {
 	region: string | null
 }
 
+export type ProvinceOption = {
+	name: string
+	code: string | null
+}
+
+/**
+ * One `Country_Code__c` row for the address form: the province list decides
+ * whether State is a dropdown or free text; the flags say what is required.
+ */
+export type PortalCountryOption = {
+	name: string
+	code: string | null
+	phoneCode: string | null
+	postalCodeRequired: boolean
+	provinceRequired: boolean
+	provinces: ProvinceOption[]
+}
+
 export type AccountOptionsView = {
 	picklists: Record<string, PicklistOption[]>
 	chapters: ChapterOption[]
+	/**
+	 * `"United States (+1)"` and friends — the exact strings the org stores in
+	 * `Contact.Mobile_Phone_Code__c`, so the phone-code select must offer them
+	 * verbatim.
+	 */
+	mobilePhoneLocations: string[]
+	countries: PortalCountryOption[]
+	/** Typeahead lists for the career/survey school and company inputs. */
+	schools: string[]
+	organizations: string[]
+	/** Year dropdowns the career/survey forms offer. */
+	workingYears: string[]
+	graduationYears: string[]
 }
 
 export type SaveAccountProfileResult = {
@@ -136,12 +172,18 @@ export type AutoRenewOffResult = {
 	statusCode: number | null
 }
 
+/**
+ * `GARP_Portal_MembershipService.AutoRenewOnResult`. Switching on stores a
+ * card and nothing more — no charge, no order — so the whole action is
+ * following `setupUrl`.
+ */
 export type AutoRenewOnResult = {
 	statusMessage: string | null
 	statusCode: number | null
+	/** Always true on the server: a card must be saved first. */
 	needPaymentInfo: boolean
-	/** Opportunity Id for Stripe setup; may be absent on the payload. */
-	orderId?: string | null
+	/** The checkout.stripe.com page that stores the card. */
+	setupUrl: string | null
 }
 
 export type AccountView = {
@@ -153,8 +195,16 @@ export type AccountView = {
 		firstName: string | null
 		lastName: string | null
 		email: string | null
+		/** Billing phone (`Contact.Phone`). */
 		phone: string | null
+		/** Mailing phone (`Contact.HomePhone`). */
+		homePhone: string | null
+		mobilePhone: string | null
+		mobilePhoneCode: string | null
+		mailingCompany: string | null
 		photoUrl: string | null
+		/** An email change was requested but not yet confirmed by the member. */
+		isAwaitingEmailChange: boolean | null
 	}
 	designations: AccountDesignations
 	career: AccountCareer
@@ -179,10 +229,15 @@ export type AccountView = {
 		chapterMeetings: boolean | null
 		careerCenter: boolean | null
 		memberUpdates: boolean | null
+		smsPromotional: boolean | null
+		smsRegistration: boolean | null
 	}
 	mailingAddress: PortalAddress
+	/** Lives on the Account, not the Contact. */
 	billingAddress: PortalAddress
 	otherAddress: PortalAddress
+	/** Pre-ticks "same as billing" — Apex compares the five address fields. */
+	isBillingAndMailingAddressSame: boolean
 }
 
 /** Envelope returned by GARP_Portal_API / memberportal Apex REST. */

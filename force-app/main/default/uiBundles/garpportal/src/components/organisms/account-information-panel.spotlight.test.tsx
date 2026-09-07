@@ -2,11 +2,10 @@ import { act, fireEvent, screen } from "@testing-library/react"
 import { http, HttpResponse } from "msw"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { personalInfoQueryKeys } from "@/api/personal-info/query-options"
 import { AccountInformationPanel } from "@/components/organisms/account-information-panel"
 import { memberPortalEnvelope } from "@/testing/factories/envelope"
 import { accountView, completeness } from "@/testing/factories/account"
-import { personalInfoEditData } from "@/testing/factories/personal-info"
+import { seedPersonalInfoCache } from "@/testing/factories/personal-info"
 import { server } from "@/testing/msw/server"
 import { createTestQueryClient } from "@/testing/query-client"
 import { renderWithRouterProviders } from "@/testing/router"
@@ -52,10 +51,7 @@ async function renderIncompletePanel() {
 		}),
 	})
 	const queryClient = createTestQueryClient()
-	queryClient.setQueryData(
-		personalInfoQueryKeys.edit(account.identity.contactId ?? ""),
-		personalInfoEditData(),
-	)
+	seedPersonalInfoCache(queryClient)
 	return renderWithRouterProviders(
 		<AccountInformationPanel account={account} />,
 		{ queryClient },

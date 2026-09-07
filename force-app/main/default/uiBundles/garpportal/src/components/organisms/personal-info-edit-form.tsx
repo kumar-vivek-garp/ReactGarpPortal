@@ -3,7 +3,7 @@ import { Controller, useForm, useWatch, type SubmitHandler } from "react-hook-fo
 import { CircleUser } from "lucide-react"
 
 import type { AddressFormFields, PersonalInfoEditData } from "@/api/personal-info"
-import { copyAddress, phoneCodeOptions } from "@/api/personal-info"
+import { copyAddress } from "@/api/personal-info"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar"
 import { Button } from "@/components/atoms/button"
 import { Checkbox } from "@/components/atoms/checkbox"
@@ -20,6 +20,7 @@ import {
 } from "@/components/atoms/select"
 import { useCountryOptions } from "@/hooks/use-country-options"
 import { usePersonalInfoEditData } from "@/hooks/use-personal-info-edit-data"
+import { usePhoneCodeOptions } from "@/hooks/use-phone-code-options"
 import { useProfilePhoto } from "@/hooks/use-profile-photo"
 import { useUpdatePersonalInfo } from "@/hooks/use-update-personal-info"
 import { resizeProfilePhoto } from "@/lib/resize-profile-photo"
@@ -73,7 +74,6 @@ const EMPTY_FORM_VALUES: PersonalInfoFormValues = {
 }
 
 type PersonalInfoEditFormProps = {
-	contactId: string
 	/** Close the parent dialog after a successful save. */
 	onSaved?: () => void
 }
@@ -323,15 +323,16 @@ function AddressSection({
 	)
 }
 
-function PersonalInfoEditForm({ contactId, onSaved }: PersonalInfoEditFormProps) {
+function PersonalInfoEditForm({ onSaved }: PersonalInfoEditFormProps) {
 	const formId = useId()
 	const fileInputRef = useRef<HTMLInputElement>(null)
 	const [photoError, setPhotoError] = useState<string | null>(null)
 	/** `undefined` = use server photo; otherwise local override after upload/remove. */
 	const [localPhotoUrl, setLocalPhotoUrl] = useState<string | null | undefined>(undefined)
 
-	const editQuery = usePersonalInfoEditData(contactId, Boolean(contactId))
-	const countriesQuery = useCountryOptions(Boolean(contactId))
+	const editQuery = usePersonalInfoEditData()
+	const countriesQuery = useCountryOptions()
+	const phoneCodesQuery = usePhoneCodeOptions()
 	const updateMutation = useUpdatePersonalInfo()
 	const { upload: uploadPhoto, remove: removePhoto } = useProfilePhoto()
 
@@ -357,7 +358,7 @@ function PersonalInfoEditForm({ contactId, onSaved }: PersonalInfoEditFormProps)
 			: (resolvePortalAssetUrl(rawPreviewUrl) ?? rawPreviewUrl)
 
 	const countries = countriesQuery.data ?? []
-	const phoneCodes = phoneCodeOptions(countries)
+	const phoneCodes = phoneCodesQuery.data ?? []
 	const isBusy =
 		isSubmitting ||
 		updateMutation.isPending ||
@@ -365,25 +366,22 @@ function PersonalInfoEditForm({ contactId, onSaved }: PersonalInfoEditFormProps)
 		removePhoto.isPending
 
 	const onSubmit: SubmitHandler<PersonalInfoFormValues> = async (values) => {
-		const accountId = editQuery.data?.accountId
-		if (!accountId) {
-			return
-		}
-
 		try {
 			await updateMutation.mutateAsync({
-				contactId,
-				accountId,
-				firstName: values.firstName,
-				lastName: values.lastName,
-				email: values.email,
-				mobilePhoneCode: values.mobilePhoneCode,
-				mobilePhone: values.mobilePhone,
-				billing: values.billing,
-				mailing: values.sameAsBilling
-					? copyAddress(values.billing)
-					: values.mailing,
-				sameAsBilling: values.sameAsBilling,
+				input: {
+					firstName: values.firstName,
+					lastName: values.lastName,
+					email: values.email,
+					mobilePhoneCode: values.mobilePhoneCode,
+					mobilePhone: values.mobilePhone,
+					billing: values.billing,
+					mailing: values.sameAsBilling
+						? copyAddress(values.billing)
+						: values.mailing,
+					sameAsBilling: values.sameAsBilling,
+				},
+				// Only identity fields that differ from the hydrate are posted.
+				baseline: editQuery.data,
 			})
 			onSaved?.()
 		} catch {
@@ -418,7 +416,6 @@ function PersonalInfoEditForm({ contactId, onSaved }: PersonalInfoEditFormProps)
 			setLocalPhotoUrl(resized.dataUrl)
 			try {
 				const url = await uploadPhoto.mutateAsync({
-					contactId,
 					base64Body: resized.base64Body,
 					fileName: resized.fileName,
 				})
@@ -433,7 +430,7 @@ function PersonalInfoEditForm({ contactId, onSaved }: PersonalInfoEditFormProps)
 	const handleRemovePhoto = () => {
 		setPhotoError(null)
 		void removePhoto
-			.mutateAsync(contactId)
+			.mutateAsync()
 			.then(() => {
 				setLocalPhotoUrl(null)
 			})
@@ -442,10 +439,10 @@ function PersonalInfoEditForm({ contactId, onSaved }: PersonalInfoEditFormProps)
 			})
 	}
 
-	const isLoading = editQuery.isLoading || countriesQuery.isLoading
+	const isLoading =
+		editQuery.isLoading || countriesQuery.isLoading || phoneCodesQuery.isLoading
 	const loadFailed = editQuery.isError || !editQuery.data
-	const missingAccount = Boolean(editQuery.data && !editQuery.data.accountId)
-	const canSubmit = !isLoading && !loadFailed && !missingAccount && !isBusy
+	const canSubmit = !isLoading && !loadFailed && !isBusy
 
 	return (
 		<form
@@ -462,11 +459,6 @@ function PersonalInfoEditForm({ contactId, onSaved }: PersonalInfoEditFormProps)
 					<p className="text-sm text-muted-foreground">
 						We couldn&apos;t load your personal information for editing. Please try
 						again later.
-					</p>
-				) : missingAccount ? (
-					<p className="text-sm text-muted-foreground">
-						Billing account is unavailable for this profile, so personal information
-						cannot be edited right now.
 					</p>
 				) : (
 					<div className="flex flex-col gap-6">
@@ -580,9 +572,13 @@ function PersonalInfoEditForm({ contactId, onSaved }: PersonalInfoEditFormProps)
 									control={control}
 									render={({ field }) => (
 										<Select
-											value={field.value || undefined}
+												// Remount once options load so the stored code is
+												// applied after Radix has a matching SelectItem.
+												key={`mobile-code-${phoneCodes.length}-${field.value || "empty"}`}
+												value={field.value || undefined}
 											onValueChange={field.onChange}
-										>
+										disabled={phoneCodes.length === 0}
+											>
 											<SelectTrigger
 												id={`${formId}-mobileCode`}
 												className="w-full"

@@ -37,12 +37,27 @@ const NO_SEARCH: RegistrationSearch = {
 	stripe_return: undefined,
 	oid: undefined,
 	on: undefined,
+	checkout_cancelled: undefined,
+	resume: undefined,
+	track_cta: undefined,
 }
 
 const PAID: Partial<RegistrationSearch> = {
 	stripe_return: "1",
 	oid: "801",
 	on: "W1",
+}
+
+const CANCELLED: Partial<RegistrationSearch> = {
+	checkout_cancelled: "1",
+	oid: "801",
+}
+
+/** The staged cancel leg: the server appends `resume` to the cancel URL. */
+const STAGED_CANCEL: Partial<RegistrationSearch> = {
+	checkout_cancelled: "1",
+	oid: "a0H",
+	resume: "a0H",
 }
 
 /**
@@ -140,6 +155,19 @@ describe("redirectMemberToPortalForm (public route)", () => {
 		// The order is already charged; redirecting drops `oid`/`on` and the
 		// candidate loses the only confirmation they get.
 		expect(run(MEMBER, PAID)).toBeNull()
+	})
+
+	it("never redirects a cancelled checkout either — the rollback needs oid", () => {
+		expect(run(MEMBER, CANCELLED)).toBeNull()
+		expect(run(MEMBER, STAGED_CANCEL)).toBeNull()
+	})
+
+	it("DOES redirect a bare resume, carrying the staged id across", () => {
+		// Nothing was created for a staged registration, so there is nothing
+		// the public route has to protect: the member form rebuilds it instead.
+		const target = run(MEMBER, { resume: "a0H" })
+		expect(target?.to).toBe("/programs/$programType/register")
+		expect(target?.search).toMatchObject({ resume: "a0H" })
 	})
 })
 

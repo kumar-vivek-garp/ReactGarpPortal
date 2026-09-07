@@ -36,4 +36,18 @@ export type OrderDetailView = PortalResult & {
 	order: PortalOrder | null
 }
 
+/** `POST orderCheckout` body. */
+export type OrderCheckoutRequest = {
+	/** An Opportunity id OR a staged Order_History__c id — `payableId` resolves either. */
+	orderId: string
+	successUrl: string
+	cancelUrl: string
+}
+
+/** `POST orderCheckout` — already validated to carry a hosted checkout URL. */
+export type OrderCheckoutResult = {
+	checkoutUrl: string
+	orderNumber: string | null
+}
+
 export type { MemberPortalEnvelope }

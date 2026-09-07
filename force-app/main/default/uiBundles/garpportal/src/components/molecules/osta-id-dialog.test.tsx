@@ -4,10 +4,17 @@ import { http, HttpResponse } from "msw"
 import { describe, expect, it, vi } from "vitest"
 
 import type { CurrentUser } from "@/api/auth/current-user"
-import type { CountryOption } from "@/api/personal-info/types"
 import { memberPortalEnvelope } from "@/testing/factories/envelope"
-import { personalInfoEditData } from "@/testing/factories/personal-info"
-import { personalInfoGraphqlResolvers } from "@/testing/factories/personal-info-graphql"
+import {
+	accountViewFromPersonalInfo,
+	billingCompanyResolver,
+	personalInfoEditData,
+} from "@/testing/factories/personal-info"
+import {
+	accountOptionsView,
+	portalCountryOption,
+} from "@/testing/factories/account-options"
+import { myAccountOrg } from "@/testing/msw/handlers/account"
 import { sdkGraphqlHandler } from "@/testing/msw/handlers/sdk-graphql"
 import { server } from "@/testing/msw/server"
 import { renderWithProviders } from "@/testing/render"
@@ -16,8 +23,8 @@ import { OstaIdDialog } from "./osta-id-dialog"
 
 const OSTA_PATH = "/services/apexrest/memberportal/osta"
 
-const COUNTRIES: CountryOption[] = [
-	{ label: "China", value: "China", phoneCode: "+86" },
+const COUNTRIES = [
+	portalCountryOption({ name: "China", phoneCode: "86" }),
 ]
 
 const MEMBER: CurrentUser = {
@@ -30,9 +37,11 @@ const MEMBER: CurrentUser = {
 
 function serveOrg() {
 	server.use(
-		sdkGraphqlHandler(
-			personalInfoGraphqlResolvers(personalInfoEditData(), COUNTRIES),
-		),
+		...myAccountOrg({
+			view: accountViewFromPersonalInfo(personalInfoEditData()),
+			options: accountOptionsView({ countries: COUNTRIES }),
+		}).handlers,
+		sdkGraphqlHandler(billingCompanyResolver(personalInfoEditData())),
 		http.get(OSTA_PATH, () =>
 			HttpResponse.json(
 				memberPortalEnvelope({

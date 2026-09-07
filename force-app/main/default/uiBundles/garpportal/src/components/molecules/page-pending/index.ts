@@ -5,6 +5,11 @@ export {
 	StudyMaterialsPendingShell,
 } from "./study-materials-pending"
 export {
+	StudyMaterialPurchasePending,
+	StudyMaterialPurchasePendingShell,
+	StudyMaterialPurchaseSkeleton,
+} from "./study-material-purchase-pending"
+export {
 	ProgramsContentSkeleton,
 	ProgramsPending,
 	ProgramsPendingShell,

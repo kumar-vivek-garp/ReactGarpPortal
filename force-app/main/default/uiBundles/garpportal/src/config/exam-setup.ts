@@ -1,10 +1,10 @@
 /**
  * Static config for the exam-setup wizard.
  *
- * Every option list here is transcribed from the legacy sfdcApp form
- * (`modules/exam-setup/components/exam-setup-*-id-info-card`), not guessed:
- * Apex supplies only `mobilePhoneLocations` and leaves the rest to the client,
- * so a wrong value here writes a picklist the org will not recognise.
+ * The flow this drives mirrors GarpAppv1's `PortalExamSetup` — the app the
+ * backend team built against the new REST API — so its three steps, its field
+ * gating and its validation copy are the reference, not the older sfdcApp form.
+ * Option lists that Apex does not serve are transcribed from that page.
  */
 
 export const EXAM_SETUP_TITLE = "Exam setup"
@@ -12,168 +12,179 @@ export const EXAM_SETUP_TITLE = "Exam setup"
 /**
  * The provider push in `examSetupAuthorize` is an OUTBOUND INTEGRATION —
  * `ExamRegistrationsStatusCls.updateRegistration` talks to Pearson / PSI / ATA
- * for real, from whichever org runs it. Firing that from a sandbox pushes test
- * data at a live vendor.
+ * for real, from whichever org runs it.
  *
- * Off until the backend team confirms the sandbox path is safe. With it off the
- * outcome screen explains the position and links to MyGarp; nothing is called.
- * Turning it on is this one line.
+ * ON since Sep 2026. It was held off on the theory that a sandbox should not
+ * push at a live vendor, but GarpAppv1 — which drives the same action from the
+ * same org — was observed calling it against `devjuly25a` in the ordinary
+ * course, so the push is being incurred either way and holding it here only
+ * made this app behave differently for no protection.
+ *
+ * Turning it back off is this one line, and the outcome screen still carries
+ * the MyGarp hand-off for that case.
  */
-export const EXAM_SETUP_AUTHORIZE_ENABLED = false
-
-/** How many times the outcome screen re-asks when the provider says "unprocessed". */
-export const EXAM_SETUP_AUTHORIZE_MAX_RETRIES = 3
-
-/* ===================== fee literals ===================== */
+export const EXAM_SETUP_AUTHORIZE_ENABLED = true
 
 /**
- * Mirrors `GARP_Portal_ExamSetupFees`, which holds these as literals rather
- * than resolving a pricebook — there is nothing to look up, so the gate can
- * decide client-side before writing anything.
+ * How long to wait before the single authorisation retry.
  *
- * Kept in sync by the tests in `exam-setup-presentation.test.ts`; if Apex ever
- * grows real pricing these move behind `examSetupFees` and the gate calls it.
+ * Authorisation reaches a third party and is not instant. The legacy asks once,
+ * waits, and asks once more before giving up — one retry, not a poll.
  */
-export const EXAM_SETUP_FEES = {
-	/** Moving an FRM sitting. */
-	frmDeferral: 250,
-	/** Moving an SCR, RAIJ or Risk AI sitting. */
-	singlePartDeferral: 150,
-	/** Per exam part sat in mainland China. */
-	ostaLocation: 40,
-	/** One-off, charged when the account has no OSTA program yet. */
-	ostaData: 10,
-} as const
+export const EXAM_SETUP_AUTH_RETRY_MS = 20000
 
 /* ===================== option lists ===================== */
 
 /**
- * Only two, deliberately.
+ * The two documents the test centre accepts.
  *
- * `OSTA_ID_TYPES` in `config/osta` offers four, but the exam-setup form offers
- * exactly these — the test centre accepts nothing else as photo ID. Do not
- * substitute the OSTA list here.
+ * Values are the lowercase strings the wire expects. Apex normalises anything
+ * containing `driver` to `Driver's License` on write, and reads it back as
+ * `Driver License` — `normalizeIdType` maps that reply onto these values so a
+ * stored licence still selects its radio.
  */
-export const EXAM_SETUP_ID_TYPES = ["Passport", "Driver's License"] as const
-
-export const EXAM_SETUP_ID_LOCATIONS = ["China", "Non-China"] as const
-
-export const EXAM_SETUP_GENDERS = ["Male", "Female", "Other"] as const
-
-export const EXAM_SETUP_WORKING_STATUSES = ["Working", "Not Working"] as const
-
-export const EXAM_SETUP_SCHOOL_STATUSES = ["In School", "Not In School"] as const
+export const EXAM_SETUP_ID_TYPES = [
+	{ value: "passport", label: "Passport" },
+	{ value: "driver license", label: "Driver's License" },
+] as const
 
 /**
- * A passport number is nine characters, letters and digits only, and excludes
- * `I` and `O` because they are indistinguishable from `1` and `0` on a scanned
- * document. Transcribed from the legacy's own inline validation.
- *
- * No equivalent rule exists for a driver's licence — the legacy checks only
- * that something was entered.
+ * The wizard offers two, where the registration form offers three.
+ * Not an oversight: this is the set the reference implementation presents, and
+ * it is what the exam provider's own record accepts.
  */
-export const EXAM_SETUP_PASSPORT_PATTERN = /^[ABCDEFGHJKLMNPQRSTUVWXYZ0-9]{9}$/i
-/**
- * Shown when a number is already stored.
- *
- * The read hands back only the last five characters, so the box starts empty
- * rather than showing a partial number the member might "correct" — and an
- * empty box means "keep what you have", not "erase it".
- */
-export const EXAM_SETUP_ID_ON_FILE_HINT =
-	"We already have your ID number on file. Leave this blank to keep it, or type the full number to replace it."
+export const EXAM_SETUP_GENDERS = ["Male", "Female"] as const
 
-export const EXAM_SETUP_PASSPORT_HINT =
-	"A passport number is 9 characters, letters and numbers only, and cannot contain I or O."
+/**
+ * Picklist API names on `Contact`, served by `GET /memberportal/options`.
+ *
+ * Fetched rather than hardcoded: these are org picklists and a stale copy here
+ * would write a value the org does not recognise.
+ */
+export const EXAM_SETUP_WORKING_STATUS_PICKLIST = "Currently_Working_Status__c"
+export const EXAM_SETUP_SCHOOL_STATUS_PICKLIST = "Currently_in_School_Status__c"
 
 /* ===================== copy ===================== */
 
 export const EXAM_SETUP_SECTIONS = {
-	selection: {
+	sitting: {
 		title: "Choose your sitting",
-		description: "Pick the exam date and the location you want to sit at.",
+		description: "Pick the exam administration and the site you want to sit at.",
 	},
 	identity: {
 		title: "Confirm your ID",
 		description:
 			"The name and document you give here must match the photo ID you bring on exam day.",
 	},
+	osta: {
+		title: "Your exam centre needs a little more",
+		description:
+			"Mainland-China centres require these details before you can be scheduled.",
+	},
 } as const
 
-/**
- * Shown when both parts are at the same administration.
- *
- * The legacy raises this because candidates assume one booking means one
- * building. It does not, and arriving late to the second is not recoverable.
- */
-export const EXAM_SETUP_SAME_DAY_WARNING =
-	"Exam sites may not be at the same location. If you sit both parts on the same day, plan for travel between sites — late arrivals are not admitted."
+/** The rail's second card — the flow, told before the member commits to it. */
+export const EXAM_SETUP_NEXT_STEPS = {
+	title: "What happens next",
+	steps: [
+		"We save your sitting and your ID details.",
+		"If your exam date moved, a change fee applies — you'll pay it on the next screen.",
+		"Then you book your seat with the exam provider.",
+	],
+} as const
+
+export const EXAM_SETUP_RAIL_TITLE = "Your sitting"
+export const EXAM_SETUP_SUBMIT_LABEL = "Save exam setup"
+
+export const EXAM_SETUP_CONSENT_LABEL =
+	"I agree to GARP sharing my driver's license or passport number, and the details below, with OSTA."
+
+export const EXAM_SETUP_MOBILE_HINT =
+	"We'll contact you at this number should we need to reach you about the exam."
+
+export const EXAM_SETUP_NO_SITES_YET =
+	"You'll choose your exam location once scheduling opens for this administration."
+
+/** Validation copy, verbatim from GarpAppv1 so the two apps read alike. */
+export const EXAM_SETUP_MESSAGES = {
+	selectAdmin: "Choose when you plan to sit the exam.",
+	selectAdminPart2: "Choose when you plan to sit Part II.",
+	idName: "Name as it appears on your ID is required.",
+	mobile: "A country code and mobile number are both required.",
+	idType: "ID Type is required.",
+	idNumber: "ID Number is required.",
+	idNumberConfirm: "The two ID numbers do not match.",
+	idExpireDate: "ID Expiration Date is required.",
+	ostaIDLocation: "ID Location Issued is required.",
+	ostaConsent: "You must agree before we can share your details with OSTA.",
+	ostaFullNameInChinese: "Your name in Chinese is required.",
+	ostaDateOfBirth: "Date of Birth is required.",
+	ostaGender: "Gender is required.",
+	ostaPhoneNumber: "Phone Number is required.",
+	saveFailed: "Your exam setup could not be saved.",
+} as const
 
 /** The states the page can refuse in, keyed by the Apex status code. */
 export const EXAM_SETUP_REFUSALS = {
 	unsupported: {
 		title: "Exam setup isn't available",
-		message: "This programme doesn't use the exam setup wizard.",
+		message: "This program isn't open for exam setup.",
 	},
 	pendingReschedule: {
-		title: "You already have a reschedule in progress",
-		message:
-			"There's an unpaid reschedule order on your account. Settle or cancel it before starting another change.",
+		title: "Exam setup isn't available",
+		message: "You already have a pending exam reschedule.",
 		ctaLabel: "View your orders",
 	},
 	noAdmins: {
-		title: "No exam dates are open",
+		title: "Nothing to set up right now",
 		message:
-			"There are no exam administrations open to you right now. Check back when registration for the next sitting opens.",
+			"Scheduling isn't open for this program. Your program page shows when it opens.",
 	},
 	unavailable: {
-		title: "Exam setup isn't available",
+		title: "We couldn't load exam setup",
 		message:
-			"We couldn't load your exam setup. Please try again, or contact Member Services if this continues.",
+			"Please try again, or contact Member Services if this continues.",
 	},
 } as const
 
 export const EXAM_SETUP_OUTCOMES = {
-	complete: {
-		title: "Your exam setup is complete",
-		message: "Nothing further is needed. We've saved your details.",
-	},
-	scheduling: {
-		title: "Now book your seat",
+	payFees: {
+		title: "There's a fee for this change",
 		message:
-			"Your registration has been sent to the exam provider. Use the link below to choose your date and time.",
-		ctaLabel: "Schedule your exam",
+			"Your exam change is saved but not yet confirmed. Complete the payment to finish it.",
+		ctaLabel: "Pay Fees",
+		totalLabel: "Total",
 	},
+	authorising: {
+		title: "Authorising your registration",
+		message: "We're confirming your details with the exam provider. This can take a moment.",
+	},
+	authorized: {
+		title: "Your exam setup was successful.",
+		message:
+			"Proceed to your exam provider to complete your exam scheduling.",
+		ctaLabel: "Schedule Exam",
+		ctaLabelPart1: "Schedule Exam Part I",
+		ctaLabelPart2: "Schedule Exam Part II",
+	},
+	notCompleted: {
+		title: "Your exam setup was not completed.",
+		message:
+			"Your authorisation has not yet completed. Please check your email for notifications, check back in 24 hours, or contact member services for more information.",
+		ctaLabel: "Contact member services",
+	},
+	/**
+	 * Only reachable with `EXAM_SETUP_AUTHORIZE_ENABLED` off, when the provider
+	 * was never asked. The details are saved; only the seat booking is left.
+	 */
 	schedulingDisabled: {
 		title: "One more step, in MyGarp",
 		message:
 			"Your details are saved. Booking your seat with the exam provider isn't available here yet — finish in MyGarp.",
 		ctaLabel: "Continue in MyGarp",
 	},
-	schedulingPending: {
-		title: "Still processing",
-		message:
-			"The exam provider hasn't confirmed your registration yet. This usually clears within a few minutes.",
-		ctaLabel: "Check again",
+	complete: {
+		title: "Thank you",
+		message: "Your exam setup is complete.",
 	},
-} as const
-
-/**
- * The fee gate.
- *
- * Not a payment screen — a stop. `examSetupFees` prices a change but returns no
- * order and no checkout URL, and `examSetupAuthorize` refuses any sitting whose
- * Opportunity is not already Closed. Nothing in the portal API raises that
- * Opportunity, so a member who paid here would have paid into nothing.
- *
- * Stopping BEFORE `examSetupId` matters: that call raises an
- * `Exam_Registration_Modification__c` as a side effect, and one left Pending
- * here would collide with the one MyGarp raises when they finish there.
- */
-export const EXAM_SETUP_FEE_GATE = {
-	title: "This change has a fee",
-	message:
-		"Changing your exam date moves your registration to a different administration, which carries a fee. Payment isn't available in this portal yet — you can complete the change in MyGarp.",
-	ctaLabel: "Continue in MyGarp",
-	resetLabel: "Keep my current date",
 } as const

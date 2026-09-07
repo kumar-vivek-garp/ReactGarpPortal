@@ -1,5 +1,6 @@
+import { useState } from "react"
 import { animated, useSpring, useTrail } from "@react-spring/web"
-import { ChevronRight, CircleUser, Pencil } from "lucide-react"
+import { ChevronDown, ChevronRight, ChevronUp, CircleUser, Pencil } from "lucide-react"
 
 import type { AccountView } from "@/api/account/types"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar"
@@ -15,6 +16,8 @@ import {
 	buildMissingChips,
 	type CareerFocusField,
 	type MissingChip,
+	splitMissingChips,
+	VISIBLE_MISSING_CHIPS,
 } from "@/lib/account-presentation"
 import { cn } from "@/lib/utils"
 
@@ -22,6 +25,9 @@ import { cn } from "@/lib/utils"
 const HERO_SPRING = { mass: 0.9, tension: 320, friction: 26 }
 /** Same cascade as `StaggerReveal`, so the chips feel like the cards below. */
 const CHIP_TRAIL_SPRING = { mass: 0.8, tension: 340, friction: 26 }
+/** Shared geometry so the "+N more" toggle sits on the chips' own baseline. */
+const CHIP_SHELL =
+	"inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold"
 
 type AccountIdentityHeroProps = {
 	account: AccountView
@@ -55,8 +61,7 @@ function MissingChipButton({
 		</animated.span>
 	)
 
-	const shell =
-		"inline-flex items-center rounded-full border border-dashed border-primary/40 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary"
+	const shell = cn(CHIP_SHELL, "border-dashed border-primary/40 bg-primary/5 text-primary")
 
 	// A label this build does not recognise still gets shown — it just cannot
 	// be actioned, so it must not look or behave like a button.
@@ -86,11 +91,20 @@ function MissingStrip({
 	onFixField: (field: CareerFocusField) => void
 	onReviewMissing: () => void
 }) {
-	const trails = useTrail(chips.length, {
+	// Local by design: which member is missing what is server state, but whether
+	// this one strip is open is not, and nothing outside it needs to know.
+	const [expanded, setExpanded] = useState(false)
+	const { visible, hiddenCount } = splitMissingChips(chips, expanded)
+
+	// Growing the count adds springs for the newly revealed chips, so they
+	// cascade in rather than appearing all at once. Collapsing drops them.
+	const trails = useTrail(visible.length, {
 		from: { opacity: 0, transform: "translateY(6px)" },
 		to: { opacity: 1, transform: "translateY(0px)" },
 		config: CHIP_TRAIL_SPRING,
 	})
+
+	const canCollapse = expanded && chips.length > VISIBLE_MISSING_CHIPS + 1
 
 	return (
 		<div className="mt-5 border-t border-border pt-4">
@@ -105,13 +119,40 @@ function MissingStrip({
 			<div className="mt-2.5 flex flex-wrap gap-2">
 				{trails.map((trailStyle, index) => (
 					<animated.span
-						key={chips[index].label}
+						key={visible[index].label}
 						style={trailStyle}
 						className="inline-flex"
 					>
-						<MissingChipButton chip={chips[index]} onFixField={onFixField} />
+						<MissingChipButton chip={visible[index]} onFixField={onFixField} />
 					</animated.span>
 				))}
+
+				{/*
+				 * A toggle, not a link to somewhere else: every chip opens the
+				 * Career dialog focused on its own field, so anything folded
+				 * away has to be openable in place or that shortcut is lost.
+				 * Neutral rather than primary-dashed — it is a control, not one
+				 * more thing the member has failed to fill in.
+				 */}
+				{hiddenCount > 0 || canCollapse ? (
+					<button
+						type="button"
+						onClick={() => setExpanded((open) => !open)}
+						className={cn(
+							CHIP_SHELL,
+							"cursor-pointer gap-1 border-border bg-muted text-muted-foreground",
+							"hover:text-foreground",
+						)}
+						aria-expanded={expanded}
+					>
+						{hiddenCount > 0 ? `+${hiddenCount} more` : "Show less"}
+						{hiddenCount > 0 ? (
+							<ChevronDown className="size-3" aria-hidden />
+						) : (
+							<ChevronUp className="size-3" aria-hidden />
+						)}
+					</button>
+				) : null}
 			</div>
 		</div>
 	)

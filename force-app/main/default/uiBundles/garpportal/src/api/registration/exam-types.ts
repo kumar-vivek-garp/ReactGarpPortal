@@ -107,6 +107,17 @@ export type ExamRegistrationLoad = {
 	countries: RegistrationCountry[]
 	stripe?: { useStripe?: boolean | null } | null
 	membershipOffer?: { productCode?: string; amount?: number } | null
+	/**
+	 * The Risk.net (MEMR) add-on — membership programmes only. Priced
+	 * server-side by `GARP_ExamReg_PricingService.riskNetAmount`: `months` is
+	 * the membership months left plus the 12 being bought, and `amount` is a
+	 * flat 100 for a plain 12 months or `months × unit price` otherwise.
+	 */
+	riskNetOffer?: {
+		productCode?: string
+		amount?: number
+		months?: number
+	} | null
 	affiliateCode?: string | null
 	/** Typeahead suggestions for the OSTA company/school fields. */
 	companies?: string[] | null
@@ -288,6 +299,14 @@ export type ExamRegisterRequest = {
 	riskNetSelected: boolean
 	/** `Form_Data__c` id from `verifyCustomer`. */
 	sessionId?: string | null
+	/**
+	 * Deferred flow only: the `Order_History__c` row this submission retries,
+	 * set when the form was rebuilt from a `resume`. The server reuses that row
+	 * (same REG- number, its old Stripe session retired) instead of stranding
+	 * it at Awaiting Payment with a session nobody will pay. Ignored unless it
+	 * points at a still-payable row with no order behind it.
+	 */
+	resumeStagedId?: string | null
 	customer: CustomerInput
 	personal: PersonalInput | null
 	selection: SelectionInput
@@ -300,9 +319,37 @@ export type ExamRegisterRequest = {
 	consent: ConsentInput
 }
 
+/**
+ * `Order_History__c.Status__c` under the deferred flow, as `paymentStatus`
+ * reports it while the browser polls on a staged id.
+ */
+export type StagedRegistrationStatus =
+	| "Awaiting Payment"
+	| "Paid"
+	| "Payment Failed"
+	| "Failed"
+	| "Materialized"
+	| "Abandoned"
+
+/**
+ * Two shapes, decided server-side by `Stripe_Auth_Configuration__mdt`
+ * `.Is_Stripe_Order_History__c`:
+ *
+ * - Immediate (flag off, and always for Wire/ACH/free): the order exists —
+ *   `orderId` / `orderNumber` are set.
+ * - Deferred (flag on, card payments): nothing but an `Order_History__c` row
+ *   holding the payload was written — `stagedId` / `registrationRef` are set
+ *   and `orderId` / `orderNumber` are null. The order is written by the
+ *   Stripe webhook once payment lands. `checkout` and `paymentStatus` take
+ *   either id and route on its type.
+ */
 export type ExamRegisterResult = {
 	orderId?: string | null
 	orderNumber?: string | null
+	/** Deferred flow: the staged row's id — goes to `checkout` in place of `orderId`. */
+	stagedId?: string | null
+	/** Deferred flow: the REG- auto-number shown to the candidate. */
+	registrationRef?: string | null
 	/** First Exam_Attempt__c id. */
 	registrationId?: string | null
 	contractId?: string | null
@@ -333,6 +380,9 @@ export type CheckoutResult = {
 	orderId?: string | null
 	orderName?: string | null
 	accountId?: string | null
+	/** Deferred flow: echoed back for a staged checkout. */
+	stagedId?: string | null
+	registrationRef?: string | null
 	isError?: boolean | null
 	msg?: string | null
 }
@@ -344,4 +394,49 @@ export type PaymentStatusResult = {
 	/** The order was cancelled — the registration did not survive. */
 	isOrderRolledback?: boolean | null
 	paymentType?: string | null
+	/**
+	 * Deferred flow only — the browser is polling on a staged id. `Paid` and
+	 * `Materialized` are both success; `Payment Failed` is retryable (the row
+	 * is still payable); `Failed` means paid but the records could not be
+	 * written, which needs a human.
+	 */
+	registrationStatus?: StagedRegistrationStatus | string | null
+	registrationRef?: string | null
+	/** The order exists AND has closed — the point of being genuinely registered. */
+	isComplete?: boolean | null
+	orderId?: string | null
+	orderNumber?: string | null
+	/** `Order_History__c.Error__c` on a Payment Failed / Failed row. */
+	errorMessage?: string | null
+}
+
+/** `GET resume?stagedId=` — the payload a staged registration was created from. */
+export type ResumeResult = {
+	resumable: boolean
+	payload: ExamRegisterRequest | null
+	registrationRef: string | null
+	stagedId?: string | null
+	/** Epoch ms when the Stripe session lapses; not resumable after. */
+	expiresAt?: number | null
+}
+
+/** `GET demographics` — picklists for the post-registration survey. */
+export type DemographicsOptions = {
+	picklists: Record<string, Array<{ label: string; value: string }>>
+	workingYears: string[]
+	graduationYears: string[]
+}
+
+/**
+ * `POST demographics` — `key` is the staged or order id the caller's own
+ * registration returned; the server resolves the contact from that record.
+ */
+export type DemographicsSaveRequest = {
+	key: string
+	values: Record<string, string | boolean | null>
+}
+
+export type DemographicsSaveResult = {
+	saved: boolean
+	rejected: string[]
 }

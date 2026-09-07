@@ -2,8 +2,11 @@ import { expect, test } from "@playwright/test"
 
 import type { AlertBarView } from "@/api/alert-bar"
 import { eventContact, eventLoad, eventView } from "@/testing/factories/event"
-import { personalInfoEditData } from "@/testing/factories/personal-info"
-import { personalInfoGraphqlResolvers } from "@/testing/factories/personal-info-graphql"
+import {
+	accountViewFromPersonalInfo,
+	billingCompanyGraphql,
+	personalInfoEditData,
+} from "@/testing/factories/personal-info"
 import { installMockOrg, type MockOrgOptions } from "../support/mock-org"
 import { programsListData } from "../support/payloads"
 
@@ -29,12 +32,14 @@ function alertBarIdle(): AlertBarView {
 }
 
 function memberBaseline(): Pick<MockOrgOptions, "actions" | "graphql"> {
-	const resolvers = personalInfoGraphqlResolvers(personalInfoEditData(), [])
+	const profile = personalInfoEditData()
 	return {
-		actions: { programs: programsListData(), alertBar: alertBarIdle() },
-		graphql: {
-			PersonalInfoEditContact: resolvers.PersonalInfoEditContact().data,
+		actions: {
+			programs: programsListData(),
+			alertBar: alertBarIdle(),
+			account: accountViewFromPersonalInfo(profile),
 		},
+		graphql: { BillingCompany: billingCompanyGraphql(profile) },
 	}
 }
 

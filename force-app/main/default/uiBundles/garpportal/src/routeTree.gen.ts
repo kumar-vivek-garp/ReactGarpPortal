@@ -30,6 +30,7 @@ import { Route as AppLayoutCoursesCourseTypeIndexRouteImport } from './pages/_ap
 import { Route as AppLayoutCpdActivitiesDetailActivityIdIndexRouteImport } from './pages/_appLayout/cpd-activities-detail/$activityId/index'
 import { Route as AppLayoutCpdActivitiesIndexRouteImport } from './pages/_appLayout/cpd/activities/index'
 import { Route as AppLayoutErrataProgramTypeIndexRouteImport } from './pages/_appLayout/errata/$programType/index'
+import { Route as AppLayoutMembershipRegisterIndexRouteImport } from './pages/_appLayout/membership/register/index'
 import { Route as AppLayoutOrderDetailsOrderNumberIndexRouteImport } from './pages/_appLayout/order-details/$orderNumber/index'
 import { Route as AppLayoutProgramsProgramTypeIndexRouteImport } from './pages/_appLayout/programs/$programType/index'
 import { Route as AppLayoutStudyMaterialsArchiveIndexRouteImport } from './pages/_appLayout/study-materials/archive/index'
@@ -45,6 +46,7 @@ import { Route as AppLayoutProgramsProgramTypeExamSetupIndexRouteImport } from '
 import { Route as AppLayoutProgramsProgramTypeRegisterIndexRouteImport } from './pages/_appLayout/programs/$programType/register/index'
 import { Route as AppLayoutProgramsProgramTypeResultsIndexRouteImport } from './pages/_appLayout/programs/$programType/results/index'
 import { Route as AppLayoutProgramsProgramTypeWorkExperienceIndexRouteImport } from './pages/_appLayout/programs/$programType/work-experience/index'
+import { Route as AppLayoutStudyMaterialsPurchaseProductCodeIndexRouteImport } from './pages/_appLayout/study-materials/purchase/$productCode/index'
 import { Route as PublicFormLayoutRegistrationChaptermeetingEventIdIndexRouteImport } from './pages/_publicFormLayout/registration/chaptermeeting/$eventId/index'
 import { Route as PublicFormLayoutRegistrationEventEventIdIndexRouteImport } from './pages/_publicFormLayout/registration/event/$eventId/index'
 import { Route as PublicFormLayoutRegistrationWebcastEventIdIndexRouteImport } from './pages/_publicFormLayout/registration/webcast/$eventId/index'
@@ -163,6 +165,12 @@ const AppLayoutErrataProgramTypeIndexRoute =
     path: '/errata/$programType/',
     getParentRoute: () => AppLayoutRouteRoute,
   } as any)
+const AppLayoutMembershipRegisterIndexRoute =
+  AppLayoutMembershipRegisterIndexRouteImport.update({
+    id: '/membership/register/',
+    path: '/membership/register/',
+    getParentRoute: () => AppLayoutRouteRoute,
+  } as any)
 const AppLayoutOrderDetailsOrderNumberIndexRoute =
   AppLayoutOrderDetailsOrderNumberIndexRouteImport.update({
     id: '/order-details/$orderNumber/',
@@ -253,6 +261,12 @@ const AppLayoutProgramsProgramTypeWorkExperienceIndexRoute =
     path: '/programs/$programType/work-experience/',
     getParentRoute: () => AppLayoutRouteRoute,
   } as any)
+const AppLayoutStudyMaterialsPurchaseProductCodeIndexRoute =
+  AppLayoutStudyMaterialsPurchaseProductCodeIndexRouteImport.update({
+    id: '/study-materials/purchase/$productCode/',
+    path: '/study-materials/purchase/$productCode/',
+    getParentRoute: () => AppLayoutRouteRoute,
+  } as any)
 const PublicFormLayoutRegistrationChaptermeetingEventIdIndexRoute =
   PublicFormLayoutRegistrationChaptermeetingEventIdIndexRouteImport.update({
     id: '/registration/chaptermeeting/$eventId/',
@@ -310,6 +324,7 @@ export interface FileRoutesByFullPath {
   '/cpd-activities-detail/$activityId/': typeof AppLayoutCpdActivitiesDetailActivityIdIndexRoute
   '/cpd/activities/': typeof AppLayoutCpdActivitiesIndexRoute
   '/errata/$programType/': typeof AppLayoutErrataProgramTypeIndexRoute
+  '/membership/register/': typeof AppLayoutMembershipRegisterIndexRoute
   '/order-details/$orderNumber/': typeof AppLayoutOrderDetailsOrderNumberIndexRoute
   '/programs/$programType/': typeof AppLayoutProgramsProgramTypeIndexRoute
   '/study-materials/archive/': typeof AppLayoutStudyMaterialsArchiveIndexRoute
@@ -324,6 +339,7 @@ export interface FileRoutesByFullPath {
   '/programs/$programType/register/': typeof AppLayoutProgramsProgramTypeRegisterIndexRoute
   '/programs/$programType/results/': typeof AppLayoutProgramsProgramTypeResultsIndexRoute
   '/programs/$programType/work-experience/': typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
+  '/study-materials/purchase/$productCode/': typeof AppLayoutStudyMaterialsPurchaseProductCodeIndexRoute
   '/registration/chaptermeeting/$eventId/': typeof PublicFormLayoutRegistrationChaptermeetingEventIdIndexRoute
   '/registration/event/$eventId/': typeof PublicFormLayoutRegistrationEventEventIdIndexRoute
   '/registration/webcast/$eventId/': typeof PublicFormLayoutRegistrationWebcastEventIdIndexRoute
@@ -351,6 +367,7 @@ export interface FileRoutesByTo {
   '/cpd-activities-detail/$activityId': typeof AppLayoutCpdActivitiesDetailActivityIdIndexRoute
   '/cpd/activities': typeof AppLayoutCpdActivitiesIndexRoute
   '/errata/$programType': typeof AppLayoutErrataProgramTypeIndexRoute
+  '/membership/register': typeof AppLayoutMembershipRegisterIndexRoute
   '/order-details/$orderNumber': typeof AppLayoutOrderDetailsOrderNumberIndexRoute
   '/programs/$programType': typeof AppLayoutProgramsProgramTypeIndexRoute
   '/study-materials/archive': typeof AppLayoutStudyMaterialsArchiveIndexRoute
@@ -365,6 +382,7 @@ export interface FileRoutesByTo {
   '/programs/$programType/register': typeof AppLayoutProgramsProgramTypeRegisterIndexRoute
   '/programs/$programType/results': typeof AppLayoutProgramsProgramTypeResultsIndexRoute
   '/programs/$programType/work-experience': typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
+  '/study-materials/purchase/$productCode': typeof AppLayoutStudyMaterialsPurchaseProductCodeIndexRoute
   '/registration/chaptermeeting/$eventId': typeof PublicFormLayoutRegistrationChaptermeetingEventIdIndexRoute
   '/registration/event/$eventId': typeof PublicFormLayoutRegistrationEventEventIdIndexRoute
   '/registration/webcast/$eventId': typeof PublicFormLayoutRegistrationWebcastEventIdIndexRoute
@@ -396,6 +414,7 @@ export interface FileRoutesById {
   '/_appLayout/cpd-activities-detail/$activityId/': typeof AppLayoutCpdActivitiesDetailActivityIdIndexRoute
   '/_appLayout/cpd/activities/': typeof AppLayoutCpdActivitiesIndexRoute
   '/_appLayout/errata/$programType/': typeof AppLayoutErrataProgramTypeIndexRoute
+  '/_appLayout/membership/register/': typeof AppLayoutMembershipRegisterIndexRoute
   '/_appLayout/order-details/$orderNumber/': typeof AppLayoutOrderDetailsOrderNumberIndexRoute
   '/_appLayout/programs/$programType/': typeof AppLayoutProgramsProgramTypeIndexRoute
   '/_appLayout/study-materials/archive/': typeof AppLayoutStudyMaterialsArchiveIndexRoute
@@ -410,6 +429,7 @@ export interface FileRoutesById {
   '/_appLayout/programs/$programType/register/': typeof AppLayoutProgramsProgramTypeRegisterIndexRoute
   '/_appLayout/programs/$programType/results/': typeof AppLayoutProgramsProgramTypeResultsIndexRoute
   '/_appLayout/programs/$programType/work-experience/': typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
+  '/_appLayout/study-materials/purchase/$productCode/': typeof AppLayoutStudyMaterialsPurchaseProductCodeIndexRoute
   '/_publicFormLayout/registration/chaptermeeting/$eventId/': typeof PublicFormLayoutRegistrationChaptermeetingEventIdIndexRoute
   '/_publicFormLayout/registration/event/$eventId/': typeof PublicFormLayoutRegistrationEventEventIdIndexRoute
   '/_publicFormLayout/registration/webcast/$eventId/': typeof PublicFormLayoutRegistrationWebcastEventIdIndexRoute
@@ -439,6 +459,7 @@ export interface FileRouteTypes {
     | '/cpd-activities-detail/$activityId/'
     | '/cpd/activities/'
     | '/errata/$programType/'
+    | '/membership/register/'
     | '/order-details/$orderNumber/'
     | '/programs/$programType/'
     | '/study-materials/archive/'
@@ -453,6 +474,7 @@ export interface FileRouteTypes {
     | '/programs/$programType/register/'
     | '/programs/$programType/results/'
     | '/programs/$programType/work-experience/'
+    | '/study-materials/purchase/$productCode/'
     | '/registration/chaptermeeting/$eventId/'
     | '/registration/event/$eventId/'
     | '/registration/webcast/$eventId/'
@@ -480,6 +502,7 @@ export interface FileRouteTypes {
     | '/cpd-activities-detail/$activityId'
     | '/cpd/activities'
     | '/errata/$programType'
+    | '/membership/register'
     | '/order-details/$orderNumber'
     | '/programs/$programType'
     | '/study-materials/archive'
@@ -494,6 +517,7 @@ export interface FileRouteTypes {
     | '/programs/$programType/register'
     | '/programs/$programType/results'
     | '/programs/$programType/work-experience'
+    | '/study-materials/purchase/$productCode'
     | '/registration/chaptermeeting/$eventId'
     | '/registration/event/$eventId'
     | '/registration/webcast/$eventId'
@@ -524,6 +548,7 @@ export interface FileRouteTypes {
     | '/_appLayout/cpd-activities-detail/$activityId/'
     | '/_appLayout/cpd/activities/'
     | '/_appLayout/errata/$programType/'
+    | '/_appLayout/membership/register/'
     | '/_appLayout/order-details/$orderNumber/'
     | '/_appLayout/programs/$programType/'
     | '/_appLayout/study-materials/archive/'
@@ -538,6 +563,7 @@ export interface FileRouteTypes {
     | '/_appLayout/programs/$programType/register/'
     | '/_appLayout/programs/$programType/results/'
     | '/_appLayout/programs/$programType/work-experience/'
+    | '/_appLayout/study-materials/purchase/$productCode/'
     | '/_publicFormLayout/registration/chaptermeeting/$eventId/'
     | '/_publicFormLayout/registration/event/$eventId/'
     | '/_publicFormLayout/registration/webcast/$eventId/'
@@ -703,6 +729,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLayoutErrataProgramTypeIndexRouteImport
       parentRoute: typeof AppLayoutRouteRoute
     }
+    '/_appLayout/membership/register/': {
+      id: '/_appLayout/membership/register/'
+      path: '/membership/register'
+      fullPath: '/membership/register/'
+      preLoaderRoute: typeof AppLayoutMembershipRegisterIndexRouteImport
+      parentRoute: typeof AppLayoutRouteRoute
+    }
     '/_appLayout/order-details/$orderNumber/': {
       id: '/_appLayout/order-details/$orderNumber/'
       path: '/order-details/$orderNumber'
@@ -808,6 +841,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRouteImport
       parentRoute: typeof AppLayoutRouteRoute
     }
+    '/_appLayout/study-materials/purchase/$productCode/': {
+      id: '/_appLayout/study-materials/purchase/$productCode/'
+      path: '/study-materials/purchase/$productCode'
+      fullPath: '/study-materials/purchase/$productCode/'
+      preLoaderRoute: typeof AppLayoutStudyMaterialsPurchaseProductCodeIndexRouteImport
+      parentRoute: typeof AppLayoutRouteRoute
+    }
     '/_publicFormLayout/registration/chaptermeeting/$eventId/': {
       id: '/_publicFormLayout/registration/chaptermeeting/$eventId/'
       path: '/registration/chaptermeeting/$eventId'
@@ -869,6 +909,7 @@ interface AppLayoutRouteRouteChildren {
   AppLayoutCpdActivitiesDetailActivityIdIndexRoute: typeof AppLayoutCpdActivitiesDetailActivityIdIndexRoute
   AppLayoutCpdActivitiesIndexRoute: typeof AppLayoutCpdActivitiesIndexRoute
   AppLayoutErrataProgramTypeIndexRoute: typeof AppLayoutErrataProgramTypeIndexRoute
+  AppLayoutMembershipRegisterIndexRoute: typeof AppLayoutMembershipRegisterIndexRoute
   AppLayoutOrderDetailsOrderNumberIndexRoute: typeof AppLayoutOrderDetailsOrderNumberIndexRoute
   AppLayoutProgramsProgramTypeIndexRoute: typeof AppLayoutProgramsProgramTypeIndexRoute
   AppLayoutStudyMaterialsArchiveIndexRoute: typeof AppLayoutStudyMaterialsArchiveIndexRoute
@@ -878,6 +919,7 @@ interface AppLayoutRouteRouteChildren {
   AppLayoutProgramsProgramTypeRegisterIndexRoute: typeof AppLayoutProgramsProgramTypeRegisterIndexRoute
   AppLayoutProgramsProgramTypeResultsIndexRoute: typeof AppLayoutProgramsProgramTypeResultsIndexRoute
   AppLayoutProgramsProgramTypeWorkExperienceIndexRoute: typeof AppLayoutProgramsProgramTypeWorkExperienceIndexRoute
+  AppLayoutStudyMaterialsPurchaseProductCodeIndexRoute: typeof AppLayoutStudyMaterialsPurchaseProductCodeIndexRoute
   AppLayoutEventsChaptermeetingEventIdRegisterIndexRoute: typeof AppLayoutEventsChaptermeetingEventIdRegisterIndexRoute
   AppLayoutEventsEventEventIdRegisterIndexRoute: typeof AppLayoutEventsEventEventIdRegisterIndexRoute
   AppLayoutEventsWebcastEventIdRegisterIndexRoute: typeof AppLayoutEventsWebcastEventIdRegisterIndexRoute
@@ -900,6 +942,7 @@ const AppLayoutRouteRouteChildren: AppLayoutRouteRouteChildren = {
     AppLayoutCpdActivitiesDetailActivityIdIndexRoute,
   AppLayoutCpdActivitiesIndexRoute: AppLayoutCpdActivitiesIndexRoute,
   AppLayoutErrataProgramTypeIndexRoute: AppLayoutErrataProgramTypeIndexRoute,
+  AppLayoutMembershipRegisterIndexRoute: AppLayoutMembershipRegisterIndexRoute,
   AppLayoutOrderDetailsOrderNumberIndexRoute:
     AppLayoutOrderDetailsOrderNumberIndexRoute,
   AppLayoutProgramsProgramTypeIndexRoute:
@@ -918,6 +961,8 @@ const AppLayoutRouteRouteChildren: AppLayoutRouteRouteChildren = {
     AppLayoutProgramsProgramTypeResultsIndexRoute,
   AppLayoutProgramsProgramTypeWorkExperienceIndexRoute:
     AppLayoutProgramsProgramTypeWorkExperienceIndexRoute,
+  AppLayoutStudyMaterialsPurchaseProductCodeIndexRoute:
+    AppLayoutStudyMaterialsPurchaseProductCodeIndexRoute,
   AppLayoutEventsChaptermeetingEventIdRegisterIndexRoute:
     AppLayoutEventsChaptermeetingEventIdRegisterIndexRoute,
   AppLayoutEventsEventEventIdRegisterIndexRoute:

@@ -8,6 +8,7 @@ import {
 } from "@/components/forms/registration-shell"
 import { ProgramsSubpageHeader } from "@/components/molecules/programs-subpage-header"
 import { resolveExamProgram } from "@/lib/registration-programs"
+import type { RegistrationLegProps } from "@/lib/registration-paths"
 import { useSubpageTransition } from "@/hooks/use-subpage-transition"
 import { cn } from "@/lib/utils"
 
@@ -20,11 +21,11 @@ import { cn } from "@/lib/utils"
 const SUBPAGE_SCROLL =
 	"mt-4 min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 
-type ProgramRegistrationPanelProps = {
+type ProgramRegistrationPanelProps = Partial<RegistrationLegProps> & {
 	programType: string
 	regCode?: string
-	/** Set when the browser has just come back from the payment provider. */
-	paymentReturn?: { orderNumber?: string } | null
+	/** The `?track_cta=` attribution tag the entry link carried. */
+	trackCta?: string
 	className?: string
 }
 
@@ -35,15 +36,18 @@ type ProgramRegistrationPanelProps = {
  * that is where Register Now is: the button only shows for programmes the
  * member is not enrolled in, which have no detail page to return to.
  *
- * One dynamic route serves every programme, so FRM, SCR, RAI, RAIJ and the
- * rest all land here, and the slug is what picks the programme. Anything the
- * registry does not cover — the courses and the membership kinds, whose forms
- * are still to be written — gets a placeholder rather than a dead end.
+ * One dynamic route serves every programme, so FRM, SCR, RAI, RAIJ, the
+ * courses and the membership programme all land here, and the slug is what
+ * picks the programme. Anything the registry does not cover (micro courses)
+ * gets a placeholder rather than a dead end.
  */
 function ProgramRegistrationPanel({
 	programType,
 	regCode,
+	trackCta,
 	paymentReturn,
+	checkoutCancelled,
+	resumeStagedId,
 	className,
 }: ProgramRegistrationPanelProps) {
 	const { style, exit } = useSubpageTransition()
@@ -66,7 +70,10 @@ function ProgramRegistrationPanel({
 						program={program}
 						programType={program.registrationType}
 						regCode={regCode}
+						trackCta={trackCta}
 						paymentReturn={paymentReturn}
+						checkoutCancelled={checkoutCancelled}
+						resumeStagedId={resumeStagedId}
 						onNavigateBack={exit}
 					/>
 				</div>

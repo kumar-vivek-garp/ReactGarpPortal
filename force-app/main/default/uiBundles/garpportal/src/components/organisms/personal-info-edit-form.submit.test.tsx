@@ -2,51 +2,42 @@ import { screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
-import type { CountryOption } from "@/api/personal-info/types"
 import { PersonalInfoEditForm } from "@/components/organisms/personal-info-edit-form"
-import { personalInfoEditData } from "@/testing/factories/personal-info"
-import { personalInfoGraphqlResolvers } from "@/testing/factories/personal-info-graphql"
+import {
+	accountViewFromPersonalInfo,
+	billingCompanyResolver,
+	personalInfoEditData,
+} from "@/testing/factories/personal-info"
+import { myAccountOrg } from "@/testing/msw/handlers/account"
+import { personalInfoWriteHandlers } from "@/testing/msw/handlers/personal-info"
 import { sdkGraphqlHandler } from "@/testing/msw/handlers/sdk-graphql"
 import { server } from "@/testing/msw/server"
 import { renderWithProviders } from "@/testing/render"
 
-const COUNTRIES: CountryOption[] = [
-	{ label: "United States", value: "United States", phoneCode: "+1" },
-	{ label: "United Kingdom", value: "United Kingdom", phoneCode: "+44" },
-]
-
 function serveOrg({
 	data = personalInfoEditData(),
-	saveRespond = () => ({
-		data: {
-			uiapi: {
-				AccountUpdate: { success: true },
-				ContactUpdate: { success: true },
-			},
-		},
-	}),
+	addressesRespond,
 }: {
 	data?: ReturnType<typeof personalInfoEditData>
-	saveRespond?: () => unknown
+	addressesRespond?: Parameters<typeof personalInfoWriteHandlers>[0] extends
+		| { addressesRespond?: infer R }
+		| undefined
+		? R
+		: never
 } = {}) {
-	const saves: Array<Record<string, unknown>> = []
+	const account = myAccountOrg({ view: accountViewFromPersonalInfo(data) })
+	const writes = personalInfoWriteHandlers({ addressesRespond })
 	server.use(
-		sdkGraphqlHandler({
-			...personalInfoGraphqlResolvers(data, COUNTRIES),
-			SavePersonalInfo: (variables) => {
-				saves.push(variables)
-				return saveRespond() as Record<string, unknown>
-			},
-		}),
+		...account.handlers,
+		...writes.handlers,
+		sdkGraphqlHandler(billingCompanyResolver(data)),
 	)
-	return { saves }
+	return { profileSpy: account.profileSpy, addressesSpy: writes.addressesSpy }
 }
 
 function renderForm() {
 	const onSaved = vi.fn()
-	const view = renderWithProviders(
-		<PersonalInfoEditForm contactId="003-member" onSaved={onSaved} />,
-	)
+	const view = renderWithProviders(<PersonalInfoEditForm onSaved={onSaved} />)
 	return { ...view, onSaved }
 }
 
@@ -60,7 +51,7 @@ async function save(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("submitting", () => {
-	it("posts the edited fields with both ids and reports back", async () => {
+	it("posts only the changed identity field, then both addresses", async () => {
 		const org = serveOrg()
 		const user = userEvent.setup()
 		const { onSaved } = renderForm()
@@ -73,27 +64,32 @@ describe("submitting", () => {
 		await vi.waitFor(() => {
 			expect(onSaved).toHaveBeenCalledTimes(1)
 		})
-		expect(org.saves).toHaveLength(1)
-		expect(org.saves[0]).toMatchObject({
-			contactId: "003-member",
-			accountId: "001-member",
-			firstName: "Grace",
-			lastName: "Lovelace",
-			email: "ada@example.org",
-			/*
-			 * Pins a suspected DATA-LOSS defect, deliberately: the stored "+1"
-			 * mobile code is posted as null even when the member never touched
-			 * the field. The mobile-code Select lacks the remount `key`
-			 * workaround every other Select in this form carries, latches
-			 * uncontrolled, and feeds "" back into the form state. Flip this
-			 * to "+1" when the form is fixed.
-			 */
-			mobilePhoneCode: null,
-			billingStreet: "1 Main St",
-			billingCity: "Hoboken",
-			mailingStreet: "2 Ship St",
-			mailingCity: "Boston",
+		// Only what changed; the stored mobile code survives untouched.
+		expect(org.profileSpy.bodies).toEqual([{ FirstName: "Grace" }])
+		expect(org.addressesSpy.bodies).toHaveLength(1)
+		expect(org.addressesSpy.bodies[0]).toMatchObject({
+			isBillingAndMailingAddressSame: false,
+			billingAddress: { street1: "1 Main St", city: "Hoboken", phone: "5551234" },
+			mailingAddress: { street1: "2 Ship St", city: "Boston" },
 		})
+	})
+
+	it("skips the profile write entirely when only an address changed", async () => {
+		const org = serveOrg()
+		const user = userEvent.setup()
+		const { onSaved } = renderForm()
+
+		await screen.findByLabelText("First name")
+		const city = addressSection("Billing address").getByLabelText("City")
+		await user.clear(city)
+		await user.type(city, "Jersey City")
+		await save(user)
+
+		await vi.waitFor(() => {
+			expect(onSaved).toHaveBeenCalledTimes(1)
+		})
+		expect(org.profileSpy.hits).toBe(0)
+		expect(org.addressesSpy.bodies[0].billingAddress.city).toBe("Jersey City")
 	})
 
 	it("copies billing over mailing when same-as-billing is ticked", async () => {
@@ -119,11 +115,13 @@ describe("submitting", () => {
 		await vi.waitFor(() => {
 			expect(onSaved).toHaveBeenCalledTimes(1)
 		})
-		expect(org.saves[0]).toMatchObject({
-			mailingStreet: "1 Main St",
-			mailingCity: "Hoboken",
-			mailingState: "NJ",
-			mailingPostalCode: "07030",
+		const body = org.addressesSpy.bodies[0]
+		expect(body.isBillingAndMailingAddressSame).toBe(true)
+		expect(body.mailingAddress).toMatchObject({
+			street1: "1 Main St",
+			city: "Hoboken",
+			state: "NJ",
+			postalCode: "07030",
 		})
 	})
 
@@ -151,7 +149,7 @@ describe("submitting", () => {
 		await user.click(screen.getByRole("button", { name: "Save" }))
 		const mailing = addressSection("Mailing address")
 		expect(await mailing.findByText("Address is required")).toBeInTheDocument()
-		expect(org.saves).toHaveLength(0)
+		expect(org.addressesSpy.hits).toBe(0)
 
 		// …and with it the requirement follows the disabled state.
 		await user.click(
@@ -164,12 +162,16 @@ describe("submitting", () => {
 		await vi.waitFor(() => {
 			expect(onSaved).toHaveBeenCalledTimes(1)
 		})
-		expect(org.saves).toHaveLength(1)
+		expect(org.addressesSpy.hits).toBe(1)
 	})
 
 	it("keeps the dialog open and re-enables Save when the org refuses", async () => {
 		const org = serveOrg({
-			saveRespond: () => ({ errors: [{ message: "Email invalid" }] }),
+			addressesRespond: () => ({
+				statusMessage: "Contact updated; Account billing address failed.",
+				statusCode: 501,
+				appliedBillingToMailing: false,
+			}),
 		})
 		const user = userEvent.setup()
 		const { onSaved } = renderForm()
@@ -178,7 +180,7 @@ describe("submitting", () => {
 		await save(user)
 
 		await vi.waitFor(() => {
-			expect(org.saves).toHaveLength(1)
+			expect(org.addressesSpy.hits).toBe(1)
 		})
 		expect(onSaved).not.toHaveBeenCalled()
 		// The draft survives for another attempt.

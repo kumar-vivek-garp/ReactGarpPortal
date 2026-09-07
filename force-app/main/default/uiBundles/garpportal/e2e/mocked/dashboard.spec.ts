@@ -43,10 +43,10 @@ test.describe("dashboard cards", () => {
 		await expect(
 			page.getByText("You have not booked a seat for your exam yet."),
 		).toBeVisible()
-		// Title line: programme + deadline share one row ("FRM Part I · Book
-		// by November 7, 2026"). The plain string would also match the
-		// notification copy, so anchor on the joined form.
-		await expect(page.getByText(/FRM Part I · Book by/)).toBeVisible()
+		// The deadline line under the programme name ("Schedule by November 7,
+		// 2026"). The message alone would also match the notification copy,
+		// so anchor on the deadline as well.
+		await expect(page.getByText(/Schedule by/)).toBeVisible()
 
 		// The known artifact this spec exists to kill: a healthy org must not
 		// toast "Unable to load ..." anywhere (cpd/notifications were the usual

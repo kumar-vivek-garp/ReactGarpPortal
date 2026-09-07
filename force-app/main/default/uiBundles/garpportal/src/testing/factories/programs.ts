@@ -5,12 +5,24 @@
  */
 
 import type {
+	EppOptInResult,
 	ExamDeadline,
 	ExamPartInfo,
 	ExamResources,
 	ProgramDetail,
 	ProgramExamNotification,
 } from "@/api/programs"
+
+export function eppOptInResult(
+	overrides: Partial<EppOptInResult> = {},
+): EppOptInResult {
+	return {
+		statusMessage: null,
+		statusCode: 200,
+		optedIn: true,
+		...overrides,
+	}
+}
 
 export function examPartInfo(
 	overrides: Partial<ExamPartInfo> = {},

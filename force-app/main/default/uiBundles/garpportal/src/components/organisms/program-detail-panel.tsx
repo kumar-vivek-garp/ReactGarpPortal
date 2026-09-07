@@ -10,7 +10,10 @@ import { ProgramsSubpageHeader } from "@/components/molecules/programs-subpage-h
 import { localizeProgramLogoUrl } from "@/config/program-logos"
 import { useSubpageTransition } from "@/hooks/use-subpage-transition"
 import { useProgramDetail } from "@/hooks/use-program-detail"
-import { buildProgramDetailPresentation } from "@/lib/program-detail-presentation"
+import {
+	buildProgramDetailPresentation,
+	visibleExamParts,
+} from "@/lib/program-detail-presentation"
 import { resolvePortalAssetUrl } from "@/lib/resolve-portal-asset-url"
 import { cn } from "@/lib/utils"
 
@@ -30,10 +33,9 @@ function logoForDetail(detail: ProgramDetail): string | undefined {
 function DetailBody({ detail }: { detail: ProgramDetail }) {
 	const presentation = buildProgramDetailPresentation(detail)
 	const logoUrl = logoForDetail(detail)
-	const showPart1 =
-		detail.examPart1Info != null && detail.examPart1Info.isResultStale !== true
-	const showPart2 =
-		detail.examPart2Info != null && detail.examPart2Info.isResultStale !== true
+	// Stale passes, ERP's Part I and a one-part programme's Part II are all
+	// decided in one place, so the hero and the cards cannot disagree.
+	const parts = visibleExamParts(detail)
 
 	return (
 		<div className="space-y-6 pb-2">
@@ -52,23 +54,15 @@ function DetailBody({ detail }: { detail: ProgramDetail }) {
 			>
 				<div className="flex min-w-0 flex-col gap-5">
 					<ProgramJourney milestones={presentation.milestones} />
-					{showPart1 && detail.examPart1Info ? (
+					{parts.map(({ part, partIndex }) => (
 						<ProgramExamOverview
+							key={partIndex}
 							detail={detail}
-							part={detail.examPart1Info}
-							partIndex={1}
+							part={part}
+							partIndex={partIndex}
 						/>
-					) : null}
-					{showPart2 && detail.examPart2Info ? (
-						<ProgramExamOverview
-							detail={detail}
-							part={detail.examPart2Info}
-							partIndex={2}
-						/>
-					) : null}
-					{!showPart1 &&
-					!showPart2 &&
-					detail.programState === "ExamAttempt" ? (
+					))}
+					{parts.length === 0 && detail.programState === "ExamAttempt" ? (
 						<p className="text-sm text-muted-foreground">
 							No exam attempt details are available for this program yet.
 						</p>

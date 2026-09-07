@@ -2,7 +2,6 @@ import { http, HttpResponse } from "msw"
 import { describe, expect, it } from "vitest"
 
 import { fetchAccount } from "@/api/account/account"
-import { accountContactQueryOptions, accountQueryKeys } from "@/api/account/query-options"
 import { AppError } from "@/api/client"
 import { accountView } from "@/testing/factories/account"
 import {
@@ -58,12 +57,3 @@ describe("fetchAccount", () => {
 	})
 })
 
-describe("accountContactQueryOptions", () => {
-	it("keys per contact and disables itself for a blank id", () => {
-		const enabled = accountContactQueryOptions("003xx1")
-		expect(enabled.queryKey).toEqual(accountQueryKeys.contact("003xx1"))
-		expect(enabled.enabled).toBe(true)
-
-		expect(accountContactQueryOptions("   ").enabled).toBe(false)
-	})
-})

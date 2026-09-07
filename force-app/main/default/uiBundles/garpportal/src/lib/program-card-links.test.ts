@@ -11,13 +11,16 @@ vi.mock("@/lib/resolve-portal-asset-url", () => ({
 
 import { isLocalViteHost } from "@/auth/sfdc-env"
 import {
+	certificateCopyCheckoutHref,
 	programDetailsHref,
 	programDetailsPath,
+	programErrataPath,
 	programExamSetupHref,
 	programExamSetupMyGarpHref,
 	programLearnMoreUrl,
 	programOrderHref,
 	programRegistrationHref,
+	programStudyMaterialsPath,
 	programTypeSlug,
 	resolveExperienceHref,
 	supportsInAppProgramDetail,
@@ -90,8 +93,15 @@ describe("programLearnMoreUrl", () => {
 		expect(programLearnMoreUrl("RiskAI")).toBe("https://www.garp.org/rai")
 	})
 
+	it("sends RAIJ to the Japanese Risk AI page, not to /raij", () => {
+		// `/raij` answers 404 — RAIJ is the Japanese sitting of the same Risk AI
+		// certification and has no page of its own.
+		expect(programLearnMoreUrl("RAIJ")).toBe("https://www.garp.org/rai/japan")
+	})
+
 	it("uses program slug for other types", () => {
 		expect(programLearnMoreUrl("SCR")).toBe("https://www.garp.org/scr")
+		expect(programLearnMoreUrl("FRM")).toBe("https://www.garp.org/frm")
 	})
 
 	it("falls back to policyURL when type is blank", () => {
@@ -184,6 +194,36 @@ describe("programOrderHref", () => {
 	})
 })
 
+describe("certificateCopyCheckoutHref", () => {
+	it("hands off to the legacy certificate checkout through its login", () => {
+		mockedLocal.mockReturnValue(false)
+		expect(certificateCopyCheckoutHref("FRM")).toBe(
+			"/Login?start=myprograms/certcheckout/frm",
+		)
+	})
+
+	it("prefixes sandbox host on local Vite and refuses a blank type", () => {
+		mockedLocal.mockReturnValue(true)
+		expect(certificateCopyCheckoutHref("erp")).toBe(
+			"https://garp--devjuly25a.sandbox.my.site.com/Login?start=myprograms/certcheckout/erp",
+		)
+		expect(certificateCopyCheckoutHref("  ")).toBeNull()
+	})
+})
+
+describe("programStudyMaterialsPath", () => {
+	it("filters the catalogue by the programme's marketing key", () => {
+		expect(programStudyMaterialsPath("FRM")).toBe("/study-materials?tab=frm")
+		expect(programStudyMaterialsPath("RiskAI")).toBe(
+			"/study-materials?tab=rai",
+		)
+	})
+
+	it("falls back to the whole catalogue for a blank type", () => {
+		expect(programStudyMaterialsPath("  ")).toBe("/study-materials")
+	})
+})
+
 describe("resolveExperienceHref", () => {
 	it("passes through absolute https URLs", () => {
 		expect(resolveExperienceHref("https://www.garp.org/scr")).toBe(
@@ -212,5 +252,21 @@ describe("resolveExperienceHref", () => {
 				"/servlet/servlet.FileDownload?file=015xxx",
 			),
 		).toBe("resolved:/servlet/servlet.FileDownload?file=015xxx")
+	})
+})
+
+describe("programErrataPath", () => {
+	it("links every programme the errataForm action accepts, mapping rai to riskai", () => {
+		expect(programErrataPath("FRM")).toBe("/programs/frm/errata")
+		expect(programErrataPath("rai")).toBe("/programs/riskai/errata")
+		expect(programErrataPath("RiskAI")).toBe("/programs/riskai/errata")
+		expect(programErrataPath("raij")).toBe("/programs/raij/errata")
+		expect(programErrataPath("frr")).toBe("/programs/frr/errata")
+	})
+
+	it("offers nothing for programmes with no curriculum to report against", () => {
+		expect(programErrataPath("frr25")).toBeNull()
+		expect(programErrataPath("ffr")).toBeNull()
+		expect(programErrataPath("  ")).toBeNull()
 	})
 })

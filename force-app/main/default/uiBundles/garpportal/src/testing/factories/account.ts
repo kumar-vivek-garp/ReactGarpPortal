@@ -14,11 +14,35 @@ import type {
 export function emptyPortalAddress(): PortalAddress {
 	return {
 		street: null,
+		street1: null,
+		street2: null,
+		street3: null,
 		city: null,
 		state: null,
 		postalCode: null,
 		country: null,
 		isEmpty: true,
+	}
+}
+
+/** A populated address; `street` is derived from the lines unless overridden. */
+export function portalAddress(
+	overrides: Partial<PortalAddress> = {},
+): PortalAddress {
+	const street1 = overrides.street1 ?? "1 Main St"
+	const street2 = overrides.street2 ?? null
+	const street3 = overrides.street3 ?? null
+	return {
+		street: [street1, street2, street3].filter(Boolean).join("\n") || null,
+		street1,
+		street2,
+		street3,
+		city: "Hoboken",
+		state: "NJ",
+		postalCode: "07030",
+		country: "United States",
+		isEmpty: false,
+		...overrides,
 	}
 }
 
@@ -54,11 +78,15 @@ export function accountStanding(
 	}
 }
 
-type AccountViewOverrides = {
+export type AccountViewOverrides = {
 	identity?: Partial<AccountView["identity"]>
 	completeness?: Partial<Completeness>
 	standing?: AccountStanding | null
 	personal?: Partial<AccountView["personal"]>
+	preferences?: Partial<AccountView["preferences"]>
+	mailingAddress?: PortalAddress
+	billingAddress?: PortalAddress
+	isBillingAndMailingAddressSame?: boolean
 }
 
 export function accountView(overrides: AccountViewOverrides = {}): AccountView {
@@ -90,7 +118,12 @@ export function accountView(overrides: AccountViewOverrides = {}): AccountView {
 			lastName: "Lovelace",
 			email: "ada@example.com",
 			phone: null,
+			homePhone: null,
+			mobilePhone: null,
+			mobilePhoneCode: null,
+			mailingCompany: null,
 			photoUrl: null,
+			isAwaitingEmailChange: null,
 			...overrides.personal,
 		},
 		designations: {
@@ -141,9 +174,14 @@ export function accountView(overrides: AccountViewOverrides = {}): AccountView {
 			chapterMeetings: null,
 			careerCenter: null,
 			memberUpdates: null,
+			smsPromotional: null,
+			smsRegistration: null,
+			...overrides.preferences,
 		},
-		mailingAddress: emptyPortalAddress(),
-		billingAddress: emptyPortalAddress(),
+		mailingAddress: overrides.mailingAddress ?? emptyPortalAddress(),
+		billingAddress: overrides.billingAddress ?? emptyPortalAddress(),
 		otherAddress: emptyPortalAddress(),
+		isBillingAndMailingAddressSame:
+			overrides.isBillingAndMailingAddressSame ?? false,
 	}
 }

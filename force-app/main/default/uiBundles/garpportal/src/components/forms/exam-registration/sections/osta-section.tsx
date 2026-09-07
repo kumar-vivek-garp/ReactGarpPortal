@@ -27,12 +27,12 @@ import {
 import { FieldError, FormField } from "@/components/molecules/form-field"
 import type { ExamFormValues } from "@/components/forms/exam-registration/exam-form-values"
 import {
-	EXAM_SETUP_GENDERS,
-	EXAM_SETUP_ID_LOCATIONS,
-	EXAM_SETUP_ID_TYPES,
-	EXAM_SETUP_SCHOOL_STATUSES,
-	EXAM_SETUP_WORKING_STATUSES,
-} from "@/config/exam-setup"
+	OSTA_GENDERS,
+	OSTA_ID_LOCATIONS,
+	OSTA_PHOTO_ID_TYPES,
+	OSTA_SCHOOL_STATUSES,
+	OSTA_WORKING_STATUSES,
+} from "@/config/osta"
 import { OSTA_COPY, PHONE_PATTERN } from "@/config/registration"
 import { idFormatError } from "@/lib/registration-presentation"
 
@@ -149,7 +149,7 @@ function OstaSection({
 							<OptionSelect
 								id="osta-idType"
 								value={field.value}
-								options={EXAM_SETUP_ID_TYPES}
+								options={OSTA_PHOTO_ID_TYPES}
 								placeholder="Select ID type"
 								onChange={field.onChange}
 								invalid={Boolean(osta?.idType)}
@@ -173,7 +173,7 @@ function OstaSection({
 							<OptionSelect
 								id="osta-idLocation"
 								value={field.value}
-								options={EXAM_SETUP_ID_LOCATIONS}
+								options={OSTA_ID_LOCATIONS}
 								placeholder="Select location"
 								onChange={field.onChange}
 								invalid={Boolean(osta?.idLocation)}
@@ -293,7 +293,7 @@ function OstaSection({
 							<OptionSelect
 								id="osta-gender"
 								value={field.value}
-								options={EXAM_SETUP_GENDERS}
+								options={OSTA_GENDERS}
 								placeholder="Select gender"
 								onChange={field.onChange}
 								invalid={Boolean(osta?.gender)}
@@ -355,7 +355,7 @@ function OstaSection({
 							<OptionSelect
 								id="osta-workStatus"
 								value={field.value}
-								options={EXAM_SETUP_WORKING_STATUSES}
+								options={OSTA_WORKING_STATUSES}
 								placeholder="Select work status"
 								onChange={field.onChange}
 								invalid={Boolean(osta?.workStatus)}
@@ -404,7 +404,7 @@ function OstaSection({
 							<OptionSelect
 								id="osta-studentStatus"
 								value={field.value}
-								options={EXAM_SETUP_SCHOOL_STATUSES}
+								options={OSTA_SCHOOL_STATUSES}
 								placeholder="Select education status"
 								onChange={field.onChange}
 								invalid={Boolean(osta?.studentStatus)}

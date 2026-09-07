@@ -3,17 +3,20 @@ import userEvent from "@testing-library/user-event"
 import { http, HttpResponse } from "msw"
 import { describe, expect, it } from "vitest"
 
+import { accountQueryKeys } from "@/api/account/query-options"
 import type { CurrentUser } from "@/api/auth/current-user"
-import { personalInfoQueryKeys } from "@/api/personal-info/query-options"
-import type { CountryOption } from "@/api/personal-info/types"
 import { WorkExperiencePanel } from "@/components/organisms/work-experience-panel"
 import { memberPortalEnvelope } from "@/testing/factories/envelope"
-import { personalInfoEditData } from "@/testing/factories/personal-info"
+import { seedPersonalInfoCache } from "@/testing/factories/personal-info"
 import {
 	cvView,
 	experienceFormView,
 	workExperience,
 } from "@/testing/factories/work-experience"
+import {
+	accountOptionsView,
+	portalCountryOption,
+} from "@/testing/factories/account-options"
 import { server } from "@/testing/msw/server"
 import { createTestQueryClient } from "@/testing/query-client"
 import { renderWithRouterProviders } from "@/testing/router"
@@ -31,9 +34,9 @@ const MEMBER: CurrentUser = {
 	photoUrl: null,
 }
 
-const COUNTRIES: CountryOption[] = [
-	{ label: "United States", value: "United States", phoneCode: "+1" },
-	{ label: "United Kingdom", value: "United Kingdom", phoneCode: "+44" },
+const COUNTRIES = [
+	portalCountryOption({ name: "United States", phoneCode: "1" }),
+	portalCountryOption({ name: "United Kingdom", phoneCode: "44" }),
 ]
 
 /** GET cvExperience spy — records each request URL for param assertions. */
@@ -53,11 +56,11 @@ async function renderPanel() {
 	const queryClient = createTestQueryClient(MEMBER)
 	// The address form seeds itself from personal-info, not from `GET cv` —
 	// pre-cached here the same way the exam registration tests do.
+	seedPersonalInfoCache(queryClient)
 	queryClient.setQueryData(
-		personalInfoQueryKeys.edit(MEMBER.contactId ?? ""),
-		personalInfoEditData(),
+		accountQueryKeys.options,
+		accountOptionsView({ countries: COUNTRIES }),
 	)
-	queryClient.setQueryData(personalInfoQueryKeys.countries, COUNTRIES)
 	const view = await renderWithRouterProviders(
 		<WorkExperiencePanel programType="frm" />,
 		{ user: MEMBER, queryClient },

@@ -80,8 +80,8 @@ function DirectorySettingsCard({
 	account,
 	handle,
 }: DirectorySettingsCardProps) {
-	const { identity, directory } = account
-	const saveMutation = useSaveDirectorySettings(identity.contactId)
+	const { directory } = account
+	const saveMutation = useSaveDirectorySettings()
 	const busy = saveMutation.isPending
 	const saveState = useSaveState(saveMutation)
 
@@ -114,7 +114,10 @@ function DirectorySettingsCard({
 			<div className="flex flex-col gap-2.5">
 				<DirectoryCheck
 					id="directory-opt-in"
-					label="Member directory opt-in"
+					// Not "Member directory": the same flag also governs the Certified
+					// directory listing, so naming one of the two read as a promise
+					// that the other was unaffected.
+					label="Directory opt-in"
 					checked={optedIn}
 					disabled={busy}
 					onCheckedChange={(next) =>

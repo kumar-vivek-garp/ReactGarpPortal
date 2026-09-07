@@ -182,7 +182,7 @@ function EventRegistrationPanel({
 	 */
 	const contactId = currentUser.data?.contactId ?? ""
 	const hasContact = Boolean(contactId)
-	const profile = usePersonalInfoEditData(contactId, hasContact)
+	const profile = usePersonalInfoEditData(hasContact)
 
 	/** Accept is client-side only — it reveals the form. */
 	const [rsvpAccepted, setRsvpAccepted] = useState(false)

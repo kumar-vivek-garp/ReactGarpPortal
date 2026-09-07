@@ -5,17 +5,17 @@ import {
 	requestEmailPreferences,
 } from "@/api/contact-preferences"
 
-/** Stamps email-pref datetime so the member receives preference-center instructions. */
+/** Stamps the email-pref date so the member receives preference-centre instructions. */
 export function useRequestEmailPreferences() {
 	const queryClient = useQueryClient()
 
 	return useMutation({
-		mutationFn: (contactId: string) => requestEmailPreferences(contactId),
+		mutationFn: () => requestEmailPreferences(),
 		meta: {
 			errorTitle: "Unable to request email preferences",
 		},
-		onSuccess: async (_data, contactId) => {
-			await invalidateContactPreferencesCaches(queryClient, contactId)
+		onSuccess: async () => {
+			await invalidateContactPreferencesCaches(queryClient)
 		},
 	})
 }

@@ -1,7 +1,7 @@
 import { createDataSDK } from "@salesforce/platform-sdk"
 
 import {
-	AppError,
+	memberPortalRefusalPayload,
 	normalizeHttpResponse,
 	unwrapApiResult,
 	unwrapMemberPortalEnvelope,
@@ -19,15 +19,19 @@ const EXAM_SETUP_ID_PATH = "/services/apexrest/memberportal/examSetupId"
 /**
  * Saves the ID details AND the sitting in one call.
  *
- * Apex takes both halves together (`saveIdInfo(programType, id, selection)`),
- * which is why this is one page and not the legacy's two screens — nothing on
- * the ID step depends on what was chosen for the sitting.
+ * Apex takes both halves together (`saveIdInfo(programType, id, selection)`).
  *
- * When the selection changed, Apex raises an
- * `Exam_Registration_Modification__c` as a side effect and returns its id. A
- * fee-incurring selection must therefore be stopped BEFORE this call, not
- * after: a modification raised here and then abandoned would sit Pending and
- * the legacy wizard would raise a second one against the same sitting.
+ * **A refusal is returned, not thrown**, for the same reason as the read — and
+ * here it matters more. Every deferral rule lives on this response:
+ * "You can only defer your exam registration once", "Part II cannot be taken
+ * before Part I", "Exam changes are currently not allowed". Those are sentences
+ * the member has to act on, so they belong in the banner against the step that
+ * can fix them, not in a toast. The caller checks `statusCode` before treating
+ * the result as a success.
+ *
+ * When the selection changed, Apex raises an `Exam_Registration_Modification__c`
+ * as a side effect and returns its id. It does that on **every** call with no
+ * dedupe, so this must not be retried automatically.
  */
 export async function saveExamSetupId(args: {
 	programType: ExamSetupProgramType
@@ -52,20 +56,14 @@ export async function saveExamSetupId(args: {
 		fallbackErrorMessage: "Unable to save your exam setup. Please try again.",
 	})
 
+	const refusal = memberPortalRefusalPayload<ExamSetupIdSaveResult>(result)
+	if (refusal) return refusal
+
 	const envelope = unwrapApiResult(result)
 
-	const data = unwrapMemberPortalEnvelope(envelope, {
+	return unwrapMemberPortalEnvelope(envelope, {
 		fallbackErrorMessage: "Unable to save your exam setup.",
 		missingDataMessage: "No response was returned.",
 		status: result.status,
 	})
-
-	if (data.statusCode !== 200) {
-		throw new AppError({
-			messages: [data.statusMessage ?? "Unable to save your exam setup."],
-			status: data.statusCode,
-		})
-	}
-
-	return data
 }

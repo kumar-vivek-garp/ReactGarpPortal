@@ -85,6 +85,27 @@ export function selectionInput(selection: ExamSelectionState): SelectionInput {
 	}
 }
 
+/**
+ * The inverse of `selectionInput`, for a form rebuilt from a staged payload.
+ * A `null` part comes back as the unchosen `{rateId: "", siteId: ""}`; the
+ * ids are restored as-is and `resolvePartSelection` re-validates them against
+ * the live load, so a sitting that has since closed degrades to "unchosen"
+ * rather than to an invalid order.
+ */
+export function selectionFromInput(
+	selection: SelectionInput | null | undefined,
+): ExamSelectionState {
+	const part = (choice: PartChoice | null | undefined) => ({
+		rateId: choice?.rateId ?? "",
+		siteId: choice?.siteId ?? "",
+	})
+	return {
+		partSelected: selection?.partSelected ?? "",
+		part1: part(selection?.part1),
+		part2: part(selection?.part2),
+	}
+}
+
 /** Product codes the candidate added. Included items are server-side. */
 export function selectedMaterialCodes(
 	materials: Array<StudyMaterialView & { selected?: boolean }>,

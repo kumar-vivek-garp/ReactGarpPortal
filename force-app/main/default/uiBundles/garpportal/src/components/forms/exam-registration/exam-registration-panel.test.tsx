@@ -3,12 +3,14 @@ import { http, HttpResponse } from "msw"
 import { describe, expect, it, vi } from "vitest"
 
 import type { CurrentUser } from "@/api/auth/current-user"
-import { personalInfoQueryKeys } from "@/api/personal-info/query-options"
 import { ExamRegistrationPanel } from "@/components/forms/exam-registration/exam-registration-panel"
 import { EXAM_PROGRAMS } from "@/config/registration"
 import { memberPortalError } from "@/testing/factories/envelope"
 import { examLoad, feesResult } from "@/testing/factories/exam"
-import { personalInfoEditData } from "@/testing/factories/personal-info"
+import {
+	personalInfoEditData,
+	seedPersonalInfoCache,
+} from "@/testing/factories/personal-info"
 import {
 	EXAMREG_PATH,
 	examregGet,
@@ -37,8 +39,8 @@ async function renderPanel({
 } = {}) {
 	const queryClient = createTestQueryClient(user)
 	if (user?.contactId && seedProfile) {
-		queryClient.setQueryData(
-			personalInfoQueryKeys.edit(user.contactId),
+		seedPersonalInfoCache(
+			queryClient,
 			personalInfoEditData({ contactId: user.contactId }),
 		)
 	}

@@ -49,6 +49,14 @@ export default defineConfig(() => {
         '.ngrok.io',
       ],
       proxy: { ...localSfPrefixProxy },
+      watch: {
+        // Merged with Vite's own defaults (.git, node_modules, test-results,
+        // cacheDir, outDir), which do not cover these two. Left watched, the
+        // coverage report's few hundred HTML files were being indexed and
+        // reloaded on every `test:coverage` run, and after a long session the
+        // dev server died of heap exhaustion doing it.
+        ignored: ['**/coverage/**', '**/playwright-report/**'],
+      },
     },
     preview: {
       port: 4173,

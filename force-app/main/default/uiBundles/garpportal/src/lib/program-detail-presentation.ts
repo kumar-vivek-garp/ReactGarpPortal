@@ -4,27 +4,48 @@ import type {
 } from "@/api/programs"
 import { formatDateTime, formatLongDate } from "@/lib/account-format"
 import {
+	certificateCopyCheckoutHref,
 	programExamSetupHref,
 	programOrderHref,
-	programRegistrationHref,
+	programRegistrationPath,
 	programResultsPath,
+	programTypeSlug,
 	programWorkExperiencePath,
 	resolveExperienceHref,
 } from "@/lib/program-card-links"
 import { stripProgramFormalName } from "@/lib/program-formal-name"
+import {
+	didNotPass,
+	isPartBlocked,
+	partBadgeUrl,
+	resultCopy,
+	TAKE_EXAM_NOTE,
+	unpaidChangeMessage,
+} from "@/lib/program-part-presentation"
 import type { StatusTone } from "@/lib/status-tone"
 
+/**
+ * Page-level rules for `/programs/$programType`, ported from GarpAppv1's
+ * `PortalProgramDetail` — which flags gate which actions, and what the hero
+ * says. Per-part card rules live in `program-part-presentation.ts`.
+ */
+
+export { resultCopy }
 
 export type ProgramActionKind =
 	| "schedule"
 	| "setup"
 	| "takeExam"
 	| "viewOrder"
+	| "viewPendingOrder"
 	| "viewExamResults"
 	| "workExperience"
 	| "registerAgain"
+	| "registerPartII"
+	| "deferExam"
 	| "digitalBadge"
 	| "downloadCertificate"
+	| "requestCertificate"
 	| "directory"
 	/* Course pages only — a course has an e-learning platform and an eBook
 	   where an exam programme has sittings. */
@@ -72,19 +93,17 @@ export type ProgramDetailPresentation = {
 	statusSummary: string
 	nextStepTitle: string
 	nextStepBody: string
+	/**
+	 * The Next-step card's tint. Usually follows `statusTone`; "danger" turns
+	 * the card into a warning (an unpaid exam change blocking the sitting).
+	 */
+	nextStepTone: StatusTone
+	/** Muted lines under the next-step body — the Take Exam caption, CV notes. */
+	notes: string[]
 	primaryAction: ProgramAction | null
 	secondaryActions: ProgramAction[]
 	milestones: JourneyMilestone[]
 	isTwoPart: boolean
-}
-
-/** Legacy result sentences keyed by Apex `result`. */
-const RESULT_COPY: Record<string, string> = {
-	Pass: "Congratulations! You are almost there to getting certified!",
-	Fail: "We regret to inform you, your result did not meet the requirement to pass.",
-	"No-Show": "We have no record of you attending this exam.",
-	"Not Graded": "Your Exam was not graded.",
-	"Not Available": "Your exam result is not available.",
 }
 
 export function displayProgramName(
@@ -100,43 +119,193 @@ export function displayProgramName(
 	)
 }
 
-export function resultCopy(result: string | null | undefined): string | null {
-	if (!result?.trim()) return null
-	return RESULT_COPY[result] ?? result
+function isTwoPartProgram(detail: ProgramDetail): boolean {
+	const type = detail.programType?.trim().toUpperCase()
+	return type === "FRM" || type === "ERP"
 }
 
-/** Prefer part 1; fall back to part 2 when part 1 is stale/missing. */
+function programTypeLabel(detail: ProgramDetail): string {
+	return detail.programType?.trim().toUpperCase() || "the"
+}
+
+/**
+ * Which part cards the page renders, in order.
+ *
+ * A stale pass (older than 90 days) is old news and the legacy hides it. ERP
+ * has no Part I card — its Part I is not sat through this portal. A one-part
+ * programme never has a Part II.
+ */
+export function visibleExamParts(
+	detail: ProgramDetail,
+): Array<{ part: ExamPartInfo; partIndex: 1 | 2 }> {
+	const parts: Array<{ part: ExamPartInfo; partIndex: 1 | 2 }> = []
+	const isErp = programTypeSlug(detail.programType ?? "") === "erp"
+	const p1 = detail.examPart1Info
+	if (p1 && p1.isResultStale !== true && !isErp) {
+		parts.push({ part: p1, partIndex: 1 })
+	}
+	const p2 = detail.examPart2Info
+	if (p2 && p2.isResultStale !== true && isTwoPartProgram(detail)) {
+		parts.push({ part: p2, partIndex: 2 })
+	}
+	return parts
+}
+
+/** The first visible part carrying an unpaid exam change, if any. */
+export function pendingExamChange(
+	detail: ProgramDetail,
+): { part: ExamPartInfo; orderId: string } | null {
+	for (const { part } of visibleExamParts(detail)) {
+		const orderId = part.unpaidDeferralOrderId?.trim()
+		if (orderId) return { part, orderId }
+	}
+	return null
+}
+
+/**
+ * The part the hero summarises. A blocked sitting takes precedence — the
+ * unpaid change is the one thing the member must act on — otherwise the first
+ * visible part.
+ */
 export function activeExamPart(
 	detail: ProgramDetail,
 ): ExamPartInfo | null {
-	const part1 =
-		detail.examPart1Info && detail.examPart1Info.isResultStale !== true
-			? detail.examPart1Info
-			: null
-	if (part1) return part1
-	const part2 =
-		detail.examPart2Info && detail.examPart2Info.isResultStale !== true
-			? detail.examPart2Info
-			: null
-	return part2
+	return (
+		pendingExamChange(detail)?.part ??
+		visibleExamParts(detail)[0]?.part ??
+		null
+	)
 }
 
-function registrationUrl(detail: ProgramDetail): string | null {
-	return programRegistrationHref(
-		detail.programInformation?.registrationPath,
-		detail.programType ?? "",
-		false,
+/**
+ * Identity only matters while a sitting is actually in play: while it can
+ * still be changed, or once the member is booked and waiting to sit it.
+ * The legacy's `showIDInfo`.
+ */
+export function showIdInfo(detail: ProgramDetail): boolean {
+	const awaiting = (part: ExamPartInfo | null) =>
+		part?.examPartState === "SchedulingClosedAwaitingToTakeExam"
+	return (
+		detail.isAnyPartDeferalOpen === true ||
+		detail.isAnyPartSchedulingOpen === true ||
+		awaiting(detail.examPart1Info) ||
+		awaiting(detail.examPart2Info)
 	)
+}
+
+/**
+ * In-app registration, as GarpAppv1 links its own form. `null` only when the
+ * payload carries no programme type at all.
+ */
+function registrationUrl(detail: ProgramDetail): string | null {
+	return programRegistrationPath(detail.programType ?? "")
 }
 
 function setupUrl(detail: ProgramDetail): string | null {
 	return programExamSetupHref(detail.programType ?? "")
 }
 
-function partActions(
+function registerAgainAction(
+	detail: ProgramDetail,
+	primary: boolean,
+): ProgramAction | null {
+	const url = registrationUrl(detail)
+	if (!url) return null
+	return {
+		kind: "registerAgain",
+		label: "Register Again",
+		url,
+		isExternal: false,
+		primary,
+	}
+}
+
+function viewResultsAction(
+	detail: ProgramDetail,
+	primary: boolean,
+): ProgramAction | null {
+	const url = programResultsPath(detail.programType ?? "")
+	if (!url) return null
+	return {
+		kind: "viewExamResults",
+		label: "View Exam Results",
+		url,
+		isExternal: false,
+		primary,
+	}
+}
+
+/**
+ * Which buttons a results-available card offers — GarpAppv1's
+ * `setExamButtonText`, reproduced per part.
+ *
+ * A pass that leaves Part II outstanding offers registration for it, a
+ * non-pass offers a re-register while the window is open, and everything
+ * falls back to the results page. "Not Available" gets nothing at all.
+ */
+export function resultActions(
 	part: ExamPartInfo,
 	detail: ProgramDetail,
 ): ProgramAction[] {
+	if (part.result === "Not Available") return []
+
+	const regOpen = detail.currentRegistrationIsOpen === true
+	const results = viewResultsAction(detail, false)
+	const regUrl = registrationUrl(detail)
+
+	if (
+		part.result === "Pass" &&
+		detail.currentRegistrationCanAddPartII === true &&
+		regOpen &&
+		regUrl
+	) {
+		return [
+			{
+				kind: "registerPartII",
+				label: "Register for Part II",
+				url: regUrl,
+				isExternal: false,
+				primary: true,
+			},
+			...(results ? [results] : []),
+		]
+	}
+
+	if (didNotPass(part.result) && regOpen) {
+		const again = registerAgainAction(detail, true)
+		if (again) return [again, ...(results ? [results] : [])]
+	}
+
+	const primaryResults = viewResultsAction(detail, true)
+	return primaryResults ? [primaryResults] : []
+}
+
+/**
+ * Every action a part offers, in the legacy's order. The single source for
+ * the part card and, through the active part, the hero.
+ *
+ * An unpaid exam change blocks every other action on the sitting: only the
+ * pending order is offered.
+ */
+export function partActions(
+	part: ExamPartInfo,
+	detail: ProgramDetail,
+): ProgramAction[] {
+	if (isPartBlocked(part)) {
+		const url = programOrderHref(part.unpaidDeferralOrderId)
+		return url
+			? [
+					{
+						kind: "viewPendingOrder",
+						label: "View Pending Order",
+						url,
+						isExternal: false,
+						primary: true,
+					},
+				]
+			: []
+	}
+
 	const actions: ProgramAction[] = []
 	const setupHref = setupUrl(detail)
 
@@ -153,12 +322,12 @@ function partActions(
 			})
 		}
 	} else if (part.isSchedulingOpen === true && setupHref) {
+		// The wizard first; the provider SSO is only reached from inside that
+		// flow, after selection and payment.
 		actions.push({
 			kind: part.schedulingIsComplete ? "setup" : "schedule",
 			label: part.schedulingIsComplete ? "Exam Setup" : "Schedule Exam",
 			url: setupHref,
-			// In-app since the wizard landed — `programExamSetupHref` returns a
-			// route now, not a MyGarp hand-off.
 			isExternal: false,
 			primary: true,
 		})
@@ -175,23 +344,22 @@ function partActions(
 		})
 	}
 
+	// Never scheduled and the window has closed: re-register if it is open
+	// AND Part I is still on offer.
 	if (
 		part.examPartState === "SchedulingClosedNeverScheduled" &&
-		detail.currentRegistrationIsOpen === true
+		detail.currentRegistrationIsOpen === true &&
+		detail.currentRegistrationCanRegPartI === true
 	) {
-		const regUrl = registrationUrl(detail)
-		if (regUrl) {
-			actions.push({
-				kind: "registerAgain",
-				label: "Register Again",
-				url: regUrl,
-				isExternal: true,
-				primary: actions.length === 0,
-			})
-		}
+		const again = registerAgainAction(detail, actions.length === 0)
+		if (again) actions.push(again)
 	}
 
-	const badgeUrl = resolveExperienceHref(part.badgePageURL ?? part.badgeURL)
+	if (part.examPartState === "SchedulingClosedResultsAvailable") {
+		actions.push(...resultActions(part, detail))
+	}
+
+	const badgeUrl = partBadgeUrl(part)
 	if (badgeUrl) {
 		actions.push({
 			kind: "digitalBadge",
@@ -203,39 +371,97 @@ function partActions(
 		})
 	}
 
-	if (part.examPartState === "SchedulingClosedResultsAvailable") {
-		const resultsUrl = programResultsPath(detail.programType ?? "")
-		if (resultsUrl) {
-			actions.unshift({
-				kind: "viewExamResults",
-				label: "View Exam Results",
-				url: resultsUrl,
-				isExternal: false,
-				primary: true,
-			})
-			// Only one primary — demote anything else that claimed it.
-			for (const action of actions) {
-				if (action.kind !== "viewExamResults") action.primary = false
-			}
-		}
+	return actions
+}
+
+/**
+ * The legacy's "Manage Your Exam": deferral and adding Part II. Nothing while
+ * an unpaid change exists — a second change cannot be requested while the
+ * first is unpaid. Deferral is skipped when `existing` already reaches the
+ * same wizard, so the card does not offer one page under two names.
+ */
+export function manageExamActions(
+	detail: ProgramDetail,
+	existing: ProgramAction[] = [],
+): ProgramAction[] {
+	if (pendingExamChange(detail)) return []
+
+	const actions: ProgramAction[] = []
+	const setupHref = setupUrl(detail)
+	if (
+		detail.isAnyPartDeferalOpen === true &&
+		setupHref &&
+		!existing.some((a) => a.url === setupHref)
+	) {
+		actions.push({
+			kind: "deferExam",
+			label: "Defer Exam",
+			url: setupHref,
+			isExternal: false,
+		})
+	}
+
+	const regUrl = registrationUrl(detail)
+	if (
+		detail.currentRegistrationCanAddPartII === true &&
+		detail.currentRegistrationIsOpen === true &&
+		regUrl &&
+		!existing.some((a) => a.kind === "registerPartII")
+	) {
+		actions.push({
+			kind: "registerPartII",
+			label: `Add ${programTypeLabel(detail)} Part II`,
+			url: regUrl,
+			isExternal: false,
+		})
 	}
 
 	return actions
 }
 
+/**
+ * Which certificate button a certified member gets is decided by programme,
+ * not by whether a download URL happens to exist:
+ *
+ *     SCR · RiskAI · RAIJ   Download Certificate
+ *     FRM · ERP             Request Copy of Certificate
+ *
+ * FRM and ERP certificates are not downloadable at all — a copy is ordered
+ * through the legacy checkout. Testing `certificateDownloadURL` alone, which
+ * is null for every FRM member, rendered neither.
+ */
+export function certificateAction(
+	detail: ProgramDetail,
+): ProgramAction | null {
+	const slug = programTypeSlug(detail.programType ?? "")
+	if (slug === "frm" || slug === "erp") {
+		const url = certificateCopyCheckoutHref(slug)
+		return url
+			? {
+					kind: "requestCertificate",
+					label: "Request Copy of Certificate",
+					url,
+					isExternal: true,
+					primary: true,
+				}
+			: null
+	}
+	const certUrl = resolveExperienceHref(detail.certificateDownloadURL)
+	if (!certUrl) return null
+	return {
+		kind: "downloadCertificate",
+		label: "Download Certificate",
+		url: certUrl,
+		isExternal: true,
+		newWindow: true,
+		primary: true,
+	}
+}
+
 function completedActions(detail: ProgramDetail): ProgramAction[] {
 	const actions: ProgramAction[] = []
-	const certUrl = resolveExperienceHref(detail.certificateDownloadURL)
-	if (certUrl) {
-		actions.push({
-			kind: "downloadCertificate",
-			label: "Download Certificate",
-			url: certUrl,
-			isExternal: true,
-			newWindow: true,
-			primary: true,
-		})
-	}
+	const certificate = certificateAction(detail)
+	if (certificate) actions.push(certificate)
 	const badgeUrl = resolveExperienceHref(detail.digitalBadgheURL)
 	if (badgeUrl) {
 		actions.push({
@@ -254,16 +480,8 @@ function completedActions(detail: ProgramDetail): ProgramAction[] {
 		isExternal: false,
 		primary: actions.length === 0,
 	})
-	const resultsUrl = programResultsPath(detail.programType ?? "")
-	if (resultsUrl) {
-		actions.push({
-			kind: "viewExamResults",
-			label: "View Exam Results",
-			url: resultsUrl,
-			isExternal: false,
-			primary: false,
-		})
-	}
+	const results = viewResultsAction(detail, false)
+	if (results) actions.push(results)
 	return actions
 }
 
@@ -560,10 +778,6 @@ function splitActions(actions: ProgramAction[]): {
 }
 
 /**
- * Maps Apex `ProgramDetail` into UI-ready status, CTAs, and journey milestones.
- * Pure — no React. Safe to unit-test every exam / program state.
- */
-/**
  * Friendly wording for the raw `Candidate_Requirement__c.Status__c`.
  *
  * The status itself is never shown. Legacy printed "Current status: Initial"
@@ -578,6 +792,51 @@ function cvStatusCopy(cvStatus: string | null | undefined): string {
 			return "We need more information before your submission can be approved."
 		default:
 			return "Submit your work experience to finish certification."
+	}
+}
+
+/**
+ * The work-experience card's copy, keyed on `cvStatus` — GarpAppv1's
+ * `CvSubmissionCard`, minus its typos. The note is the consequence of missing
+ * the window, which differs by programme.
+ */
+export function cvSubmissionCopy(detail: ProgramDetail): {
+	heading: string
+	body: string
+	notes: string[]
+} {
+	const type = programTypeLabel(detail)
+	switch (detail.cvStatus?.trim()) {
+		case "Ready For Review":
+			return {
+				heading: "Submission received",
+				body: "Thank you for submitting your work experience. Your submission has been received and is now under review.",
+				notes: [],
+			}
+		case "Failed Review":
+			return {
+				heading: "Submission denied",
+				body: "After a review of your submission we require some more information. You will be contacted shortly.",
+				notes: [],
+			}
+		default: {
+			const notes: string[] = []
+			if (type === "FRM") {
+				notes.push(
+					"Please note: GARP requires candidates to submit their work experience within 10 years of sitting for the FRM Exam Part II, or else they will be required to re-enroll in the FRM Program as a new candidate.",
+				)
+			}
+			if (type === "ERP") {
+				notes.push(
+					"Please note: GARP requires candidates to submit their work experience within 10 years of sitting for the ERP Exam Part II, or else their program will expire and they will not be able to complete certification.",
+				)
+			}
+			return {
+				heading: "Submission required",
+				body: `Before you can become ${type === "ERP" ? "an" : "a certified"} ${type} you must submit two years of professional work experience. We will contact you in the event we require further information.`,
+				notes,
+			}
+		}
 	}
 }
 
@@ -633,10 +892,65 @@ function withWorkExperienceAction(
 	}
 }
 
+/**
+ * Maps Apex `ProgramDetail` into UI-ready status, CTAs, and journey milestones.
+ * Pure — no React. Safe to unit-test every exam / program state.
+ */
 export function buildProgramDetailPresentation(
 	detail: ProgramDetail,
 ): ProgramDetailPresentation {
 	return withWorkExperienceAction(detail, buildStatePresentation(detail))
+}
+
+function nextStepFor(
+	primaryAction: ProgramAction | null,
+	detail: ProgramDetail,
+	fallbackBody: string,
+): { title: string; body: string } {
+	switch (primaryAction?.kind) {
+		case "schedule":
+			return {
+				title: "Schedule your exam",
+				body: "Open exam setup to choose your sitting while the scheduling window is open.",
+			}
+		case "setup":
+			return {
+				title: "Update your exam setup",
+				body: "Review or change your exam administration and site in exam setup.",
+			}
+		case "takeExam":
+			return {
+				title: "Take your exam",
+				body: "Launch your exam provider when you are ready to sit.",
+			}
+		case "registerAgain":
+			return {
+				title: "Register again",
+				body: "Registration is open — register again to continue.",
+			}
+		case "registerPartII":
+			return {
+				title: "Register for Part II",
+				body: `Registration is open — register for the ${programTypeLabel(detail)} Exam Part II to continue your certification.`,
+			}
+		case "viewOrder":
+			return {
+				title: "Complete your payment",
+				body: "Review your unpaid order and complete payment to unlock setup.",
+			}
+		case "deferExam":
+			return {
+				title: "Defer your exam",
+				body: "Move your sitting to a later administration in exam setup while the deferral window is open.",
+			}
+		case "viewExamResults":
+			return {
+				title: "Review your exam results",
+				body: "See your official result, quartile rankings, and downloadable letters.",
+			}
+		default:
+			return { title: "Your next step", body: fallbackBody }
+	}
 }
 
 function buildStatePresentation(
@@ -645,8 +959,7 @@ function buildStatePresentation(
 	const displayName = displayProgramName(detail)
 	const examLabel = detail.programType?.trim() || displayName
 	const description = detail.programInformation?.description?.trim() || null
-	const isTwoPart =
-		detail.programType === "FRM" || detail.programType === "ERP"
+	const isTwoPart = isTwoPartProgram(detail)
 	const part = activeExamPart(detail)
 	const administration =
 		part?.examAttemptAdminName?.trim() ||
@@ -659,6 +972,7 @@ function buildStatePresentation(
 		const completedOn = detail.programCompletedDate
 			? formatLongDate(detail.programCompletedDate.slice(0, 10))
 			: null
+		const requestable = primaryAction?.kind === "requestCertificate"
 		return {
 			displayName,
 			examLabel,
@@ -670,8 +984,11 @@ function buildStatePresentation(
 				? `Congratulations! You completed the ${displayName} Program on ${completedOn}.`
 				: `Congratulations! You have completed the ${displayName} Program.`,
 			nextStepTitle: "Celebrate your certification",
-			nextStepBody:
-				"Download your certificate, share your digital badge, or update your directory listing.",
+			nextStepBody: requestable
+				? "Request a printed copy of your certificate, share your digital badge, or update your directory listing."
+				: "Download your certificate, share your digital badge, or update your directory listing.",
+			nextStepTone: "success",
+			notes: [],
 			primaryAction,
 			secondaryActions,
 			milestones: buildMilestones(detail, part),
@@ -680,6 +997,10 @@ function buildStatePresentation(
 	}
 
 	if (detail.programState === "CVSubmission") {
+		const copy = cvSubmissionCopy(detail)
+		const { primaryAction, secondaryActions } = splitActions(
+			manageExamActions(detail),
+		)
 		return {
 			displayName,
 			examLabel,
@@ -689,11 +1010,16 @@ function buildStatePresentation(
 			statusTone: "info",
 			statusSummary:
 				"Congratulations! You are almost there to getting certified. Submit your work experience to complete your certification.",
-			nextStepTitle: "Finish certification",
-			nextStepBody:
-				"Add the roles that make up your two years of risk management experience, then submit them for review.",
+			nextStepTitle: copy.heading,
+			nextStepBody: copy.body,
+			nextStepTone: "info",
+			notes: copy.notes,
+			// Manage actions never claim primary here — the work-experience CTA
+			// appended afterwards is the point of this state.
 			primaryAction: null,
-			secondaryActions: [],
+			secondaryActions: primaryAction
+				? [primaryAction, ...secondaryActions]
+				: secondaryActions,
 			milestones: buildMilestones(detail, part),
 			isTwoPart,
 		}
@@ -701,21 +1027,13 @@ function buildStatePresentation(
 
 	if (detail.programState === "EnrollmentExpired") {
 		const regOpen = detail.currentRegistrationIsOpen === true
-		const regUrl = regOpen ? registrationUrl(detail) : null
+		const again = regOpen ? registerAgainAction(detail, true) : null
 		const nextDate = formatLongDate(
 			detail.nextRegistrationOpenDate?.slice(0, 10),
 		)
-		const actions: ProgramAction[] = []
-		if (regUrl) {
-			actions.push({
-				kind: "registerAgain",
-				label: "Register Again",
-				url: regUrl,
-				isExternal: true,
-				primary: true,
-			})
-		}
-		const { primaryAction, secondaryActions } = splitActions(actions)
+		const { primaryAction, secondaryActions } = splitActions(
+			again ? [again] : [],
+		)
 		return {
 			displayName,
 			examLabel,
@@ -727,9 +1045,11 @@ function buildStatePresentation(
 			nextStepTitle: "Register again",
 			nextStepBody: nextDate
 				? `The next window opens on ${nextDate}.`
-				: regUrl
-					? "Registration is open — continue in MyGarp to enroll again."
+				: again
+					? "Registration is open — register again to continue."
 					: "Register again when exam results are released.",
+			nextStepTone: "danger",
+			notes: [],
 			primaryAction,
 			secondaryActions,
 			milestones: buildMilestones(detail, part),
@@ -751,6 +1071,8 @@ function buildStatePresentation(
 			nextStepTitle: "Check back soon",
 			nextStepBody:
 				"Exam details will appear here once your registration is processed.",
+			nextStepTone: "neutral",
+			notes: [],
 			primaryAction: null,
 			secondaryActions: [],
 			milestones: buildMilestones(detail, part),
@@ -759,38 +1081,38 @@ function buildStatePresentation(
 	}
 
 	const status = partStatusSummary(part, detail)
+	const pending = pendingExamChange(detail)
+
+	if (pending) {
+		const { primaryAction, secondaryActions } = splitActions(
+			partActions(pending.part, detail),
+		)
+		return {
+			displayName,
+			examLabel,
+			description,
+			administration,
+			statusLabel: status.label,
+			statusTone: status.tone,
+			statusSummary: status.summary,
+			nextStepTitle: "You have an unpaid exam change",
+			nextStepBody: unpaidChangeMessage(pending.part),
+			nextStepTone: "danger",
+			notes: [],
+			primaryAction,
+			secondaryActions,
+			milestones: buildMilestones(detail, part),
+			isTwoPart,
+		}
+	}
+
 	const actions = partActions(part, detail)
+	actions.push(...manageExamActions(detail, actions))
 	const { primaryAction, secondaryActions } = splitActions(actions)
-
-	const nextStepTitle =
-		primaryAction?.label === "Schedule Exam"
-			? "Schedule your exam"
-			: primaryAction?.label === "Exam Setup"
-				? "Update your exam setup"
-				: primaryAction?.label === "Take Exam"
-					? "Take your exam"
-					: primaryAction?.label === "Register Again"
-						? "Register again"
-						: primaryAction?.label === "View Order"
-							? "Complete your payment"
-							: primaryAction?.label === "View Exam Results"
-								? "Review your exam results"
-								: "Your next step"
-
-	const nextStepBody =
-		primaryAction?.kind === "schedule"
-			? "Open exam setup to choose your sitting while the scheduling window is open."
-			: primaryAction?.kind === "setup"
-				? "Review or change your exam administration and site in exam setup."
-				: primaryAction?.kind === "takeExam"
-					? "Launch your exam provider when you are ready to sit."
-					: primaryAction?.kind === "registerAgain"
-						? "Registration is open — continue in MyGarp to enroll again."
-						: primaryAction?.kind === "viewOrder"
-							? "Review your unpaid order and complete payment to unlock setup."
-							: primaryAction?.kind === "viewExamResults"
-								? "See your official result, quartile rankings, and downloadable letters."
-								: status.summary
+	const next = nextStepFor(primaryAction, detail, status.summary)
+	const notes = actions.some((a) => a.kind === "takeExam")
+		? [TAKE_EXAM_NOTE]
+		: []
 
 	return {
 		displayName,
@@ -800,8 +1122,10 @@ function buildStatePresentation(
 		statusLabel: status.label,
 		statusTone: status.tone,
 		statusSummary: status.summary,
-		nextStepTitle,
-		nextStepBody,
+		nextStepTitle: next.title,
+		nextStepBody: next.body,
+		nextStepTone: status.tone,
+		notes,
 		primaryAction,
 		secondaryActions,
 		milestones: buildMilestones(detail, part),
@@ -814,8 +1138,6 @@ export function examPartTitle(
 	partIndex: 1 | 2,
 ): string {
 	const examLabel = detail.programType?.trim() || displayProgramName(detail)
-	const twoPart =
-		detail.programType === "FRM" || detail.programType === "ERP"
 	if (partIndex === 2) return `${examLabel} Exam Part II`
-	return twoPart ? `${examLabel} Exam Part I` : `${examLabel} Exam`
+	return isTwoPartProgram(detail) ? `${examLabel} Exam Part I` : `${examLabel} Exam`
 }

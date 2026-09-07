@@ -1,19 +1,22 @@
-import type { ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 import { Link } from "@tanstack/react-router"
+import { Award } from "lucide-react"
 
 import type { AccountView } from "@/api/account/types"
+import { Badge } from "@/components/atoms/badge"
 import { Button } from "@/components/atoms/button"
 import { AccountFieldList } from "@/components/molecules/account-field-list"
 import {
 	AccountSectionCard,
 	type AccountCardSlotProps,
 } from "@/components/molecules/account-section-card"
+import { DisableAutoRenewDialog } from "@/components/molecules/disable-auto-renew-dialog"
 import { StatusBadge } from "@/components/molecules/status-badge"
-import { MEMBERSHIP_REGISTRATION_URL } from "@/config/membership-account"
 import {
-	useTurnOffMembershipAutoRenew,
-	useTurnOnMembershipAutoRenew,
-} from "@/hooks/use-membership-auto-renew"
+	buildAutoRenewReturnUrl,
+	MEMBERSHIP_REGISTRATION_LINK,
+} from "@/config/membership-account"
+import { useTurnOnMembershipAutoRenew } from "@/hooks/use-membership-auto-renew"
 import { buildMembershipPresentation } from "@/lib/account-presentation"
 import { cn } from "@/lib/utils"
 
@@ -47,15 +50,23 @@ function Callout({
 	)
 }
 
+/**
+ * The Membership card on My Account. The branching lives in
+ * `buildMembershipPresentation` (GarpAppv1's `MembershipInfoCard` rules);
+ * this renders it.
+ *
+ * Switching auto-renew ON is one hop: the server opens the Stripe setup
+ * session and the browser leaves for it, returning to this page with
+ * `?status=autorenewsetupcomplete`. Switching it OFF asks first, in
+ * `DisableAutoRenewDialog`, because it stops a recurring payment.
+ */
 function MembershipAccountCard({
 	account,
 	autoRenewSetupComplete,
 	handle,
 }: MembershipAccountCardProps) {
-	const contactId = account.identity.contactId
-	const turnOff = useTurnOffMembershipAutoRenew(contactId)
-	const turnOn = useTurnOnMembershipAutoRenew(contactId)
-	const busy = turnOff.isPending || turnOn.isPending
+	const turnOn = useTurnOnMembershipAutoRenew()
+	const [confirmingOff, setConfirmingOff] = useState(false)
 
 	const membership = buildMembershipPresentation(
 		account,
@@ -68,12 +79,20 @@ function MembershipAccountCard({
 			subtitle={membership.intro}
 			handle={handle}
 		>
-			{membership.statusText ? (
+			{membership.statusText || membership.isCertHolder ? (
 				<div className="flex flex-wrap items-center gap-2">
-					<StatusBadge
-						label={membership.statusText}
-						tone={membership.statusTone}
-					/>
+					{membership.statusText ? (
+						<StatusBadge
+							label={membership.statusText}
+							tone={membership.statusTone}
+						/>
+					) : null}
+					{membership.isCertHolder ? (
+						<Badge variant="secondary">
+							<Award aria-hidden />
+							Certification holder
+						</Badge>
+					) : null}
 				</div>
 			) : null}
 
@@ -81,14 +100,15 @@ function MembershipAccountCard({
 				rows={[
 					{ label: "GARP ID", value: membership.garpId },
 					{ label: "Member Type", value: membership.memberType },
+					{ label: "Member Since", value: membership.memberSince },
 				]}
 			/>
 
 			{membership.showTurnOnCallout ? (
 				<Callout tone="danger" title="Auto Renew">
 					<p>
-						Auto renew is off. Turn on to ensure you don&apos;t lose access to
-						your Individual Membership benefits
+						Auto renew is off. Turn it on to make sure you don&apos;t lose access
+						to your Individual Membership benefits
 						{membership.expiryLabel ? (
 							<>
 								{" "}
@@ -101,10 +121,10 @@ function MembershipAccountCard({
 						type="button"
 						variant="link"
 						className="h-auto px-0"
-						disabled={busy}
-						onClick={() => turnOn.mutate()}
+						disabled={turnOn.isPending}
+						onClick={() => turnOn.mutate(buildAutoRenewReturnUrl(window.location))}
 					>
-						Turn On Auto-Renew
+						{turnOn.isPending ? "Opening Stripe…" : "Turn On Auto-Renew"}
 					</Button>
 				</Callout>
 			) : null}
@@ -112,7 +132,7 @@ function MembershipAccountCard({
 			{membership.showOnCallout ? (
 				<Callout tone="success" title="Auto Renew">
 					<p>
-						GARP will automatically renew my Individual Membership at the
+						GARP will automatically renew your Individual Membership at the
 						prevailing rate (USD {membership.renewAmount})
 						{membership.expiryLabel ? (
 							<>
@@ -120,24 +140,28 @@ function MembershipAccountCard({
 								on <strong>{membership.expiryLabel}</strong>
 							</>
 						) : null}{" "}
-						using the same previously used credit card.
+						using the same credit card you used previously.
 					</p>
 				</Callout>
 			) : null}
 
-			{membership.isAutoRenewPending ? (
-				<Callout tone="pending" title="Auto Renew">
-					<p>Auto-Renew is being setup, please check back later.</p>
+			{membership.pendingOrderText ? (
+				<Callout tone="pending" title="Payment pending">
+					<p>{membership.pendingOrderText}</p>
+				</Callout>
+			) : null}
+
+			{membership.showCardSaved ? (
+				<Callout tone="success" title="Card saved">
+					<p>
+						Auto-renew takes effect once the payment is confirmed. This card will
+						update shortly — nothing has been charged.
+					</p>
 				</Callout>
 			) : null}
 
 			<div className="mt-auto flex flex-wrap gap-2 pt-1">
-				{membership.showUpgrade ? (
-					<Button asChild className="w-fit">
-						<a href={MEMBERSHIP_REGISTRATION_URL}>Upgrade</a>
-					</Button>
-				) : null}
-				{membership.showViewOrder && membership.pendingOrderId ? (
+				{membership.action === "viewOrder" && membership.pendingOrderId ? (
 					<Button asChild className="w-fit">
 						<Link
 							to="/my-account/orders/$orderNumber"
@@ -147,29 +171,32 @@ function MembershipAccountCard({
 						</Link>
 					</Button>
 				) : null}
-				{membership.showDisable ? (
+				{membership.action === "upgrade" ? (
+					<Button asChild className="w-fit">
+						<Link {...MEMBERSHIP_REGISTRATION_LINK}>Upgrade</Link>
+					</Button>
+				) : null}
+				{membership.action === "disable" ? (
 					<Button
 						type="button"
 						variant="outline"
 						className="w-fit"
-						disabled={busy}
-						onClick={() => turnOff.mutate()}
+						onClick={() => setConfirmingOff(true)}
 					>
 						Disable Auto Renew
 					</Button>
 				) : null}
-				{membership.showRenewNow ? (
-					membership.isAutoRenewPending || busy ? (
-						<Button type="button" className="w-fit" disabled>
-							Renew Now
-						</Button>
-					) : (
-						<Button asChild className="w-fit">
-							<a href={MEMBERSHIP_REGISTRATION_URL}>Renew Now</a>
-						</Button>
-					)
+				{membership.action === "renewNow" ? (
+					<Button asChild className="w-fit">
+						<Link {...MEMBERSHIP_REGISTRATION_LINK}>Renew Now</Link>
+					</Button>
 				) : null}
 			</div>
+
+			<DisableAutoRenewDialog
+				open={confirmingOff}
+				onOpenChange={setConfirmingOff}
+			/>
 		</AccountSectionCard>
 	)
 }

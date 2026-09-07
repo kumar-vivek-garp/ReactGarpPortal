@@ -4,7 +4,10 @@ import { useQuery } from "@tanstack/react-query"
 import { Link, useRouterState } from "@tanstack/react-router"
 
 import { AppError } from "@/api/client"
-import type { ExamRegistrationLoad } from "@/api/registration/exam-types"
+import type {
+	ExamRegisterRequest,
+	ExamRegistrationLoad,
+} from "@/api/registration/exam-types"
 import type { PersonalInfoEditData } from "@/api/personal-info/types"
 import { Alert, AlertDescription, AlertTitle } from "@/components/atoms/alert"
 import { Button } from "@/components/atoms/button"
@@ -13,6 +16,7 @@ import { ProgramsSubpageHeader } from "@/components/molecules/programs-subpage-h
 import { AnimatedAmount } from "@/components/forms/exam-registration/animated-amount"
 import {
 	toExamFormValues,
+	toExamFormValuesFromRequest,
 	type ExamFormValues,
 } from "@/components/forms/exam-registration/exam-form-values"
 import { AcknowledgementsSection } from "@/components/forms/exam-registration/sections/acknowledgements-section"
@@ -34,6 +38,7 @@ import {
 } from "@/components/forms/registration-shell"
 import { MembershipOfferSection } from "@/components/forms/exam-registration/sections/membership-offer-section"
 import { RegistrationRail } from "@/components/forms/exam-registration/sections/registration-rail"
+import { RiskNetOfferSection } from "@/components/forms/exam-registration/sections/risk-net-offer-section"
 import { YourDetailsSection } from "@/components/forms/exam-registration/sections/your-details-section"
 import { YourExamSection } from "@/components/forms/exam-registration/sections/your-exam-section"
 import { useExamRegistrationState } from "@/hooks/use-exam-registration"
@@ -45,17 +50,29 @@ import {
 	type ExamSubmitOutcome,
 } from "@/hooks/use-exam-registration-submit"
 import { registrationOptionsQueryOptions } from "@/api/registration/query-options"
-import { buildRegisterRequest } from "@/lib/registration-payloads"
+import {
+	buildRegisterRequest,
+	selectionFromInput,
+} from "@/lib/registration-payloads"
 import {
 	defaultPaymentType,
 	isComplianceCountry as isComplianceCountryFor,
 	isExamKind,
+	isMembershipKind,
+	memberBackKind,
+	railEmptyState,
 	showAddresses as showAddressesFor,
 	showAutorenew as showAutorenewFor,
 	showCandidateAcknowledgements as showCandidateAcknowledgementsFor,
+	showMembershipOffer,
+	showRiskNet,
 	submitLabel as submitLabelFor,
 } from "@/lib/registration-presentation"
-import { EMAIL_PATTERN, type ExamProgramConfig } from "@/config/registration"
+import {
+	EMAIL_PATTERN,
+	MEMBERSHIP_REGISTRATION_COPY,
+	type ExamProgramConfig,
+} from "@/config/registration"
 import { LOGIN_PATH } from "@/auth/constants"
 import { getReturnPath } from "@/auth/return-path"
 import { cn } from "@/lib/utils"
@@ -76,6 +93,11 @@ type ExamRegistrationFormProps = {
 	profile: PersonalInfoEditData | null
 	regCode?: string
 	/**
+	 * The `?track_cta=` tag the entry link carried. Rides the identity call
+	 * only — the blur check for a guest, the in-submit check for a member.
+	 */
+	trackCta?: string | null
+	/**
 	 * Whether this browser has a portal session.
 	 *
 	 * Deliberately *not* `load.isAuthenticated`. That is the server's view, and
@@ -90,6 +112,13 @@ type ExamRegistrationFormProps = {
 	/** Plays the page exit before Back navigates. */
 	onNavigateBack: (run: () => void) => void
 	onRegistered: (outcome: ExamSubmitOutcome) => void
+	/**
+	 * A staged registration to rebuild the form from (deferred flow — the
+	 * candidate pressed Back on the payment page). Applied at mount over the
+	 * profile seed, so the panel must not mount this form before it resolves.
+	 * The staged id travels with the next submit so the retry reuses the row.
+	 */
+	resume?: { stagedId: string; request: ExamRegisterRequest } | null
 }
 
 /**
@@ -112,9 +141,11 @@ function ExamRegistrationForm({
 	programType,
 	profile,
 	regCode,
+	trackCta = null,
 	isAuthenticated,
 	onNavigateBack,
 	onRegistered,
+	resume = null,
 }: ExamRegistrationFormProps) {
 	const submit = useExamRegistrationSubmit()
 	const verifyEmail = useVerifyExamCustomer()
@@ -135,7 +166,12 @@ function ExamRegistrationForm({
 		trigger,
 		formState: { errors, isValid },
 	} = useForm<ExamFormValues>({
-		defaultValues: toExamFormValues(profile, load.countries),
+		defaultValues: resume
+			? toExamFormValuesFromRequest(
+					resume.request,
+					toExamFormValues(profile, load.countries),
+				)
+			: toExamFormValues(profile, load.countries),
 		/*
 		 * `onTouched`, not `onChange`: Register stays disabled until the form is
 		 * valid, which needs validity recomputed as fields change — but `isValid`
@@ -163,6 +199,7 @@ function ExamRegistrationForm({
 	const sameAsBilling = useWatch({ control, name: "billingAndShippingSame" })
 	const autoRenew = useWatch({ control, name: "autoRenew" })
 	const membershipSelected = useWatch({ control, name: "membershipSelected" })
+	const riskNetSelected = useWatch({ control, name: "riskNetSelected" })
 	const ostaIdType = useWatch({ control, name: "osta.idType" })
 	const ostaWorkStatus = useWatch({ control, name: "osta.workStatus" })
 	const ostaStudentStatus = useWatch({ control, name: "osta.studentStatus" })
@@ -179,6 +216,11 @@ function ExamRegistrationForm({
 		billingAndShippingSame: sameAsBilling,
 		autoRenew,
 		membershipSelected,
+		riskNetSelected,
+		initialSelection: resume
+			? selectionFromInput(resume.request.selection)
+			: undefined,
+		initialMaterialCodes: resume?.request.materials,
 	})
 
 	const { fees } = state
@@ -187,11 +229,22 @@ function ExamRegistrationForm({
 	/*
 	 * Which sections apply at all. The server's `kind` decides, not our config:
 	 * `GARP_ExamReg_RegService` requires a selection and the exam-policy
-	 * attestation for `kind == 'exam'` and for nothing else, and
-	 * `LoadService` only builds a membership offer for a course.
+	 * attestation for `kind == 'exam'` and for nothing else, `LoadService`
+	 * only builds a membership offer for a course, and only the membership
+	 * programme carries the Risk.net add-on — where the membership IS the
+	 * purchase, so the course upsell never applies.
 	 */
 	const isExam = isExamKind(load.program.kind)
-	const membershipOffer = load.membershipOffer ?? null
+	const isMembership = isMembershipKind(load.program.kind)
+	const membershipOffer = showMembershipOffer(
+		load.program.kind,
+		load.membershipOffer,
+	)
+		? load.membershipOffer
+		: null
+	const riskNetOffer = showRiskNet(load.program.kind, load.riskNetOffer)
+		? load.riskNetOffer
+		: null
 	const showAddresses = showAddressesFor(paymentType)
 	const label = submitLabelFor(hasBilling, paymentType)
 
@@ -215,6 +268,9 @@ function ExamRegistrationForm({
 		// A course's membership upsell is also a membership worth renewing —
 		// GarpAppv1's `form.membership` branch, lost once and re-wired.
 		membershipSelected,
+		// And the membership programme is one by definition — GarpAppv1's
+		// `isMembership ||` clause, the one its own comment says was missed.
+		isMembership,
 	)
 
 	/*
@@ -310,6 +366,7 @@ function ExamRegistrationForm({
 			email,
 			firstName: getValues("firstName"),
 			lastName: getValues("lastName"),
+			trackCta,
 		})
 	}
 
@@ -337,8 +394,7 @@ function ExamRegistrationForm({
 			billingAndShippingSame: values.billingAndShippingSame,
 			autoRenew: values.autoRenew,
 			membershipSelected: values.membershipSelected,
-			/* See the note in `use-exam-registration` — `mem` is not served here. */
-			riskNetSelected: false,
+			riskNetSelected: values.riskNetSelected,
 			mobilePhoneCode: values.mobilePhoneCode,
 			firstName: values.firstName,
 			lastName: values.lastName,
@@ -398,6 +454,11 @@ function ExamRegistrationForm({
 				showAddresses && load.program.addressVerificationDisabled !== true,
 			// The blur check's answer, reused when it covered this same email.
 			session: verifyEmail.data ?? null,
+			// Only set when this form was rebuilt from a staged registration, so
+			// submitting again updates that row instead of stranding it.
+			resumeStagedId: resume?.stagedId ?? null,
+			// For the in-submit identity call — a member never blurred an email.
+			trackCta,
 		})
 	})
 
@@ -417,12 +478,25 @@ function ExamRegistrationForm({
 		}
 	}
 
-	// Either leg can say it: the blur check is advisory, the submit check binds.
+	/*
+	 * Either leg can say it: the blur check is advisory, the submit check
+	 * binds. Both offers are for GUESTS only — "sign in" means nothing to
+	 * someone who already has a session, and the mutation's toast has already
+	 * carried the server's answer to them. (Locally the gateway signs as an
+	 * admin, so Apex sees a non-community user and CAN answer a member with
+	 * mustSignIn; on the deployed site a member's session carries through.)
+	 */
 	const mustSignIn =
-		submit.error instanceof MustSignInError ||
-		verifyEmail.data?.mustSignIn === true
+		!isAuthenticated &&
+		(submit.error instanceof MustSignInError ||
+			verifyEmail.data?.mustSignIn === true)
 	const existingCustomer =
-		!mustSignIn && verifyEmail.data?.isExistingCustomer === true
+		!isAuthenticated &&
+		!mustSignIn &&
+		verifyEmail.data?.isExistingCustomer === true
+	/* A member's mustSignIn is toast-only: nothing inline they could act on. */
+	const inlineSubmitError =
+		isAuthenticated && submit.error instanceof MustSignInError ? null : submitError
 	const isBusy = submit.isPending
 	const canSubmit =
 		isValid && examChosen && !state.outOfOrder && Boolean(fees)
@@ -454,7 +528,7 @@ function ExamRegistrationForm({
 						<>
 							<ProgramsSubpageHeader
 								onNavigateBack={onNavigateBack}
-								back={{ kind: "programs" }}
+								back={{ kind: memberBackKind(load.program.kind) }}
 								iconOnlyBackOnMobile
 							/>
 							<div
@@ -592,10 +666,10 @@ function ExamRegistrationForm({
 						added to your existing record.
 					</AlertDescription>
 				</Alert>
-			) : submitError ? (
+			) : inlineSubmitError ? (
 				<Alert variant="destructive">
 					<AlertTitle>Unable to complete your registration</AlertTitle>
-					<AlertDescription>{submitError}</AlertDescription>
+					<AlertDescription>{inlineSubmitError}</AlertDescription>
 				</Alert>
 			) : null}
 
@@ -645,6 +719,20 @@ function ExamRegistrationForm({
 						/>
 					) : null}
 
+					{/*
+					 * The membership programme's one add-on, in the slot the course
+					 * upsell takes on a course — GarpAppv1's order: details, offer,
+					 * addresses, payment.
+					 */}
+					{riskNetOffer ? (
+						<RiskNetOfferSection
+							control={control}
+							amount={riskNetOffer.amount}
+							months={riskNetOffer.months}
+							disabled={isBusy}
+						/>
+					) : null}
+
 					{isExam && state.ostaRequired ? (
 						<OstaSection
 							register={register}
@@ -677,6 +765,9 @@ function ExamRegistrationForm({
 							useStripe={load.stripe?.useStripe === true}
 							paymentType={paymentType}
 							showAutorenew={showAutorenew}
+							autoRenewLabel={
+								isMembership ? MEMBERSHIP_REGISTRATION_COPY.autoRenew : undefined
+							}
 							disabled={isBusy}
 						/>
 					) : null}
@@ -728,6 +819,7 @@ function ExamRegistrationForm({
 						onToggleMaterial={state.toggleMaterial}
 						fees={fees}
 						isPricing={state.isPricing}
+						emptyState={railEmptyState(load.program.kind)}
 						disabled={isBusy}
 					/>
 				</aside>

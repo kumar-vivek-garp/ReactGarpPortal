@@ -107,10 +107,15 @@ export type ExamSetupView = {
  * **Dates are `MM/dd/yyyy` here**, unlike the ISO values `ExamSetupIdInfo`
  * returns. Convert with `toUsDateString` on the way out.
  *
- * **Every field is optional, and that is load-bearing.** Apex guards each
- * write with `!= null` — but an empty string is not null, so sending `""`
- * for an untouched field overwrites the Contact with blank. Omit what the
- * member did not supply; see `toIdInput`.
+ * **Which keys travel depends on the programme**, not on what the member typed
+ * — see `toIdInput`. The name and mobile always go; the government-ID trio only
+ * for FRM; the OSTA block only for an FRM candidate at a mainland-China centre.
+ * Apex guards every write with `!= null`, so the five free-text OSTA fields are
+ * sent as `null` when blank rather than as `""`, which would overwrite the
+ * Contact with an empty value.
+ *
+ * There is deliberately no `ostaConsent` here: the form requires the tick, but
+ * Apex has no field for it on this action.
  */
 export type ExamSetupIdInput = {
 	idName?: string
@@ -127,11 +132,12 @@ export type ExamSetupIdInput = {
 	/** `MM/dd/yyyy`. */
 	ostaDateOfBirth?: string
 	ostaPhoneNumber?: string
-	ostaCurrentWorkingStatus?: string
-	ostaCompany?: string
-	ostaCurrentSchoolStatus?: string
-	ostaSchool?: string
-	ostaDegreeProgramName?: string
+	/* Optional free text — `null`, never `""`, when the member left it blank. */
+	ostaCurrentWorkingStatus?: string | null
+	ostaCompany?: string | null
+	ostaCurrentSchoolStatus?: string | null
+	ostaSchool?: string | null
+	ostaDegreeProgramName?: string | null
 }
 
 /** The selection half of `POST examSetupId`. Ids, or null for an absent part. */
@@ -142,13 +148,7 @@ export type ExamSetupSelectionInput = {
 	selectedSitePart2: string | null
 }
 
-/**
- * Where Apex sends the member next.
- *
- * `Pay Fees` is unreachable by design on our side — the fee gate stops a
- * fee-incurring selection before `examSetupId` is ever called, because no
- * endpoint exists to raise the order it would need. See `config/exam-setup`.
- */
+/** Where Apex sends the member next; the outcome step branches on it. */
 export type ExamSetupNextScreen =
 	| "Setup Complete"
 	| "Pay Fees"
@@ -182,9 +182,8 @@ export type ExamSetupFee = {
 /**
  * `POST examSetupFees`.
  *
- * Carries no `orderId` and no checkout URL — pricing only. Nothing in the
- * portal API raises the Opportunity these lines would be billed against, which
- * is why the paid path is gated rather than half-built.
+ * Carries no `orderId` and no checkout URL — pricing only. The charge is taken
+ * at the legacy checkout, which the outcome step links to.
  */
 export type ExamSetupFeesView = {
 	statusMessage: string | null

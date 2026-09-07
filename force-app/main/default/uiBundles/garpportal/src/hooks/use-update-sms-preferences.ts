@@ -6,7 +6,7 @@ import {
 	type UpdateSmsPreferencesInput,
 } from "@/api/contact-preferences"
 
-/** Saves SMS promotional + registration checkboxes on Contact. */
+/** Saves SMS promotional + registration checkboxes through `/memberportal/profile`. */
 export function useUpdateSmsPreferences() {
 	const queryClient = useQueryClient()
 
@@ -15,8 +15,8 @@ export function useUpdateSmsPreferences() {
 		meta: {
 			errorTitle: "Unable to update SMS preferences",
 		},
-		onSuccess: async (_data, variables) => {
-			await invalidateContactPreferencesCaches(queryClient, variables.contactId)
+		onSuccess: async () => {
+			await invalidateContactPreferencesCaches(queryClient)
 		},
 	})
 }

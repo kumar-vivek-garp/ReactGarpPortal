@@ -52,12 +52,18 @@ export async function fetchProgramDetail(
 	})
 
 	if (data.statusCode !== 200) {
-		throw new AppError({
-			messages: [
-				data.statusMessage ?? "Unable to load program details.",
-			],
-			status: data.statusCode,
-		})
+		const serverMessage = data.statusMessage?.trim()
+		// 401 here is the service's "no contract for this programme", not an
+		// auth failure — GarpAppv1 words it for the member. The server text is
+		// kept behind it rather than dropped.
+		const messages =
+			data.statusCode === 401
+				? [
+						"You aren't enrolled in this program.",
+						...(serverMessage ? [serverMessage] : []),
+					]
+				: [serverMessage || "Unable to load program details."]
+		throw new AppError({ messages, status: data.statusCode })
 	}
 
 	return data

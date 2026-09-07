@@ -187,10 +187,7 @@ function AccountInformationPanel({
 						open={personalEditOpen}
 						onOpenChange={setPersonalEditOpen}
 					>
-						<PersonalInfoEditForm
-							contactId={identity.contactId}
-							onSaved={() => setPersonalEditOpen(false)}
-						/>
+						<PersonalInfoEditForm onSaved={() => setPersonalEditOpen(false)} />
 					</AccountEditDialog>
 				}
 			>

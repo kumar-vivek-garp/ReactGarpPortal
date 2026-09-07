@@ -56,6 +56,25 @@ describe("fetchProgramDetail", () => {
 		})
 	})
 
+	it("words a 401 for the member, keeping the server's text behind it", async () => {
+		server.use(
+			http.get(PROGRAM_DETAIL_PATH, () =>
+				HttpResponse.json(
+					memberPortalEnvelope({
+						statusMessage: "No enrollment found",
+						statusCode: 401,
+						programsDetailInfo: null,
+					}),
+				),
+			),
+		)
+
+		await expect(fetchProgramDetail("frm")).rejects.toMatchObject({
+			messages: ["You aren't enrolled in this program.", "No enrollment found"],
+			status: 401,
+		})
+	})
+
 	it("surfaces the server's error message on a transport failure", async () => {
 		server.use(
 			http.get(PROGRAM_DETAIL_PATH, () =>

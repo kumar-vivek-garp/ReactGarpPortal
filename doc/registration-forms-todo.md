@@ -29,7 +29,7 @@ Single form component in GarpAppv1 serving all program types.
 - ✅ `frr` — retired; renders the server's own "not currently available" refusal
 - ✅ `frr25`
 - ✅ `ffr`
-- ⬜ `mem` — resolves to `kind=membership` (needs `riskNetOffer` support)
+- ✅ `mem` — `/registration/membership` (guest) + `/membership/register` (member); `riskNetOffer` wired, but `register()` drops `riskNetSelected` — see `backend-request-membership-risknet.md`
 - ✅ `affiliate` — `isAffiliate=true`, `addOns=(AFREE)` — bespoke form at `/registration/affiliate`
 - ⬜ `micro` — course code + reg code (API layer and query keys already accept `courseCode`; no form or route)
 
@@ -121,7 +121,7 @@ Rendered outside `PortalShell` — no chrome.
 Flagged in `doc/backend-artifact-2.md` — verify rather than assume when building.
 
 - ⬜ Paid **chapter meeting** registration is untested in GarpAppv1 (only events ran end to end; chapter meetings write to a different object with its own restricted picklists)
-- ⬜ `/registration/mem` has never had a real order put through it, and it does take money
+- ⬜ `/registration/membership` (`mem`) has never had a real order put through it, and it does take money — the form is built (Sep 2026); the live card leg is still unverified
 - ⬜ B2B live registration blocked in sandbox — no open exam rate has `Team_Product__c` populated
 - ⬜ Real deferral cannot be constructed in sandbox — only one administration open per exam type
 - ⬜ Three B2B deal fields unapplied in GarpAppv1: `OSTA_Fee_Paid_by_Institution__c`, `GST_Fee_Paid_by_Institution__c`, `Free_Membership__c`

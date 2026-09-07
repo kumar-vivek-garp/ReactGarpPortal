@@ -120,7 +120,7 @@ describe("GatedContentPanel — entitled member", () => {
 })
 
 describe("GatedContentPanel — not in good standing", () => {
-	it("upsells renewal to a lapsed individual, carrying the article along", async () => {
+	it("upsells renewal to a lapsed individual through the tagged in-app form", async () => {
 		setGatedCookie(ARTICLE_URL)
 		serveMembership({ isMemberInGoodStanding: false, isIndividualMember: true })
 		await renderWithRouterProviders(<GatedContentPanel />)
@@ -128,9 +128,8 @@ describe("GatedContentPanel — not in good standing", () => {
 		const renew = await screen.findByRole("link", {
 			name: "Renew your membership",
 		})
-		expect(renew.getAttribute("href")).toContain("track_cta=PortalGatedContent")
-		expect(renew.getAttribute("href")).toContain(
-			encodeURIComponent(ARTICLE_URL),
+		expect(renew.getAttribute("href")).toBe(
+			"/membership/register?track_cta=PortalGatedContent",
 		)
 		expect(
 			screen.getByRole("link", { name: "My Account" }),

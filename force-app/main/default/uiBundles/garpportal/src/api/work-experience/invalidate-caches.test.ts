@@ -26,13 +26,13 @@ describe("invalidateWorkExperienceCaches", () => {
 })
 
 describe("invalidateCvAddressCaches", () => {
-	it("also drops personal-info — cvAddress writes the Contact itself", async () => {
+	it("also drops the account view — cvAddress writes the Contact itself", async () => {
 		const { queryClient, invalidate } = spiedClient()
 		await invalidateCvAddressCaches(queryClient)
 
 		expect(invalidate.mock.calls.map(([f]) => f?.queryKey)).toEqual([
 			["work-experience"],
-			["personal-info"],
+			["account", "detail"],
 		])
 	})
 })

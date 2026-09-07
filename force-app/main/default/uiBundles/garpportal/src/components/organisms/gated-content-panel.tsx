@@ -5,14 +5,16 @@ import { ArrowRight, CheckCircle2, ExternalLink } from "lucide-react"
 import { Button } from "@/components/atoms/button"
 import { Skeleton } from "@/components/atoms/skeleton"
 import {
-	GATED_COOKIE_DOMAIN,
 	GATED_CONTENT_COPY,
 	GATED_CONTENT_TITLE,
+	GATED_COOKIE_DOMAIN,
+	GATED_TRACK_CTA,
 	GATED_URL_COOKIE,
 } from "@/config/gated-content"
 import { useMembership } from "@/hooks/use-membership"
 import { clearCookie } from "@/lib/cookies"
-import { gatedUpsellHref, readGatedUrl } from "@/lib/gated-content"
+import { readGatedUrl } from "@/lib/gated-content"
+import { MEMBERSHIP_MEMBER_REGISTRATION_ROUTE } from "@/lib/registration-paths"
 import { cn } from "@/lib/utils"
 
 function ExpiredLink() {
@@ -126,13 +128,15 @@ function GatedContentPanel({ className }: GatedContentPanelProps) {
 							, or {identity.isIndividualMember ? "renew" : "upgrade"} below.
 						</p>
 						<Button asChild>
-							{/* The article travels with them, so checkout can return
-							    them to what they were after. */}
-							<a href={gatedUpsellHref(gatedUrl)}>
+							{/* Tagged, so the sale is attributed to this page. */}
+							<Link
+								to={MEMBERSHIP_MEMBER_REGISTRATION_ROUTE}
+								search={{ track_cta: GATED_TRACK_CTA }}
+							>
 								{identity.isIndividualMember
 									? GATED_CONTENT_COPY.refused.renew
 									: GATED_CONTENT_COPY.refused.upgrade}
-							</a>
+							</Link>
 						</Button>
 					</div>
 				)

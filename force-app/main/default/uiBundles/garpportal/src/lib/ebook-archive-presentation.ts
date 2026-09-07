@@ -1,17 +1,11 @@
 import type {
 	ApexArchiveEBook,
+	EBookTitle,
 	MyEBooksView,
 } from "@/api/study-materials/types"
 
-/** One openable title within an edition year. */
-export type ArchiveTitle = {
-	/** Stable within a group — vendor id when present, else the composed label. */
-	id: string
-	label: string
-	/** Null when the key resolved to no vendor item; the row is then unopenable. */
-	vendorId: string | null
-	provider: string | null
-}
+/** One openable title within an edition year — the same shape a card's eBook set uses. */
+export type ArchiveTitle = EBookTitle
 
 export type ArchiveYearGroup = {
 	year: number

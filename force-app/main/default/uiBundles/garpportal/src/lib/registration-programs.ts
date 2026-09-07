@@ -15,6 +15,12 @@ import { EXAM_PROGRAMS, type ExamProgramConfig } from "@/config/registration"
  */
 const SLUG_ALIASES: Record<string, string> = {
 	rai: "riskai",
+	/*
+	 * The membership programme's wire type is `mem` (`GARP_ExamReg_Program__mdt`
+	 * keys it that way) but its address is `/registration/membership`, as in
+	 * GarpAppv1 and the legacy app. Either slug reaches the same entry.
+	 */
+	mem: "membership",
 }
 
 /** A route param reduced to the slug the registration module answers to. */
@@ -26,9 +32,9 @@ export function canonicalProgramSlug(slug: string): string {
 /**
  * The programme this route param names, or null when no form is built for it.
  *
- * Null is not an error — `ffr`, `frr`, `frr25`, `mem` and `micro` are all real
- * programmes whose forms are still to be written, and the dispatcher gives
- * them a placeholder page rather than a dead end.
+ * Null is not an error — `micro` is a real programme whose form is still to
+ * be written, and the dispatcher gives it a placeholder page rather than a
+ * dead end.
  */
 export function resolveExamProgram(slug: string): ExamProgramConfig | null {
 	return EXAM_PROGRAMS[canonicalProgramSlug(slug)] ?? null

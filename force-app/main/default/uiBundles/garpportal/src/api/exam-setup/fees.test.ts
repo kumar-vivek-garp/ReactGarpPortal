@@ -91,9 +91,13 @@ describe("fetchExamSetupFees", () => {
 			),
 		)
 
-		await expect(fetchExamSetupFees("a0Mxx1")).rejects.toMatchObject({
-			messages: ["Modification not found"],
-			status: 404,
+		// Returned, not thrown: the outcome screen still has a working checkout
+		// link and should not be replaced by an error because the breakdown is
+		// missing.
+		await expect(fetchExamSetupFees("a0Mxx1")).resolves.toMatchObject({
+			statusCode: 404,
+			statusMessage: "Modification not found",
+			fees: [],
 		})
 	})
 

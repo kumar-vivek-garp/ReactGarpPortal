@@ -70,6 +70,9 @@ describe("addressLines", () => {
 	function address(overrides: Partial<PortalAddress> = {}): PortalAddress {
 		return {
 			street: "111 Town Square Pl",
+			street1: "111 Town Square Pl",
+			street2: null,
+			street3: null,
 			city: "Jersey City",
 			state: "NJ",
 			postalCode: "07310",

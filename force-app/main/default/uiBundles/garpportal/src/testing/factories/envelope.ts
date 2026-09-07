@@ -25,3 +25,23 @@ export function memberPortalError(statusCode: number, errorMessage: string) {
 		data: {},
 	}
 }
+
+/**
+ * A business refusal that still carries its payload — `GARP_Portal_API`
+ * answering 401/403/404 with the screen's data intact. Serve it with the same
+ * HTTP status: `HttpResponse.json(memberPortalRefusal(...), { status })`.
+ * The client resolves these as a state (`memberPortalRefusalPayload`) rather
+ * than throwing.
+ */
+export function memberPortalRefusal<T>(
+	statusCode: number,
+	errorMessage: string,
+	data: T,
+) {
+	return {
+		status: "Error" as const,
+		statusCode,
+		errorMessage,
+		data,
+	}
+}

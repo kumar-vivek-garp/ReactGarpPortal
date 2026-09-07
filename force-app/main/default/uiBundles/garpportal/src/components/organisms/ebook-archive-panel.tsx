@@ -1,12 +1,11 @@
-import { BookOpen, ExternalLink, Loader2 } from "lucide-react"
 import { animated } from "@react-spring/web"
 
-import { Button } from "@/components/atoms/button"
 import { Card } from "@/components/atoms/card"
 import { Skeleton } from "@/components/atoms/skeleton"
+import { EBookTitleList } from "@/components/molecules/ebook-title-list"
 import { ProgramsSubpageHeader } from "@/components/molecules/programs-subpage-header"
 import { EBOOK_ARCHIVE } from "@/config/study-materials"
-import { useMyEBooks, useOpenEBook } from "@/hooks/use-ebook-archive"
+import { useMyEBooks } from "@/hooks/use-ebook-archive"
 import { useSubpageTransition } from "@/hooks/use-subpage-transition"
 import {
 	archiveTitleCount,
@@ -45,7 +44,6 @@ function ArchiveEmpty() {
 function EBookArchivePanel({ className }: { className?: string }) {
 	const { style, exit } = useSubpageTransition()
 	const { data, isLoading, isError } = useMyEBooks()
-	const open = useOpenEBook()
 
 	const groups = groupEBooksByYear(data)
 	const total = archiveTitleCount(groups)
@@ -91,66 +89,11 @@ function EBookArchivePanel({ className }: { className?: string }) {
 										{group.year}
 									</h2>
 									<Card className="gap-0 px-5 py-4 shadow-none">
-										<ul className="divide-y divide-border/80">
-											{group.titles.map((title) => (
-												<li
-													key={title.id}
-													className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3 first:pt-0 last:pb-0"
-												>
-													<BookOpen
-														className="size-4 shrink-0 text-muted-foreground"
-														aria-hidden
-													/>
-													<div className="min-w-0 flex-1">
-														<p className="text-sm text-foreground">
-															{title.label}
-														</p>
-														{title.provider ? (
-															<p className="text-xs text-muted-foreground">
-																{title.provider}
-															</p>
-														) : null}
-													</div>
-													{title.vendorId ? (
-														<Button
-															type="button"
-															variant="outline"
-															size="sm"
-															disabled={open.isPending}
-															onClick={() =>
-																void open
-																	.mutateAsync(title.vendorId ?? "")
-																	.catch(() => undefined)
-															}
-														>
-															{open.isPending &&
-															open.variables === title.vendorId ? (
-																<Loader2
-																	className="size-4 animate-spin"
-																	aria-hidden
-																/>
-															) : (
-																<ExternalLink
-																	className="size-4"
-																	aria-hidden
-																/>
-															)}
-															Access
-														</Button>
-													) : (
-														/*
-														 * Owned, but the key never resolved to a vendor
-														 * item — there is nothing to open. Shown rather
-														 * than hidden so the member can see what they
-														 * paid for and ask about it.
-														 */
-														<span className="text-xs text-muted-foreground">
-															Not available online
-														</span>
-													)}
-												</li>
-											))}
-										</ul>
+										<EBookTitleList
+											titles={group.titles}
+											actionLabel="Access"
+											className="[&>li]:py-3"
+										/>
 									</Card>
 								</section>
 							))}

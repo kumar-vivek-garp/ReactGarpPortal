@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { ostaQueryOptions, saveOsta, type OstaIdInput } from "@/api/osta"
-import { personalInfoQueryKeys } from "@/api/personal-info/query-options"
+import { accountQueryKeys } from "@/api/account/query-options"
 import { programsQueryKeys } from "@/api/programs"
 
 /** Identity details on file (`GET /memberportal/osta`). */
@@ -30,7 +30,7 @@ export function useSaveOsta() {
 			await Promise.all([
 				queryClient.invalidateQueries({ queryKey: ["osta"] }),
 				queryClient.invalidateQueries({ queryKey: programsQueryKeys.all }),
-				queryClient.invalidateQueries({ queryKey: personalInfoQueryKeys.all }),
+				queryClient.invalidateQueries({ queryKey: accountQueryKeys.detail }),
 			])
 		},
 	})

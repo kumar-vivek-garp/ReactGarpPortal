@@ -1,61 +1,53 @@
-import { createDataSDK, gql } from "@salesforce/platform-sdk"
+import { createDataSDK } from "@salesforce/platform-sdk"
 
-import { AppError } from "@/api/client"
+import type { MemberPortalEnvelope } from "@/api/account/types"
+import {
+	AppError,
+	normalizeHttpResponse,
+	unwrapApiResult,
+	unwrapMemberPortalEnvelope,
+} from "@/api/client"
+import type { EmailPreferenceResult } from "@/api/contact-preferences/types"
 
-type EmailPreferenceUpdateResult = {
-	uiapi?: {
-		ContactUpdate?: {
-			success?: boolean | null
-		} | null
-	} | null
-}
+const EMAIL_PREFERENCE_UPDATE_PATH =
+	"/services/apexrest/memberportal/emailPreferenceUpdate"
 
-const REQUEST_EMAIL_PREFERENCES_MUTATION = gql`
-	mutation RequestEmailPreferences($contactId: IdOrRef!, $updatedAt: DateTime) {
-		uiapi(input: { allOrNone: true }) {
-			ContactUpdate(
-				input: {
-					Id: $contactId
-					Contact: { Last_Email_Pref_Update_Date__c: $updatedAt }
-				}
-			) {
-				success
-			}
-		}
-	}
-`
+const FAILURE = "Unable to request email preferences."
 
 /**
- * Stamps `Last_Email_Pref_Update_Date__c` so org automation can email the
- * member their preference-center link (same as MyGarp remoting).
+ * The legacy "Manage My Email Subscription Preferences" link. Apex stamps
+ * `Contact.Last_Email_Pref_Update_Date__c`; the org's own automation then
+ * mails the member their preference-centre link. A 200 means the request was
+ * recorded, which is what the confirmation copy promises.
  */
-export async function requestEmailPreferences(contactId: string): Promise<void> {
-	const trimmedId = contactId.trim()
-	if (!trimmedId) {
-		throw new AppError({ messages: ["Contact Id is required."] })
-	}
-
+export async function requestEmailPreferences(): Promise<void> {
 	const sdk = await createDataSDK()
-	const result = await sdk.graphql?.mutate<
-		EmailPreferenceUpdateResult,
-		{ contactId: string; updatedAt: string }
-	>({
-		mutation: REQUEST_EMAIL_PREFERENCES_MUTATION,
-		variables: {
-			contactId: trimmedId,
-			updatedAt: new Date().toISOString(),
+	const response = await sdk.fetch?.(EMAIL_PREFERENCE_UPDATE_PATH, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Accept: "application/json",
 		},
+		body: "{}",
 	})
 
-	if (result?.errors?.length) {
-		throw new AppError({
-			messages: result.errors.map((error) => error.message),
-		})
-	}
+	const result = await normalizeHttpResponse<
+		MemberPortalEnvelope<EmailPreferenceResult>
+	>(response, {
+		unreachableMessage: "Unable to reach the email preferences service.",
+		fallbackErrorMessage: FAILURE,
+	})
 
-	if (result?.data?.uiapi?.ContactUpdate?.success === false) {
+	const data = unwrapMemberPortalEnvelope(unwrapApiResult(result), {
+		fallbackErrorMessage: FAILURE,
+		missingDataMessage: "No response was returned.",
+		status: result.status,
+	})
+
+	if (data.statusCode !== 200) {
 		throw new AppError({
-			messages: ["Unable to request email preference update."],
+			messages: [data.statusMessage?.trim() || FAILURE],
+			status: data.statusCode,
 		})
 	}
 }

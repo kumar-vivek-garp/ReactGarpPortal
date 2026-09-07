@@ -326,21 +326,27 @@ export function isOfflinePayment(paymentType: string): boolean {
  *
  * Only for a card order — there is no saved payment method to renew against
  * otherwise — and only when the cart actually contains a membership to renew:
- * either one included with the programme (`hasCompMembership`) or one the
- * candidate just added from the course upsell card (`membershipSelected`,
- * GarpAppv1's `form.membership` branch). Someone who already has auto-renew
- * on is not asked again.
+ * one included with the programme (`hasCompMembership`), one the candidate
+ * just added from the course upsell card (`membershipSelected`, GarpAppv1's
+ * `form.membership` branch), or the membership programme itself, where the
+ * membership IS the purchase and nothing has to be ticked (`isMembership`,
+ * GarpAppv1's `isMembership ||` clause — the one that was written in its hook
+ * and easiest to lose). Someone who already has auto-renew on is not asked
+ * again.
  */
 export function showAutorenew(
 	isAutoRenewEnabled: boolean | null | undefined,
 	paymentType: string,
 	hasCompMembership: boolean | null | undefined,
 	membershipSelected: boolean = false,
+	isMembership: boolean = false,
 ): boolean {
 	return (
 		isAutoRenewEnabled !== true &&
 		paymentType === "Stripe" &&
-		(hasCompMembership === true || membershipSelected === true)
+		(hasCompMembership === true ||
+			membershipSelected === true ||
+			isMembership === true)
 	)
 }
 
@@ -384,5 +390,88 @@ export function showCandidateAcknowledgements(
 	kind: ProgramKind | null | undefined,
 ): boolean {
 	return isExamKind(kind)
+}
+
+/**
+ * Whether this programme is a membership purchase — `mem` (paid Individual)
+ * and the free affiliate tier. No exam, no course: the MEMI/MEMC line is the
+ * whole order.
+ */
+export function isMembershipKind(kind: ProgramKind | null | undefined): boolean {
+	return kind === "membership"
+}
+
+/**
+ * The Risk.net add-on card.
+ *
+ * The membership programme's own add-on (MEMR), and nothing else's:
+ * `GARP_ExamReg_LoadService` only builds `riskNetOffer` for
+ * `kind == 'membership'`, so the offer's presence is the real gate and the
+ * kind check only says so explicitly.
+ */
+export function showRiskNet<T>(
+	kind: ProgramKind | null | undefined,
+	riskNetOffer: T | null | undefined,
+): riskNetOffer is T {
+	return isMembershipKind(kind) && riskNetOffer != null
+}
+
+/**
+ * The course membership upsell card.
+ *
+ * Never on the membership form: the server builds no offer for it, and even
+ * if one arrived, "add membership to your membership" is not a choice — the
+ * request's `membershipSelected` must stay false there.
+ */
+export function showMembershipOffer<T>(
+	kind: ProgramKind | null | undefined,
+	membershipOffer: T | null | undefined,
+): membershipOffer is T {
+	return !isMembershipKind(kind) && membershipOffer != null
+}
+
+/**
+ * Where a member's Back link goes. A membership purchase is reached from the
+ * Membership Benefits page and My Account, not from the programmes listing.
+ */
+export function memberBackKind(
+	kind: ProgramKind | null | undefined,
+): "membership" | "programs" {
+	return isMembershipKind(kind) ? "membership" : "programs"
+}
+
+export type RailEmptyState = {
+	message: string
+	/** Greyed placeholder rows, in the shape of the lines to come. */
+	ghostLabels: string[]
+}
+
+/**
+ * The order summary before it has anything to say.
+ *
+ * Reachable on every kind: for an exam until a sitting is chosen, and on a
+ * course or membership for the first price's debounce and fetch. A membership
+ * cart is never empty once priced, so its placeholder must not ask the
+ * candidate to choose an exam that does not exist.
+ */
+export function railEmptyState(
+	kind: ProgramKind | null | undefined,
+): RailEmptyState {
+	if (isMembershipKind(kind)) {
+		return {
+			message: "Pricing your membership…",
+			ghostLabels: ["Individual Membership", "Total"],
+		}
+	}
+	if (!isExamKind(kind)) {
+		return {
+			message: "Choose your options to see the total.",
+			ghostLabels: ["Course registration", "Total"],
+		}
+	}
+	return {
+		message: "Choose your exam to see the total.",
+		ghostLabels: ["Exam registration", "Enrollment fee", "Total"],
+	}
 }
 

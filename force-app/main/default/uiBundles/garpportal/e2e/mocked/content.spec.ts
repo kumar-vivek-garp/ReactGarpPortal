@@ -88,13 +88,13 @@ test.describe("gated content", () => {
 		).toBeVisible()
 		await expect(page.getByRole("link", { name: "My Account" })).toBeVisible()
 
-		// Not an Individual member => "Upgrade"; the CTA carries the attribution
-		// tag and the article so checkout can return them to it.
+		// Not an Individual member => "Upgrade"; the CTA is the in-app membership
+		// form, tagged so the sale is attributed to this page.
 		const upsell = page.getByRole("link", { name: "Upgrade your membership" })
 		await expect(upsell).toBeVisible()
-		const href = await upsell.getAttribute("href")
-		expect(href).toContain("track_cta=PortalGatedContent")
-		expect(href).toContain("garp_gated_url=https%3A%2F%2Fwww.garp.org")
+		expect(await upsell.getAttribute("href")).toBe(
+			"/membership/register?track_cta=PortalGatedContent",
+		)
 	})
 
 	test("without the cookie the page reports an expired link", async ({

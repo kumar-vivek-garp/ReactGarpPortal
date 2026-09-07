@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query"
 
-import { contactPreferencesQueryOptions } from "@/api/contact-preferences"
+import { accountQueryOptions } from "@/api/account/query-options"
+import { toContactPreferences } from "@/api/contact-preferences"
 
-/** Contact Preferences tab hydrate (SMS + display email/mobile). */
-export function useContactPreferences(contactId: string, enabled = true) {
+/** Contact Preferences tab hydrate (SMS + display email/mobile), off the shared account query. */
+export function useContactPreferences(enabled = true) {
 	return useQuery({
-		...contactPreferencesQueryOptions(contactId),
-		enabled: enabled && Boolean(contactId.trim()),
+		...accountQueryOptions,
+		select: toContactPreferences,
+		enabled,
 	})
 }

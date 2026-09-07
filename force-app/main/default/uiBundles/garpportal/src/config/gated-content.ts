@@ -24,12 +24,12 @@ export const GATED_COOKIE_DOMAIN = "garp.org"
  */
 export const GATED_ALLOWED_HOSTS = ["garp.org"] as const
 
-/** Attribution tag, so this upsell is distinguishable from the others. */
+/**
+ * Attribution tag, so this upsell is distinguishable from the others. Rides
+ * `?track_cta=` on the in-app membership form (`/membership/register`); the
+ * article itself does not travel — GarpAppv1's form never read it either.
+ */
 export const GATED_TRACK_CTA = "PortalGatedContent"
-
-/** Membership purchase still lives in the legacy app. */
-export const GATED_MEMBERSHIP_URL =
-	"/sfdcApp?track_cta=" + GATED_TRACK_CTA + "#!/registration/membership"
 
 export const GATED_CONTENT_TITLE = "GARP Content"
 

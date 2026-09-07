@@ -53,10 +53,13 @@ describe("pollPaymentStatus", () => {
 			}
 		}
 
-		it("resolves after one delay when the payment shows up on attempt 2", async () => {
+		it("resolves after one delay when a pending payment succeeds on attempt 2", async () => {
+			// A transaction that exists but has not succeeded yet is the ONLY
+			// state worth asking about again.
 			const status = examregPost("paymentStatus", (_body, hits) => ({
 				isOrderFound: true,
-				isPaymentFound: hits >= 2,
+				isPaymentFound: true,
+				isPaymentSuccess: hits >= 2,
 			}))
 			server.use(status.handler)
 
@@ -77,10 +80,11 @@ describe("pollPaymentStatus", () => {
 			expect(settled).toBe(true)
 		})
 
-		it("gives up silently after STATUS_POLL_ATTEMPTS unconfirmed tries", async () => {
+		it("gives up silently after STATUS_POLL_ATTEMPTS pending tries", async () => {
 			const status = examregPost("paymentStatus", () => ({
 				isOrderFound: true,
-				isPaymentFound: false,
+				isPaymentFound: true,
+				isPaymentSuccess: false,
 			}))
 			server.use(status.handler)
 
@@ -109,8 +113,22 @@ describe("pollPaymentStatus", () => {
 			await vi.advanceTimersByTimeAsync(STATUS_POLL_DELAY_MS)
 			await poll
 			expect(settled).toBe(true)
-			// Wire/ACH settle days later — an unconfirmed status is NOT an error.
 			expect(status.spy.hits).toBe(STATUS_POLL_ATTEMPTS)
 		})
+	})
+
+	it("accepts 'no payment recorded' first time — the normal wire/ACH answer", async () => {
+		const status = examregPost("paymentStatus", () => ({
+			isOrderFound: true,
+			isPaymentFound: false,
+		}))
+		server.use(status.handler)
+
+		await pollPaymentStatus("801-wire")
+
+		// GarpAppv1's rule: stop on `!isPaymentFound || isPaymentSuccess`. Wire
+		// and ACH settle days later, so an absent transaction is not something
+		// to wait for.
+		expect(status.spy.hits).toBe(1)
 	})
 })

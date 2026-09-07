@@ -189,3 +189,49 @@ describe("draft and save on close", () => {
 		})
 	})
 })
+
+describe("opening the menu is not a selection", () => {
+	/*
+	 * Shipped bug: one click on the trigger both opened the list AND ticked an
+	 * option. Radix's menu item turns a pointer-UP over itself into a selection
+	 * whenever the matching pointer-down happened elsewhere, and the list is tall
+	 * enough that collision handling lays it over the field — so the release of
+	 * the very click that opened it landed on whichever option was covering the
+	 * trigger.
+	 */
+	it("a press on the trigger released over an option selects nothing", async () => {
+		const user = userEvent.setup()
+		const state = expertiseOrg()
+		renderWithProviders(<ExpertiseCard />)
+
+		const trigger = await screen.findByRole("button", { name: "Area of Expertise" })
+
+		// Press, and hold. The menu opens under the still-held pointer, which is
+		// why the option has to be looked up only once it exists.
+		await user.pointer({ keys: "[MouseLeft>]", target: trigger })
+		const covered = await screen.findByRole("menuitemcheckbox", {
+			name: "Market Risk",
+		})
+		// Release over the option the open menu is now covering.
+		await user.pointer([{ target: covered }, { keys: "[/MouseLeft]" }])
+
+		expect(item("Market Risk")).toHaveAttribute("data-state", "unchecked")
+		expect(trigger).toHaveTextContent("Select Area of Expertise")
+
+		await user.keyboard("{Escape}")
+		// Nothing was chosen, so nothing is written back.
+		await waitFor(() => expect(state.saves).toHaveLength(0))
+	})
+
+	it("still selects when the press both starts and ends on the option", async () => {
+		const user = userEvent.setup()
+		expertiseOrg()
+		renderWithProviders(<ExpertiseCard />)
+
+		await user.click(await screen.findByRole("button", { name: "Area of Expertise" }))
+		await user.click(item("Market Risk"))
+
+		expect(item("Market Risk")).toHaveAttribute("data-state", "checked")
+		expect(areaTrigger()).toHaveTextContent("1 selected")
+	})
+})

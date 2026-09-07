@@ -4,7 +4,7 @@ import {
 	AUTO_RENEW_USD_CERT_HOLDER,
 	AUTO_RENEW_USD_INDIVIDUAL,
 } from "@/config/membership-account"
-import { formatLongDate } from "@/lib/account-format"
+import { formatLongDate, formatMoney } from "@/lib/account-format"
 import type { MetaLine } from "@/lib/meta-line"
 import { resolvePortalAssetUrl } from "@/lib/resolve-portal-asset-url"
 import type { StatusTone } from "@/lib/status-tone"
@@ -68,6 +68,41 @@ export function buildMissingChips(completeness: Completeness): MissingChip[] {
 		const field = MISSING_LABEL_TO_FIELD[label] ?? null
 		return { label, field, section: field ? "career" : null }
 	})
+}
+
+/**
+ * How many missing-field chips the hero shows before collapsing the rest behind
+ * a "+N more" toggle.
+ *
+ * Apex scores eleven fields, and a new member is missing most of them. Eleven
+ * chips wrap to four rows on a phone, pushing the cards below the fold — the
+ * strip stops being a nudge and becomes the page (UI/UX request, Sep 2026).
+ */
+export const VISIBLE_MISSING_CHIPS = 4
+
+export type MissingChipSplit = {
+	visible: MissingChip[]
+	/** 0 when everything is on screen — the toggle is not rendered. */
+	hiddenCount: number
+}
+
+/**
+ * Splits the chips into what is shown now and how many are held back.
+ *
+ * Collapsing a single chip is not worth it: "+1 more" occupies the row the
+ * chip itself would have, so one over the cap is shown rather than hidden.
+ */
+export function splitMissingChips(
+	chips: MissingChip[],
+	expanded: boolean,
+): MissingChipSplit {
+	if (expanded || chips.length <= VISIBLE_MISSING_CHIPS + 1) {
+		return { visible: chips, hiddenCount: 0 }
+	}
+	return {
+		visible: chips.slice(0, VISIBLE_MISSING_CHIPS),
+		hiddenCount: chips.length - VISIBLE_MISSING_CHIPS,
+	}
 }
 
 /** How many missing items a given card owns. All eleven belong to Career. */
@@ -159,40 +194,76 @@ const AFFILIATE_INTRO =
 const EXPIRED_INTRO =
 	"Renew your Individual Membership to get exclusive access to premium content and professional learning resources, special Career Center features, networking opportunities through our GARP Member Directory, and preferential pricing on products and events."
 
+export type MembershipFooterAction =
+	| "viewOrder"
+	| "upgrade"
+	| "disable"
+	| "renewNow"
+	| null
+
 export type MembershipPresentation = {
 	intro: string
 	garpId: string | null
 	memberType: string | null
+	memberSince: string | null
 	statusText: string | null
 	statusTone: StatusTone
 	expiryLabel: string | null
+	isCertHolder: boolean
 	renewAmount: string
-	isAutoRenewPending: boolean
-	showTurnOnCallout: boolean
-	showOnCallout: boolean
-	showUpgrade: boolean
-	showViewOrder: boolean
 	/** Opportunity Id when a membership order is unpaid — for `/my-account/orders/$orderNumber`. */
 	pendingOrderId: string | null
-	showDisable: boolean
-	showRenewNow: boolean
+	/** "Order X — $Y is waiting to be paid." Only with a pending order. */
+	pendingOrderText: string | null
+	showTurnOnCallout: boolean
+	showOnCallout: boolean
+	/** Back from Stripe with a card stored; the contract has not flipped yet. */
+	showCardSaved: boolean
+	/** The one footer action — GarpAppv1's rule: they are mutually exclusive. */
+	action: MembershipFooterAction
 }
 
 function statusDisplay(options: {
 	pendingOrderId: string | null
 	statusLabel: string | null
-	isExpired: boolean
+	isLapsed: boolean
 	expiryLabel: string | null
 }): string | null {
 	if (options.pendingOrderId) return "Payment Pending"
 	if (!options.statusLabel) return null
 	if (!options.expiryLabel) return options.statusLabel
-	if (options.isExpired) {
+	if (options.isLapsed) {
 		return `${options.statusLabel} (expired ${options.expiryLabel})`
 	}
-	return `${options.statusLabel} (Until ${options.expiryLabel})`
+	return `${options.statusLabel} (until ${options.expiryLabel})`
 }
 
+function pendingOrderDisplay(
+	standing: AccountView["standing"],
+): string | null {
+	const id = standing?.pendingOrderId
+	if (!id) return null
+	const amount = formatMoney(standing?.pendingOrderAmount, "USD")
+	const label = standing?.pendingOrderNumber ?? id
+	return `Order ${label}${amount ? ` — ${amount}` : ""} is waiting to be paid.`
+}
+
+/**
+ * The Membership card's state machine, ported from GarpAppv1's
+ * `MembershipInfoCard`: two mutually exclusive auto-renew notices and one
+ * footer action, keyed off member type, auto-renew, and whether an unpaid
+ * membership order is outstanding.
+ *
+ * A PENDING ORDER OUTRANKS EVERYTHING. With one outstanding the status reads
+ * "Payment Pending", both auto-renew notices are suppressed and the only
+ * action is View Order — anything else would raise a second order for a
+ * membership the member is already part-way through buying.
+ *
+ * One deliberate departure: while the "card saved" notice is up (back from
+ * Stripe, webhook not landed) the Turn On invitation is hidden. GarpAppv1
+ * shows both; offering to start a second Stripe session for the card that was
+ * just stored is not something worth matching.
+ */
 export function buildMembershipPresentation(
 	account: AccountView,
 	autoRenewSetupComplete: boolean,
@@ -208,47 +279,58 @@ export function buildMembershipPresentation(
 	const isAffiliate =
 		memberType === "Affiliate" || (standing == null && identity.isAffiliateMember)
 	const memberStatus = standing?.memberStatus ?? identity.membershipStatus
-	const isExpired = memberStatus === "Expired"
+	// Anything not Activated — Expired, Cancelled — is Lapsed on the contract
+	// label; the Contact's own "Expired" counts too (GarpAppv1's `isLapsed`).
+	const isLapsed =
+		standing?.statusLabel === "Lapsed" ||
+		memberStatus === "Expired" ||
+		identity.membershipStatus === "Expired"
 	const autoRenew = standing?.isAutoRenewEnabled ?? identity.autoRenew
 	const pendingOrderId = standing?.pendingOrderId ?? null
 	const expiryLabel = formatLongDate(
 		standing?.expirationDate ?? identity.membershipExpiration,
 	)
 	const statusLabel =
-		standing?.statusLabel ?? (isExpired ? "Lapsed" : identity.membershipStatus)
-	const isAutoRenewPending = autoRenewSetupComplete && !autoRenew
+		standing?.statusLabel ?? (isLapsed ? "Lapsed" : identity.membershipStatus)
+	const showCardSaved = autoRenewSetupComplete && !autoRenew
+
+	const action: MembershipFooterAction = pendingOrderId
+		? "viewOrder"
+		: isAffiliate
+			? "upgrade"
+			: isIndividual && autoRenew
+				? "disable"
+				: isIndividual
+					? "renewNow"
+					: null
 
 	return {
 		intro: isAffiliate
 			? AFFILIATE_INTRO
-			: isExpired
+			: isLapsed
 				? EXPIRED_INTRO
 				: INDIVIDUAL_INTRO,
 		garpId: standing?.garpId ?? identity.garpId,
 		memberType,
+		memberSince: formatLongDate(standing?.dateJoined ?? identity.memberSince),
 		statusText: statusDisplay({
 			pendingOrderId,
 			statusLabel,
-			isExpired,
+			isLapsed,
 			expiryLabel,
 		}),
-		statusTone: pendingOrderId ? "warning" : isExpired ? "danger" : "success",
+		statusTone: pendingOrderId ? "warning" : isLapsed ? "danger" : "success",
 		expiryLabel,
+		isCertHolder: standing?.isCertHolder === true,
 		renewAmount: standing?.isCertHolder
 			? AUTO_RENEW_USD_CERT_HOLDER
 			: AUTO_RENEW_USD_INDIVIDUAL,
-		isAutoRenewPending,
-		showTurnOnCallout:
-			!isAutoRenewPending &&
-			isIndividual &&
-			!autoRenew &&
-			!pendingOrderId &&
-			!isExpired,
-		showOnCallout: isIndividual && autoRenew && !pendingOrderId,
-		showUpgrade: isAffiliate && !pendingOrderId,
-		showViewOrder: Boolean(pendingOrderId),
 		pendingOrderId,
-		showDisable: isIndividual && autoRenew && !pendingOrderId,
-		showRenewNow: isIndividual && !autoRenew && !pendingOrderId,
+		pendingOrderText: pendingOrderDisplay(standing),
+		showTurnOnCallout:
+			isIndividual && !pendingOrderId && !autoRenew && !isLapsed && !showCardSaved,
+		showOnCallout: isIndividual && !pendingOrderId && autoRenew,
+		showCardSaved,
+		action,
 	}
 }

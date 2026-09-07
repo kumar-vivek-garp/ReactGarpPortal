@@ -1,30 +1,34 @@
 import { expect, test } from "@playwright/test"
 
-import { accountView } from "@/testing/factories/account"
-import { personalInfoEditData } from "@/testing/factories/personal-info"
-import { personalInfoGraphqlResolvers } from "@/testing/factories/personal-info-graphql"
-import type { CountryOption } from "@/api/personal-info/types"
+import { accountOptionsView } from "@/testing/factories/account-options"
+import { completeness } from "@/testing/factories/account"
+import {
+	accountViewFromPersonalInfo,
+	billingCompanyGraphql,
+	personalInfoEditData,
+} from "@/testing/factories/personal-info"
 import { installMockOrg, type MockOrgOptions } from "../support/mock-org"
 
+function body(postData: string | null): Record<string, unknown> {
+	return JSON.parse(postData ?? "{}") as Record<string, unknown>
+}
+
 /**
- * The Personal Information edit dialog on the account-information tab:
- * lazy GraphQL hydrate on open, prefill, clean cancel, and the
- * SavePersonalInfo mutation body.
+ * The Personal Information edit dialog on the account-information tab: it
+ * hydrates from the composed account payload the tab already holds (plus the
+ * one billing-company read), prefills, cancels cleanly, and saves through the
+ * `profile` (changed identity fields only) then `addresses` actions.
  */
 
-const EDIT_DATA = personalInfoEditData() // Ada Lovelace, 003-member/001-member
-const COUNTRIES: CountryOption[] = [
-	{ label: "United States", value: "United States", phoneCode: "+1" },
-	{ label: "United Kingdom", value: "United Kingdom", phoneCode: "+44" },
-]
+const EDIT_DATA = personalInfoEditData({
+	billing: { ...personalInfoEditData().billing, company: "Analytical Engines" },
+})
 
 function baseOptions(): MockOrgOptions {
-	// The factory resolvers are written for MSW (they return `{ data }`);
-	// the mock org wants the GraphQL `data` object itself — unwrap once here.
-	const resolvers = personalInfoGraphqlResolvers(EDIT_DATA, COUNTRIES)
 	return {
 		actions: {
-			account: accountView(),
+			account: accountViewFromPersonalInfo(EDIT_DATA),
+			options: accountOptionsView(),
 			expertise: {
 				statusCode: 200,
 				statusMessage: null,
@@ -32,22 +36,19 @@ function baseOptions(): MockOrgOptions {
 				options: {},
 				labels: {},
 			},
-		},
-		graphql: {
-			PersonalInfoEditContact: resolvers.PersonalInfoEditContact().data,
-			PersonalInfoCountries: resolvers.PersonalInfoCountries().data,
-			SavePersonalInfo: {
-				uiapi: {
-					AccountUpdate: { success: true },
-					ContactUpdate: { success: true },
-				},
+			profile: { applied: ["FirstName"], rejected: [], completeness: completeness() },
+			addresses: {
+				statusMessage: "Success",
+				statusCode: 200,
+				appliedBillingToMailing: false,
 			},
 		},
+		graphql: { BillingCompany: billingCompanyGraphql(EDIT_DATA) },
 	}
 }
 
 test.describe("personal information edit dialog", () => {
-	test("opens prefilled from the GraphQL contact and cancels without saving", async ({
+	test("opens prefilled from the account payload and cancels without saving", async ({
 		page,
 	}) => {
 		const org = await installMockOrg(page, baseOptions())
@@ -61,10 +62,6 @@ test.describe("personal information edit dialog", () => {
 			dialog.getByRole("heading", { name: "Edit Personal Information" }),
 		).toBeVisible()
 
-		// The hydrate reads fire on open, not on tab mount.
-		await expect.poll(() => org.hits("PersonalInfoEditContact")).toBe(1)
-		await expect.poll(() => org.hits("PersonalInfoCountries")).toBe(1)
-
 		await expect(dialog.getByRole("textbox", { name: "First name" })).toHaveValue(
 			"Ada",
 		)
@@ -74,18 +71,29 @@ test.describe("personal information edit dialog", () => {
 		await expect(dialog.getByRole("textbox", { name: "Email" })).toHaveValue(
 			"ada@example.org",
 		)
-		// sameAsBilling is DERIVED by the loader (addressesMatch), not read off
-		// the wire — the factory's differing mailing address arrives unchecked.
+		// The billing company comes from its own read, never blanked.
+		await expect(
+			dialog.getByRole("textbox", { name: "Company" }).first(),
+		).toHaveValue("Analytical Engines")
+		// Same-as-billing is the server's verdict: the factory's differing
+		// mailing address arrives unchecked.
 		await expect(
 			dialog.getByRole("checkbox", { name: /same as billing/ }),
 		).not.toBeChecked()
 
+		// Opening added no account read — the tab's own payload is reused —
+		// and exactly one billing-company read.
+		expect(org.hits("account")).toBe(1)
+		expect(org.hits("options")).toBe(1)
+		expect(org.hits("BillingCompany")).toBe(1)
+
 		await page.keyboard.press("Escape")
 		await expect(page.getByRole("dialog")).toHaveCount(0)
-		expect(org.hits("SavePersonalInfo")).toBe(0)
+		expect(org.hits("profile")).toBe(0)
+		expect(org.hits("addresses")).toBe(0)
 	})
 
-	test("saving posts SavePersonalInfo with the edited variables and closes", async ({
+	test("saving posts the changed field to profile, then addresses, and closes", async ({
 		page,
 	}) => {
 		const org = await installMockOrg(page, baseOptions())
@@ -102,22 +110,18 @@ test.describe("personal information edit dialog", () => {
 		await expect(page.getByText("Personal information saved")).toBeVisible()
 		await expect(page.getByRole("dialog")).toHaveCount(0)
 
-		expect(org.hits("SavePersonalInfo")).toBe(1)
-		const body = JSON.parse(org.of("SavePersonalInfo")[0].postData ?? "{}") as {
-			variables?: Record<string, unknown>
-		}
-		expect(body.variables).toMatchObject({
-			firstName: "Grace",
-			lastName: "Lovelace",
-			email: "ada@example.org",
-			// contactId comes from the account identity; accountId from the hydrate.
-			contactId: "003xx0000001",
-			accountId: "001-member",
-			billingCity: "Hoboken",
-			// sameAsBilling arrives false (derived, addresses differ), so the
-			// mailing block ships as typed rather than copied from billing.
-			mailingCity: "Boston",
-			mailingStreet: "2 Ship St",
+		expect(org.hits("profile")).toBe(1)
+		expect(body(org.of("profile")[0].postData)).toEqual({
+			values: { FirstName: "Grace" },
 		})
+
+		expect(org.hits("addresses")).toBe(1)
+		expect(body(org.of("addresses")[0].postData)).toMatchObject({
+			isBillingAndMailingAddressSame: false,
+			billingAddress: { city: "Hoboken", company: "Analytical Engines" },
+			mailingAddress: { city: "Boston", street1: "2 Ship St" },
+		})
+		// The save invalidates the account view, which refetches once.
+		await expect.poll(() => org.hits("account")).toBe(2)
 	})
 })

@@ -5,10 +5,8 @@ import {
 	turnOffMembershipAutoRenew,
 	turnOnMembershipAutoRenew,
 } from "@/api/account/auto-renew"
-import { notifySuccess } from "@/api/client"
-import { stripeSetupCheckoutUrl } from "@/config/membership-account"
 
-export function useTurnOffMembershipAutoRenew(contactId: string) {
+export function useTurnOffMembershipAutoRenew() {
 	const queryClient = useQueryClient()
 
 	return useMutation({
@@ -18,26 +16,25 @@ export function useTurnOffMembershipAutoRenew(contactId: string) {
 			errorTitle: "Unable to turn off auto-renew",
 		},
 		onSuccess: async () => {
-			await invalidateAccountCaches(queryClient, contactId)
+			await invalidateAccountCaches(queryClient)
 		},
 	})
 }
 
-export function useTurnOnMembershipAutoRenew(contactId: string) {
-	const queryClient = useQueryClient()
-
+/**
+ * One hop to Stripe, as in GarpAppv1: the server answers with the setup page
+ * and the browser leaves for it. Nothing is invalidated or announced here —
+ * the contract only flips once Stripe's webhook lands, and the page the
+ * member returns to (`?status=autorenewsetupcomplete`) says so.
+ */
+export function useTurnOnMembershipAutoRenew() {
 	return useMutation({
-		mutationFn: turnOnMembershipAutoRenew,
+		mutationFn: (returnUrl: string) => turnOnMembershipAutoRenew(returnUrl),
 		meta: {
 			errorTitle: "Unable to turn on auto-renew",
 		},
-		onSuccess: async (data) => {
-			if (data.needPaymentInfo) {
-				window.location.assign(stripeSetupCheckoutUrl(data.orderId))
-				return
-			}
-			await invalidateAccountCaches(queryClient, contactId)
-			notifySuccess("Auto-renew is on")
+		onSuccess: (data) => {
+			if (data.setupUrl) window.location.assign(data.setupUrl)
 		},
 	})
 }

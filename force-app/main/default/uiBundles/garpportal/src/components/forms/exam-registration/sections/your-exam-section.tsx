@@ -11,7 +11,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/atoms/select"
-import { FieldError } from "@/components/molecules/form-field"
+import { FieldError, RequiredMark } from "@/components/molecules/form-field"
 import { EXAM_REGISTRATION_COPY } from "@/config/registration"
 import { formatMoney } from "@/lib/account-format"
 import { sortSites } from "@/lib/registration-presentation"
@@ -67,6 +67,7 @@ function PartBlock({
 			<div className="flex flex-col gap-2">
 				<Label className="text-caption font-bold text-muted-foreground uppercase">
 					Sitting
+					<RequiredMark />
 				</Label>
 				{admins.length === 0 ? (
 					<p className="text-body text-muted-foreground">
@@ -118,6 +119,7 @@ function PartBlock({
 						className="text-caption font-bold text-muted-foreground uppercase"
 					>
 						Where you will sit
+						<RequiredMark />
 					</Label>
 					{sites.length === 0 ? (
 						<p className="text-body text-muted-foreground">
@@ -221,10 +223,7 @@ function YourExamSection({
 					<div className="flex flex-col gap-2">
 						<Label htmlFor="examPart" className="font-bold">
 							Exam part
-							<span className="text-destructive" aria-hidden>
-								{" "}
-								*
-							</span>
+							<RequiredMark />
 						</Label>
 						<Select
 							value={partSelected}

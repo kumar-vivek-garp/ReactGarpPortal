@@ -119,9 +119,19 @@ export type ExamProgramConfig = {
 	heading: MegaMenuHeading
 	/** Short name for the document title. */
 	abbrevName: string
+	/**
+	 * The full document title, when `${abbrevName} Registration` is not it —
+	 * "Membership Registration" is not what GarpAppv1 calls the page.
+	 */
+	documentTitle?: string
 	/** Shown to guests under the title, never to members. */
 	publicByLine: string
 	examPolicyUrl: string
+}
+
+/** The document title for a programme's registration page. */
+export function registrationDocumentTitle(program: ExamProgramConfig): string {
+	return program.documentTitle ?? `${program.abbrevName} Registration`
 }
 
 export const EXAM_PROGRAMS: Record<string, ExamProgramConfig> = {
@@ -267,7 +277,73 @@ export const EXAM_PROGRAMS: Record<string, ExamProgramConfig> = {
 			"Individual members may sign in for a discounted rate. Become an individual member and access the discount by adding membership to your cart below.",
 		examPolicyUrl: "https://www.garp.org/frr",
 	},
+
+	/*
+	 * Individual membership. Keyed by its URL slug (`/registration/membership`,
+	 * GarpAppv1's and the legacy app's address) with the wire type `mem` that
+	 * `GARP_ExamReg_Program__mdt` keys it by; `registration-programs` aliases
+	 * the one to the other. `kind: "membership"` on the payload: no exam, no
+	 * course, no attestations — the MEMI/MEMC line is the whole order, plus the
+	 * Risk.net add-on. Not a certification, so no ®/™ and no mega-menu hue to
+	 * borrow: `garp-cyan`, like the courses and the affiliate form.
+	 *
+	 * The byline is the upfront half of `mustSignIn`: the programme does not
+	 * allow a member to register publicly, so a guest whose email belongs to a
+	 * member is refused at submit — better said before anything is typed.
+	 */
+	membership: {
+		registrationType: "mem",
+		heading: {
+			prefix: "",
+			highlight: "Member",
+			highlightToken: "garp-cyan",
+			suffix: " Registration",
+		},
+		abbrevName: "Membership",
+		documentTitle: "Member Registration",
+		publicByLine:
+			"Already a member? Sign in to renew against your existing record.",
+		examPolicyUrl: "https://www.garp.org/membership",
+	},
 }
+
+/**
+ * The `?track_cta=` tags the portal's own membership links carry — GarpAppv1's
+ * values, kept so attribution reads the same whichever app the sale came
+ * through. Sent on `verifyCustomer` only; Apex writes
+ * `Form_Data__c.Track_CTA__c`. The gated-content page has its own in
+ * `config/gated-content`.
+ */
+export const REGISTRATION_TRACK_CTA = {
+	myAccount: "PortalMyAccountPage",
+	membershipPage: "PortalMembershipPage",
+} as const
+
+/**
+ * The Risk.net add-on card, membership form only. Copy is GarpAppv1's — and
+ * its "12 months" is literal there too: the PRICE tracks the member's
+ * remaining cover, the sentence does not.
+ */
+export const RISK_NET_OFFER_COPY = {
+	title: "Exclusive Offer for Members",
+	optional: "(optional)",
+	brand: "Risk.net",
+	tagline: "GARP-Risk.net Content Hub — One Hub. Three Resources.",
+	body: "Participating members will be given 12 months of online access to a content hub containing three resources: 80+ Books, nine Journals, and a hand-picked selection of in-depth news and analysis each week.",
+	privacyIntro: "To learn more about how Risk.net will use your data, please refer to their",
+	privacyLabel: "privacy policy",
+	privacyUrl: "https://www.infopro-digital.com/privacy-policy/",
+} as const
+
+/**
+ * Copy the membership form swaps in for the exam wording. The auto-renew
+ * consent renews the membership being paid for — `OFFLINE_PAYMENT_COPY`'s
+ * line says "complimentary", which is only true of the exam and course carts.
+ */
+export const MEMBERSHIP_REGISTRATION_COPY = {
+	autoRenew:
+		"Enrol in Membership Automatic Renewal: your GARP Individual Membership renews each year at the then-current rate using your saved payment method, until you cancel. You can cancel any time from your account.",
+} as const
 
 /** Notices the exam form shows in specific situations. */
 /**
@@ -335,28 +411,80 @@ export const OSTA_COPY = {
 		"I agree to GARP sharing my passport or driver's licence number as required by any Chinese governmental authority, and to sharing the last five digits with its exam delivery partner to verify my identity at the exam.",
 } as const
 
+/** The tone an outcome screen is drawn in — `RegistrationStatusPanel`'s set. */
+export type RegistrationOutcomeTone = "muted" | "notice" | "error" | "success"
+
+export type RegistrationOutcomeCopy = {
+	title: string
+	message: string
+	tone: RegistrationOutcomeTone
+}
+
+/**
+ * Every screen the exam form can end on. The payment-return leg's five come
+ * from GarpAppv1's PaymentReturn sequence; the wording is ours.
+ */
 export const EXAM_REGISTRATION_OUTCOMES = {
 	registered: {
 		title: "You're registered",
 		message:
 			"Your registration is confirmed and a confirmation email is on its way.",
+		tone: "success",
 	},
 	invoiced: {
 		title: "Your order has been submitted",
 		message:
 			"Payment instructions are on their way by email, and are also on your invoice and in your account.",
+		tone: "success",
 	},
+	/** The return leg while the provider's webhook is still being waited for. */
+	confirming: {
+		title: "Payment received",
+		message: "Confirming your registration. This usually takes a few seconds.",
+		tone: "notice",
+	},
+	/** Payment confirmed and the order exists. */
 	paid: {
 		title: "Thank you — payment received",
 		message:
-			"Your payment is being processed and your registration is confirmed. A confirmation email is on its way.",
+			"Your registration is confirmed and a confirmation email is on its way.",
+		tone: "success",
+	},
+	/** Payment confirmed; the records are still being written (deferred flow). */
+	finalising: {
+		title: "Thank you — payment received",
+		message:
+			"Your payment is confirmed and your registration is being finalised. A confirmation email with your order details will follow shortly — there is nothing more you need to do.",
+		tone: "success",
+	},
+	/** The status endpoint refused the id, or never saw the registration. */
+	paymentIssue: {
+		title: "There may have been an issue processing your payment",
+		message:
+			"Please wait for confirmation by email, try again later, or contact memberservices@garp.com for assistance.",
+		tone: "error",
+	},
+	/** The card was declined. The staged registration is still payable. */
+	paymentDeclined: {
+		title: "There may have been an issue processing your payment",
+		message:
+			"You can try again, wait for confirmation by email, or contact memberservices@garp.com for assistance.",
+		tone: "error",
+	},
+	/** Paid, but the registration did not survive — needs a human. */
+	registrationFailed: {
+		title: "We could not complete your registration",
+		message:
+			"Your payment went through, but we could not finish setting up your registration. Please contact memberservices@garp.com quoting your reference and we will put it right.",
+		tone: "error",
 	},
 	cancelled: {
 		title: "Payment was not completed",
 		message:
 			"Your registration was cancelled and nothing has been charged. You can start again whenever you are ready.",
+		tone: "error",
 	},
-} as const
+} as const satisfies Record<string, RegistrationOutcomeCopy>
 
 /**
  * Where the public form points someone who has no account.
@@ -402,7 +530,17 @@ export const looseSearchString = () =>
  *
  * `stripe_return` is the payment return leg. The checkout success URL is built
  * client-side from the current location, so the provider comes back to
- * whichever route served the form, carrying the order it settled.
+ * whichever route served the form, carrying the order it settled (`oid`).
+ * `on` is no longer sent — the status poll answers with the order number —
+ * but is still accepted, for links already in flight.
+ *
+ * `checkout_cancelled` is the cancel leg, carrying the `oid` the rollback
+ * depends on. `resume` is the deferred flow's staged id, appended by the
+ * server to that same cancel URL: nothing was created, so the form is rebuilt
+ * from the saved payload instead of rolled back.
+ *
+ * `track_cta` is the attribution tag the portal's own membership links carry
+ * (`REGISTRATION_TRACK_CTA`); it rides `verifyCustomer` and nothing else.
  */
 export const registrationSearchSchema = z.object({
 	regCode: looseSearchString(),
@@ -410,6 +548,9 @@ export const registrationSearchSchema = z.object({
 	stripe_return: looseSearchString(),
 	oid: looseSearchString(),
 	on: looseSearchString(),
+	checkout_cancelled: looseSearchString(),
+	resume: looseSearchString(),
+	track_cta: looseSearchString(),
 })
 
 export type RegistrationSearch = z.infer<typeof registrationSearchSchema>

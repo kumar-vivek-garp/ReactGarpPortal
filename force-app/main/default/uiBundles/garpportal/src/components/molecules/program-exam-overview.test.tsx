@@ -27,78 +27,101 @@ describe("what the card says per exam-part state", () => {
 			}),
 		)
 		expect(
-			screen.getByText("Payment due by February 15, 2027."),
+			screen.getByText("Your registration is not yet paid."),
 		).toBeInTheDocument()
+		expect(screen.getByText("Complete payment by")).toBeInTheDocument()
+		expect(screen.getByText("February 15, 2027")).toBeInTheDocument()
+		// The scheduling rows do not apply yet, so they are not shown empty.
+		expect(screen.queryByText("Exam site")).not.toBeInTheDocument()
 		expect(
 			screen.getByRole("link", { name: /View Order/ }).getAttribute("href"),
 		).toContain("801-order")
 	})
 
-	it("explains a deferral, with the target administration and reopen date", async () => {
+	it("explains a deferral, headed by the administration deferred to", async () => {
 		await renderPart(
 			examPartInfo({
 				examPartState: "Deferred",
+				examAttemptAdminName: "May 2027",
 				deferredAdminName: "November 2027",
 				deferredExamSetupOpenDate: "2027-06-01",
 			}),
 		)
 		expect(
-			screen.getByText("Deferred to November 2027. Setup opens June 1, 2027."),
+			screen.getByText("Your exam has been deferred to November 2027."),
 		).toBeInTheDocument()
+		expect(screen.getByText("November 2027")).toBeInTheDocument()
+		expect(screen.queryByText("May 2027")).not.toBeInTheDocument()
+		expect(screen.getByText("Scheduling opens")).toBeInTheDocument()
+		expect(screen.getByText("June 1, 2027")).toBeInTheDocument()
 	})
 
-	it("gives the scheduling deadline while setup is open and unfinished", async () => {
+	it("gives the scheduling deadline while setup is open, and Edit while a deferral is", async () => {
 		await renderPart(
 			examPartInfo({
 				examPartState: "SchedulingOpen",
 				schedulingIsComplete: false,
 				schedulingDeadline: "2027-04-20",
 				isSchedulingOpen: true,
+				isDeferralOpen: true,
 			}),
 		)
 		expect(
 			screen.getByText("Schedule before April 20, 2027."),
 		).toBeInTheDocument()
-		// Setup being open earns the Edit affordance.
 		expect(screen.getByRole("link", { name: /Edit/ })).toHaveAttribute(
 			"href",
 			"/programs/frm/exam-setup",
 		)
+		expect(
+			screen.getByRole("link", { name: /Schedule Exam/ }),
+		).toBeInTheDocument()
 	})
 
-	it("offers Register Again only while registration is open", async () => {
+	it("withholds Edit when only scheduling, not a deferral, is open", async () => {
+		await renderPart(
+			examPartInfo({
+				examPartState: "SchedulingOpen",
+				isSchedulingOpen: true,
+				isDeferralOpen: false,
+			}),
+		)
+		expect(screen.queryByRole("link", { name: /Edit/ })).not.toBeInTheDocument()
+	})
+
+	it("offers Register Again only while registration is open and Part I on offer", async () => {
 		const part = examPartInfo({
 			examPartState: "SchedulingClosedNeverScheduled",
+			examAttemptAdminName: "May 2027",
 		})
 		const { unmount } = await renderPart(
 			part,
 			programDetail({
 				programType: "FRM",
 				currentRegistrationIsOpen: true,
+				currentRegistrationCanRegPartI: true,
+				nextRegistrationOpenDate: "2027-12-01",
 			}),
 		)
+		expect(screen.getByText("Your registration has expired.")).toBeInTheDocument()
 		expect(
-			screen.getByText(
-				"Your registration expired before a sitting was scheduled.",
-			),
+			screen.getByText("Register again on December 1, 2027."),
 		).toBeInTheDocument()
+		// No administration heads an expired registration.
+		expect(screen.queryByText("May 2027")).not.toBeInTheDocument()
 		expect(
 			screen.getByRole("link", { name: /Register Again/ }),
-		).toBeInTheDocument()
+		).toHaveAttribute("href", "/programs/frm/register")
 		unmount()
 
-		await renderPart(part, FRM)
+		await renderPart(part, programDetail({ programType: "FRM", currentRegistrationIsOpen: true }))
 		expect(
 			screen.queryByRole("link", { name: /Register Again/ }),
 		).not.toBeInTheDocument()
 	})
 
 	it("speaks each remaining state's line", async () => {
-		const cases: Array<[Partial<ExamPartInfo>, string | RegExp]> = [
-			[
-				{ examPartState: "Unpaid", unpaidOrderPayByDate: null },
-				"Your registration is not yet paid.",
-			],
+		const cases: Array<[Partial<ExamPartInfo>, string]> = [
 			[
 				{
 					examPartState: "AwaitingSchedulingToOpen",
@@ -106,10 +129,7 @@ describe("what the card says per exam-part state", () => {
 				},
 				"Exam setup opens March 1, 2027.",
 			],
-			[
-				{ examPartState: "AwaitingSchedulingToOpen" },
-				"Exam setup opens soon.",
-			],
+			[{ examPartState: "AwaitingSchedulingToOpen" }, "Exam setup opens soon."],
 			[
 				{ examPartState: "SchedulingOpen", schedulingIsComplete: true },
 				"Your exam is scheduled.",
@@ -133,16 +153,10 @@ describe("what the card says per exam-part state", () => {
 				},
 				"Results out on 1 July.",
 			],
-			[
-				{ examPartState: "SchedulingClosedResultsAvailable", result: "P" },
-				/./,
-			],
 		]
 		for (const [overrides, text] of cases) {
 			const { unmount } = await renderPart(examPartInfo(overrides))
-			if (typeof text === "string") {
-				expect(screen.getByText(text)).toBeInTheDocument()
-			}
+			expect(screen.getByText(text)).toBeInTheDocument()
 			unmount()
 		}
 	})
@@ -156,21 +170,32 @@ describe("what the card says per exam-part state", () => {
 })
 
 describe("the facts grid", () => {
-	it("shows the scheduled sitting with its zone, and honest empties otherwise", async () => {
-		const { unmount } = await renderPart(
+	it("shows the scheduled sitting with its zone, linking the provider once booked", async () => {
+		await renderPart(
 			examPartInfo({
+				schedulingIsComplete: true,
 				schedulingExamDateTimeSelected: "2027-05-08T09:00:00",
 				schedulingExamDateTimeZoneSelected: "EST",
 				schedulingExamLocationSelected: "Boston",
 				schedulingExamProviderName: "Pearson VUE",
+				schedulingExamAccessURL: "https://exam.example.test/launch",
 			}),
 		)
 		expect(screen.getByText(/\(EST\)/)).toBeInTheDocument()
 		expect(screen.getByText("Boston")).toBeInTheDocument()
-		expect(screen.getByText("Pearson VUE")).toBeInTheDocument()
-		unmount()
+		// FRM is always in person, whatever the stored format says.
+		expect(screen.getByText("In-Person")).toBeInTheDocument()
+		expect(screen.getByRole("link", { name: /Pearson VUE/ })).toHaveAttribute(
+			"href",
+			"https://exam.example.test/launch",
+		)
+	})
 
-		await renderPart(examPartInfo({ examFormat: null }))
+	it("shows honest empties before anything is booked", async () => {
+		await renderPart(
+			examPartInfo({ examFormat: null }),
+			programDetail({ programType: "SCR" }),
+		)
 		expect(screen.getByText("Not available")).toBeInTheDocument()
 		expect(screen.getByText("Not scheduled")).toBeInTheDocument()
 		expect(screen.getByText("Not selected")).toBeInTheDocument()
@@ -179,21 +204,33 @@ describe("the facts grid", () => {
 })
 
 describe("the hand-offs", () => {
-	it("links the digital badge and Take Exam in new windows when granted", async () => {
-		await renderPart(
+	it("links the digital badge for a pass, and Take Exam with its caption, in new windows", async () => {
+		const { unmount } = await renderPart(
 			examPartInfo({
+				examPartState: "SchedulingClosedResultsAvailable",
+				result: "Pass",
+				badgeURL: "https://badges.example.test/frm.png",
 				badgePageURL: "https://badges.example.test/frm",
-				showTakeExam: true,
-				schedulingExamAccessURL: "https://exam.example.test/launch",
 			}),
 		)
 		expect(
 			screen.getByRole("link", { name: /Digital Badge/ }),
 		).toHaveAttribute("href", "https://badges.example.test/frm")
+		unmount()
+
+		await renderPart(
+			examPartInfo({
+				showTakeExam: true,
+				schedulingExamAccessURL: "https://exam.example.test/launch",
+			}),
+		)
 		expect(screen.getByRole("link", { name: /Take Exam/ })).toHaveAttribute(
 			"href",
 			"https://exam.example.test/launch",
 		)
+		expect(
+			screen.getByText(/check in 30 minutes prior to the appointment time/),
+		).toBeInTheDocument()
 	})
 
 	it("withholds Take Exam when the flag is off, even with an access URL", async () => {

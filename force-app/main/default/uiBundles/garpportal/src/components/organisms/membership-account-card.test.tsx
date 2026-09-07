@@ -1,20 +1,17 @@
-import { screen } from "@testing-library/react"
-import userEvent from "@testing-library/user-event"
-import { http, HttpResponse } from "msw"
+import { screen, within } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
 import type { AccountView } from "@/api/account/types"
 import { MembershipAccountCard } from "@/components/organisms/membership-account-card"
-import { MEMBERSHIP_REGISTRATION_URL } from "@/config/membership-account"
 import { accountStanding, accountView } from "@/testing/factories/account"
-import { memberPortalEnvelope } from "@/testing/factories/envelope"
-import { server } from "@/testing/msw/server"
 import { renderWithRouterProviders } from "@/testing/router"
 
-const AUTO_RENEW_ON_PATH =
-	"/services/apexrest/memberportal/membershipAutoRenewOn"
-const AUTO_RENEW_OFF_PATH =
-	"/services/apexrest/memberportal/membershipAutoRenewOff"
+/**
+ * The card's states — which notice and which single footer action each
+ * membership standing produces. The auto-renew wire behaviour (Turn On's
+ * request, the Disable confirm dialog) is in
+ * `membership-account-card.auto-renew.test.tsx`.
+ */
 
 /** An Individual member with a live contract; flags overridden per case. */
 function individual(
@@ -38,6 +35,23 @@ async function renderCard(
 	)
 }
 
+describe("MembershipAccountCard — facts", () => {
+	it("lists GARP ID, member type, status and member since", async () => {
+		await renderCard(individual({ isAutoRenewEnabled: true }))
+
+		expect(screen.getByText("G-STANDING")).toBeInTheDocument()
+		expect(screen.getByText("Individual")).toBeInTheDocument()
+		expect(screen.getByText("Active (until March 1, 2027)")).toBeInTheDocument()
+		expect(screen.getByText("Member Since")).toBeInTheDocument()
+		expect(screen.getByText("March 1, 2020")).toBeInTheDocument()
+	})
+
+	it("marks a certification holder", async () => {
+		await renderCard(individual({ isCertHolder: true }))
+		expect(screen.getByText("Certification holder")).toBeInTheDocument()
+	})
+})
+
 describe("MembershipAccountCard — auto-renew off", () => {
 	it("warns with the expiry date and offers Turn On plus Renew Now", async () => {
 		await renderCard(individual({ isAutoRenewEnabled: false }))
@@ -47,40 +61,26 @@ describe("MembershipAccountCard — auto-renew off", () => {
 		expect(
 			screen.getByRole("button", { name: "Turn On Auto-Renew" }),
 		).toBeEnabled()
-		const renewNow = screen.getByRole("link", { name: "Renew Now" })
-		expect(renewNow).toHaveAttribute("href", MEMBERSHIP_REGISTRATION_URL)
+		// The in-app membership form, tagged so the sale is attributed to this card.
+		expect(screen.getByRole("link", { name: "Renew Now" })).toHaveAttribute(
+			"href",
+			"/membership/register?track_cta=PortalMyAccountPage",
+		)
 		expect(
 			screen.queryByRole("button", { name: "Disable Auto Renew" }),
 		).not.toBeInTheDocument()
 	})
-
-	it("Turn On posts to the auto-renew service", async () => {
-		const user = userEvent.setup()
-		const hits: number[] = []
-		server.use(
-			http.post(AUTO_RENEW_ON_PATH, () => {
-				hits.push(1)
-				// No orderId: nothing further to hand to Stripe in this test.
-				return HttpResponse.json(
-					memberPortalEnvelope({ statusCode: 200, orderId: null }),
-				)
-			}),
-		)
-		await renderCard(individual({ isAutoRenewEnabled: false }))
-
-		await user.click(screen.getByRole("button", { name: "Turn On Auto-Renew" }))
-
-		expect(hits).toHaveLength(1)
-	})
 })
 
 describe("MembershipAccountCard — auto-renew on", () => {
-	it("confirms the standing arrangement and offers only Disable", async () => {
+	it("confirms the standing arrangement with the rate and offers only Disable", async () => {
 		await renderCard(individual({ isAutoRenewEnabled: true }))
 
-		expect(
-			screen.getByText(/GARP will automatically renew my Individual Membership/),
-		).toBeInTheDocument()
+		const notice = screen.getByText(
+			/GARP will automatically renew your Individual Membership/,
+		)
+		expect(notice).toHaveTextContent("USD 195")
+		expect(within(notice).getByText("March 1, 2027")).toBeInTheDocument()
 		expect(
 			screen.getByRole("button", { name: "Disable Auto Renew" }),
 		).toBeEnabled()
@@ -92,38 +92,40 @@ describe("MembershipAccountCard — auto-renew on", () => {
 		).not.toBeInTheDocument()
 	})
 
-	it("Disable posts to the auto-renew-off service", async () => {
-		const user = userEvent.setup()
-		const hits: number[] = []
-		server.use(
-			http.post(AUTO_RENEW_OFF_PATH, () => {
-				hits.push(1)
-				return HttpResponse.json(memberPortalEnvelope({ statusCode: 200 }))
-			}),
-		)
-		await renderCard(individual({ isAutoRenewEnabled: true }))
-
-		await user.click(screen.getByRole("button", { name: "Disable Auto Renew" }))
-
-		expect(hits).toHaveLength(1)
+	it("quotes the certification-holder rate", async () => {
+		await renderCard(individual({ isAutoRenewEnabled: true, isCertHolder: true }))
+		expect(
+			screen.getByText(/GARP will automatically renew your Individual Membership/),
+		).toHaveTextContent("USD 150")
 	})
 })
 
 describe("MembershipAccountCard — transitional states", () => {
-	it("a pending renewal order shows Payment Pending and View Order alone", async () => {
+	it("a pending renewal order shows Payment Pending, names the order, and offers View Order alone", async () => {
 		await renderCard(
 			individual({
-				isAutoRenewEnabled: false,
+				isAutoRenewEnabled: true,
 				pendingOrderId: "801PENDING",
 				pendingOrderNumber: "ORD-9",
+				pendingOrderAmount: 195,
 			}),
 		)
 
 		expect(screen.getByText("Payment Pending")).toBeInTheDocument()
+		expect(
+			screen.getByText("Order ORD-9 — $195.00 is waiting to be paid."),
+		).toBeInTheDocument()
 		expect(screen.getByRole("link", { name: "View Order" })).toHaveAttribute(
 			"href",
 			"/my-account/orders/801PENDING",
 		)
+		// Both auto-renew notices are suppressed while an order is pending.
+		expect(
+			screen.queryByText(/GARP will automatically renew/),
+		).not.toBeInTheDocument()
+		expect(
+			screen.queryByRole("button", { name: "Disable Auto Renew" }),
+		).not.toBeInTheDocument()
 		expect(
 			screen.queryByRole("button", { name: "Turn On Auto-Renew" }),
 		).not.toBeInTheDocument()
@@ -132,16 +134,31 @@ describe("MembershipAccountCard — transitional states", () => {
 		).not.toBeInTheDocument()
 	})
 
-	it("an in-flight auto-renew setup parks Renew Now disabled with the pending note", async () => {
+	it("back from Stripe, says the card is saved and keeps Renew Now available", async () => {
 		await renderCard(individual({ isAutoRenewEnabled: false }), true)
 
+		expect(screen.getByText("Card saved")).toBeInTheDocument()
 		expect(
-			screen.getByText("Auto-Renew is being setup, please check back later."),
+			screen.getByText(/Auto-renew takes effect once the payment is confirmed/),
 		).toBeInTheDocument()
-		expect(screen.getByRole("button", { name: "Renew Now" })).toBeDisabled()
+		expect(screen.getByRole("link", { name: "Renew Now" })).toBeEnabled()
 		expect(
 			screen.queryByRole("button", { name: "Turn On Auto-Renew" }),
 		).not.toBeInTheDocument()
+	})
+
+	it("a lapsed Individual is asked to renew and gets no auto-renew notice", async () => {
+		await renderCard(
+			individual({
+				memberStatus: "Expired",
+				statusLabel: "Lapsed",
+				expirationDate: "2026-03-01",
+			}),
+		)
+
+		expect(screen.getByText("Lapsed (expired March 1, 2026)")).toBeInTheDocument()
+		expect(screen.getByRole("link", { name: "Renew Now" })).toBeInTheDocument()
+		expect(screen.queryByText(/Auto renew is off/)).not.toBeInTheDocument()
 	})
 
 	it("an Affiliate is offered the Upgrade path instead of renewal controls", async () => {
@@ -154,10 +171,13 @@ describe("MembershipAccountCard — transitional states", () => {
 
 		expect(screen.getByRole("link", { name: "Upgrade" })).toHaveAttribute(
 			"href",
-			MEMBERSHIP_REGISTRATION_URL,
+			"/membership/register?track_cta=PortalMyAccountPage",
 		)
 		expect(
 			screen.queryByRole("button", { name: "Turn On Auto-Renew" }),
+		).not.toBeInTheDocument()
+		expect(
+			screen.queryByRole("link", { name: "Renew Now" }),
 		).not.toBeInTheDocument()
 	})
 })

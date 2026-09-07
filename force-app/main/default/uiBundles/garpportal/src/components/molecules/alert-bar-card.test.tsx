@@ -20,7 +20,7 @@ function model(overrides: Partial<AlertBarModel> = {}): AlertBarModel {
 	return {
 		programme: "FRM Part I",
 		message: "You have not booked a seat for your exam yet.",
-		deadlineLabel: "Book by 7 November 2026",
+		deadlineLabel: "Schedule by 7 November 2026",
 		tone: "urgent",
 		action: {
 			label: "Schedule your exam",
@@ -61,7 +61,7 @@ describe("AlertBarCard — rendering the resolved model", () => {
 
 		const alert = screen.getByRole("alert")
 		expect(alert).toHaveTextContent("FRM Part I")
-		expect(alert).toHaveTextContent("Book by 7 November 2026")
+		expect(alert).toHaveTextContent("Schedule by 7 November 2026")
 		expect(alert).toHaveTextContent(
 			"You have not booked a seat for your exam yet.",
 		)
@@ -77,13 +77,13 @@ describe("AlertBarCard — rendering the resolved model", () => {
 		expect(screen.queryByRole("alert")).not.toBeInTheDocument()
 	})
 
-	it("drops the deadline separator and the CTA when the model has neither", () => {
+	it("drops the deadline line and the CTA when the model has neither", () => {
 		renderCard(
 			"expanded",
 			model({ deadlineLabel: null, action: null }),
 		)
 
-		expect(screen.getByRole("alert")).not.toHaveTextContent("·")
+		expect(screen.getByRole("alert")).not.toHaveTextContent(/schedule by/i)
 		expect(screen.queryByRole("link")).not.toBeInTheDocument()
 	})
 })

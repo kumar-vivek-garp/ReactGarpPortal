@@ -1,6 +1,8 @@
 export type {
 	CompletedProgram,
 	EnrolledProgram,
+	EppExamType,
+	EppOptInResult,
 	ExamDeadline,
 	ExamPartInfo,
 	ExamPartState,
@@ -17,6 +19,11 @@ export type {
 } from "@/api/programs/types"
 export { fetchPrograms } from "@/api/programs/programs"
 export { fetchProgramDetail } from "@/api/programs/program-detail"
+export {
+	saveEppOptIn,
+	toEppExamType,
+	type EppOptInInput,
+} from "@/api/programs/epp-opt-in"
 export {
 	programDetailQueryOptions,
 	programsQueryKeys,

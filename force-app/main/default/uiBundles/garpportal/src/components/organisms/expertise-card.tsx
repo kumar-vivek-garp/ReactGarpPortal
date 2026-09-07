@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { animated, useTrail } from "@react-spring/web"
 import { ChevronDownIcon, X } from "lucide-react"
 
@@ -113,6 +113,26 @@ function ExpertiseMultiSelect({
 	const selected = useMemo(() => new Set(chosen), [chosen])
 	const summary = chosen.length === 0 ? "" : `${chosen.length} selected`
 
+	/**
+	 * Whether the press currently in progress began on a menu item.
+	 *
+	 * Radix turns a pointer-up over an item into a selection even when the press
+	 * began on the TRIGGER (`react-menu`: `onPointerUp` calls `currentTarget
+	 * .click()` whenever its own pointer-down never fired). That is deliberate —
+	 * it lets a native-select-style press-and-drag pick an option — but on a
+	 * multi-select it means one ordinary click both opens the list AND ticks
+	 * whatever option the list is covering. There is always one: with a dozen
+	 * topics the menu is taller than the room above or below it, so Radix's
+	 * collision handling lays it directly over the field.
+	 *
+	 * So selection is kept to presses that START on an item. Preventing the
+	 * default on our own `onPointerUp` is what suppresses Radix's synthetic
+	 * click — its `composeEventHandlers` skips the internal handler once the
+	 * event is defaultPrevented. A real click still selects through the native
+	 * `click` event, and the keyboard path never goes near any of this.
+	 */
+	const pressBeganOnItem = useRef(false)
+
 	const chipTrails = useTrail(chosen.length, {
 		from: { opacity: 0, transform: "scale(0.9)" },
 		to: { opacity: 1, transform: "scale(1)" },
@@ -136,6 +156,8 @@ function ExpertiseMultiSelect({
 			<DropdownMenu
 				modal={false}
 				onOpenChange={(open) => {
+					// Never carry a half-finished press across an open/close.
+					pressBeganOnItem.current = false
 					if (!open) onClose()
 				}}
 			>
@@ -182,6 +204,13 @@ function ExpertiseMultiSelect({
 										onChosenChange(orderedChosen(options, nextSet))
 									}}
 									onSelect={(event) => event.preventDefault()}
+									onPointerDown={() => {
+										pressBeganOnItem.current = true
+									}}
+									onPointerUp={(event) => {
+										if (!pressBeganOnItem.current) event.preventDefault()
+										pressBeganOnItem.current = false
+									}}
 								>
 									{decodeLabel(option.label)}
 								</DropdownMenuCheckboxItem>

@@ -2,6 +2,7 @@ import { createDataSDK } from "@salesforce/platform-sdk"
 
 import {
 	AppError,
+	memberPortalRefusalPayload,
 	normalizeHttpResponse,
 	unwrapApiResult,
 	unwrapMemberPortalEnvelope,
@@ -14,17 +15,15 @@ import type {
 const EXAM_SETUP_FEES_PATH = "/services/apexrest/memberportal/examSetupFees"
 
 /**
- * Prices a raised modification.
+ * Prices a raised modification, for the "Pay Fees" outcome.
  *
- * **Written but not yet called.** It returns fee lines and nothing else — no
- * `orderId`, no checkout URL — and `examSetupAuthorize` refuses any sitting
- * whose Opportunity is not already `Closed`. The endpoint that raises that
- * Opportunity (the legacy's `createExamRescheduleFeesOrder`) was never ported,
- * so there is no way to pay what this quotes.
+ * Called only after `examSetupId` has answered `nextScreen: "Pay Fees"` — the
+ * `modificationId` it needs does not exist until that write has happened, which
+ * is why fees cannot be shown while the member is still choosing.
  *
- * Kept here, exercised by tests, and wired the moment that endpoint lands.
- * `predictFee` in `lib/exam-setup-presentation` covers the member-facing need
- * in the meantime, from the fixed literals Apex itself uses.
+ * Returns lines only: no `orderId`, no checkout URL. Payment happens at the
+ * legacy checkout (`examSetupFeesCheckoutHref`). A failure here is not fatal —
+ * the caller shows the checkout link without the breakdown.
  */
 export async function fetchExamSetupFees(
 	modificationId: string,
@@ -48,6 +47,11 @@ export async function fetchExamSetupFees(
 		fallbackErrorMessage: "Unable to price your exam change. Please try again.",
 	})
 
+	const refusal = memberPortalRefusalPayload<ExamSetupFeesView>(result)
+	if (refusal) {
+		return { ...refusal, fees: Array.isArray(refusal.fees) ? refusal.fees : [] }
+	}
+
 	const envelope = unwrapApiResult(result)
 
 	const data = unwrapMemberPortalEnvelope(envelope, {
@@ -55,13 +59,6 @@ export async function fetchExamSetupFees(
 		missingDataMessage: "No fee data was returned.",
 		status: result.status,
 	})
-
-	if (data.statusCode !== 200) {
-		throw new AppError({
-			messages: [data.statusMessage ?? "Unable to price your exam change."],
-			status: data.statusCode,
-		})
-	}
 
 	return { ...data, fees: Array.isArray(data.fees) ? data.fees : [] }
 }

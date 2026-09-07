@@ -2,8 +2,12 @@ import { createFileRoute } from "@tanstack/react-router"
 
 import { redirectMemberToPortalForm } from "@/auth/registration-guard"
 import { ProgramRegistrationPanel } from "@/components/forms/program-registration/program-registration-panel"
-import { registrationSearchSchema } from "@/config/registration"
+import {
+	registrationDocumentTitle,
+	registrationSearchSchema,
+} from "@/config/registration"
 import { pageTitle } from "@/lib/document-title"
+import { registrationLegProps } from "@/lib/registration-paths"
 import { resolveExamProgram } from "@/lib/registration-programs"
 
 /**
@@ -29,19 +33,20 @@ export const Route = createFileRoute("/_publicFormLayout/registration/$programTy
 	 * The programme's own short name, not the raw slug — `riskai` uppercased
 	 * reads "RISKAI Registration". Unbuilt programmes keep the slug fallback.
 	 */
-	head: ({ params }) => ({
-		meta: [
-			{
-				title: pageTitle(
-					`${
-						resolveExamProgram(params.programType)?.abbrevName ||
-						params.programType.toUpperCase() ||
-						"Program"
-					} Registration`,
-				),
-			},
-		],
-	}),
+	head: ({ params }) => {
+		const program = resolveExamProgram(params.programType)
+		return {
+			meta: [
+				{
+					title: pageTitle(
+						program
+							? registrationDocumentTitle(program)
+							: `${params.programType.toUpperCase() || "Program"} Registration`,
+					),
+				},
+			],
+		}
+	},
 	component: PublicRegistrationPage,
 })
 
@@ -53,9 +58,8 @@ function PublicRegistrationPage() {
 		<ProgramRegistrationPanel
 			programType={programType}
 			regCode={search.regCode ?? search.teamCode}
-			paymentReturn={
-				search.stripe_return === "1" ? { orderNumber: search.on } : null
-			}
+			trackCta={search.track_cta}
+			{...registrationLegProps(search)}
 		/>
 	)
 }

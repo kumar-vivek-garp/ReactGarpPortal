@@ -3,13 +3,19 @@ import userEvent from "@testing-library/user-event"
 import { http, HttpResponse } from "msw"
 import { describe, expect, it } from "vitest"
 
+import { accountQueryKeys } from "@/api/account/query-options"
 import type { AccountView } from "@/api/account/types"
-import { personalInfoQueryKeys } from "@/api/personal-info/query-options"
-import type { CountryOption } from "@/api/personal-info/types"
 import { AccountInformationPanel } from "@/components/organisms/account-information-panel"
 import { memberPortalEnvelope } from "@/testing/factories/envelope"
 import { accountView, completeness } from "@/testing/factories/account"
-import { personalInfoEditData } from "@/testing/factories/personal-info"
+import {
+	personalInfoEditData,
+	seedPersonalInfoCache,
+} from "@/testing/factories/personal-info"
+import {
+	accountOptionsView,
+	portalCountryOption,
+} from "@/testing/factories/account-options"
 import { server } from "@/testing/msw/server"
 import { createTestQueryClient } from "@/testing/query-client"
 import { renderWithRouterProviders } from "@/testing/router"
@@ -17,8 +23,8 @@ import { renderWithRouterProviders } from "@/testing/router"
 const OPTIONS_PATH = "/services/apexrest/memberportal/options"
 const EXPERTISE_PATH = "/services/apexrest/memberportal/expertise"
 
-const COUNTRIES: CountryOption[] = [
-	{ label: "United States", value: "United States", phoneCode: "+1" },
+const COUNTRIES = [
+	portalCountryOption({ name: "United States", phoneCode: "1" }),
 ]
 
 /** The two queries the always-mounted cards fire on panel mount. */
@@ -48,11 +54,14 @@ async function renderPanel(account: AccountView = accountView()) {
 	const queryClient = createTestQueryClient()
 	// The Personal dialog seeds from personal-info + countries; pre-cached so
 	// opening it does not need the GraphQL transport.
-	queryClient.setQueryData(
-		personalInfoQueryKeys.edit(account.identity.contactId ?? ""),
+	seedPersonalInfoCache(
+		queryClient,
 		personalInfoEditData({ contactId: account.identity.contactId ?? "" }),
 	)
-	queryClient.setQueryData(personalInfoQueryKeys.countries, COUNTRIES)
+	queryClient.setQueryData(
+		accountQueryKeys.options,
+		accountOptionsView({ countries: COUNTRIES }),
+	)
 	return renderWithRouterProviders(
 		<AccountInformationPanel account={account} />,
 		{ queryClient },

@@ -12,9 +12,12 @@ export const ERRATA_TITLE = "Curriculum errata"
 /**
  * Programmes that offer errata, as route slugs.
  *
- * Apex entitles a member holding an activated contract on FRM, SCR, RiskAI,
- * RAIJ or ICBRR. Anything else — FRR, FRR25, micro courses — has no errata
- * route, matching the legacy's own gate on the programme rail.
+ * Every programme the `errataForm` action accepts (`frm|scr|riskai|raij|frr`)
+ * plus ICBRR, which the programme rail still links. Entitlement is Apex's
+ * call — it answers 403 for a member with no activated contract, and the
+ * page renders that as `ERRATA_NO_ACCESS` — so this list only decides which
+ * programmes get a link at all. FRR25 and micro courses have no curriculum
+ * to report against and stay out.
  */
 export const ERRATA_PROGRAM_SLUGS = [
 	"frm",
@@ -22,6 +25,7 @@ export const ERRATA_PROGRAM_SLUGS = [
 	"riskai",
 	"rai",
 	"raij",
+	"frr",
 	"icbrr",
 ] as const
 

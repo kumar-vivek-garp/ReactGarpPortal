@@ -3,10 +3,16 @@ import { useState } from "react"
 import type { LucideIcon } from "lucide-react"
 import { CalendarClock, TriangleAlert } from "lucide-react"
 
+import { useQuery } from "@tanstack/react-query"
+
 import { AppError } from "@/api/client"
+import { examResumeQueryOptions } from "@/api/registration/query-options"
 import { Button } from "@/components/atoms/button"
 import { Skeleton } from "@/components/atoms/skeleton"
 import { ExamRegistrationForm } from "@/components/forms/exam-registration/exam-registration-form"
+import { CheckoutCancelledScreen } from "@/components/forms/exam-registration/sections/checkout-cancelled-screen"
+import { PaymentReturnScreen } from "@/components/forms/exam-registration/sections/payment-return-screen"
+import { RegistrationSurvey } from "@/components/forms/registration-survey/registration-survey"
 import {
 	REGISTRATION_BAR_CONTROL_GROUP,
 	REGISTRATION_BAR_CONTROL_HEIGHT,
@@ -50,11 +56,20 @@ type ExamRegistrationPanelProps = {
 	/**
 	 * The payment provider's answer, when the browser has just come back from
 	 * it. Arrives as a fresh page load with no React state, so it has to be
-	 * read from the URL rather than remembered.
+	 * read from the URL rather than remembered. `statusId` is the order — or,
+	 * under the deferred flow, the staged row — to poll on.
 	 */
-	paymentReturn?: {
-		orderNumber?: string
-	} | null
+	paymentReturn?: { statusId?: string; orderNumber?: string } | null
+	/** The provider's cancel leg for an ORDER: roll it back, offer a restart. */
+	checkoutCancelled?: { orderId?: string } | null
+	/**
+	 * A staged registration to rebuild the form from (deferred flow). Arrives
+	 * on the provider's cancel leg — the server appends it to that URL — and
+	 * on the declined screen's Try again.
+	 */
+	resumeStagedId?: string
+	/** The `?track_cta=` attribution tag, for the identity call. */
+	trackCta?: string
 }
 
 /**
@@ -249,20 +264,37 @@ function ExamRegistrationPanel({
 	regCode,
 	onNavigateBack,
 	paymentReturn,
+	checkoutCancelled,
+	resumeStagedId,
+	trackCta,
 }: ExamRegistrationPanelProps) {
 	const [outcome, setOutcome] = useState<{
 		kind: RegistrationOutcomeKind
 		orderNumber?: string | null
 		total?: number | null
 		currency?: string | null
+		/** The order or staged id — the survey's save key. */
+		settlementId: string | null
 	} | null>(null)
-	const load = useExamRegistrationLoad(programType, regCode)
+	/* The survey shows once after a success, then gives way to the actions. */
+	const [surveyDone, setSurveyDone] = useState(false)
+	/*
+	 * Neither payment leg renders the form, so neither loads it: the return
+	 * leg should be network-silent apart from its own status poll.
+	 */
+	const onPaymentLeg = Boolean(paymentReturn || checkoutCancelled)
+	const load = useExamRegistrationLoad(programType, regCode, undefined, {
+		enabled: !onPaymentLeg,
+	})
+	const resume = useQuery(
+		examResumeQueryOptions(onPaymentLeg ? null : resumeStagedId),
+	)
 	const currentUser = useCurrentUser()
 	const contactId = currentUser.data?.contactId ?? ""
 	/* Empty for a guest — the public route serves this form with no session. */
 	const hasContact = Boolean(contactId)
 	const isAuthenticated = Boolean(currentUser.data)
-	const profile = usePersonalInfoEditData(contactId, hasContact)
+	const profile = usePersonalInfoEditData(hasContact)
 
 	/*
 	 * A return from the payment provider is shown before anything else is
@@ -271,23 +303,48 @@ function ExamRegistrationPanel({
 	 */
 	if (paymentReturn) {
 		return (
-			<RegistrationOutcome
-				kind="paid"
+			<PaymentReturnScreen
+				statusId={paymentReturn.statusId}
 				orderNumber={paymentReturn.orderNumber}
+				programName={program.abbrevName}
 				isAuthenticated={isAuthenticated}
 			/>
 		)
 	}
 
+	if (checkoutCancelled) {
+		return (
+			<CheckoutCancelledScreen
+				orderId={checkoutCancelled.orderId}
+				isAuthenticated={isAuthenticated}
+			/>
+		)
+	}
+
+	/*
+	 * Done. The "Complete Your Profile" survey first — GarpAppv1 shows it after
+	 * every successful registration, card or offline — then the closing copy
+	 * with its actions. A REG- number is shown as a reference, not an order.
+	 */
 	if (outcome) {
 		return (
 			<RegistrationOutcome
 				kind={outcome.kind}
 				orderNumber={outcome.orderNumber}
+				referenceLabel={outcome.orderNumber?.startsWith("REG-") ? "Reference" : "Order"}
 				total={outcome.total}
 				currency={outcome.currency}
 				isAuthenticated={isAuthenticated}
-			/>
+				hideActions={!surveyDone}
+			>
+				{surveyDone ? null : (
+					<RegistrationSurvey
+						surveyKey={outcome.settlementId}
+						programName={program.abbrevName}
+						onFinished={() => setSurveyDone(true)}
+					/>
+				)}
+			</RegistrationOutcome>
 		)
 	}
 
@@ -295,14 +352,17 @@ function ExamRegistrationPanel({
 	 * The profile is only waited for when there is a contact to load. A
 	 * disabled React Query sits at `status: "pending"` for ever, so testing it
 	 * unconditionally strands a guest — who has no contact id, so the query
-	 * never runs — on the skeleton permanently. `currentUser` is settled
-	 * before this by both route guards; it is tested anyway so the one-shot
-	 * form seed cannot lose a race with it.
+	 * never runs — on the skeleton permanently. The same applies to the resume
+	 * read, waited for only when there is a staged id: the form seeds itself at
+	 * mount, so it must not mount before the restored payload is in hand.
+	 * `currentUser` is settled before this by both route guards; it is tested
+	 * anyway so the one-shot form seed cannot lose a race with it.
 	 */
 	if (
 		load.isPending ||
 		currentUser.isPending ||
-		(hasContact && profile.isPending)
+		(hasContact && profile.isPending) ||
+		(Boolean(resumeStagedId) && resume.isPending)
 	) {
 		return <RegistrationSkeleton hasBackLink={isAuthenticated} />
 	}
@@ -351,16 +411,32 @@ function ExamRegistrationPanel({
 			program={program}
 			programType={programType}
 			regCode={regCode}
+			trackCta={trackCta}
 			onNavigateBack={onNavigateBack}
 			onRegistered={(result: ExamSubmitOutcome) => {
 				if (result.kind === "redirecting") return
 				setOutcome({
 					kind: result.kind,
-					orderNumber: result.result.orderNumber,
+					orderNumber:
+						result.result.orderNumber ?? result.result.registrationRef ?? null,
 					total: result.result.total,
 					currency: "USD",
+					settlementId: result.settlementId,
 				})
 			}}
+			/*
+			 * Restored only when the server says the row is still payable and
+			 * holds a payload. Anything else — expired, already paid, unknown —
+			 * is a plain empty form, not an error screen.
+			 */
+			resume={
+				resumeStagedId && resume.data?.resumable && resume.data.payload
+					? {
+							stagedId: resume.data.stagedId ?? resumeStagedId,
+							request: resume.data.payload,
+						}
+					: null
+			}
 			// A missing profile is not fatal — the form renders empty and the
 			// member fills it in, which beats blocking registration on a
 			// secondary read.

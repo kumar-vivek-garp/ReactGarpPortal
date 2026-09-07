@@ -8,7 +8,9 @@ import {
 import type { EventVariant } from "@/api/registration/event-types"
 import {
 	calculateFees,
+	fetchExamDemographics,
 	fetchExamRegistration,
+	fetchExamResume,
 	fetchRegistrationOptions,
 } from "@/api/registration/exam-registration"
 import type { FeesRequest } from "@/api/registration/exam-types"
@@ -29,6 +31,11 @@ export const registrationQueryKeys = {
 	fees: (request: unknown) => ["registration", "fees", request] as const,
 	/** Company/school typeahead lists — one static payload per session. */
 	options: ["registration", "options"] as const,
+	/** A staged registration's saved payload — one-shot, per row. */
+	resume: (stagedId: string | null | undefined) =>
+		["registration", "resume", stagedId ?? null] as const,
+	/** Survey picklists — static per session. */
+	demographics: ["registration", "demographics"] as const,
 	/** One event's registration load — variant + id name the record family. */
 	event: (variant: EventVariant, eventId: string) =>
 		["registration", "event", variant, eventId.trim()] as const,
@@ -87,6 +94,37 @@ export function examRegistrationQueryOptions(
 		meta: { toastError: true, errorTitle: "Unable to open registration" },
 	})
 }
+
+/**
+ * The payload a staged registration was created from (deferred flow), read
+ * once when the browser lands with `?resume=`. Never cached: the row's state
+ * moves on the moment it is paid or retried, and a stale restore would put an
+ * already-paid registration back on screen. No toast — an unrestorable form
+ * is an empty one, not an error screen.
+ */
+export function examResumeQueryOptions(stagedId: string | null | undefined) {
+	return queryOptions({
+		queryKey: registrationQueryKeys.resume(stagedId),
+		queryFn: () => fetchExamResume(stagedId as string),
+		enabled: Boolean(stagedId),
+		staleTime: 0,
+		gcTime: 0,
+		retry: false,
+	})
+}
+
+/**
+ * Survey picklists for a GUEST — the guest profile cannot read the member
+ * portal's options endpoint, so the registration module serves its own copy.
+ * No toast: the survey is optional, and without options it simply is not
+ * offered.
+ */
+export const examDemographicsQueryOptions = queryOptions({
+	queryKey: registrationQueryKeys.demographics,
+	queryFn: fetchExamDemographics,
+	staleTime: Infinity,
+	retry: false,
+})
 
 /* ===================== event registration ===================== */
 

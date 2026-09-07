@@ -1,46 +1,13 @@
-import type { CatalogueItem, StudyMaterial } from "@/api/study-materials/types"
+import type { StudyMaterialItem } from "@/api/study-materials/types"
 import { formatLongDate } from "@/lib/account-format"
 import { daysUntil } from "@/lib/days-until"
 import type { MetaLine } from "@/lib/meta-line"
+import { orderDetailsPath } from "@/lib/order-paths"
+import { resolveExperienceHref } from "@/lib/program-card-links"
 import type { StatusTone } from "@/lib/status-tone"
-
-/** Which bucket an item came from — entitlements carry status, catalogue does not. */
-export type StudyItemVariant = "owned" | "catalogue"
-
-export type StudyItemLink = {
-	label: string
-	url: string
-	isExternal: boolean
-	newWindow?: boolean
-}
-
-/**
- * One shape for both owned materials and catalogue entries, so the grid card and
- * the list row can never show different facts about the same item.
- */
-export type StudyItemPresentation = {
-	id: string
-	variant: StudyItemVariant
-	title: string
-	/** Program code chip (`FRM`, `SCR`) — drives the brand tint too. */
-	programKey: string
-	codeLabel: string
-	/** Material kind, e.g. "eBook" / "GARP Learning" / "Book". */
-	typeLabel: string | null
-	statusLabel: string | null
-	statusTone: StatusTone | null
-	paragraphs: string[]
-	imageUrl: string | null
-	metaLines: MetaLine[]
-	primaryAction: StudyItemLink | null
-	secondaryAction: StudyItemLink | null
-}
 
 /** Inside this window, an access expiry is worth counting down rather than dating. */
 const EXPIRING_SOON_DAYS = 30
-
-const ACCESS_HELP_MAILTO =
-	"mailto:memberservices@garp.com?Subject=Study%20material%20access"
 
 export function studyCodeLabel(programKey: string): string {
 	return programKey.trim().toUpperCase()
@@ -75,103 +42,150 @@ export function accessExpiryLine(
 	return date ? { icon: "accessUntil", text: `Access until ${date}` } : null
 }
 
-function ownedStatus(material: StudyMaterial): {
-	statusLabel: string
-	statusTone: StatusTone
-} {
-	if (!material.isAvailable) {
-		return { statusLabel: "Unavailable", statusTone: "warning" }
-	}
-	const status = material.status?.trim()
-	if (status) return { statusLabel: status, statusTone: "info" }
-	return { statusLabel: "Available", statusTone: "success" }
+/** `$295`, `$12.50` — the legacy's own rendering, whole dollars unadorned. */
+export function formatPrice(amount: number | null | undefined): string | null {
+	if (amount == null) return null
+	return `$${amount.toFixed(2).replace(/\.00$/, "")}`
 }
 
-/** Maps one owned material into everything a card or row renders. */
-export function buildOwnedItemPresentation(
-	material: StudyMaterial,
-): StudyItemPresentation {
-	const { statusLabel, statusTone } = ownedStatus(material)
-	const metaLines: MetaLine[] = []
+/** The in-app purchase page for one product. */
+export function purchasePath(productCode: string | null | undefined): string | null {
+	const code = productCode?.trim()
+	if (!code) return null
+	return `/study-materials/purchase/${encodeURIComponent(code)}`
+}
 
-	const expiry = accessExpiryLine(material.expirationDate)
-	if (expiry) metaLines.push(expiry)
+/** "Included with your registration · 11 February 2026" / "Purchased". */
+export function ownedLine(
+	item: Pick<
+		StudyMaterialItem,
+		"wasOrderedWithReg" | "registrationDate" | "orderedDate"
+	>,
+): string {
+	const label = item.wasOrderedWithReg
+		? "Included with your registration"
+		: "Purchased"
+	const on = formatLongDate(item.registrationDate ?? item.orderedDate)
+	return on ? `${label} · ${on}` : label
+}
 
-	if (!material.isAvailable && material.unavailableReason?.trim()) {
-		metaLines.push({
-			icon: "unavailable",
-			text: material.unavailableReason.trim(),
+/** "Available 1 June 2026", or "Available soon" when Apex gave no date. */
+export function comingSoonLine(comingSoonDate: string | null | undefined): string {
+	const date = formatLongDate(comingSoonDate)
+	return date ? `Available ${date}` : "Available soon"
+}
+
+/**
+ * What a material lets the member do right now — GarpAppv1's `Actions`,
+ * first match wins. A material has more states than a catalogue entry
+ * usually does, and the order is the legacy's: something already granted
+ * beats something still to buy.
+ */
+export type MaterialAction =
+	| { kind: "garpLearning"; url: string }
+	| {
+			kind: "external"
+			label: "Read eBook" | "Download Now"
+			url: string
+			icon: "read" | "download"
+	  }
+	| { kind: "completeOrder"; path: string }
+	| { kind: "owned"; text: string }
+	| { kind: "comingSoon"; text: string; notifyUrl: string | null }
+	| { kind: "outOfStock"; text: string }
+	| { kind: "purchase"; priceLabel: string | null; path: string }
+	| { kind: "contact"; text: string }
+	| { kind: "none" }
+
+export function resolveMaterialAction(item: StudyMaterialItem): MaterialAction {
+	// Portal-relative SSO paths (`/BenchPrepSSO?…`) resolve against the
+	// Experience site; absolute vendor URLs pass through.
+	const learning = resolveExperienceHref(item.garpLearningAccessUrl)
+	if (learning) return { kind: "garpLearning", url: learning }
+
+	const read = resolveExperienceHref(item.accessUrl)
+	if (read) return { kind: "external", label: "Read eBook", url: read, icon: "read" }
+
+	const download = resolveExperienceHref(item.downloadUrl)
+	if (download) {
+		return { kind: "external", label: "Download Now", url: download, icon: "download" }
+	}
+
+	const orderPath = item.isUnPaidOrder ? orderDetailsPath(item.orderId) : null
+	if (orderPath) return { kind: "completeOrder", path: orderPath }
+
+	if (item.isOwned) return { kind: "owned", text: ownedLine(item) }
+
+	if (item.isComingSoon) {
+		return {
+			kind: "comingSoon",
+			text: comingSoonLine(item.comingSoonDate),
+			notifyUrl: item.leadGenUrl,
+		}
+	}
+
+	if (item.isOutOfStock) return { kind: "outOfStock", text: "Out of stock" }
+
+	if (item.canPurchase) {
+		const path = purchasePath(item.productCode)
+		if (path) return { kind: "purchase", priceLabel: formatPrice(item.price), path }
+		return { kind: "contact", text: "Contact member services to buy this." }
+	}
+
+	return { kind: "none" }
+}
+
+/**
+ * The status chip, now that ownership is a fact on the card rather than a
+ * section of its own. Null when the material is simply for sale.
+ */
+export function materialStatusBadge(
+	item: StudyMaterialItem,
+): { label: string; tone: StatusTone } | null {
+	if (item.isUnPaidOrder) return { label: "Unpaid order", tone: "warning" }
+	if (item.isOwned) return { label: "Owned", tone: "success" }
+	// Granted by an open sitting or contract rather than bought.
+	if (item.garpLearningAccessUrl || item.accessUrl) {
+		return { label: "Access granted", tone: "success" }
+	}
+	if (item.isComingSoon) return { label: "Coming soon", tone: "info" }
+	if (item.isOutOfStock) return { label: "Out of stock", tone: "neutral" }
+	return null
+}
+
+/** The icon-prefixed facts under the copy — today, only the eBook key's expiry. */
+export function materialMetaLines(item: StudyMaterialItem): MetaLine[] {
+	const lines: MetaLine[] = []
+	const expiry = accessExpiryLine(item.eBookSet?.expireDate)
+	if (expiry) lines.push(expiry)
+	return lines
+}
+
+export type PartGroup = {
+	/** "Part 1" / "Part 2", or null for materials that belong to no part. */
+	part: string | null
+	items: StudyMaterialItem[]
+}
+
+/**
+ * FRM is the one programme whose materials split by exam part. Part 1 leads
+ * Part 2 and the un-parted items come last; every other programme yields a
+ * single null-part group. Item order inside a group is Apex's.
+ */
+export function groupByPart(items: StudyMaterialItem[]): PartGroup[] {
+	const byPart = new Map<string | null, StudyMaterialItem[]>()
+	for (const item of items) {
+		const key = item.relatedPart
+		const group = byPart.get(key)
+		if (group) group.push(item)
+		else byPart.set(key, [item])
+	}
+
+	return [...byPart.entries()]
+		.sort(([a], [b]) => {
+			if (a === null) return 1
+			if (b === null) return -1
+			return a.localeCompare(b)
 		})
-	}
-
-	const canOpen = material.isAvailable && Boolean(material.accessUrl?.trim())
-
-	return {
-		id: material.id,
-		variant: "owned",
-		title: material.name?.trim() || "Study material",
-		programKey: material.programKey,
-		codeLabel: studyCodeLabel(material.programKey),
-		typeLabel: material.type?.trim() || null,
-		statusLabel,
-		statusTone,
-		paragraphs: [],
-		imageUrl: null,
-		metaLines,
-		primaryAction: canOpen
-			? {
-					label: "Open material",
-					url: material.accessUrl!.trim(),
-					isExternal: true,
-					newWindow: true,
-				}
-			: null,
-		// Without an access URL the only useful next step is asking a human.
-		secondaryAction: canOpen
-			? null
-			: {
-					label: "Ask about access",
-					url: ACCESS_HELP_MAILTO,
-					isExternal: true,
-				},
-	}
-}
-
-/** Maps one catalogue entry into everything a card or row renders. */
-export function buildCatalogueItemPresentation(
-	item: CatalogueItem,
-): StudyItemPresentation {
-	const metaLines: MetaLine[] = []
-	const price = item.costNote?.trim()
-	if (price) metaLines.push({ icon: "price", text: price })
-
-	const download = item.isDownload ? item.downloadUrl?.trim() : null
-	const purchase = item.purchaseUrl?.trim()
-
-	const primaryAction: StudyItemLink | null = download
-		? {
-				label: "Download now",
-				url: download,
-				isExternal: true,
-				newWindow: true,
-			}
-		: purchase
-			? { label: "Purchase", url: purchase, isExternal: true, newWindow: true }
-			: null
-
-	return {
-		id: item.id,
-		variant: "catalogue",
-		title: item.title?.trim() || "Study material",
-		programKey: item.programKey,
-		codeLabel: studyCodeLabel(item.programKey),
-		typeLabel: item.materialType?.trim() || null,
-		statusLabel: null,
-		statusTone: null,
-		paragraphs: item.paragraphs.filter((p) => p.trim().length > 0),
-		imageUrl: item.imageUrl?.trim() || null,
-		metaLines,
-		primaryAction,
-		secondaryAction: null,
-	}
+		.map(([part, grouped]) => ({ part, items: grouped }))
 }

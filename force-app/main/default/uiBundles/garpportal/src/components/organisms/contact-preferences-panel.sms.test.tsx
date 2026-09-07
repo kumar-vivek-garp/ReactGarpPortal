@@ -1,20 +1,22 @@
 import { screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { http, HttpResponse } from "msw"
 import { describe, expect, it } from "vitest"
 
+import type { AccountProfileValues } from "@/api/account/save-profile"
 import { ContactPreferencesPanel } from "@/components/organisms/contact-preferences-panel"
+import { accountView, completeness } from "@/testing/factories/account"
+import { memberPortalEnvelope } from "@/testing/factories/envelope"
+import { myAccountOrg, PROFILE_PATH } from "@/testing/msw/handlers/account"
 import { server } from "@/testing/msw/server"
-import { sdkGraphqlHandler } from "@/testing/msw/handlers/sdk-graphql"
 import { renderWithProviders } from "@/testing/render"
-
-const CONTACT_ID = "003XX0000012345"
 
 type SmsState = { smsPromotional: boolean; smsRegistration: boolean }
 
 /**
- * A tiny stateful org: the mutation writes what the next query reads, so the
- * post-save cache invalidation refetches the value the member just chose
- * rather than snapping back to the fixture's initial one.
+ * A tiny stateful org: the profile write changes what the next account read
+ * returns, so the post-save cache invalidation refetches the value the member
+ * just chose rather than snapping back to the fixture's initial one.
  */
 function smsOrg({
 	initial = { smsPromotional: false, smsRegistration: false },
@@ -27,61 +29,45 @@ function smsOrg({
 	fail?: boolean
 } = {}) {
 	const state: SmsState = { ...initial }
-	const updates: Array<Record<string, unknown>> = []
+	const updates: AccountProfileValues[] = []
 
-	server.use(
-		sdkGraphqlHandler({
-			ContactPreferences: () => ({
-				data: {
-					uiapi: {
-						query: {
-							Contact: {
-								edges: [
-									{
-										node: {
-											Id: CONTACT_ID,
-											Email: { value: "ada@example.com" },
-											MobilePhone: { value: "5551234567" },
-											Mobile_Phone_Code__c: { value: "1" },
-											SMS_Promotional_Updates__c: {
-												value: state.smsPromotional,
-											},
-											SMS_Registration_Updates__c: {
-												value: state.smsRegistration,
-											},
-										},
-									},
-								],
-							},
-						},
-					},
+	const org = myAccountOrg({
+		view: () =>
+			accountView({
+				personal: {
+					email: "ada@example.com",
+					mobilePhone: "5551234567",
+					mobilePhoneCode: "United States (+1)",
 				},
+				preferences: { ...state },
 			}),
-			UpdateSmsPreferences: async (variables) => {
-				updates.push(variables)
-				if (gate) await gate
-				if (fail) return { errors: [{ message: "SMS provider is down" }] }
-				state.smsPromotional = variables.smsPromotional === true
-				state.smsRegistration = variables.smsRegistration === true
-				return {
-					data: {
-						uiapi: {
-							ContactUpdate: {
-								success: true,
-								Record: {
-									SMS_Promotional_Updates__c: {
-										value: state.smsPromotional,
-									},
-									SMS_Registration_Updates__c: {
-										value: state.smsRegistration,
-									},
-								},
-							},
-						},
-					},
-				}
-			},
+	})
+	// First wins in MSW, so the stateful write shadows the org's default one.
+	server.use(
+		http.post(PROFILE_PATH, async ({ request }) => {
+			const body = (await request.json()) as { values: AccountProfileValues }
+			updates.push(body.values)
+			if (gate) await gate
+			if (fail) {
+				return HttpResponse.json(
+					memberPortalEnvelope({
+						applied: [],
+						rejected: Object.keys(body.values),
+						completeness: completeness(),
+					}),
+				)
+			}
+			state.smsPromotional = body.values.SMS_Promotional_Updates__c === true
+			state.smsRegistration = body.values.SMS_Registration_Updates__c === true
+			return HttpResponse.json(
+				memberPortalEnvelope({
+					applied: Object.keys(body.values),
+					rejected: [],
+					completeness: completeness(),
+				}),
+			)
 		}),
+		...org.handlers,
 	)
 
 	return { state, updates }
@@ -96,9 +82,7 @@ describe("ContactPreferencesPanel — SMS optimistic toggle", () => {
 	it("ticks immediately, then the server write confirms and it stays ticked", async () => {
 		const { updates } = smsOrg()
 		const user = userEvent.setup()
-		const { queryClient } = renderWithProviders(
-			<ContactPreferencesPanel contactId={CONTACT_ID} />,
-		)
+		const { queryClient } = renderWithProviders(<ContactPreferencesPanel />)
 		await screen.findByText("ada@example.com")
 
 		expect(registrationBox()).not.toBeChecked()
@@ -108,10 +92,9 @@ describe("ContactPreferencesPanel — SMS optimistic toggle", () => {
 		await waitFor(() => expect(queryClient.isFetching()).toBe(0))
 		expect(registrationBox()).toBeChecked()
 		// Both flags travel together — the untouched one keeps its value.
-		expect(updates[0]).toMatchObject({
-			contactId: CONTACT_ID,
-			smsPromotional: false,
-			smsRegistration: true,
+		expect(updates[0]).toEqual({
+			SMS_Promotional_Updates__c: false,
+			SMS_Registration_Updates__c: true,
 		})
 	})
 
@@ -123,7 +106,7 @@ describe("ContactPreferencesPanel — SMS optimistic toggle", () => {
 			}),
 		})
 		const user = userEvent.setup()
-		renderWithProviders(<ContactPreferencesPanel contactId={CONTACT_ID} />)
+		renderWithProviders(<ContactPreferencesPanel />)
 		await screen.findByText("ada@example.com")
 
 		await user.click(registrationBox())
@@ -142,7 +125,7 @@ describe("ContactPreferencesPanel — SMS optimistic toggle", () => {
 	it("reverts the tick when the server refuses the write", async () => {
 		smsOrg({ fail: true })
 		const user = userEvent.setup()
-		renderWithProviders(<ContactPreferencesPanel contactId={CONTACT_ID} />)
+		renderWithProviders(<ContactPreferencesPanel />)
 		await screen.findByText("ada@example.com")
 
 		await user.click(registrationBox())
@@ -160,7 +143,7 @@ describe("ContactPreferencesPanel — SMS optimistic toggle", () => {
 			fail: true,
 		})
 		const user = userEvent.setup()
-		renderWithProviders(<ContactPreferencesPanel contactId={CONTACT_ID} />)
+		renderWithProviders(<ContactPreferencesPanel />)
 		await screen.findByText("ada@example.com")
 		expect(promotionalBox()).toBeChecked()
 
@@ -176,16 +159,45 @@ describe("ContactPreferencesPanel — SMS optimistic toggle", () => {
 			initial: { smsPromotional: false, smsRegistration: true },
 		})
 		const user = userEvent.setup()
-		renderWithProviders(<ContactPreferencesPanel contactId={CONTACT_ID} />)
+		renderWithProviders(<ContactPreferencesPanel />)
 		await screen.findByText("ada@example.com")
 
 		await user.click(promotionalBox())
 
 		await waitFor(() => expect(promotionalBox()).toBeEnabled())
-		expect(updates[0]).toMatchObject({
-			contactId: CONTACT_ID,
-			smsPromotional: true,
-			smsRegistration: true,
+		expect(updates[0]).toEqual({
+			SMS_Promotional_Updates__c: true,
+			SMS_Registration_Updates__c: true,
 		})
+	})
+})
+
+describe("ContactPreferencesPanel — the SMS card's save indicator", () => {
+	/*
+	 * These boxes autosave, and the only confirmation used to be a global toast
+	 * that appears away from the box the member just clicked. The card header now
+	 * says so in place, matching the autosaving cards on Account Information.
+	 */
+	it("says Saving while the write is in flight, then Saved", async () => {
+		let release!: () => void
+		smsOrg({
+			gate: new Promise<void>((resolve) => {
+				release = resolve
+			}),
+		})
+		const user = userEvent.setup()
+		renderWithProviders(<ContactPreferencesPanel />)
+		await screen.findByText("ada@example.com")
+
+		// Nothing has been saved yet, so the header carries no status.
+		expect(screen.queryByText("Saving…")).not.toBeInTheDocument()
+		expect(screen.queryByText("Saved")).not.toBeInTheDocument()
+
+		await user.click(registrationBox())
+		expect(await screen.findByText("Saving…")).toBeInTheDocument()
+
+		release()
+		expect(await screen.findByText("Saved")).toBeInTheDocument()
+		expect(screen.queryByText("Saving…")).not.toBeInTheDocument()
 	})
 })

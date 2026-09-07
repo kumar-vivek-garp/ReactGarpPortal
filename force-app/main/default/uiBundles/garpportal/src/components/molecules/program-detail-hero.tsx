@@ -69,6 +69,8 @@ function ProgramDetailHero({
 		statusSummary,
 		nextStepTitle,
 		nextStepBody,
+		nextStepTone,
+		notes,
 		primaryAction,
 		secondaryActions,
 	} = presentation
@@ -115,21 +117,36 @@ function ProgramDetailHero({
 			<Card
 				className={cn(
 					"gap-4 py-5 shadow-none",
-					statusTone === "warning" || statusTone === "danger"
-						? "bg-muted/40"
-						: "bg-accent/40",
+					// Danger is a warning the member must act on (an unpaid exam
+					// change); it gets the destructive tint, not a muted one.
+					nextStepTone === "danger"
+						? "border-destructive/40 bg-destructive/5"
+						: nextStepTone === "warning"
+							? "bg-muted/40"
+							: "bg-accent/40",
 				)}
+				role={nextStepTone === "danger" ? "alert" : undefined}
 			>
 				<CardHeader className="gap-1 px-5">
-					<p className="text-xs font-semibold uppercase tracking-wider text-primary">
-						Next step
+					<p
+						className={cn(
+							"text-xs font-semibold uppercase tracking-wider",
+							nextStepTone === "danger" ? "text-destructive" : "text-primary",
+						)}
+					>
+						{nextStepTone === "danger" ? "Action required" : "Next step"}
 					</p>
 					<h2 className="font-heading text-xl tracking-wide text-foreground">
 						{nextStepTitle}
 					</h2>
 				</CardHeader>
-				<CardContent className="px-5">
+				<CardContent className="space-y-2 px-5">
 					<p className="text-sm text-muted-foreground">{nextStepBody}</p>
+					{notes.map((note) => (
+						<p key={note} className="text-xs text-muted-foreground">
+							{note}
+						</p>
+					))}
 				</CardContent>
 				{(primaryAction || secondaryActions.length > 0) && (
 					<CardFooter className="flex flex-wrap items-center gap-3 border-t border-border/60 px-5 pt-4">

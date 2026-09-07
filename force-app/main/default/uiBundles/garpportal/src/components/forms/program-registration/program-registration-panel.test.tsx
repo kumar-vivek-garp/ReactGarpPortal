@@ -14,11 +14,12 @@ vi.mock("@/components/forms/exam-registration/exam-registration-panel", () => ({
 	ExamRegistrationPanel: (props: {
 		programType: string
 		regCode?: string
+		trackCta?: string
 		paymentReturn?: { orderNumber?: string } | null
 	}) => (
 		<p>
 			exam-panel {props.programType} code={props.regCode ?? "none"} paid=
-			{props.paymentReturn?.orderNumber ?? "none"}
+			{props.paymentReturn?.orderNumber ?? "none"} cta={props.trackCta ?? "none"}
 		</p>
 	),
 }))
@@ -61,17 +62,28 @@ describe("ProgramRegistrationPanel — the programme dispatcher", () => {
 		).toBeInTheDocument()
 	})
 
-	it("gives an unbuilt programme a placeholder page instead of a dead end", async () => {
-		// `mem` is a real programme kind with no registry entry (no form built).
+	it("routes the membership programme to the exam panel with its wire type", async () => {
+		// The address is `membership`; the module is asked for `mem`. The
+		// alias goes the other way too, and neither gets the placeholder.
 		await renderWithRouterProviders(
-			<ProgramRegistrationPanel programType="mem" />,
+			<ProgramRegistrationPanel programType="membership" trackCta="PortalMyAccountPage" />,
+		)
+		expect(screen.getByText(/exam-panel mem code=none paid=none/)).toBeInTheDocument()
+		expect(screen.getByText(/cta=PortalMyAccountPage/)).toBeInTheDocument()
+		expect(screen.queryByRole("heading")).not.toBeInTheDocument()
+	})
+
+	it("gives an unbuilt programme a placeholder page instead of a dead end", async () => {
+		// `micro` is a real programme kind with no registry entry (no form built).
+		await renderWithRouterProviders(
+			<ProgramRegistrationPanel programType="micro" />,
 		)
 
 		expect(
-			screen.getByRole("heading", { level: 1, name: "MEM Registration" }),
+			screen.getByRole("heading", { level: 1, name: "MICRO Registration" }),
 		).toBeInTheDocument()
 		expect(
-			screen.getByText("The MEM registration form will be built here."),
+			screen.getByText("The MICRO registration form will be built here."),
 		).toBeInTheDocument()
 		expect(screen.getByRole("link", { name: "Programs" })).toBeInTheDocument()
 		expect(screen.queryByText(/exam-panel/)).not.toBeInTheDocument()

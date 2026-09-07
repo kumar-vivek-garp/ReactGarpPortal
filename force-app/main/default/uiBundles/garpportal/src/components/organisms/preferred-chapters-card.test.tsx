@@ -172,3 +172,71 @@ describe("PreferredChaptersCard — saving", () => {
 		expect(secondarySelect()).toBeDisabled()
 	})
 })
+
+describe("PreferredChaptersCard — clearing a selection", () => {
+	const clearPrimary = () =>
+		screen.getByRole("button", { name: "Clear Primary Chapter" })
+
+	it("offers a clear button only for the select that has a value", async () => {
+		serveOptions()
+		await renderWithRouterProviders(
+			<PreferredChaptersCard account={chapterAccount("New York", null)} />,
+		)
+
+		expect(await screen.findByRole("button", { name: "Clear Primary Chapter" }))
+			.toBeInTheDocument()
+		expect(
+			screen.queryByRole("button", { name: "Clear Secondary Chapter" }),
+		).not.toBeInTheDocument()
+	})
+
+	it("clearing saves a null for that chapter and leaves the other one alone", async () => {
+		serveOptions()
+		const wire = profileWire()
+		const user = userEvent.setup()
+		await renderWithRouterProviders(
+			<PreferredChaptersCard account={chapterAccount("New York", "London")} />,
+		)
+
+		await user.click(await screen.findByRole("button", { name: "Clear Primary Chapter" }))
+
+		expect(wire.bodies[0]).toEqual({
+			values: {
+				KPI_Primary_Chapter_Name__c: null,
+				// Untouched — clearing one must not wipe its neighbour.
+				KPI_Secondary_Chapter_Name__c: "London",
+			},
+		})
+	})
+
+	it("clearing does not open the dropdown it sits on top of", async () => {
+		serveOptions()
+		profileWire()
+		const user = userEvent.setup()
+		await renderWithRouterProviders(
+			<PreferredChaptersCard account={chapterAccount("New York", null)} />,
+		)
+
+		await user.click(await screen.findByRole("button", { name: "Clear Primary Chapter" }))
+
+		expect(screen.queryByRole("option")).not.toBeInTheDocument()
+	})
+
+	it("cannot be pressed while a save is already in flight", async () => {
+		serveOptions()
+		server.use(
+			http.post(PROFILE_PATH, async () => {
+				await delay("infinite")
+				return HttpResponse.json(memberPortalEnvelope({}))
+			}),
+		)
+		const user = userEvent.setup()
+		await renderWithRouterProviders(
+			<PreferredChaptersCard account={chapterAccount("New York", null)} />,
+		)
+
+		await user.click(await screen.findByRole("button", { name: "Clear Primary Chapter" }))
+
+		expect(clearPrimary()).toBeDisabled()
+	})
+})

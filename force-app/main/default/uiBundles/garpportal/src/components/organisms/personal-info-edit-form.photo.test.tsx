@@ -2,11 +2,15 @@ import { screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
-import type { CountryOption } from "@/api/personal-info/types"
 import { PersonalInfoEditForm } from "@/components/organisms/personal-info-edit-form"
 import { resizeProfilePhoto } from "@/lib/resize-profile-photo"
-import { personalInfoEditData } from "@/testing/factories/personal-info"
-import { personalInfoGraphqlResolvers } from "@/testing/factories/personal-info-graphql"
+import {
+	accountViewFromPersonalInfo,
+	billingCompanyResolver,
+	personalInfoEditData,
+} from "@/testing/factories/personal-info"
+import { myAccountOrg } from "@/testing/msw/handlers/account"
+import { personalInfoWriteHandlers } from "@/testing/msw/handlers/personal-info"
 import { sdkGraphqlHandler } from "@/testing/msw/handlers/sdk-graphql"
 import { server } from "@/testing/msw/server"
 import { renderWithProviders } from "@/testing/render"
@@ -17,37 +21,22 @@ vi.mock("@/lib/resize-profile-photo", () => ({ resizeProfilePhoto: vi.fn() }))
 
 const resizeMock = vi.mocked(resizeProfilePhoto)
 
-const COUNTRIES: CountryOption[] = [
-	{ label: "United States", value: "United States", phoneCode: "+1" },
-]
-
-function serveOrg(data = personalInfoEditData()) {
-	const attachments: Array<Record<string, unknown>> = []
-	const photoWrites: Array<Record<string, unknown>> = []
+function serveOrg(
+	data = personalInfoEditData(),
+	writes: Parameters<typeof personalInfoWriteHandlers>[0] = {},
+) {
+	const account = myAccountOrg({ view: accountViewFromPersonalInfo(data) })
+	const writeOrg = personalInfoWriteHandlers(writes)
 	server.use(
-		sdkGraphqlHandler({
-			...personalInfoGraphqlResolvers(data, COUNTRIES),
-			UploadProfilePhotoAttachment: (variables) => {
-				attachments.push(variables)
-				return {
-					data: {
-						uiapi: { AttachmentCreate: { Record: { Id: "00P-att-9" } } },
-					},
-				}
-			},
-			SetContactPhotoUrl: (variables) => {
-				photoWrites.push(variables)
-				return { data: { uiapi: { ContactUpdate: { success: true } } } }
-			},
-		}),
+		...account.handlers,
+		...writeOrg.handlers,
+		sdkGraphqlHandler(billingCompanyResolver(data)),
 	)
-	return { attachments, photoWrites }
+	return { photoSpy: writeOrg.photoSpy, photoRemoveSpy: writeOrg.photoRemoveSpy }
 }
 
 function renderForm() {
-	return renderWithProviders(
-		<PersonalInfoEditForm contactId="003-member" onSaved={vi.fn()} />,
-	)
+	return renderWithProviders(<PersonalInfoEditForm onSaved={vi.fn()} />)
 }
 
 /** The picker input is sr-only with no label; the button is what users see. */
@@ -56,6 +45,15 @@ function fileInput() {
 }
 
 const removeButton = () => screen.getByRole("button", { name: "Remove" })
+
+const RESIZED = {
+	base64Body: "Zm9v",
+	dataUrl: "data:image/jpeg;base64,Zm9v",
+	fileName: "profile-photo.jpg",
+	contentType: "image/jpeg" as const,
+	width: 128,
+	height: 128,
+}
 
 describe("choosing a photo", () => {
 	it("refuses a file over 2 MB before anything else happens", async () => {
@@ -112,16 +110,9 @@ describe("choosing a photo", () => {
 		).toBeInTheDocument()
 	})
 
-	it("uploads the resized square and records the servlet URL", async () => {
+	it("uploads the resized square as the bare base64 payload", async () => {
 		const org = serveOrg()
-		resizeMock.mockResolvedValueOnce({
-			base64Body: "Zm9v",
-			dataUrl: "data:image/jpeg;base64,Zm9v",
-			fileName: "profile-photo.jpg",
-			contentType: "image/jpeg",
-			width: 128,
-			height: 128,
-		})
+		resizeMock.mockResolvedValueOnce(RESIZED)
 		const user = userEvent.setup()
 		renderForm()
 
@@ -133,17 +124,11 @@ describe("choosing a photo", () => {
 		)
 
 		await vi.waitFor(() => {
-			expect(org.photoWrites).toHaveLength(1)
+			expect(org.photoSpy.hits).toBe(1)
 		})
-		expect(org.attachments[0]).toMatchObject({
-			parentId: "003-member",
-			name: "profile-photo.jpg",
-			contentType: "image/jpeg",
-			body: "Zm9v",
-		})
-		expect(org.photoWrites[0]).toMatchObject({
-			contactId: "003-member",
-			photoUrl: "/servlet/servlet.FileDownload?file=00P-att-9",
+		expect(org.photoSpy.bodies[0]).toEqual({
+			fileName: "profile-photo.jpg",
+			fileText: "Zm9v",
 		})
 		// A photo now exists, so Remove wakes up.
 		await vi.waitFor(() => {
@@ -152,23 +137,14 @@ describe("choosing a photo", () => {
 	})
 
 	it("falls back to the server photo when the upload itself fails", async () => {
-		serveOrg()
-		resizeMock.mockResolvedValueOnce({
-			base64Body: "Zm9v",
-			dataUrl: "data:image/jpeg;base64,Zm9v",
-			fileName: "profile-photo.jpg",
-			contentType: "image/jpeg",
-			width: 128,
-			height: 128,
-		})
-		server.use(
-			sdkGraphqlHandler({
-				...personalInfoGraphqlResolvers(personalInfoEditData(), COUNTRIES),
-				UploadProfilePhotoAttachment: () => ({
-					errors: [{ message: "Attachment refused" }],
-				}),
+		serveOrg(personalInfoEditData(), {
+			photoRespond: () => ({
+				statusMessage: "The image could not be read.",
+				statusCode: 501,
+				photoUrl: null,
 			}),
-		)
+		})
+		resizeMock.mockResolvedValueOnce(RESIZED)
 		const user = userEvent.setup()
 		renderForm()
 
@@ -189,7 +165,7 @@ describe("choosing a photo", () => {
 })
 
 describe("removing a photo", () => {
-	it("clears Contact.Photo_URL__c and locks Remove again", async () => {
+	it("posts the remove action and locks Remove again", async () => {
 		const org = serveOrg(personalInfoEditData({ photoUrl: "/photo.png" }))
 		const user = userEvent.setup()
 		renderForm()
@@ -199,11 +175,7 @@ describe("removing a photo", () => {
 		await user.click(removeButton())
 
 		await vi.waitFor(() => {
-			expect(org.photoWrites).toHaveLength(1)
-		})
-		expect(org.photoWrites[0]).toMatchObject({
-			contactId: "003-member",
-			photoUrl: null,
+			expect(org.photoRemoveSpy.hits).toBe(1)
 		})
 		// Once removed there is nothing left to remove.
 		await vi.waitFor(() => {

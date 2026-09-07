@@ -2,12 +2,8 @@ import { authQueryKeys } from "@/api/auth/query-options"
 import { LOGIN_PATH, LOGOUT_URL } from "@/auth/constants"
 import { clearLocalDevContactId } from "@/auth/local-dev-contacts"
 import { markLocallyLoggedOut } from "@/auth/local-session"
-import { getSfdcEnv, isLocalViteHost } from "@/auth/sfdc-env"
+import { isLocalViteHost, siteBasePath } from "@/auth/sfdc-env"
 import { queryClient } from "@/api/client"
-
-function siteBasePath(): string {
-	return (getSfdcEnv()?.basePath ?? "").replace(/\/+$/, "")
-}
 
 /**
  * Absolute URL guests can open after logout (public SPA home).

@@ -16,6 +16,8 @@ import {
 	buildIdentityPresentation,
 	buildMissingChips,
 	missingCountForSection,
+	splitMissingChips,
+	VISIBLE_MISSING_CHIPS,
 } from "./account-presentation"
 
 describe("buildMissingChips", () => {
@@ -34,6 +36,44 @@ describe("buildMissingChips", () => {
 		expect(buildMissingChips(completeness({ missing: ["Shoe size"] }))).toEqual([
 			{ label: "Shoe size", field: null, section: null },
 		])
+	})
+})
+
+describe("splitMissingChips", () => {
+	function chips(count: number) {
+		return buildMissingChips(
+			completeness({
+				missing: Array.from({ length: count }, (_, i) => `Field ${i + 1}`),
+			}),
+		)
+	}
+
+	it("holds back everything past the cap and counts what it hid", () => {
+		const split = splitMissingChips(chips(11), false)
+
+		expect(split.visible).toHaveLength(VISIBLE_MISSING_CHIPS)
+		expect(split.hiddenCount).toBe(11 - VISIBLE_MISSING_CHIPS)
+		// The ones kept are the first, in the order Apex ranked them.
+		expect(split.visible[0].label).toBe("Field 1")
+	})
+
+	it("shows a single chip over the cap rather than a '+1 more' worth one row", () => {
+		const split = splitMissingChips(chips(VISIBLE_MISSING_CHIPS + 1), false)
+
+		expect(split.visible).toHaveLength(VISIBLE_MISSING_CHIPS + 1)
+		expect(split.hiddenCount).toBe(0)
+	})
+
+	it("hides nothing at or under the cap", () => {
+		expect(splitMissingChips(chips(VISIBLE_MISSING_CHIPS), false).hiddenCount).toBe(0)
+		expect(splitMissingChips([], false)).toEqual({ visible: [], hiddenCount: 0 })
+	})
+
+	it("expanded shows every chip with nothing left to reveal", () => {
+		const split = splitMissingChips(chips(11), true)
+
+		expect(split.visible).toHaveLength(11)
+		expect(split.hiddenCount).toBe(0)
 	})
 })
 

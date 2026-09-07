@@ -204,7 +204,7 @@ function CvAddressForm({ view, onSaved, onCancel }: CvAddressFormProps) {
 	const { data: user } = useCurrentUser()
 	const contactId = user?.contactId ?? ""
 
-	const editData = usePersonalInfoEditData(contactId, Boolean(contactId))
+	const editData = usePersonalInfoEditData(Boolean(contactId))
 	const countries = useCountryOptions(Boolean(contactId))
 	const mutation = useSaveCvAddress()
 

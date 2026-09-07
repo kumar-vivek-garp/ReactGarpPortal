@@ -6,6 +6,7 @@ import {
 	memberPortalEnvelope,
 	memberPortalError,
 } from "@/testing/factories/envelope"
+import { examPartInfo } from "@/testing/factories/programs"
 import { renderFileRoute } from "@/testing/file-route"
 import { server } from "@/testing/msw/server"
 
@@ -67,6 +68,55 @@ describe("/programs/$programType page", () => {
 
 		expect(
 			screen.getByLabelText("Loading program details"),
+		).toBeInTheDocument()
+	})
+
+	it("never renders an ERP Part I card — that part is not sat through the portal", async () => {
+		server.use(
+			http.get(PROGRAM_DETAIL_PATH, () =>
+				HttpResponse.json(
+					memberPortalEnvelope({
+						...happyPayload,
+						programsDetailInfo: {
+							...happyPayload.programsDetailInfo,
+							programType: "ERP",
+							programInformation: {
+								...happyPayload.programsDetailInfo.programInformation,
+								formalName: "Energy Risk Professional",
+							},
+							examPart1Info: examPartInfo({ examAttemptId: "p1" }),
+							examPart2Info: examPartInfo({ examAttemptId: "p2" }),
+						},
+					}),
+				),
+			),
+		)
+		await renderFileRoute(Route, {
+			id: "/_appLayout/programs/$programType/",
+			path: "/programs/$programType/",
+			initialEntries: ["/programs/erp"],
+		})
+
+		expect(await screen.findByText("ERP Exam Part II")).toBeInTheDocument()
+		expect(screen.queryByText("ERP Exam Part I")).not.toBeInTheDocument()
+	})
+
+	it("tells a member with no enrollment so, in plain words", async () => {
+		server.use(
+			http.get(PROGRAM_DETAIL_PATH, () =>
+				HttpResponse.json(
+					memberPortalEnvelope({
+						statusMessage: "No contract",
+						statusCode: 401,
+						programsDetailInfo: null,
+					}),
+				),
+			),
+		)
+		await mount()
+
+		expect(
+			await screen.findByText("You aren't enrolled in this program."),
 		).toBeInTheDocument()
 	})
 

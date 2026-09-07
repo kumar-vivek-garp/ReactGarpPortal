@@ -91,9 +91,23 @@
 	--color-toolbar-foreground: var(--toolbar-foreground);
 	--color-overlay: var(--overlay);
 	--color-nav-scrim: var(--nav-scrim);
+	--color-inverse: var(--inverse);
+	--color-inverse-foreground: var(--inverse-foreground);
+	--color-inverse-muted-foreground: var(--inverse-muted-foreground);
+	--color-inverse-urgent: var(--inverse-urgent);
+	--color-inverse-notice: var(--inverse-notice);
+	--color-inverse-hover: var(--inverse-hover);
 
 	--font-sans: 'Nunito Sans', sans-serif;
 	--font-heading: 'Klinic Slab', 'Nunito Sans', sans-serif;
+	/*
+	 * Klinic Slab ships oldstyle figures by default (3/4/5/7/9 drop below the
+	 * baseline). `lnum` switches every heading-font digit to lining figures so
+	 * numbers sit on one baseline — UI/UX request, Sep 2026. Tailwind attaches
+	 * this to the `font-heading` utility automatically; base.css applies that
+	 * utility to h1–h6 so the base rule picks it up too.
+	 */
+	--font-heading--font-feature-settings: 'lnum';
 
 	--color-deep-purple: var(--deep-purple);
 	--color-deep-purple-foreground: var(--deep-purple-foreground);
@@ -208,6 +222,17 @@
 	--overlay: oklch(0 0 0 / 0.1);
 	/* inferred: mega-menu scrim — heavier than --overlay so the dimmed page reads as inert */
 	--nav-scrim: oklch(0 0 0 / 0.5);
+	/* Inverse surface: a card that is the OPPOSITE of the page, so it cannot
+	   blend in — dark on the light theme, white on the dark one. Built for the
+	   exam alert (UI/UX request, Sep 2026); reuse for anything that must stand
+	   apart from every other card. Text tokens are AA-checked against this
+	   surface, not against --card. */
+	--inverse: oklch(0.21 0.03 283.6); /* same surface the dark theme uses for its cards and toolbar */
+	--inverse-foreground: oklch(0.985 0 0);
+	--inverse-muted-foreground: oklch(0.708 0.01 197); /* 6.89:1 on --inverse */
+	--inverse-urgent: oklch(0.6498 0.2018 35.8); /* accent-vermillion, 5.03:1 on --inverse */
+	--inverse-notice: oklch(0.78 0.13 283.6); /* lifted primary hue — primary itself is 3.83:1 on --inverse; this is 8.54:1 */
+	--inverse-hover: oklch(1 0 0 / 12%);
 }
 
 .dark {
@@ -251,6 +276,12 @@
 	--overlay: oklch(0 0 0 / 0.1);
 	/* Darker still on dark chrome — 0.5 black over a near-black page reads as nothing. */
 	--nav-scrim: oklch(0 0 0 / 0.68);
+	--inverse: oklch(1 0 0); /* white card on the dark page */
+	--inverse-foreground: oklch(0 0 0);
+	--inverse-muted-foreground: oklch(0.5234 0.0062 197); /* light theme's muted-foreground, 5.41:1 on white */
+	--inverse-urgent: oklch(0.55 0.19 35.8); /* AA-safe deviation from accent-vermillion, which is 3.54:1 on white; this is 5.31:1 */
+	--inverse-notice: oklch(0.5836 0.2367 283.6); /* primary, 4.64:1 on white */
+	--inverse-hover: oklch(0 0 0 / 8%);
 	/* Chrome gradients — darker stops so sidebar/footer don’t stay pastel. */
 	--surface-gradient-start: oklch(0.22 0.03 291.7);
 	--surface-gradient-end: oklch(0.2 0.02 197);

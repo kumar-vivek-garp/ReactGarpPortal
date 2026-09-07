@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router"
 import { ArrowLeft } from "lucide-react"
 
 import { SpringNudge } from "@/components/atoms/spring-nudge"
+import { DEFAULT_MEMBERSHIP_TAB } from "@/config/membership"
 import { DEFAULT_STUDY_MATERIALS_TAB } from "@/config/study-materials"
 import { useSpringNudge } from "@/hooks/use-spring-nudge"
 import { cn } from "@/lib/utils"
@@ -18,6 +19,8 @@ type ProgramsSubpageBack =
 	/** Any other in-app parent — study materials, CPD, and so on. */
 	| { kind: "studyMaterials"; label?: string }
 	| { kind: "events"; label?: string }
+	/** The membership purchase form, reached from Membership Benefits. */
+	| { kind: "membership"; label?: string }
 
 type ProgramsSubpageHeaderProps = {
 	/**
@@ -90,7 +93,9 @@ function ProgramsSubpageHeader({
 				? back.label?.trim() || "Study Materials"
 				: back.kind === "events"
 					? back.label?.trim() || "Events"
-				: "Programs"
+					: back.kind === "membership"
+						? back.label?.trim() || "Membership"
+						: "Programs"
 
 	// `sr-only`, not `hidden`: the collapsed link must keep its accessible name.
 	const backLabelNode = iconOnlyBackOnMobile ? (
@@ -140,6 +145,31 @@ function ProgramsSubpageHeader({
 							void navigate({
 								to: "/study-materials",
 								search: { tab: DEFAULT_STUDY_MATERIALS_TAB },
+							})
+						})
+					}
+					{...nudge.bind}
+				>
+					<SpringNudge
+						nudge={nudge}
+						icon={<ArrowLeft className="size-6" strokeWidth={2.5} />}
+						iconPosition="leading"
+						className="gap-3"
+					>
+						{backLabelNode}
+					</SpringNudge>
+				</Link>
+			) : back.kind === "membership" ? (
+				<Link
+					to="/membership"
+					// The benefits page requires a tab; land on its default.
+					search={{ tab: DEFAULT_MEMBERSHIP_TAB }}
+					className="inline-flex text-lg font-bold text-foreground hover:text-primary"
+					onClick={(event) =>
+						interceptBack(event, () => {
+							void navigate({
+								to: "/membership",
+								search: { tab: DEFAULT_MEMBERSHIP_TAB },
 							})
 						})
 					}

@@ -35,13 +35,20 @@ export type SelectableMaterial = StudyMaterialView & { selected: boolean }
 /** How long the cart sits still before it is re-priced. */
 const FEES_DEBOUNCE_MS = 400
 
-/** Opens the form's load query. The form must not mount until this resolves. */
+/**
+ * Opens the form's load query. The form must not mount until this resolves.
+ *
+ * `enabled: false` on the payment legs: those screens never render the form,
+ * and the load is a wasted request on a leg that should be network-silent.
+ */
 export function useExamRegistrationLoad(
 	programType: string,
 	regCode?: string,
 	courseCode?: string,
+	{ enabled = true }: { enabled?: boolean } = {},
 ) {
-	return useQuery(examRegistrationQueryOptions(programType, regCode, courseCode))
+	const options = examRegistrationQueryOptions(programType, regCode, courseCode)
+	return useQuery({ ...options, enabled: options.enabled && enabled })
 }
 
 type ExamRegistrationStateArgs = {
@@ -66,6 +73,15 @@ type ExamRegistrationStateArgs = {
 	autoRenew: boolean
 	/** The course membership upsell. Always false for an exam programme. */
 	membershipSelected: boolean
+	/** The Risk.net add-on. Only the membership programme ever offers it. */
+	riskNetSelected: boolean
+	/**
+	 * A form rebuilt from a staged registration starts from what was chosen
+	 * rather than from nothing. Read once, in the state initialisers — a pure
+	 * derivation, not an effect.
+	 */
+	initialSelection?: ExamSelectionState
+	initialMaterialCodes?: string[]
 }
 
 /**
@@ -90,22 +106,28 @@ export function useExamRegistrationState({
 	billingAndShippingSame,
 	autoRenew,
 	membershipSelected,
+	riskNetSelected,
+	initialSelection,
+	initialMaterialCodes,
 }: ExamRegistrationStateArgs) {
 	const [selection, setSelection] = useState<ExamSelectionState>(() => {
-		const base = emptySelection()
+		const base = initialSelection ?? emptySelection()
 		const available = load.examSelection?.partsAvailable ?? []
 		// One option is not a choice — pre-select it and state it, rather than
 		// rendering a select with a single entry.
-		if (available.length === 1) base.partSelected = available[0]
+		if (available.length === 1 && !base.partSelected) {
+			return { ...base, partSelected: available[0] }
+		}
 		return base
 	})
 
-	const [materials, setMaterials] = useState<SelectableMaterial[]>(() =>
-		(load.studyMaterials ?? []).map((material) => ({
+	const [materials, setMaterials] = useState<SelectableMaterial[]>(() => {
+		const chosen = new Set(initialMaterialCodes ?? [])
+		return (load.studyMaterials ?? []).map((material) => ({
 			...material,
-			selected: false,
-		})),
-	)
+			selected: chosen.has(material.productCode),
+		}))
+	})
 
 	const part1Active = isPart1Active(selection.partSelected)
 	const part2Active = isPart2Active(selection.partSelected)
@@ -225,12 +247,7 @@ export function useExamRegistrationState({
 				billingAndShippingSame,
 				autoRenew,
 				membershipSelected,
-				/*
-				 * Risk.net (MEMR) is the membership programme's own add-on, and
-				 * `mem` is not served by this form yet — the load payload does not
-				 * even carry `riskNetOffer`. Fixed false until it is.
-				 */
-				riskNetSelected: false,
+				riskNetSelected,
 				mobilePhoneCode,
 			}),
 		[
@@ -246,6 +263,7 @@ export function useExamRegistrationState({
 			billingAndShippingSame,
 			autoRenew,
 			membershipSelected,
+			riskNetSelected,
 			mobilePhoneCode,
 		],
 	)

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from "react"
 import { animated, useSpring } from "@react-spring/web"
-import { ChevronUp, Info, TriangleAlert } from "lucide-react"
+import { ArrowRight, ChevronUp, Info, TriangleAlert } from "lucide-react"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/atoms/alert"
 import { CardCta } from "@/components/molecules/card-cta"
@@ -142,6 +142,16 @@ function AlertBarCard({
 	const urgent = model.tone === "urgent"
 	const Icon = urgent ? TriangleAlert : Info
 	const interactive = phase === "expanded"
+	// One hue carries the whole tone: the icon chip, the deadline and the link.
+	// Everything else on the card is neutral, so the hue is the only thing
+	// competing for the eye.
+	//
+	// Spelled out in full per tone: Tailwind's scanner only sees literal class
+	// strings, so nothing here may be assembled from fragments.
+	const toneText = urgent ? "text-inverse-urgent" : "text-inverse-notice"
+	const toneChip = urgent
+		? "bg-inverse-urgent/15 text-inverse-urgent"
+		: "bg-inverse-notice/15 text-inverse-notice"
 
 	return (
 		<div
@@ -168,36 +178,68 @@ function AlertBarCard({
 					transformOrigin: "top right",
 				}}
 			>
+				{/*
+				 * The card is the page's opposite — dark on the light theme, white
+				 * on the dark one — so it cannot blend into the cards around it.
+				 * The atom's own variants both sit on `bg-card`, which is exactly
+				 * the surface this has to stand apart from, so the tone is painted
+				 * here from the `inverse-*` tokens instead of picked by variant.
+				 */}
 				<Alert
-					variant={urgent ? "destructive" : "default"}
 					// The atom hardcodes role="alert". That is right for an
 					// urgent rung and too interrupting for a soft nudge.
 					role={urgent ? "alert" : "status"}
-					className="gap-y-1 rounded-xl py-2.5 pr-10 shadow-lg"
+					className={cn(
+						"gap-x-3 gap-y-1.5 rounded-xl border-0 bg-inverse py-4 pr-10",
+						"text-inverse-foreground shadow-lg",
+						// The atom sizes column one from a *direct* svg child, and
+						// ours is wrapped in its chip, so the track is set here.
+						"grid-cols-[auto_1fr]",
+					)}
 				>
-					<Icon aria-hidden />
-					{/* Programme and deadline share the title line: two short
-					    facts that would otherwise cost two rows of a card
-					    deliberately kept small. */}
-					<AlertTitle className="text-[0.9375rem]">
+					{/*
+					 * The tone accent is a contained chip, not a slab down the
+					 * card's edge. A coloured left border is the house style of
+					 * every framework alert of the last decade and reads as one
+					 * on sight; the tinted tile is what the rest of this app
+					 * already uses to badge a row (see `order-row`).
+					 */}
+					<span
+						className={cn(
+							// Spans both text rows rather than sitting in the title's own:
+							// a 36px chip in row one stretches that row and opens a gap
+							// between the programme and the deadline under it.
+							"col-start-1 row-start-1 row-span-2 grid size-9 shrink-0 place-items-center rounded-lg",
+							toneChip,
+						)}
+						aria-hidden
+					>
+						<Icon className="size-5" />
+					</span>
+					<AlertTitle className="text-base font-semibold tracking-normal">
 						{model.programme}
+					</AlertTitle>
+					<AlertDescription className="gap-0 text-inverse-muted-foreground">
+						{/* The deadline is the reason the card exists, so it takes
+						    the tone colour and sits directly under the programme. */}
 						{model.deadlineLabel ? (
-							<span className="font-normal text-muted-foreground">
-								{" · "}
+							<span className={cn("mb-2 font-medium", toneText)}>
 								{model.deadlineLabel}
 							</span>
 						) : null}
-					</AlertTitle>
-					<AlertDescription className="gap-0.5">
 						<span>{model.message}</span>
 						{model.action ? (
 							<CardCta
 								label={model.action.label}
 								url={model.action.href}
 								isExternal={model.action.isExternal}
+								icon={<ArrowRight className="size-4" />}
 								className={cn(
-									"text-sm",
-									urgent && "text-destructive hover:text-destructive/80",
+									"mt-3 text-sm",
+									toneText,
+									urgent
+										? "hover:text-inverse-urgent/80"
+										: "hover:text-inverse-notice/80",
 								)}
 							/>
 						) : null}
@@ -213,8 +255,8 @@ function AlertBarCard({
 							// A circle, so the hover fill and the focus ring both
 							// read as one round control rather than a stray square
 							// tucked into a `rounded-xl` corner.
-							"absolute top-2 right-2 grid size-7 cursor-pointer place-items-center rounded-full opacity-70",
-							"hover:bg-accent hover:text-accent-foreground hover:opacity-100",
+							"absolute top-3 right-2 grid size-7 cursor-pointer place-items-center rounded-full text-inverse-muted-foreground",
+							"hover:bg-inverse-hover hover:text-inverse-foreground",
 							"focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
 						)}
 					>

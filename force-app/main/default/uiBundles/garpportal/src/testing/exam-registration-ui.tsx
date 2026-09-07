@@ -16,9 +16,12 @@ import type {
 } from "@/api/registration/exam-types"
 import type { PersonalInfoEditData } from "@/api/personal-info/types"
 import { ExamRegistrationForm } from "@/components/forms/exam-registration/exam-registration-form"
-import { EXAM_PROGRAMS } from "@/config/registration"
+import { EXAM_PROGRAMS, type ExamProgramConfig } from "@/config/registration"
 import { examLoad } from "@/testing/factories/exam"
-import { personalInfoEditData } from "@/testing/factories/personal-info"
+import {
+	personalInfoEditData,
+	portalAddressFields,
+} from "@/testing/factories/personal-info"
 import { renderWithRouterProviders } from "@/testing/router"
 
 /**
@@ -77,28 +80,42 @@ export function pricedExamLoad(
 
 type RenderExamFormOptions = {
 	load?: ExamRegistrationLoad
+	/** The programme's own copy; FRM unless a test is about another kind. */
+	program?: ExamProgramConfig
+	/** The wire type the form posts; defaults to the programme's own. */
+	programType?: string
 	/** null = guest seed (nothing prefilled). */
 	profile?: PersonalInfoEditData | null
 	isAuthenticated?: boolean
 	regCode?: string
+	trackCta?: string | null
 }
 
 /** Mounts the form under router + query providers with spy callbacks. */
 export async function renderExamForm({
 	load = pricedExamLoad(),
-	profile = personalInfoEditData(),
+	// One address on file: shipping mirrors billing, so the billing card is
+	// the only Country control until a test unticks "same as billing".
+	profile = personalInfoEditData({
+		mailing: portalAddressFields(),
+		sameAsBilling: true,
+	}),
+	program = EXAM_PROGRAMS.frm,
+	programType = program.registrationType,
 	isAuthenticated = true,
 	regCode,
+	trackCta,
 }: RenderExamFormOptions = {}) {
 	const onRegistered = vi.fn()
 	const onNavigateBack = vi.fn()
 	const rendered = await renderWithRouterProviders(
 		<ExamRegistrationForm
 			load={load}
-			program={EXAM_PROGRAMS.frm}
-			programType="frm"
+			program={program}
+			programType={programType}
 			profile={profile}
 			regCode={regCode}
+			trackCta={trackCta}
 			isAuthenticated={isAuthenticated}
 			onNavigateBack={onNavigateBack}
 			onRegistered={onRegistered}

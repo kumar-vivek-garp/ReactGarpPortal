@@ -9,8 +9,11 @@ import {
 	eventRegisterResult,
 	eventView,
 } from "@/testing/factories/event"
-import { personalInfoEditData } from "@/testing/factories/personal-info"
-import { personalInfoGraphqlResolvers } from "@/testing/factories/personal-info-graphql"
+import {
+	accountViewFromPersonalInfo,
+	billingCompanyGraphql,
+	personalInfoEditData,
+} from "@/testing/factories/personal-info"
 import {
 	installMockOrg,
 	refuse,
@@ -44,12 +47,14 @@ function alertBarIdle(): AlertBarView {
  * (unanswered it errors and toasts "Unable to load personal information").
  */
 function memberBaseline(): Pick<MockOrgOptions, "actions" | "graphql"> {
-	const resolvers = personalInfoGraphqlResolvers(personalInfoEditData(), [])
+	const profile = personalInfoEditData()
 	return {
-		actions: { programs: programsListData(), alertBar: alertBarIdle() },
-		graphql: {
-			PersonalInfoEditContact: resolvers.PersonalInfoEditContact().data,
+		actions: {
+			programs: programsListData(),
+			alertBar: alertBarIdle(),
+			account: accountViewFromPersonalInfo(profile),
 		},
+		graphql: { BillingCompany: billingCompanyGraphql(profile) },
 	}
 }
 

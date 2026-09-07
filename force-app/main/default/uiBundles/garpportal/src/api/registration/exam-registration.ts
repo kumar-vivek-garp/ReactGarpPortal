@@ -5,6 +5,9 @@ import {
 import type {
 	AddressCheckResult,
 	CheckoutResult,
+	DemographicsOptions,
+	DemographicsSaveRequest,
+	DemographicsSaveResult,
 	ExamRegisterRequest,
 	ExamRegisterResult,
 	ExamRegistrationLoad,
@@ -13,8 +16,10 @@ import type {
 	FeesResult,
 	PaymentStatusResult,
 	RegistrationOptions,
+	ResumeResult,
 	VerifyCustomerResult,
 } from "@/api/registration/exam-types"
+import { AppError } from "@/api/client"
 
 /**
  * Opens a registration form.
@@ -212,4 +217,67 @@ export function rollbackExamRegistration(
 			fallback: "Unable to cancel the registration.",
 		},
 	)
+}
+
+/**
+ * The payload a staged registration was created from, for a candidate who
+ * pressed Back on Stripe Checkout (deferred flow only).
+ *
+ * The server holds exactly what was submitted, so the restored form survives a
+ * closed tab or a return on another device. Resumable only while the
+ * 30-minute Stripe session is alive and the row is still payable; anything
+ * else answers `resumable: false` rather than an error.
+ */
+export function fetchExamResume(stagedId: string): Promise<ResumeResult> {
+	const params = new URLSearchParams({ stagedId })
+	return examregFetch<ResumeResult>(
+		`/resume?${params.toString()}`,
+		{ method: "GET" },
+		{
+			unreachable: EXAMREG_UNREACHABLE,
+			fallback: "Unable to restore your registration.",
+		},
+	)
+}
+
+/** Picklists and year lists for the post-registration survey. Guest-reachable. */
+export function fetchExamDemographics(): Promise<DemographicsOptions> {
+	return examregFetch<DemographicsOptions>(
+		"/demographics",
+		{ method: "GET" },
+		{
+			unreachable: EXAMREG_UNREACHABLE,
+			fallback: "Unable to load the survey options.",
+		},
+	)
+}
+
+/**
+ * Saves the survey onto the contact behind the caller's OWN registration —
+ * `key` is the staged or order id that registration returned, never a
+ * contact id from the browser.
+ *
+ * Fields outside the server's allow-list come back in `rejected`; that is
+ * raised here so both survey save paths (this one and the member-portal
+ * profile) surface a partial save the same way.
+ */
+export async function saveExamDemographics(
+	request: DemographicsSaveRequest,
+): Promise<DemographicsSaveResult> {
+	const result = await examregFetch<DemographicsSaveResult>(
+		"/demographics",
+		{ method: "POST", body: JSON.stringify(request) },
+		{
+			unreachable: EXAMREG_UNREACHABLE,
+			fallback: "Your answers could not be saved.",
+		},
+	)
+	const rejected = result.rejected ?? []
+	if (rejected.length > 0) {
+		throw new AppError({
+			messages: [`These answers could not be saved: ${rejected.join(", ")}.`],
+			status: 400,
+		})
+	}
+	return result
 }

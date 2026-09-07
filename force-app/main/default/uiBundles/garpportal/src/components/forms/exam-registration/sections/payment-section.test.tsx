@@ -31,11 +31,13 @@ function Harness({
 	country: billingCountry = country(),
 	useStripe = true,
 	showAutorenew = false,
+	autoRenewLabel,
 	disabled,
 }: {
 	country?: RegistrationCountry | null
 	useStripe?: boolean
 	showAutorenew?: boolean
+	autoRenewLabel?: string
 	disabled?: boolean
 }) {
 	const form = useForm<ExamFormValues>({
@@ -56,6 +58,7 @@ function Harness({
 				useStripe={useStripe}
 				paymentType={paymentType}
 				showAutorenew={showAutorenew}
+				autoRenewLabel={autoRenewLabel}
 				disabled={disabled}
 			/>
 			<output aria-label="observed">{`${paymentType}|${autoRenew}`}</output>
@@ -148,6 +151,21 @@ describe("PaymentSection — choosing and its consequences", () => {
 })
 
 describe("PaymentSection — the auto-renew opt-in", () => {
+	it("takes the membership form's own wording — nothing 'complimentary' about a paid membership", () => {
+		renderWithProviders(
+			<Harness
+				showAutorenew
+				autoRenewLabel="Enrol in Membership Automatic Renewal: your GARP Individual Membership renews each year."
+			/>,
+		)
+
+		const consent = screen.getByRole("checkbox", {
+			name: /your GARP Individual Membership renews each year/,
+		})
+		expect(consent).toBeInTheDocument()
+		expect(screen.queryByText(/complimentary/)).not.toBeInTheDocument()
+	})
+
 	it("appears only when offered, and writes the form value when ticked", async () => {
 		const user = userEvent.setup()
 		renderWithProviders(<Harness showAutorenew />)

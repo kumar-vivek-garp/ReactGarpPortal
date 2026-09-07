@@ -108,10 +108,10 @@ export function programWorkExperiencePath(programType: string): string | null {
 /**
  * In-app curriculum errata for a program (`/programs/{slug}/errata`).
  *
- * Narrower than the detail gate. Apex entitles a member holding an activated
- * contract on FRM, SCR, RiskAI, RAIJ or ICBRR — everything else (FRR, FRR25,
- * micro courses) has no published curriculum to report against, and the legacy
- * hides the link for exactly those.
+ * Narrower than the detail gate: only the programmes in `ERRATA_PROGRAM_SLUGS`
+ * — the ones the `errataForm` action accepts — get a link. Whether THIS member
+ * may report is Apex's answer (403 → the page's no-access state), not the
+ * link's.
  */
 export function programErrataPath(programType: string): string | null {
 	const slug = programTypeSlug(programType)
@@ -163,6 +163,19 @@ export function programDetailsHref(programType: string): string | null {
 }
 
 /**
+ * Programme slug -> its path on garp.org, for the ones where the two differ.
+ *
+ * RAIJ is the Japanese sitting of the same Risk AI certification and has no
+ * page of its own — `/raij` answers 404, the same way `/raij/exam-policies`
+ * does (see `config/registration.ts`). Its marketing page is `/rai/japan`.
+ * Anything absent here uses its slug unchanged.
+ */
+const MARKETING_PATHS: Record<string, string> = {
+	riskai: "rai",
+	raij: "rai/japan",
+}
+
+/**
  * Marketing Learn More URL. MyGarp maps `riskai` → `rai` on garp.org.
  * Falls back to catalogue `policyURL` when no type slug is available.
  */
@@ -171,9 +184,9 @@ export function programLearnMoreUrl(
 	policyUrl?: string | null,
 ): string | null {
 	const slug = programTypeSlug(programType)
-	const marketingSlug = slug === "riskai" ? "rai" : slug
-	if (marketingSlug) {
-		return `https://www.garp.org/${marketingSlug}`
+	const marketingPath = MARKETING_PATHS[slug] ?? slug
+	if (marketingPath) {
+		return `https://www.garp.org/${marketingPath}`
 	}
 	return isSafeHttpUrl(policyUrl) ? policyUrl.trim() : null
 }
@@ -231,10 +244,9 @@ export function programExamSetupHref(programType: string): string | null {
 /**
  * The legacy sfdcApp wizard, still needed for the half we cannot finish here.
  *
- * Two hand-offs use it: a change that carries a fee (no endpoint raises the
- * order that fee would be billed against) and the provider push while
- * `EXAM_SETUP_AUTHORIZE_ENABLED` is off. Neither is a route in this app, so
- * this stays a full-page navigation and must never be given to `<Link>`.
+ * One hand-off uses it now: the provider push, while
+ * `EXAM_SETUP_AUTHORIZE_ENABLED` is off. Not a route in this app, so this stays
+ * a full-page navigation and must never be given to `<Link>`.
  */
 export function programExamSetupMyGarpHref(
 	programType: string,
@@ -243,6 +255,61 @@ export function programExamSetupMyGarpHref(
 	if (!slug) return null
 	const routeSlug = slug === "rai" ? "riskai" : slug
 	return myGarpSfdcAppHref(`programs/exam-setup/${routeSlug}`)
+}
+
+/**
+ * The legacy fees checkout for a raised exam modification.
+ *
+ * `examSetupFees` prices a change but returns no order and no checkout URL, and
+ * nothing in the portal API raises the Opportunity the lines are billed
+ * against — so the charge is taken by the legacy app, which the member is sent
+ * to through its own login so the session is established before the deep link
+ * resolves.
+ *
+ * Not a hash route, so it does not go through `myGarpSfdcAppHref`. Like that
+ * helper it is absolute on local Vite and same-origin elsewhere, and it is a
+ * full-page navigation — never a `<Link>`.
+ */
+export function examSetupFeesCheckoutHref(
+	modificationId: string | null | undefined,
+): string | null {
+	const id = modificationId?.trim()
+	if (!id) return null
+	// Only the id is encoded — the path separators in `start` are part of the
+	// legacy route and must survive.
+	const path = `/Login?start=myprograms/setup/feescheckout/${encodeURIComponent(id)}`
+	return isLocalViteHost() ? `${LOCAL_MY_GARP_ORIGIN}${path}` : path
+}
+
+/**
+ * The legacy checkout that reorders a printed certificate.
+ *
+ * FRM and ERP certificates are not downloadable at all — a copy is bought
+ * through this checkout, keyed by programme type, which only the legacy app
+ * can run. Same host rule and login hand-off as `examSetupFeesCheckoutHref`,
+ * and a full-page navigation for the same reason — never a `<Link>`.
+ */
+export function certificateCopyCheckoutHref(
+	programType: string,
+): string | null {
+	const slug = programTypeSlug(programType)
+	if (!slug) return null
+	const path = `/Login?start=myprograms/certcheckout/${encodeURIComponent(slug)}`
+	return isLocalViteHost() ? `${LOCAL_MY_GARP_ORIGIN}${path}` : path
+}
+
+/**
+ * The study-materials catalogue filtered to one programme.
+ *
+ * `?tab=` takes a `StudyMaterial.programKey`, which uses the marketing slug —
+ * `rai`, not `riskai` — so the rewrite runs the other way from the route
+ * helpers above. Same-origin and a route, so `<Link>`-safe.
+ */
+export function programStudyMaterialsPath(programType: string): string {
+	const slug = programTypeSlug(programType)
+	if (!slug) return "/study-materials"
+	const key = slug === "riskai" ? "rai" : slug
+	return `/study-materials?tab=${encodeURIComponent(key)}`
 }
 
 /**

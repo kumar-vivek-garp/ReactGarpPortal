@@ -1,68 +1,51 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { http, HttpResponse } from "msw"
+import { describe, expect, it } from "vitest"
 
+import { AppError } from "@/api/client"
 import { requestEmailPreferences } from "@/api/contact-preferences/update-email-preference"
-import { sdkGraphqlHandler } from "@/testing/msw/handlers/sdk-graphql"
+import { memberPortalError } from "@/testing/factories/envelope"
+import {
+	EMAIL_PREFERENCE_UPDATE_PATH,
+	emailPreferenceHandler,
+} from "@/testing/msw/handlers/contact-preferences"
 import { server } from "@/testing/msw/server"
 
-beforeEach(() => {
-	// Only Date is faked — faking timers would stall MSW's fetch internals.
-	vi.useFakeTimers({ toFake: ["Date"] })
-	vi.setSystemTime(new Date("2026-09-03T12:00:00.000Z"))
-})
-
-afterEach(() => {
-	vi.useRealTimers()
-})
-
 describe("requestEmailPreferences", () => {
-	it("refuses a blank contact id before it reaches the network", async () => {
-		await expect(requestEmailPreferences("  ")).rejects.toMatchObject({
-			messages: ["Contact Id is required."],
+	it("posts once and resolves when the stamp is recorded", async () => {
+		const org = emailPreferenceHandler()
+		server.use(org.handler)
+
+		await expect(requestEmailPreferences()).resolves.toBeUndefined()
+		expect(org.spy.hits).toBe(1)
+	})
+
+	it("surfaces the service's own refusal", async () => {
+		server.use(
+			emailPreferenceHandler(() => ({
+				statusMessage: "Email preference field is not available.",
+				statusCode: 501,
+			})).handler,
+		)
+
+		const failure = requestEmailPreferences()
+		await expect(failure).rejects.toBeInstanceOf(AppError)
+		await expect(failure).rejects.toMatchObject({
+			messages: ["Email preference field is not available."],
+			status: 501,
 		})
 	})
 
-	it("stamps the trimmed contact with the current instant", async () => {
-		const stamps: Array<Record<string, unknown>> = []
+	it("surfaces a router-level refusal", async () => {
 		server.use(
-			sdkGraphqlHandler({
-				RequestEmailPreferences: (variables) => {
-					stamps.push(variables)
-					return { data: { uiapi: { ContactUpdate: { success: true } } } }
-				},
-			}),
-		)
-
-		await expect(requestEmailPreferences(" 003xx1 ")).resolves.toBeUndefined()
-		expect(stamps).toEqual([
-			{ contactId: "003xx1", updatedAt: "2026-09-03T12:00:00.000Z" },
-		])
-	})
-
-	it("treats an unsuccessful update as a failure", async () => {
-		server.use(
-			sdkGraphqlHandler({
-				RequestEmailPreferences: () => ({
-					data: { uiapi: { ContactUpdate: { success: false } } },
+			http.post(EMAIL_PREFERENCE_UPDATE_PATH, () =>
+				HttpResponse.json(memberPortalError(403, "No member record."), {
+					status: 403,
 				}),
-			}),
+			),
 		)
 
-		await expect(requestEmailPreferences("003xx1")).rejects.toMatchObject({
-			messages: ["Unable to request email preference update."],
-		})
-	})
-
-	it("throws the GraphQL error messages", async () => {
-		server.use(
-			sdkGraphqlHandler({
-				RequestEmailPreferences: () => ({
-					errors: [{ message: "Row locked" }],
-				}),
-			}),
-		)
-
-		await expect(requestEmailPreferences("003xx1")).rejects.toMatchObject({
-			messages: ["Row locked"],
+		await expect(requestEmailPreferences()).rejects.toMatchObject({
+			messages: ["No member record."],
 		})
 	})
 })

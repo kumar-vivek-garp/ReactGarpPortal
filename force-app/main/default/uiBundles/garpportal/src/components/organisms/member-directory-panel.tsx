@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { Link } from "@tanstack/react-router"
 import {
 	ChevronLeft,
 	ChevronRight,
@@ -28,6 +29,8 @@ import {
 	DIRECTORY_ZERO_STATE,
 	MEMBER_DIRECTORY_TITLE,
 } from "@/config/directory"
+import { REGISTRATION_TRACK_CTA } from "@/config/registration"
+import { MEMBERSHIP_MEMBER_REGISTRATION_ROUTE } from "@/lib/registration-paths"
 import { useAccountOptions } from "@/hooks/use-account-options"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { useDirectory, useDirectorySearch } from "@/hooks/use-directory"
@@ -156,15 +159,18 @@ function MemberDirectoryPanel({
 					action={
 						upsell ? (
 							<Button asChild>
-								<a
-									href={
-										upsell.orderId
-											? `/order-details/${upsell.orderId}`
-											: "/membership"
-									}
-								>
-									{upsell.label}
-								</a>
+								{upsell.orderId ? (
+									<a href={`/order-details/${upsell.orderId}`}>{upsell.label}</a>
+								) : (
+									/* The purchase form, tagged for attribution — not the
+									   benefits page, which is what "Upgrade" used to open. */
+									<Link
+										to={MEMBERSHIP_MEMBER_REGISTRATION_ROUTE}
+										search={{ track_cta: REGISTRATION_TRACK_CTA.membershipPage }}
+									>
+										{upsell.label}
+									</Link>
+								)}
 							</Button>
 						) : null
 					}

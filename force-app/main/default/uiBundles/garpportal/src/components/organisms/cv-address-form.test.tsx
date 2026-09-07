@@ -4,12 +4,19 @@ import { http, HttpResponse } from "msw"
 import { describe, expect, it, vi } from "vitest"
 
 import type { CurrentUser } from "@/api/auth/current-user"
-import type { CountryOption } from "@/api/personal-info/types"
 import type { CvView } from "@/api/work-experience"
 import { CvAddressForm } from "@/components/organisms/cv-address-form"
 import { memberPortalEnvelope, memberPortalError } from "@/testing/factories/envelope"
-import { personalInfoEditData } from "@/testing/factories/personal-info"
-import { personalInfoGraphqlResolvers } from "@/testing/factories/personal-info-graphql"
+import {
+	accountViewFromPersonalInfo,
+	billingCompanyResolver,
+	personalInfoEditData,
+} from "@/testing/factories/personal-info"
+import {
+	accountOptionsView,
+	portalCountryOption,
+} from "@/testing/factories/account-options"
+import { myAccountOrg } from "@/testing/msw/handlers/account"
 import { cvView } from "@/testing/factories/work-experience"
 import { sdkGraphqlHandler } from "@/testing/msw/handlers/sdk-graphql"
 import { server } from "@/testing/msw/server"
@@ -25,9 +32,9 @@ const MEMBER: CurrentUser = {
 	photoUrl: null,
 }
 
-const COUNTRIES: CountryOption[] = [
-	{ label: "United States", value: "United States", phoneCode: "+1" },
-	{ label: "United Kingdom", value: "United Kingdom", phoneCode: "+44" },
+const COUNTRIES = [
+	portalCountryOption({ name: "United States", phoneCode: "1" }),
+	portalCountryOption({ name: "United Kingdom", phoneCode: "44" }),
 ]
 
 function serveOrg(
@@ -38,9 +45,11 @@ function serveOrg(
 ) {
 	const saves: Array<Record<string, unknown>> = []
 	server.use(
-		sdkGraphqlHandler(
-			personalInfoGraphqlResolvers(personalInfoEditData(), COUNTRIES),
-		),
+		...myAccountOrg({
+			view: accountViewFromPersonalInfo(personalInfoEditData()),
+			options: accountOptionsView({ countries: COUNTRIES }),
+		}).handlers,
+		sdkGraphqlHandler(billingCompanyResolver(personalInfoEditData())),
 		http.post(CV_ADDRESS_PATH, async ({ request }) => {
 			saves.push((await request.json()) as Record<string, unknown>)
 			return saveRespond()

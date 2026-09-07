@@ -174,9 +174,15 @@ test.describe("program detail", () => {
 		await expect(
 			page.getByRole("heading", { name: "Schedule your exam" }),
 		).toBeVisible()
-		const cta = page.getByRole("link", { name: "Schedule Exam" })
-		await expect(cta).toBeVisible()
-		await expect(cta).toHaveAttribute("href", /\/programs\/frm\/exam-setup/)
+		// Offered twice by design: the hero's next step, and again on the part
+		// card so a second part's card can carry its own actions.
+		const ctas = page.getByRole("link", { name: "Schedule Exam" })
+		await expect(ctas).toHaveCount(2)
+		await expect(ctas.first()).toBeVisible()
+		await expect(ctas.first()).toHaveAttribute(
+			"href",
+			/\/programs\/frm\/exam-setup/,
+		)
 
 		// Desktop rail: notifications, deadlines, and the resources CTAs.
 		// Each block renders twice (mobile + desktop slots); assert the visible one.

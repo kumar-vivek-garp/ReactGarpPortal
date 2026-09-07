@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query"
 
-import { countryOptionsQueryOptions } from "@/api/personal-info/query-options"
+import { accountOptionsQueryOptions } from "@/api/account/query-options"
+import { toCountryOptions } from "@/api/personal-info/countries"
 
-/** Country / phone-code options from `Country_Code__c`. */
+/** Country options for the address selects (`GET /memberportal/options`). */
 export function useCountryOptions(enabled = true) {
 	return useQuery({
-		...countryOptionsQueryOptions,
-		enabled,
+		...accountOptionsQueryOptions(enabled),
+		select: toCountryOptions,
 	})
 }

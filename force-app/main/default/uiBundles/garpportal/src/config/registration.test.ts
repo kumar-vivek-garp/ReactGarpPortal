@@ -87,6 +87,8 @@ describe("registrationSearchSchema", () => {
 			stripe_return: 1,
 			oid: 8013,
 			on: 12345,
+			checkout_cancelled: 1,
+			resume: 7,
 		})
 		expect(parsed).toEqual({
 			regCode: "2024",
@@ -94,6 +96,8 @@ describe("registrationSearchSchema", () => {
 			stripe_return: "1",
 			oid: "8013",
 			on: "12345",
+			checkout_cancelled: "1",
+			resume: "7",
 		})
 	})
 
@@ -110,6 +114,8 @@ describe("registrationSearchSchema", () => {
 			stripe_return: undefined,
 			oid: undefined,
 			on: undefined,
+			checkout_cancelled: undefined,
+			resume: undefined,
 		})
 	})
 

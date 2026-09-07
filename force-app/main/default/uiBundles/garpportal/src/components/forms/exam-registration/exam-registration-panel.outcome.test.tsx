@@ -3,7 +3,6 @@ import userEvent from "@testing-library/user-event"
 import { describe, expect, it, vi } from "vitest"
 
 import type { CurrentUser } from "@/api/auth/current-user"
-import { personalInfoQueryKeys } from "@/api/personal-info/query-options"
 import { ExamRegistrationPanel } from "@/components/forms/exam-registration/exam-registration-panel"
 import { EXAM_PROGRAMS } from "@/config/registration"
 import {
@@ -16,7 +15,11 @@ import {
 	pricedExamLoad,
 	tickExamAcknowledgements,
 } from "@/testing/exam-registration-ui"
-import { personalInfoEditData } from "@/testing/factories/personal-info"
+import {
+	personalInfoEditData,
+	seedPersonalInfoCache,
+} from "@/testing/factories/personal-info"
+import { myAccountOrg } from "@/testing/msw/handlers/account"
 import { examregGet, examregPost } from "@/testing/msw/handlers/examreg"
 import { server } from "@/testing/msw/server"
 import { createTestQueryClient } from "@/testing/query-client"
@@ -50,11 +53,19 @@ describe("ExamRegistrationPanel — registration outcome", () => {
 				total: 0,
 			}),
 		)
-		server.use(info.handler, verify.handler, fees.handler, register.handler)
+		// The member's survey reads the member portal once the outcome is up.
+		const account = myAccountOrg()
+		server.use(
+			info.handler,
+			verify.handler,
+			fees.handler,
+			register.handler,
+			...account.handlers,
+		)
 
 		const queryClient = createTestQueryClient(MEMBER)
-		queryClient.setQueryData(
-			personalInfoQueryKeys.edit(MEMBER.contactId as string),
+		seedPersonalInfoCache(
+			queryClient,
 			personalInfoEditData({ contactId: MEMBER.contactId as string }),
 		)
 		const user = userEvent.setup()
@@ -91,10 +102,23 @@ describe("ExamRegistrationPanel — registration outcome", () => {
 		expect(
 			screen.queryByRole("button", { name: "Register" }),
 		).not.toBeInTheDocument()
+
+		// The survey stands between the confirmation and the actions — shown
+		// after every successful registration, card or offline, as GarpAppv1
+		// does — and Skip is a first-class way past it.
+		expect(
+			await screen.findByRole("heading", { name: /Help us tailor your/ }),
+		).toBeInTheDocument()
+		expect(
+			screen.queryByRole("link", { name: "Go to dashboard" }),
+		).not.toBeInTheDocument()
+		await user.click(screen.getByRole("button", { name: "Skip for now" }))
+
 		// A member's outcome offers the in-app destinations.
 		expect(
 			screen.getByRole("link", { name: "Go to dashboard" }),
 		).toBeInTheDocument()
 		expect(register.spy.hits).toBe(1)
+		expect(account.profileSpy.hits).toBe(0)
 	})
 })

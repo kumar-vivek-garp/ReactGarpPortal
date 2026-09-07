@@ -35,6 +35,17 @@ describe("resolveExamProgram", () => {
 		}
 	})
 
+	it("resolves the membership programme by its address AND its wire type", () => {
+		// `/registration/membership` is the address; `mem` is what the module
+		// is asked for on the wire — one entry, keyed by the address.
+		expect(resolveExamProgram("membership")?.registrationType).toBe("mem")
+		expect(resolveExamProgram("mem")).toBe(EXAM_PROGRAMS.membership)
+		expect(resolveExamProgram("MEM ")).toBe(EXAM_PROGRAMS.membership)
+		expect(resolveExamProgram("membership")?.documentTitle).toBe(
+			"Member Registration",
+		)
+	})
+
 	it("keeps the catalogue's own label for the FRR courses", () => {
 		// GARP_Portal_Program__mdt calls frr25 "FRR Series" and frr "FRR" — two
 		// different programmes, and the listing links to both by those names.
@@ -48,7 +59,7 @@ describe("resolveExamProgram", () => {
 
 	it("returns null for a programme whose form is not built", () => {
 		// Not an error: the dispatcher gives these a placeholder page.
-		for (const key of ["mem", "micro", "erp"]) {
+		for (const key of ["micro", "erp"]) {
 			expect(resolveExamProgram(key)).toBeNull()
 		}
 	})

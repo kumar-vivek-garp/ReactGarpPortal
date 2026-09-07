@@ -38,6 +38,7 @@ function stateProps(load: ExamRegistrationLoad = examLoad()) {
 		billingAndShippingSame: true,
 		autoRenew: false,
 		membershipSelected: false,
+		riskNetSelected: false,
 	}
 }
 

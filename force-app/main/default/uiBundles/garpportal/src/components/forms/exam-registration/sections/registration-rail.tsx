@@ -17,6 +17,7 @@ import {
 	showSubtotal,
 	sortFeeLines,
 	splitStudyMaterials,
+	type RailEmptyState,
 } from "@/lib/registration-presentation"
 import { cn } from "@/lib/utils"
 
@@ -175,6 +176,12 @@ type RegistrationRailProps = {
 	onToggleMaterial: (productCode: string) => void
 	fees: FeesResult | null
 	isPricing: boolean
+	/**
+	 * What the summary says before it has lines — reachable on every kind, for
+	 * the first price's debounce at least, so the wording has to fit the
+	 * programme (`railEmptyState`).
+	 */
+	emptyState: RailEmptyState
 	disabled?: boolean
 }
 
@@ -192,6 +199,7 @@ function RegistrationRail({
 	onToggleMaterial,
 	fees,
 	isPricing,
+	emptyState,
 	disabled,
 }: RegistrationRailProps) {
 	const { included, offered } = splitStudyMaterials(materials)
@@ -302,26 +310,25 @@ function RegistrationRail({
 						<div className="flex flex-col gap-3">
 							<div className="flex items-center gap-3 text-muted-foreground">
 								<ReceiptText className="size-5 shrink-0" aria-hidden />
-								<p className="text-body">Choose your exam to see the total.</p>
+								<p className="text-body">{emptyState.message}</p>
 							</div>
 							<div
 								className="flex flex-col gap-2 border-t border-border pt-3"
 								aria-hidden
 							>
-								{["Exam registration", "Enrollment fee", "Total"].map(
-									(label, index) => (
-										<div
-											key={label}
-											className={cn(
-												"flex items-center justify-between gap-4 text-body text-muted-foreground/60",
-												index === 2 && "font-semibold",
-											)}
-										>
-											<span>{label}</span>
-											<span aria-hidden>&mdash;</span>
-										</div>
-									),
-								)}
+								{emptyState.ghostLabels.map((label, index) => (
+								<div
+									key={label}
+									className={cn(
+										"flex items-center justify-between gap-4 text-body text-muted-foreground/60",
+										index === emptyState.ghostLabels.length - 1 &&
+											"font-semibold",
+									)}
+								>
+									<span>{label}</span>
+									<span aria-hidden>&mdash;</span>
+								</div>
+							))}
 							</div>
 						</div>
 					) : (

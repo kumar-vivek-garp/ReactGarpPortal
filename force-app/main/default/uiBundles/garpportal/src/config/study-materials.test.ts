@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+	materialPurchaseSearchSchema,
 	resolveStudyMaterialsView,
 	studyMaterialsSearchSchema,
 } from "./study-materials"
@@ -29,6 +30,21 @@ describe("studyMaterialsSearchSchema", () => {
 		expect(studyMaterialsSearchSchema.parse({ view: "grid" }).view).toBe("grid")
 		expect(studyMaterialsSearchSchema.parse({}).view).toBeUndefined()
 		expect(studyMaterialsSearchSchema.parse({ view: "table" }).view).toBeUndefined()
+	})
+})
+
+describe("studyMaterialsSearchSchema — the purchase return", () => {
+	it("keeps ?purchased= as a string even when the router hands it over as a number", () => {
+		expect(studyMaterialsSearchSchema.parse({ purchased: 1 }).purchased).toBe("1")
+		expect(studyMaterialsSearchSchema.parse({ purchased: "1" }).purchased).toBe("1")
+		expect(studyMaterialsSearchSchema.parse({}).purchased).toBeUndefined()
+	})
+})
+
+describe("materialPurchaseSearchSchema", () => {
+	it("keeps the provider's cancel flag through the router's JSON parse", () => {
+		expect(materialPurchaseSearchSchema.parse({ checkout_cancelled: 1 }).checkout_cancelled).toBe("1")
+		expect(materialPurchaseSearchSchema.parse({}).checkout_cancelled).toBeUndefined()
 	})
 })
 

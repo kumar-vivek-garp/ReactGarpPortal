@@ -5,6 +5,7 @@ import {
 	BookOpen,
 	CalendarClock,
 	ExternalLink,
+	Eye,
 	IdCard,
 	Pencil,
 } from "lucide-react"
@@ -15,6 +16,8 @@ import type {
 	ProgramDetail,
 	ProgramExamNotification,
 } from "@/api/programs"
+import { toEppExamType } from "@/api/programs"
+import { EppOptInDialog } from "@/components/molecules/epp-opt-in-dialog"
 import { OstaIdDialog } from "@/components/molecules/osta-id-dialog"
 import {
 	Accordion,
@@ -24,12 +27,16 @@ import {
 } from "@/components/atoms/accordion"
 import { Button } from "@/components/atoms/button"
 import { AccountFieldGrid } from "@/components/molecules/account-field-grid"
+import { MEMBER_SERVICES_MAILTO } from "@/config/help-center"
 import { formatLongDate } from "@/lib/account-format"
 import { daysUntil } from "@/lib/days-until"
+import { parseInternalAppHref } from "@/lib/parse-internal-app-href"
 import {
 	programErrataPath,
+	programStudyMaterialsPath,
 	resolveExperienceHref,
 } from "@/lib/program-card-links"
+import { showIdInfo } from "@/lib/program-detail-presentation"
 import { cn } from "@/lib/utils"
 
 type DeadlineItem = {
@@ -171,13 +178,25 @@ function ResourceLinkRow({
 }) {
 	const linkClass =
 		"inline-flex items-center gap-1 text-sm font-semibold text-primary hover:text-primary/80"
+	// In-app targets may carry a query string (`/study-materials?tab=frm`).
+	const internal = to ? parseInternalAppHref(to) : null
 
 	return (
 		<div>
-			{to ? (
-				<Link to={to} className={linkClass}>
-					{label}
-				</Link>
+			{internal ? (
+				Object.keys(internal.search).length > 0 ? (
+					<Link
+						to={internal.pathname}
+						search={internal.search}
+						className={linkClass}
+					>
+						{label}
+					</Link>
+				) : (
+					<Link to={internal.pathname} className={linkClass}>
+						{label}
+					</Link>
+				)
 			) : (
 				<a
 					href={href}
@@ -207,8 +226,16 @@ function ResourcesBlock({
 	resources: ExamResources | null | undefined
 	programType: string
 }) {
+	const [isEppOpen, setEppOpen] = useState(false)
 	const glpUrl = resolveExperienceHref(resources?.eLearningPlatformAccessURL)
 	const adaUrl = resolveExperienceHref(resources?.ADAFormAccessURL)
+	/*
+	 * The legacy's EPP opt-in, not a marketing link: it records the answer.
+	 * Gone once the member has opted in, and never offered for a programme
+	 * Apex has no exam attempt to stamp it against (ERP, the courses).
+	 */
+	const offersEpp =
+		toEppExamType(programType) !== null && resources?.IsOptedIntoEPP !== true
 	/*
 	 * The real errata page, not the marketing site. This row promises "Report
 	 * an error or discrepancy in the curriculum" and pointed at
@@ -237,7 +264,12 @@ function ResourcesBlock({
 						Practice exams, multimedia content, and more.
 					</ResourceLinkRow>
 				) : null}
-				<ResourceLinkRow to="/study-materials" label="Study Materials">
+				{/* Filtered to this programme rather than dumping the member on the
+				    full list. */}
+				<ResourceLinkRow
+					to={programStudyMaterialsPath(programType)}
+					label="Study Materials"
+				>
 					Official documents to help you prepare for your Exam
 				</ResourceLinkRow>
 				{errataPath ? (
@@ -264,15 +296,23 @@ function ResourcesBlock({
 						</Button>
 					</div>
 				) : null}
-				<hr className="border-border" />
-				<a
-					href="https://www.garp.org/exam-prep-providers"
-					target="_blank"
-					rel="noreferrer noopener"
-					className="text-sm font-semibold text-primary hover:text-primary/80"
-				>
-					Need Help Studying?
-				</a>
+				{offersEpp ? (
+					<>
+						<hr className="border-border" />
+						<button
+							type="button"
+							onClick={() => setEppOpen(true)}
+							className="text-sm font-semibold text-primary hover:text-primary/80"
+						>
+							Need Help Studying?
+						</button>
+						<EppOptInDialog
+							open={isEppOpen}
+							onOpenChange={setEppOpen}
+							programType={programType}
+						/>
+					</>
+				) : null}
 			</div>
 		</section>
 	)
@@ -280,15 +320,22 @@ function ResourcesBlock({
 
 function MemberDetailsBlock({ detail }: { detail: ProgramDetail }) {
 	const [isIdOpen, setIdOpen] = useState(false)
+	// Masked until asked for, so a shoulder-surfer cannot read it off an open
+	// portal — the service already returns only the last characters.
+	const [isIdRevealed, setIdRevealed] = useState(false)
 	const phone = [detail.phoneCode, detail.phoneNumber]
 		.filter(Boolean)
 		.join(" ")
 		.trim()
+	const idNumber = detail.IDNumber?.trim() || null
 
 	const idRows = [
 		{ label: "Name", value: detail.IDName },
 		{ label: "ID type", value: detail.IDType },
-		{ label: "ID number", value: detail.IDNumber },
+		{
+			label: "ID number",
+			value: idNumber ? (isIdRevealed ? idNumber : "•••••") : null,
+		},
 		{ label: "ID location", value: detail.IDLocation },
 		{
 			label: "ID expiry",
@@ -331,6 +378,10 @@ function MemberDetailsBlock({ detail }: { detail: ProgramDetail }) {
 	 * gating on `hasId` would hide it from them.
 	 */
 	const canEditId = detail.isOSTACandidate === true
+	// Identity only matters while a sitting is actually in play — the
+	// legacy's showIDInfo. That window includes scheduling being open, which
+	// is exactly when an OSTA candidate needs to add their ID.
+	if (!showIdInfo(detail)) return null
 	if (!hasId && !hasOsta && !canEditId) return null
 
 	return (
@@ -345,17 +396,40 @@ function MemberDetailsBlock({ detail }: { detail: ProgramDetail }) {
 						ID information
 					</p>
 					<AccountFieldGrid rows={idRows} emptyMessage="No ID on file." />
-					{canEditId ? (
-						<Button
-							type="button"
-							variant="outline"
-							size="sm"
-							className="mt-3"
-							onClick={() => setIdOpen(true)}
-						>
-							<Pencil className="size-3.5" aria-hidden />
-							{hasId ? "Update ID" : "Add your ID"}
-						</Button>
+					<div className="mt-3 flex flex-wrap items-center gap-2">
+						{idNumber && !isIdRevealed ? (
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								onClick={() => setIdRevealed(true)}
+							>
+								<Eye className="size-3.5" aria-hidden />
+								Show ID number
+							</Button>
+						) : null}
+						{canEditId ? (
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => setIdOpen(true)}
+							>
+								<Pencil className="size-3.5" aria-hidden />
+								{hasId ? "Update ID" : "Add your ID"}
+							</Button>
+						) : null}
+					</div>
+					{detail.IDName?.trim() ? (
+						<p className="mt-3 text-xs text-muted-foreground">
+							Something wrong?{" "}
+							<a
+								href={MEMBER_SERVICES_MAILTO}
+								className="font-semibold text-primary hover:text-primary/80"
+							>
+								Contact Member Services
+							</a>
+						</p>
 					) : null}
 				</div>
 			) : null}

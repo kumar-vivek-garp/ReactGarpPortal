@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query"
 
-import { personalInfoQueryKeys } from "@/api/personal-info/query-options"
+import { accountQueryKeys } from "@/api/account/query-options"
 import { workExperienceQueryKeys } from "@/api/work-experience/query-options"
 
 /**
@@ -30,7 +30,7 @@ export async function invalidateWorkExperienceCaches(
  * `cvAddress` does not write a CV-local address — it writes the member's own
  * Contact mailing fields, the same ones the Personal Information dialog edits,
  * and Apex clears its server-side contact cache afterwards. Leaving the
- * personal-info queries alone would show the member their old address in My
+ * account query alone would show the member their old address in My
  * Account immediately after changing it here.
  */
 export async function invalidateCvAddressCaches(
@@ -38,6 +38,6 @@ export async function invalidateCvAddressCaches(
 ): Promise<void> {
 	await Promise.all([
 		queryClient.invalidateQueries({ queryKey: workExperienceQueryKeys.all }),
-		queryClient.invalidateQueries({ queryKey: personalInfoQueryKeys.all }),
+		queryClient.invalidateQueries({ queryKey: accountQueryKeys.detail }),
 	])
 }

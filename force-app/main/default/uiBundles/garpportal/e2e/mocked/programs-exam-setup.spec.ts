@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test"
 
 import type { AlertBarView } from "@/api/alert-bar"
 import {
+	examSetupAuthorizeResult,
 	examSetupSaveResult,
 	examSetupView,
 } from "@/testing/factories/exam-setup"
@@ -9,15 +10,18 @@ import { installMockOrg } from "../support/mock-org"
 import { dashboardActionSet } from "../support/payloads"
 
 /**
- * Exam setup wizard journeys: the form renders from `examSetup`, moving the
- * administration trips the fee gate BEFORE anything is written, a free
- * site-only change saves through the real `examSetupId` action with the exact
- * body Apex reads, and a save that wants scheduling lands on the MyGarp
- * hand-off because `EXAM_SETUP_AUTHORIZE_ENABLED` is off at build time — so
- * `examSetupAuthorize` must never be called.
+ * Exam setup wizard journeys against the built bundle.
+ *
+ * One page — the sitting, the ID, one Save — over the real `examSetup` /
+ * `examSetupId` / `examSetupFees` actions. What this layer is for
+ * is the wire contract and the screen outcome: the exact body Apex reads, that
+ * a fee-bearing change prices exactly once, and that a scheduling-required save
+ * pushes to the provider exactly once. Field-level rules stay in the component
+ * suite; the 20s retry stays in the fake-timer hook test, because waiting it out
+ * in a real browser would cost the suite 20 seconds to prove nothing new.
  */
 
-/** No floating alert over the wizard's sticky controls (see programs.spec.ts). */
+/** No floating alert over the wizard's controls (see programs.spec.ts). */
 const NO_ALERT = {
 	statusMessage: null,
 	statusCode: 200,
@@ -29,6 +33,28 @@ const NO_ALERT = {
 	route: null,
 } satisfies AlertBarView
 
+const FEES_VIEW = {
+	statusMessage: null,
+	statusCode: 200,
+	examType: "FRM",
+	fees: [
+		{
+			name: "FRM Part I from May 2026 to November 2026",
+			type: "fee",
+			amount: 250,
+			description: "Standard exam administration change fee",
+			productCode: "FRM1",
+			glCode: "4040",
+			accountingCode: null,
+			examRegId: null,
+			examSiteId: null,
+		},
+	],
+	examEmailParts: null,
+	deferralSubType: "Deferral Standard",
+	transactionType: "Salesforce - Deferral",
+}
+
 function examSetupActions(
 	overrides: Record<string, unknown> = {},
 ): Record<string, unknown> {
@@ -37,75 +63,50 @@ function examSetupActions(
 		alertBar: NO_ALERT,
 		examSetup: examSetupView(),
 		examSetupId: examSetupSaveResult(),
+		examSetupFees: FEES_VIEW,
 		...overrides,
 	}
 }
 
+const SAVE = "Save exam setup"
+
+/** The form is interactive once the sitting tiles have rendered. */
+async function ready(page: import("@playwright/test").Page) {
+	await expect(page.getByRole("radio", { name: /May 2026/ })).toBeVisible()
+}
+
 test.describe("exam setup", () => {
-	test("the form renders the current sitting and both wizard steps", async ({
+	test("opens with the current sitting selected and read out in the bar", async ({
 		page,
 	}) => {
 		const org = await installMockOrg(page, { actions: examSetupActions() })
 		await page.goto("/programs/frm/exam-setup")
+		await ready(page)
 
-		await expect(page.getByText("Choose your sitting")).toBeVisible()
-		await expect(page.getByText("Confirm your ID")).toBeVisible()
-
-		// The selects start on where the member sits today (May, London).
 		await expect(
-			page.getByRole("combobox", { name: "Exam date" }),
-		).toContainText("May 2026")
+			page.getByRole("heading", { level: 1, name: /Financial Risk Manager.*Exam Setup/ }),
+		).toBeVisible()
+		await expect(page.getByRole("radio", { name: /May 2026/ })).toBeChecked()
 		await expect(
-			page.getByRole("combobox", { name: "Exam site" }),
+			page.getByRole("combobox", { name: /Where do you plan to sit/ }),
 		).toContainText("London")
-
-		// ID on file (blank box = keep it), so the save is offered immediately.
-		await expect(
-			page.getByRole("button", { name: "Save and continue" }),
-		).toBeEnabled()
+		await expect(page.getByText("May 2026 · London")).toBeVisible()
 		expect(org.hits("examSetup")).toBe(1)
 	})
 
-	test("moving the administration trips the fee gate before any write", async ({
+	test("saves through examSetupId with the exact body Apex reads", async ({
 		page,
 	}) => {
 		const org = await installMockOrg(page, { actions: examSetupActions() })
 		await page.goto("/programs/frm/exam-setup")
 
-		await page.getByRole("combobox", { name: "Exam date" }).click()
-		await page.getByRole("option", { name: "November 2026" }).click()
-
-		// The gate replaces the submit button — nothing may be posted from here.
-		await expect(page.getByText("This change has a fee")).toBeVisible()
-		await expect(
-			page.getByRole("button", { name: "Save and continue" }),
-		).toBeHidden()
-
-		await page.getByRole("button", { name: "Keep my current date" }).click()
-		await expect(
-			page.getByRole("combobox", { name: "Exam date" }),
-		).toContainText("May 2026")
-		await expect(
-			page.getByRole("button", { name: "Save and continue" }),
-		).toBeVisible()
-
-		expect(org.hits("examSetupId")).toBe(0)
-	})
-
-	test("a free site change saves through examSetupId with the exact body", async ({
-		page,
-	}) => {
-		const org = await installMockOrg(page, { actions: examSetupActions() })
-		await page.goto("/programs/frm/exam-setup")
-
-		// Same administration, different site — the free change, no gate.
-		await page.getByRole("combobox", { name: "Exam site" }).click()
+		await ready(page)
+		// Same administration, different site — the free change.
+		await page.getByRole("combobox", { name: /Where do you plan to sit/ }).click()
 		await page.getByRole("option", { name: "Paris" }).click()
-		await page.getByRole("button", { name: "Save and continue" }).click()
+		await page.getByRole("button", { name: SAVE }).click()
 
-		await expect(
-			page.getByText("Your exam setup is complete"),
-		).toBeVisible()
+		await expect(page.getByText("Your exam setup is complete.")).toBeVisible()
 		await expect.poll(() => org.hits("examSetupId")).toBe(1)
 
 		const call = org.of("examSetupId")[0]
@@ -122,14 +123,65 @@ test.describe("exam setup", () => {
 			selectedAdminPart2: null,
 			selectedSitePart2: null,
 		})
-		// The blank ID box means "keep what you have": no number travels, and
-		// idType/expiry travel with the number or not at all.
-		expect(body.id.idNumber).toBeUndefined()
-		expect(body.id.idType).toBeUndefined()
-		expect(body.id.idName).toBe("Ada Lovelace")
+		// FRM sends the government-ID trio, with the date in the US format the
+		// write expects — not the ISO the read returned.
+		expect(body.id).toMatchObject({
+			idName: "Ada Lovelace",
+			idType: "passport",
+			idNumber: "45678",
+			idExpireDate: "01/01/2030",
+		})
+		// No OSTA block: this member does not sit in mainland China.
+		expect(body.id.ostaIDLocation).toBeUndefined()
 	})
 
-	test("a scheduling-required save hands off to MyGarp without calling authorize", async ({
+	test("a fee-bearing change is written, then priced exactly once", async ({
+		page,
+	}) => {
+		const org = await installMockOrg(page, {
+			actions: examSetupActions({
+				examSetupId: examSetupSaveResult({
+					nextScreen: "Pay Fees",
+					paymentRequired: true,
+					examModificationId: "a0M999",
+				}),
+			}),
+		})
+		await page.goto("/programs/frm/exam-setup")
+
+		await ready(page)
+		await page.getByRole("radio", { name: /November 2026/ }).click()
+		await expect(page.getByText("New sitting")).toBeVisible()
+		await page.getByRole("button", { name: SAVE }).click()
+
+		await expect(page.getByText("There's a fee for this change")).toBeVisible()
+		await expect(page.getByText("$250.00").first()).toBeVisible()
+
+		// Priced from the modification the write raised — one call, no polling.
+		await expect.poll(() => org.hits("examSetupFees")).toBe(1)
+		const fees = JSON.parse(org.of("examSetupFees")[0].postData ?? "{}") as {
+			modificationId: string
+		}
+		expect(fees.modificationId).toBe("a0M999")
+
+		await expect(page.getByRole("link", { name: "Pay Fees" })).toHaveAttribute(
+			"href",
+			/myprograms\/setup\/feescheckout\/a0M999/,
+		)
+	})
+
+	test("nothing is priced when nothing is owed", async ({ page }) => {
+		const org = await installMockOrg(page, { actions: examSetupActions() })
+		await page.goto("/programs/frm/exam-setup")
+
+		await ready(page)
+		await page.getByRole("button", { name: SAVE }).click()
+
+		await expect(page.getByText("Your exam setup is complete.")).toBeVisible()
+		expect(org.hits("examSetupFees")).toBe(0)
+	})
+
+	test("a scheduling-required save pushes to the provider once and links out", async ({
 		page,
 	}) => {
 		const org = await installMockOrg(page, {
@@ -138,22 +190,51 @@ test.describe("exam setup", () => {
 					nextScreen: "Check Authorization",
 					schedulingRequired: true,
 				}),
+				examSetupAuthorize: examSetupAuthorizeResult({
+					isAuthorized: true,
+					examScheduleExamURLPart1: "https://provider.example/schedule/one",
+				}),
 			}),
 		})
 		await page.goto("/programs/frm/exam-setup")
 
-		await page.getByRole("combobox", { name: "Exam site" }).click()
-		await page.getByRole("option", { name: "Paris" }).click()
-		await page.getByRole("button", { name: "Save and continue" }).click()
+		await ready(page)
+		await page.getByRole("button", { name: SAVE }).click()
 
-		// EXAM_SETUP_AUTHORIZE_ENABLED is a build-time false: the provider push
-		// is an outbound integration, so the built app must offer MyGarp and
-		// call nothing. The authorized/pending/exhausted legs are unreachable
-		// in dist/ and stay covered by exam-setup-panel.authorize.test.tsx.
-		await expect(page.getByText("One more step, in MyGarp")).toBeVisible()
+		await expect(page.getByText("Your exam setup was successful.")).toBeVisible()
 		await expect(
-			page.getByRole("link", { name: "Continue in MyGarp" }),
-		).toBeVisible()
-		expect(org.hits("examSetupAuthorize")).toBe(0)
+			page.getByRole("link", { name: "Schedule Exam" }),
+		).toHaveAttribute("href", "https://provider.example/schedule/one")
+
+		// Accepted first time, so no retry: the second attempt only exists for a
+		// provider that answers "not yet". Never a poll.
+		await expect.poll(() => org.hits("examSetupAuthorize")).toBe(1)
+		const call = org.of("examSetupAuthorize")[0]
+		expect(JSON.parse(call.postData ?? "{}")).toEqual({
+			programType: "frm",
+			isRetry: false,
+		})
+	})
+
+	test("a server refusal keeps the member on the form", async ({ page }) => {
+		const org = await installMockOrg(page, {
+			actions: examSetupActions({
+				examSetupId: examSetupSaveResult({
+					statusCode: 505,
+					statusMessage: "Part II cannot be taken before Part I",
+				}),
+			}),
+		})
+		await page.goto("/programs/frm/exam-setup")
+
+		await ready(page)
+		await page.getByRole("button", { name: SAVE }).click()
+
+		await expect(page.getByRole("alert")).toContainText(
+			"Part II cannot be taken before Part I",
+		)
+		// Still the form, not an outcome: the member can act on it.
+		await expect(page.getByRole("button", { name: SAVE })).toBeVisible()
+		expect(org.hits("examSetupFees")).toBe(0)
 	})
 })

@@ -32,6 +32,7 @@ describe("toExamFormValues — guest", () => {
 		expect(EMPTY_EXAM_FORM_VALUES.attestReleaseAndWaiver).toBe(false)
 		expect(EMPTY_EXAM_FORM_VALUES.smsPromotionalUpdates).toBe(false)
 		expect(EMPTY_EXAM_FORM_VALUES.membershipSelected).toBe(false)
+		expect(EMPTY_EXAM_FORM_VALUES.riskNetSelected).toBe(false)
 		expect(EMPTY_EXAM_FORM_VALUES.osta.ostaConsent).toBe(false)
 	})
 })

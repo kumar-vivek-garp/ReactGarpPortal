@@ -36,15 +36,41 @@ function ProgramJourney({ milestones, className }: ProgramJourneyProps) {
 			<h2 className="font-heading text-lg tracking-wide text-foreground">
 				Your journey
 			</h2>
-			<ol className="mt-4 space-y-0">
+			{/*
+			 * A rail down the side on a phone, a stepper across the card on a
+			 * desktop — the same markup, re-laid-out. Four or five one-word steps
+			 * stacked vertically left the right two-thirds of this card empty and
+			 * pushed the exam cards below the fold (UI/UX request, Sep 2026).
+			 *
+			 * `auto-cols-fr` rather than a fixed column count: a journey is four
+			 * steps normally and five once it reaches Certification or Work
+			 * experience, and the columns have to stay even either way.
+			 */}
+			<ol className="mt-4 space-y-0 app:grid app:grid-flow-col app:auto-cols-fr">
 				{milestones.map((step, index) => {
 					const Icon = STATUS_ICON[step.status]
 					const isLast = index === milestones.length - 1
 					return (
-						<li key={step.id} className="relative flex gap-3 pb-5 last:pb-0">
+						<li
+							key={step.id}
+							className={cn(
+								"relative flex gap-3 pb-5 last:pb-0",
+								"app:flex-col app:items-center app:gap-2 app:pb-0 app:text-center",
+							)}
+						>
 							{!isLast ? (
+								/*
+								 * Runs from this step's centre to the next one's, so it
+								 * is a full column wide starting at the halfway mark.
+								 * It passes UNDER both icons, which are opaque and
+								 * raised, so no end ever shows.
+								 */
 								<span
-									className="absolute top-9 bottom-0 left-[1.05rem] w-px bg-border"
+									className={cn(
+										"absolute bg-border",
+										"top-9 bottom-0 left-[1.05rem] w-px",
+										"app:top-[1.125rem] app:bottom-auto app:left-1/2 app:h-px app:w-full",
+									)}
 									aria-hidden
 								/>
 							) : null}
@@ -56,7 +82,12 @@ function ProgramJourney({ milestones, className }: ProgramJourneyProps) {
 							>
 								<Icon className="size-4" aria-hidden />
 							</span>
-							<div className="min-w-0 pt-1.5">
+							{/*
+							 * The columns sit flush so the rail can reach across them,
+							 * so the breathing room between two steps' text is padding
+							 * here rather than a grid gap.
+							 */}
+							<div className="min-w-0 pt-1.5 app:px-2 app:pt-0">
 								<p className="text-sm font-semibold text-foreground">
 									{step.label}
 									<span className="sr-only"> — {step.status}</span>

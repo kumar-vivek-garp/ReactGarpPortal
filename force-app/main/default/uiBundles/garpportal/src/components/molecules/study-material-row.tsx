@@ -1,24 +1,32 @@
+import type { StudyMaterialItem } from "@/api/study-materials/types"
 import { Badge } from "@/components/atoms/badge"
 import { Card } from "@/components/atoms/card"
-import { CardCta } from "@/components/molecules/card-cta"
+import { EBookTitleList } from "@/components/molecules/ebook-title-list"
+import { GarpLearningAddOnCard } from "@/components/molecules/garp-learning-add-on"
 import { MetaLines } from "@/components/molecules/meta-lines"
 import { StatusBadge } from "@/components/molecules/status-badge"
+import { StudyMaterialAction } from "@/components/molecules/study-material-action"
 import { programBrandSurface } from "@/config/program-brand"
-import type { StudyItemPresentation } from "@/lib/study-materials-presentation"
+import {
+	materialMetaLines,
+	materialStatusBadge,
+	resolveMaterialAction,
+	studyCodeLabel,
+} from "@/lib/study-materials-presentation"
 import { cn } from "@/lib/utils"
 
 type StudyMaterialRowProps = {
-	item: StudyItemPresentation
+	item: StudyMaterialItem
 	priority?: boolean
 	className?: string
 }
 
 /**
- * List row for an owned material or a catalogue entry — denser than the card and
- * better for scanning a long catalogue for one title.
+ * List row for one material — denser than the card and better for scanning a
+ * long catalogue for one title.
  *
- * Shares `StudyItemPresentation` with `StudyMaterialCard`, so grid and list can
- * never disagree about status, price or actions.
+ * Shares every rule with `StudyMaterialCard`, so grid and list can never
+ * disagree about status, price or actions.
  */
 function StudyMaterialRow({
 	item,
@@ -26,13 +34,17 @@ function StudyMaterialRow({
 	className,
 }: StudyMaterialRowProps) {
 	const brand = programBrandSurface(item.programKey)
+	const codeLabel = studyCodeLabel(item.programKey)
+	const action = resolveMaterialAction(item)
+	const badge = materialStatusBadge(item)
+	const metaLines = materialMetaLines(item)
 
 	return (
 		<Card
 			className={cn(
 				// Same flat, bordered treatment as the grid card this row shares
-				// presentation with — Card's own border/bg/radius apply as-is,
-				// only the row's flex layout is added on top.
+				// rules with — Card's own border/bg/radius apply as-is, only the
+				// row's flex layout is added on top.
 				"gap-4 p-4 shadow-none sm:flex-row sm:items-center",
 				className,
 			)}
@@ -57,7 +69,7 @@ function StudyMaterialRow({
 					/>
 				) : (
 					<span className="font-heading text-sm font-bold tracking-wider text-foreground/70">
-						{item.codeLabel}
+						{codeLabel}
 					</span>
 				)}
 			</div>
@@ -65,11 +77,9 @@ function StudyMaterialRow({
 			<div className="min-w-0 flex-1 space-y-2">
 				<div className="flex flex-wrap items-center gap-2">
 					<Badge className={cn("rounded-md font-bold tracking-wider", brand.chip)}>
-						{item.codeLabel}
+						{codeLabel}
 					</Badge>
-					{item.statusLabel && item.statusTone ? (
-						<StatusBadge label={item.statusLabel} tone={item.statusTone} />
-					) : null}
+					{badge ? <StatusBadge label={badge.label} tone={badge.tone} /> : null}
 					{item.typeLabel ? (
 						<Badge variant="outline" className="rounded-md font-semibold">
 							{item.typeLabel}
@@ -81,31 +91,23 @@ function StudyMaterialRow({
 					{item.title}
 				</h3>
 
-				{item.paragraphs.length > 0 ? (
+				{item.description ? (
 					<p className="line-clamp-1 text-sm text-muted-foreground">
-						{item.paragraphs.join(" ")}
+						{item.description}
 					</p>
 				) : null}
 
-				<MetaLines lines={item.metaLines} className="space-y-1" />
+				<MetaLines lines={metaLines} className="space-y-1" />
+
+				{item.eBookSet ? (
+					<EBookTitleList titles={item.eBookSet.titles} />
+				) : null}
+
+				{item.addOn ? <GarpLearningAddOnCard addOn={item.addOn} /> : null}
 			</div>
 
 			<div className="flex shrink-0 flex-wrap items-center gap-x-5 gap-y-2 sm:flex-col sm:items-end">
-				{item.primaryAction ? (
-					<CardCta
-						label={item.primaryAction.label}
-						url={item.primaryAction.url}
-						isExternal={item.primaryAction.isExternal}
-						newWindow={item.primaryAction.newWindow}
-					/>
-				) : null}
-				{item.secondaryAction ? (
-					<CardCta
-						label={item.secondaryAction.label}
-						url={item.secondaryAction.url}
-						isExternal={item.secondaryAction.isExternal}
-					/>
-				) : null}
+				<StudyMaterialAction action={action} />
 			</div>
 		</Card>
 	)

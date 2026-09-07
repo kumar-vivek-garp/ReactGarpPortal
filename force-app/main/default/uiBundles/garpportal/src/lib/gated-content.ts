@@ -1,8 +1,4 @@
-import {
-	GATED_ALLOWED_HOSTS,
-	GATED_MEMBERSHIP_URL,
-	GATED_URL_COOKIE,
-} from "@/config/gated-content"
+import { GATED_ALLOWED_HOSTS, GATED_URL_COOKIE } from "@/config/gated-content"
 import { readCookie } from "@/lib/cookies"
 
 /**
@@ -55,19 +51,4 @@ export function readGatedUrl(): string | null {
 	if (!raw) return null
 	const unquoted = raw.trim().replace(/^['"]|['"]$/g, "")
 	return isAllowedGatedUrl(unquoted) ? unquoted : null
-}
-
-/**
- * The membership upsell, carrying the article along.
- *
- * The gated URL travels with the member so checkout can return them to what
- * they wanted. Built on the `track_cta` shape deliberately — four different URL
- * shapes reach the same registration flow and they are **not** interchangeable;
- * only the tagged ones carry attribution.
- */
-export function gatedUpsellHref(gatedUrl: string | null): string {
-	if (!gatedUrl) return GATED_MEMBERSHIP_URL
-	return `${GATED_MEMBERSHIP_URL}&${new URLSearchParams({
-		garp_gated_url: gatedUrl,
-	})}`
 }

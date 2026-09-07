@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest"
 import type { FeesResult } from "@/api/registration/exam-types"
 import type { SelectableMaterial } from "@/hooks/use-exam-registration"
 import { RegistrationRail } from "@/components/forms/exam-registration/sections/registration-rail"
+import { railEmptyState, type RailEmptyState } from "@/lib/registration-presentation"
 import { feesResult } from "@/testing/factories/exam"
 import { renderWithProviders } from "@/testing/render"
 
@@ -24,6 +25,7 @@ function renderRail({
 	materials = [] as SelectableMaterial[],
 	fees = null as FeesResult | null,
 	isPricing = false,
+	emptyState = railEmptyState("exam") as RailEmptyState,
 	disabled = false,
 } = {}) {
 	const onToggleMaterial = vi.fn()
@@ -33,6 +35,7 @@ function renderRail({
 			onToggleMaterial={onToggleMaterial}
 			fees={fees}
 			isPricing={isPricing}
+			emptyState={emptyState}
 			disabled={disabled}
 		/>,
 	)
@@ -116,6 +119,14 @@ describe("RegistrationRail — the order summary", () => {
 		for (const label of ["Exam registration", "Enrollment fee", "Total"]) {
 			expect(screen.getByText(label)).toBeInTheDocument()
 		}
+	})
+
+	it("says what the programme is pricing — a membership cart never asks for an exam", () => {
+		renderRail({ emptyState: railEmptyState("membership") })
+
+		expect(screen.getByText("Pricing your membership…")).toBeInTheDocument()
+		expect(screen.getByText("Individual Membership")).toBeInTheDocument()
+		expect(screen.queryByText(/Choose your exam/)).not.toBeInTheDocument()
 	})
 
 	it("one untaxed line earns no subtotal — the total says it once", () => {

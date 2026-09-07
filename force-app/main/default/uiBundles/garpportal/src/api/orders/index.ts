@@ -2,6 +2,7 @@ export { fetchOrders } from "@/api/orders/orders"
 export { fetchOrderDetail } from "@/api/orders/order-detail"
 export { payOrder } from "@/api/orders/pay-order"
 export { cancelOrder } from "@/api/orders/cancel-order"
+export { orderCheckout } from "@/api/orders/order-checkout"
 export {
 	ordersQueryKeys,
 	ordersQueryOptions,
@@ -9,6 +10,8 @@ export {
 } from "@/api/orders/query-options"
 export type {
 	MemberPortalEnvelope,
+	OrderCheckoutRequest,
+	OrderCheckoutResult,
 	OrderDetailView,
 	OrdersView,
 	PortalOrder,

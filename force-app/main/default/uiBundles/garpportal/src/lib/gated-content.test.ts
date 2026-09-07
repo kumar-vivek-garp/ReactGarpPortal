@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it } from "vitest"
 
 import { GATED_URL_COOKIE } from "@/config/gated-content"
 import {
-	gatedUpsellHref,
 	isAllowedGatedUrl,
 	readGatedUrl,
 } from "./gated-content"
@@ -83,19 +82,3 @@ describe("readGatedUrl", () => {
 	})
 })
 
-describe("gatedUpsellHref", () => {
-	/** Only the `track_cta` shapes carry attribution; the four are not swappable. */
-	it("keeps the tracking tag and carries the article along", () => {
-		const href = gatedUpsellHref("https://www.garp.org/a?b=c")
-		expect(href).toContain("track_cta=PortalGatedContent")
-		expect(href).toContain("registration/membership")
-		expect(href).toContain(
-			`garp_gated_url=${encodeURIComponent("https://www.garp.org/a?b=c")}`,
-		)
-	})
-
-	it("still offers membership when there is no article to return to", () => {
-		expect(gatedUpsellHref(null)).toContain("registration/membership")
-		expect(gatedUpsellHref(null)).not.toContain("garp_gated_url")
-	})
-})

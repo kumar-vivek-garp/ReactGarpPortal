@@ -1,20 +1,23 @@
 import type {
 	ApexStudyMaterial,
+	ApexStudyMaterialsInfo,
 	ApexStudyMaterialsPayload,
-	CatalogueItem,
-	StudyMaterial,
-	StudyMaterialsView,
+	GarpLearningAddOn,
+	StudyEBookSet,
+	StudyMaterialItem,
 	StudyProgram,
+	StudyProgramKey,
 } from "@/api/study-materials/types"
 
 /**
  * Program filter pills — labels match MyGarp study-materials
- * `programFilterOptions` (full names). Keys stay the Apex bucket codes.
+ * `programFilterOptions` (full names). Keys stay the Apex bucket codes, and
+ * the order is the legacy's.
  */
 const PROGRAM_BUCKETS: Array<{
-	key: string
+	key: StudyProgramKey
 	label: string
-	field: keyof NonNullable<ApexStudyMaterialsPayload["studyMaterialsInfo"]>
+	field: keyof ApexStudyMaterialsInfo
 }> = [
 	{ key: "frm", label: "Financial Risk Manager", field: "frmStudyMaterials" },
 	{
@@ -39,7 +42,8 @@ function asList(value: ApexStudyMaterial[] | null | undefined): ApexStudyMateria
 	return Array.isArray(value) ? value : []
 }
 
-function stripHtml(value: string | null | undefined): string {
+/** Apex copy arrives as HTML fragments; the cards render plain text. */
+export function stripHtml(value: string | null | undefined): string {
 	if (!value?.trim()) return ""
 	return value
 		.replace(/<[^>]+>/g, " ")
@@ -48,129 +52,149 @@ function stripHtml(value: string | null | undefined): string {
 		.trim()
 }
 
+function text(value: string | null | undefined): string | null {
+	const trimmed = value?.trim()
+	return trimmed ? trimmed : null
+}
+
+/** Apex dates may arrive as datetimes; the cards only ever show the day. */
+function isoDate(value: string | null | undefined): string | null {
+	const trimmed = value?.trim()
+	return trimmed ? trimmed.slice(0, 10) : null
+}
+
 function materialId(raw: ApexStudyMaterial, programKey: string, index: number): string {
 	return (
 		raw.productCode?.trim() ||
-		raw.productId?.trim() ||
 		raw.eBook?.key?.trim() ||
 		`${programKey}-${index}-${raw.title?.trim() || "item"}`
 	)
 }
 
-function sortValue(raw: ApexStudyMaterial, index: number): number {
-	if (typeof raw.displayOrder === "number") return raw.displayOrder
-	// Preserve Apex list order; sortCode is a catalogue hint, not a global rank.
-	return index
+/**
+ * `relatedPart` is a real null from the service's own FRM map, but the value
+ * can also come from admin-edited programme config, which in the legacy
+ * carried the literal four-character string "null". Guarded here so a card
+ * can never be filed under a part called "null".
+ */
+function relatedPart(raw: ApexStudyMaterial): string | null {
+	const value = text(raw.relatedPart)
+	if (!value || value.toLowerCase() === "null") return null
+	return value
 }
 
-function costNote(raw: ApexStudyMaterial): string | null {
-	if (raw.isCompWithReg) return "Included with registration"
-	if (typeof raw.price !== "number") return null
-	if (raw.price === 0) return "Complimentary"
-	return `$${raw.price.toFixed(raw.price % 1 === 0 ? 0 : 2)}`
-}
+function eBookSet(raw: ApexStudyMaterial): StudyEBookSet | null {
+	const book = raw.eBook
+	const items = Array.isArray(book?.eBookItems) ? book.eBookItems : []
+	if (items.length === 0) return null
 
-function toCatalogueItem(
-	raw: ApexStudyMaterial,
-	programKey: string,
-	index: number,
-): CatalogueItem {
-	const short = stripHtml(raw.shortDescription)
-	const long = stripHtml(raw.description)
-	const paragraphs = [short || long].filter(Boolean)
-	const downloadUrl = raw.downloadURL?.trim() || null
-	const materialType = raw.materialType?.trim() || null
-	const isDownload =
-		Boolean(downloadUrl) ||
-		materialType?.toLowerCase() === "download"
-
+	const provider = text(book?.provider)
 	return {
-		id: materialId(raw, programKey, index),
-		programKey,
-		title: raw.title?.trim() || null,
-		paragraphs,
-		imageUrl: raw.imageURL?.trim() || null,
-		downloadUrl,
-		purchaseUrl: raw.leadGenURL?.trim() || null,
-		costNote: costNote(raw),
-		materialType,
-		isDownload,
-		sortOrder: sortValue(raw, index),
+		expireDate: isoDate(book?.expireDate),
+		titles: items.map((item, index) => {
+			const vendorId =
+				item.vendorId == null ? null : String(item.vendorId).trim() || null
+			const label = text(item.title) ?? text(book?.title) ?? "eBook"
+			return {
+				id: vendorId ?? `${label}-${index}`,
+				label,
+				vendorId,
+				provider,
+			}
+		}),
 	}
 }
 
-function unavailableReason(raw: ApexStudyMaterial): string | null {
-	if (raw.isComingSoon) return "Coming soon"
-	if (raw.isOutOfStock) return "Out of stock"
-	if (raw.isUnPaidOrder) return "Payment pending"
-	if (raw.isAvailable === false) return "Not available"
-	return null
+function addOn(raw: ApexStudyMaterial): GarpLearningAddOn | null {
+	if (raw.hasGARPLearningAddOn !== true) return null
+
+	if (raw.isGARPLearningAddOnOwned === true) {
+		return {
+			kind: "owned",
+			heading: text(raw.GARPLearningAddOnAccessHeading) ?? "Add-On Content",
+			description: text(raw.GARPLearningAddOnAccessDescription) ?? "",
+			purchasedDate: isoDate(raw.GARPLearningAddOnPurchasedDate),
+		}
+	}
+
+	return {
+		kind: "purchasable",
+		heading:
+			text(raw.GARPLearningAddOnPuchaseHeading) ??
+			"Upgrade for Additional Content",
+		description: text(raw.GARPLearningAddOnPuchaseDescription) ?? "",
+		price:
+			typeof raw.GARPLearningAddOnPuchasePrice === "number"
+				? raw.GARPLearningAddOnPuchasePrice
+				: null,
+		productCode: text(raw.GARPLearningAddOnPuchaseProductCode),
+		pendingOrderId: text(raw.GARPLearningAddOnPuchasePendingOrder),
+	}
 }
 
-function toEntitlement(
+/** One Apex row into the client model. Every flag is carried; none is decided here. */
+export function normalizeStudyMaterial(
 	raw: ApexStudyMaterial,
-	programKey: string,
+	programKey: StudyProgramKey,
 	index: number,
-): StudyMaterial {
-	const accessUrl =
-		raw.GARPLearningAccessURL?.trim() ||
-		raw.accessUrl?.trim() ||
-		raw.downloadURL?.trim() ||
-		null
-	const expire = raw.eBook?.expireDate
-	const expirationDate =
-		typeof expire === "string" && expire.trim()
-			? expire.trim().slice(0, 10)
-			: null
-
+): StudyMaterialItem {
 	return {
 		id: materialId(raw, programKey, index),
 		programKey,
-		name: raw.title?.trim() || null,
-		type: raw.materialType?.trim() || null,
-		accessUrl,
-		status: raw.eBook?.keyStatus?.trim() || null,
-		expirationDate,
-		isAvailable: raw.isAvailable !== false && !raw.isComingSoon,
-		unavailableReason: unavailableReason(raw),
-		lastAccessed: null,
-		invoiceNumber: null,
+		title: text(raw.title) ?? "Study material",
+		typeLabel: text(raw.materialType),
+		description: stripHtml(raw.shortDescription) || null,
+		imageUrl: text(raw.imageURL),
+		relatedPart: relatedPart(raw),
+		productCode: text(raw.productCode),
+		price: typeof raw.price === "number" ? raw.price : null,
+
+		isOwned: raw.isOwned === true,
+		wasOrderedWithReg: raw.wasOrderedWithReg === true,
+		registrationDate: isoDate(raw.registrationDate),
+		orderedDate: isoDate(raw.orderedDate),
+		orderId: text(raw.orderId),
+		isUnPaidOrder: raw.isUnPaidOrder === true,
+
+		isComingSoon: raw.isComingSoon === true,
+		comingSoonDate: isoDate(raw.comingSoonDate),
+		leadGenUrl: text(raw.leadGenURL),
+
+		downloadUrl: text(raw.downloadURL),
+		accessUrl: text(raw.accessUrl),
+		garpLearningAccessUrl: text(raw.GARPLearningAccessURL),
+
+		canPurchase: raw.canPurchase === true,
+		isOutOfStock: raw.isOutOfStock === true,
+
+		eBookSet: eBookSet(raw),
+		addOn: addOn(raw),
 	}
 }
 
 /**
- * Maps Apex legacy `studyMaterialsInfo` buckets into the React panel model.
+ * Maps the legacy `studyMaterialsInfo` buckets into programs. Only programs
+ * with something in them come back — an empty bucket earns no tab. Apex list
+ * order is preserved; the service already sorts.
  */
 export function normalizeStudyMaterialsPayload(
 	payload: ApexStudyMaterialsPayload | null | undefined,
-): StudyMaterialsView {
+): StudyProgram[] {
 	const info = payload?.studyMaterialsInfo
 	const programs: StudyProgram[] = []
-	const entitlements: StudyMaterial[] = []
-	const seenEntitlementIds = new Set<string>()
 
 	for (const bucket of PROGRAM_BUCKETS) {
-		const rows = asList(info?.[bucket.field] as ApexStudyMaterial[] | null)
+		const rows = asList(info?.[bucket.field])
 		if (rows.length === 0) continue
-
-		const materials = rows
-			.map((row, index) => toCatalogueItem(row, bucket.key, index))
-			.sort((a, b) => a.sortOrder - b.sortOrder)
 
 		programs.push({
 			key: bucket.key,
 			label: bucket.label,
-			materials,
-		})
-
-		rows.forEach((row, index) => {
-			if (!row.isOwned) return
-			const entitlement = toEntitlement(row, bucket.key, index)
-			if (seenEntitlementIds.has(entitlement.id)) return
-			seenEntitlementIds.add(entitlement.id)
-			entitlements.push(entitlement)
+			items: rows.map((row, index) =>
+				normalizeStudyMaterial(row, bucket.key, index),
+			),
 		})
 	}
 
-	return { programs, myEntitlements: entitlements }
+	return programs
 }

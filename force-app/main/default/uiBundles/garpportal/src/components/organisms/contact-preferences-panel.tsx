@@ -3,10 +3,13 @@ import { ExternalLink } from "lucide-react"
 
 import { Checkbox } from "@/components/atoms/checkbox"
 import { Label } from "@/components/atoms/label"
+import { AccountEditDialog } from "@/components/molecules/account-edit-dialog"
 import { AccountSectionCard } from "@/components/molecules/account-section-card"
 import { ContactPreferencesSkeleton } from "@/components/organisms/contact-preferences-skeleton"
+import { PersonalInfoEditForm } from "@/components/organisms/personal-info-edit-form"
 import { StaggerReveal } from "@/components/molecules/stagger-reveal"
 import { useContactPreferences } from "@/hooks/use-contact-preferences"
+import { useSaveState } from "@/hooks/use-save-state"
 import { useRequestEmailPreferences } from "@/hooks/use-request-email-preferences"
 import { useUpdateSmsPreferences } from "@/hooks/use-update-sms-preferences"
 import { cn } from "@/lib/utils"
@@ -15,7 +18,6 @@ const EMAIL_SUCCESS =
 	"An email has been sent to your account with instructions on how to update your preferences."
 
 type ContactPreferencesPanelProps = {
-	contactId: string
 	enabled?: boolean
 	className?: string
 }
@@ -25,27 +27,46 @@ type SmsDraft = {
 	smsRegistration: boolean
 }
 
+/**
+ * `Mobile_Phone_Code__c` holds `"United States (+1)"` — the dialing code is
+ * the parenthesised part. A bare code (older records) is shown with a `+`.
+ */
+function dialingCode(code: string | null | undefined): string {
+	const trimmed = code?.trim() ?? ""
+	const match = /\(\+?(\d+)\)/.exec(trimmed)
+	if (match) return `+${match[1]}`
+	return trimmed ? `+${trimmed.replace(/^\+/, "")}` : ""
+}
+
 function formatMobilePhone(
 	code: string | null | undefined,
 	mobile: string | null | undefined,
 ): string {
-	const trimmedCode = code?.trim() ?? ""
+	const prefix = dialingCode(code)
 	const trimmedMobile = mobile?.trim() ?? ""
-	if (trimmedCode && trimmedMobile) return `+${trimmedCode} ${trimmedMobile}`
+	if (prefix && trimmedMobile) return `${prefix} ${trimmedMobile}`
 	return trimmedMobile
 }
 
 function ContactPreferencesPanel({
-	contactId,
 	enabled = true,
 	className,
 }: ContactPreferencesPanelProps) {
-	const prefsQuery = useContactPreferences(contactId, enabled)
+	const prefsQuery = useContactPreferences(enabled)
 	const requestEmail = useRequestEmailPreferences()
 	const updateSms = useUpdateSmsPreferences()
 
 	const [emailRequested, setEmailRequested] = useState(false)
 	const [smsDraft, setSmsDraft] = useState<SmsDraft | null>(null)
+	const [contactEditOpen, setContactEditOpen] = useState(false)
+
+	/*
+	 * These checkboxes autosave on change, with only a global toast to say so —
+	 * easy to miss when the box that changed is still under the cursor. The
+	 * header indicator puts the confirmation next to the control, exactly as the
+	 * autosaving cards on Account Information already do.
+	 */
+	const smsSaveState = useSaveState(updateSms)
 
 	const isBusy = requestEmail.isPending || updateSms.isPending
 	const data = prefsQuery.data
@@ -60,7 +81,6 @@ function ContactPreferencesPanel({
 		setSmsDraft(next)
 		void updateSms
 			.mutateAsync({
-				contactId,
 				smsPromotional: next.smsPromotional,
 				smsRegistration: next.smsRegistration,
 			})
@@ -110,7 +130,7 @@ function ContactPreferencesPanel({
 						className="mt-3 inline-flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-deep-purple hover:underline disabled:pointer-events-none disabled:opacity-50"
 						onClick={() => {
 							void requestEmail
-								.mutateAsync(contactId)
+								.mutateAsync()
 								.then(() => {
 									setEmailRequested(true)
 								})
@@ -129,7 +149,31 @@ function ContactPreferencesPanel({
 				)}
 			</AccountSectionCard>
 
-			<AccountSectionCard title="Contact Information" className="h-full">
+			{/*
+			 * Editing runs through the SAME dialog as Account Information rather
+			 * than a second, smaller one: `savePersonalInfo` already writes these
+			 * exact fields (`Email`, `Mobile_Phone_Code__c`, `MobilePhone`), and a
+			 * bespoke editor here would be a second copy of their validation, free
+			 * to drift from the first. The save invalidates the composed account
+			 * view, which is what this card reads, so the new values land here
+			 * without any extra wiring.
+			 */}
+			<AccountSectionCard
+				title="Contact Information"
+				className="h-full"
+				action={
+					<AccountEditDialog
+						title="Edit Personal Information"
+						description="Update your name, mobile number, photo, billing and mailing address."
+						open={contactEditOpen}
+						onOpenChange={setContactEditOpen}
+					>
+						<PersonalInfoEditForm
+							onSaved={() => setContactEditOpen(false)}
+						/>
+					</AccountEditDialog>
+				}
+			>
 				<dl className="space-y-3 text-sm">
 					<div>
 						<dt className="inline font-semibold text-foreground">Email: </dt>
@@ -144,7 +188,7 @@ function ContactPreferencesPanel({
 				</dl>
 			</AccountSectionCard>
 
-			<AccountSectionCard title="SMS Preferences">
+			<AccountSectionCard title="SMS Preferences" saveState={smsSaveState}>
 				<p className="text-xs text-muted-foreground">
 					Note: Standard text messaging rates may apply.
 				</p>
@@ -168,7 +212,7 @@ function ContactPreferencesPanel({
 							/>
 							<Label
 								htmlFor="sms-registration"
-								className="text-sm font-normal leading-snug text-muted-foreground"
+								className="cursor-pointer text-sm font-normal leading-snug text-muted-foreground"
 							>
 								I agree to receive time-sensitive information about my upcoming
 								exam/event via text message.
@@ -192,7 +236,7 @@ function ContactPreferencesPanel({
 							/>
 							<Label
 								htmlFor="sms-promotional"
-								className="text-sm font-normal leading-snug text-muted-foreground"
+								className="cursor-pointer text-sm font-normal leading-snug text-muted-foreground"
 							>
 								I agree to receive future marketing and promotional text
 								messages.

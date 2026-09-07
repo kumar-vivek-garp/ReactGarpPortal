@@ -1,35 +1,24 @@
 import { queryOptions } from "@tanstack/react-query"
 
-import { fetchCountryOptions } from "@/api/personal-info/countries"
-import { loadPersonalInfoEditData } from "@/api/personal-info/load-edit-data"
+import { fetchBillingCompany } from "@/api/personal-info/billing-company"
 
 export const personalInfoQueryKeys = {
 	all: ["personal-info"] as const,
-	countries: ["personal-info", "countries"] as const,
-	edit: (contactId: string) => ["personal-info", "edit", contactId] as const,
+	billingCompany: (contactId: string) =>
+		["personal-info", "billing-company", contactId] as const,
 }
 
-export const countryOptionsQueryOptions = queryOptions({
-	queryKey: personalInfoQueryKeys.countries,
-	queryFn: fetchCountryOptions,
-	staleTime: 5 * 60_000,
-	retry: false,
-	meta: {
-		toastError: true,
-		errorTitle: "Unable to load countries",
-	},
-})
-
-export function personalInfoEditQueryOptions(contactId: string) {
+/** The Account billing company the account payload omits — see `billing-company.ts`. */
+export function billingCompanyQueryOptions(contactId: string) {
 	return queryOptions({
-		queryKey: personalInfoQueryKeys.edit(contactId),
-		queryFn: () => loadPersonalInfoEditData(contactId),
+		queryKey: personalInfoQueryKeys.billingCompany(contactId),
+		queryFn: () => fetchBillingCompany(contactId),
 		enabled: Boolean(contactId.trim()),
 		staleTime: 30_000,
 		retry: false,
 		meta: {
 			toastError: true,
-			errorTitle: "Unable to load personal information",
+			errorTitle: "Unable to load billing details",
 		},
 	})
 }

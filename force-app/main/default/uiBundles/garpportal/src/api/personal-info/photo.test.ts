@@ -1,135 +1,111 @@
+import { http, HttpResponse } from "msw"
 import { describe, expect, it } from "vitest"
 
+import { AppError } from "@/api/client"
 import { removeProfilePhoto, uploadProfilePhoto } from "@/api/personal-info/photo"
-import { sdkGraphqlHandler } from "@/testing/msw/handlers/sdk-graphql"
+import { memberPortalError } from "@/testing/factories/envelope"
+import {
+	MEMBER_PHOTO_PATH,
+	personalInfoWriteHandlers,
+} from "@/testing/msw/handlers/personal-info"
 import { server } from "@/testing/msw/server"
 
-type UploadVariables = {
-	parentId: string
-	name: string
-	contentType: string
-	body: string
-}
-
-type SetUrlVariables = { contactId: string; photoUrl: string | null }
-
-function photoOrg({
-	attachmentId = "00Pxx1",
-}: { attachmentId?: string | null } = {}) {
-	const uploads: UploadVariables[] = []
-	const updates: SetUrlVariables[] = []
-	const handler = sdkGraphqlHandler({
-		UploadProfilePhotoAttachment: (variables) => {
-			uploads.push(variables as UploadVariables)
-			return {
-				data: {
-					uiapi: {
-						AttachmentCreate: {
-							Record: attachmentId ? { Id: attachmentId } : null,
-						},
-					},
-				},
-			}
-		},
-		SetContactPhotoUrl: (variables) => {
-			updates.push(variables as SetUrlVariables)
-			return { data: { uiapi: { ContactUpdate: { success: true } } } }
-		},
-	})
-	return { uploads, updates, handler }
-}
-
 describe("uploadProfilePhoto", () => {
-	it("refuses a blank contact id or empty photo before the network", async () => {
-		await expect(uploadProfilePhoto("  ", "AAAA", "x.png")).rejects.toMatchObject({
-			messages: ["Contact Id is required."],
-		})
-		await expect(uploadProfilePhoto("003xx1", "  ", "x.png")).rejects.toMatchObject({
+	it("refuses an empty body before it reaches the network", async () => {
+		await expect(uploadProfilePhoto("  ", "me.jpg")).rejects.toMatchObject({
 			messages: ["Photo data is required."],
 		})
 	})
 
-	it("creates the Attachment then points Photo_URL__c at the servlet", async () => {
-		const org = photoOrg()
-		server.use(org.handler)
+	it("posts the file name and bare base64 payload, resolving the photo URL", async () => {
+		const org = personalInfoWriteHandlers()
+		server.use(...org.handlers)
 
-		await expect(
-			uploadProfilePhoto(" 003xx1 ", "QkFTRTY0", "portrait.PNG"),
-		).resolves.toBe("/servlet/servlet.FileDownload?file=00Pxx1")
-
-		expect(org.uploads).toEqual([
-			{
-				parentId: "003xx1",
-				name: "portrait.PNG",
-				contentType: "image/png",
-				body: "QkFTRTY0",
-			},
-		])
-		expect(org.updates).toEqual([
-			{
-				contactId: "003xx1",
-				photoUrl: "/servlet/servlet.FileDownload?file=00Pxx1",
-			},
-		])
+		await expect(uploadProfilePhoto("Zm9v", " me.png ")).resolves.toBe(
+			"/servlet/servlet.FileDownload?file=00PX0000000ATT",
+		)
+		expect(org.photoSpy.bodies).toEqual([{ fileName: "me.png", fileText: "Zm9v" }])
 	})
 
-	it("derives the content type from the extension, defaulting safely", async () => {
-		const org = photoOrg()
-		server.use(org.handler)
+	it("defaults the file name when none is given", async () => {
+		const org = personalInfoWriteHandlers()
+		server.use(...org.handlers)
 
-		await uploadProfilePhoto("003xx1", "QkFTRTY0", "me.jpeg")
-		await uploadProfilePhoto("003xx1", "QkFTRTY0", "  ")
-		expect(org.uploads.map((u) => u.contentType)).toEqual([
-			"image/jpeg",
-			"application/octet-stream",
-		])
-		// A blank name falls back to the default file name.
-		expect(org.uploads[1].name).toBe("profile-photo.jpg")
+		await uploadProfilePhoto("Zm9v", "")
+		expect(org.photoSpy.bodies[0].fileName).toBe("profile-photo.jpg")
 	})
 
-	it("throws when the create returns no attachment id", async () => {
-		const org = photoOrg({ attachmentId: null })
-		server.use(org.handler)
-
-		await expect(uploadProfilePhoto("003xx1", "QkFTRTY0", "x.png")).rejects.toMatchObject({
-			messages: ["Photo upload did not return an attachment Id."],
-		})
-		expect(org.updates).toEqual([])
-	})
-
-	it("throws the GraphQL error messages from the create", async () => {
+	it("surfaces the service's own refusal", async () => {
 		server.use(
-			sdkGraphqlHandler({
-				UploadProfilePhotoAttachment: () => ({
-					errors: [{ message: "Attachment body too large" }],
+			...personalInfoWriteHandlers({
+				photoRespond: () => ({
+					statusMessage: "The image could not be read.",
+					statusCode: 501,
+					photoUrl: null,
 				}),
-			}),
+			}).handlers,
 		)
 
-		await expect(uploadProfilePhoto("003xx1", "QkFTRTY0", "x.png")).rejects.toMatchObject({
-			messages: ["Attachment body too large"],
+		const failure = uploadProfilePhoto("not-base64", "me.jpg")
+		await expect(failure).rejects.toBeInstanceOf(AppError)
+		await expect(failure).rejects.toMatchObject({
+			messages: ["The image could not be read."],
+		})
+	})
+
+	it("throws when a healthy answer carries no photo URL", async () => {
+		server.use(
+			...personalInfoWriteHandlers({
+				photoRespond: () => ({
+					statusMessage: "Success",
+					statusCode: 200,
+					photoUrl: " ",
+				}),
+			}).handlers,
+		)
+
+		await expect(uploadProfilePhoto("Zm9v", "me.jpg")).rejects.toMatchObject({
+			messages: ["Photo upload did not return a photo URL."],
+		})
+	})
+
+	it("surfaces a router-level refusal", async () => {
+		server.use(
+			http.post(MEMBER_PHOTO_PATH, () =>
+				HttpResponse.json(memberPortalError(401, "Not authenticated."), {
+					status: 401,
+				}),
+			),
+		)
+
+		await expect(uploadProfilePhoto("Zm9v", "me.jpg")).rejects.toMatchObject({
+			messages: ["Not authenticated."],
 		})
 	})
 })
 
 describe("removeProfilePhoto", () => {
-	it("clears Photo_URL__c with a null write", async () => {
-		const org = photoOrg()
-		server.use(org.handler)
+	it("posts an empty body and resolves", async () => {
+		const org = personalInfoWriteHandlers()
+		server.use(...org.handlers)
 
-		await removeProfilePhoto("003xx1")
-		expect(org.updates).toEqual([{ contactId: "003xx1", photoUrl: null }])
+		await expect(removeProfilePhoto()).resolves.toBeUndefined()
+		expect(org.photoRemoveSpy.hits).toBe(1)
 	})
 
-	it("throws the GraphQL error messages from the update", async () => {
+	it("surfaces the service's refusal", async () => {
 		server.use(
-			sdkGraphqlHandler({
-				SetContactPhotoUrl: () => ({ errors: [{ message: "Row locked" }] }),
-			}),
+			...personalInfoWriteHandlers({
+				photoRemoveRespond: () => ({
+					statusMessage: "No photo on file.",
+					statusCode: 501,
+					photoUrl: null,
+				}),
+			}).handlers,
 		)
 
-		await expect(removeProfilePhoto("003xx1")).rejects.toMatchObject({
-			messages: ["Row locked"],
+		await expect(removeProfilePhoto()).rejects.toMatchObject({
+			messages: ["No photo on file."],
 		})
 	})
 })

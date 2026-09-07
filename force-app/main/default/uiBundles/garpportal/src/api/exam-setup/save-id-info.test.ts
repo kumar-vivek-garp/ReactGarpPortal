@@ -3,7 +3,10 @@ import { describe, expect, it } from "vitest"
 
 import { saveExamSetupId } from "@/api/exam-setup/save-id-info"
 import type { ExamSetupSelectionInput } from "@/api/exam-setup/types"
-import { memberPortalEnvelope } from "@/testing/factories/envelope"
+import {
+	memberPortalEnvelope,
+	memberPortalError,
+} from "@/testing/factories/envelope"
 import { server } from "@/testing/msw/server"
 
 const EXAM_SETUP_ID_PATH = "/services/apexrest/memberportal/examSetupId"
@@ -21,7 +24,7 @@ const args = {
 	selection,
 }
 
-describe("saveExamSetupId 200-with-error defence", () => {
+describe("saveExamSetupId", () => {
 	it("posts both halves in one body and returns the save result", async () => {
 		let body: unknown
 		server.use(
@@ -50,35 +53,61 @@ describe("saveExamSetupId 200-with-error defence", () => {
 		})
 	})
 
-	it("surfaces an inner refusal hidden inside an HTTP 200", async () => {
+	// Every deferral rule arrives this way — "You can only defer your exam
+	// registration once", "Part II cannot be taken before Part I". Thrown, they
+	// would become a toast over a form the member can no longer see the fault
+	// in; returned, the wizard prints them against the step that caused them.
+	it("returns an inner refusal rather than throwing", async () => {
 		server.use(
 			http.post(EXAM_SETUP_ID_PATH, () =>
 				HttpResponse.json(
 					memberPortalEnvelope({
-						statusCode: 500,
-						statusMessage: "ID information could not be saved",
+						statusCode: 501,
+						statusMessage:
+							"You can only defer your exam registration once.",
 					}),
 				),
 			),
 		)
 
-		await expect(saveExamSetupId(args)).rejects.toMatchObject({
-			status: 500,
-			messages: ["ID information could not be saved"],
+		await expect(saveExamSetupId(args)).resolves.toMatchObject({
+			statusCode: 501,
+			statusMessage: "You can only defer your exam registration once.",
 		})
 	})
 
-	it("falls back to its own sentence when the refusal is silent", async () => {
+	it("returns a refusal that arrives with a non-200 HTTP status too", async () => {
 		server.use(
 			http.post(EXAM_SETUP_ID_PATH, () =>
 				HttpResponse.json(
-					memberPortalEnvelope({ statusCode: 500, statusMessage: null }),
+					memberPortalEnvelope({
+						statusCode: 505,
+						statusMessage: "Part II cannot be taken before Part I",
+					}),
+					{ status: 505 },
 				),
 			),
 		)
 
+		await expect(saveExamSetupId(args)).resolves.toMatchObject({
+			statusCode: 505,
+			statusMessage: "Part II cannot be taken before Part I",
+		})
+	})
+
+	// A request that never ran carries no payload, and that still throws — the
+	// discriminator is the payload, not the status.
+	it("throws when the failure carries no payload", async () => {
+		server.use(
+			http.post(EXAM_SETUP_ID_PATH, () =>
+				HttpResponse.json(memberPortalError(500, "Apex blew up"), {
+					status: 500,
+				}),
+			),
+		)
+
 		await expect(saveExamSetupId(args)).rejects.toMatchObject({
-			messages: ["Unable to save your exam setup."],
+			messages: ["Apex blew up"],
 		})
 	})
 })

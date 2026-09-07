@@ -8,8 +8,9 @@ import {
 	feesResult,
 	verifyCustomerResult,
 } from "@/testing/factories/exam"
-import { contactEditNode } from "@/testing/factories/personal-info-graphql"
 import {
+	accountViewFromPersonalInfo,
+	billingCompanyGraphql,
 	personalInfoEditData,
 	portalAddressFields,
 } from "@/testing/factories/personal-info"
@@ -69,25 +70,15 @@ function memberExamLoad() {
 }
 
 /**
- * The member's own record, served to the PersonalInfoEditContact hydrate.
+ * The member's own record, served as the composed account payload the
+ * registration panel hydrates from.
  * Mailing mirrors billing on purpose: the loader DERIVES same-as-billing by
  * comparing the two, so differing addresses would mount the shipping card.
  */
-const PROFILE_GRAPHQL = {
-	uiapi: {
-		query: {
-			Contact: {
-				edges: [
-					{
-						node: contactEditNode(
-							personalInfoEditData({ mailing: portalAddressFields() }),
-						),
-					},
-				],
-			},
-		},
-	},
-}
+const PROFILE = personalInfoEditData({
+	mailing: portalAddressFields(),
+	sameAsBilling: true,
+})
 
 function parse(postData: string | null): Record<string, any> {
 	return JSON.parse(postData ?? "{}")
@@ -100,8 +91,12 @@ test.describe("member exam registration", () => {
 		test.slow()
 
 		const org = await installMockOrg(page, {
-			actions: { programs: programsListData(), alertBar: NO_ALERT },
-			graphql: { PersonalInfoEditContact: PROFILE_GRAPHQL },
+			actions: {
+				programs: programsListData(),
+				alertBar: NO_ALERT,
+				account: accountViewFromPersonalInfo(PROFILE),
+			},
+			graphql: { BillingCompany: billingCompanyGraphql(PROFILE) },
 			examreg: {
 				info: memberExamLoad(),
 				fees: feesResult(750),
@@ -115,7 +110,9 @@ test.describe("member exam registration", () => {
 				},
 				register: examRegisterResult(),
 				payOrder: { completed: true },
-				paymentStatus: { isOrderFound: true, isPaymentFound: true },
+				// A wire order's real answer: the order exists, and no payment is recorded
+			// yet — finance settles it days later. The poll accepts that first time.
+			paymentStatus: { isOrderFound: true, isPaymentFound: false },
 			},
 		})
 
@@ -217,6 +214,12 @@ test.describe("member exam registration", () => {
 		await expect(page.getByText("Your order has been submitted")).toBeVisible()
 		await expect(page.getByText("ORD-1001")).toBeVisible()
 		// Member outcome offers the in-portal destinations.
+		// The optional survey stands between the outcome and its actions —
+		// shown after every successful registration, wire included.
+		await expect(
+			page.getByRole("heading", { name: /Help us tailor your/ }),
+		).toBeVisible()
+		await page.getByRole("button", { name: "Skip for now" }).click()
 		await expect(
 			page.getByRole("link", { name: "Go to dashboard" }),
 		).toBeVisible()

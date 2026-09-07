@@ -1,13 +1,27 @@
-import { screen } from "@testing-library/react"
+import { screen, within } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
+import { http, HttpResponse } from "msw"
 import { describe, expect, it, vi } from "vitest"
 
 import type { CurrentUser } from "@/api/auth/current-user"
-import { personalInfoQueryKeys } from "@/api/personal-info/query-options"
 import { ExamRegistrationPanel } from "@/components/forms/exam-registration/exam-registration-panel"
 import { EXAM_PROGRAMS } from "@/config/registration"
+import { memberPortalError } from "@/testing/factories/envelope"
 import { examLoad, feesResult } from "@/testing/factories/exam"
-import { personalInfoEditData } from "@/testing/factories/personal-info"
-import { examregGet, examregPost } from "@/testing/msw/handlers/examreg"
+import {
+	demographicsOptions,
+	paymentStatusResult,
+	stagedPaymentStatus,
+} from "@/testing/factories/exam-payment"
+import {
+	personalInfoEditData,
+	seedPersonalInfoCache,
+} from "@/testing/factories/personal-info"
+import {
+	EXAMREG_PATH,
+	examregGet,
+	examregPost,
+} from "@/testing/msw/handlers/examreg"
 import { server } from "@/testing/msw/server"
 import { createTestQueryClient } from "@/testing/query-client"
 import { renderWithRouterProviders } from "@/testing/router"
@@ -20,26 +34,35 @@ const MEMBER: CurrentUser = {
 	photoUrl: null,
 }
 
-/** Spies on every endpoint the panel could possibly reach. */
+/** Spies on every endpoint the panel could possibly reach besides the poll. */
 function armExamregSpies() {
 	const info = examregGet("info", () => examLoad())
 	const fees = examregPost("fees", () => feesResult(100))
 	const register = examregPost("register", () => ({}))
 	const payOrder = examregPost("payOrder", () => ({}))
-	server.use(info.handler, fees.handler, register.handler, payOrder.handler)
-	return { info, fees, register, payOrder }
+	const rollback = examregPost("rollback", () => ({}))
+	const demographics = examregGet("demographics", () => demographicsOptions())
+	const options = examregGet("options", () => ({ companies: ["Acme"], schools: [] }))
+	server.use(
+		info.handler,
+		fees.handler,
+		register.handler,
+		payOrder.handler,
+		rollback.handler,
+		demographics.handler,
+		options.handler,
+	)
+	return { info, fees, register, payOrder, rollback }
 }
 
 async function renderPaymentReturn(
 	user: CurrentUser | null,
-	orderNumber?: string,
+	paymentReturn: { statusId?: string; orderNumber?: string },
 ) {
 	const queryClient = createTestQueryClient(user)
 	if (user?.contactId) {
-		// Seed the member's profile so the secondary GraphQL read stays off the
-		// wire — the panel's payment-return branch is what is under test here.
-		queryClient.setQueryData(
-			personalInfoQueryKeys.edit(user.contactId),
+		seedPersonalInfoCache(
+			queryClient,
 			personalInfoEditData({ contactId: user.contactId }),
 		)
 	}
@@ -48,7 +71,7 @@ async function renderPaymentReturn(
 			program={EXAM_PROGRAMS.frm}
 			programType="frm"
 			onNavigateBack={vi.fn()}
-			paymentReturn={{ orderNumber }}
+			paymentReturn={paymentReturn}
 		/>,
 		{ user, queryClient },
 	)
@@ -62,86 +85,177 @@ async function flushNetwork() {
 }
 
 describe("ExamRegistrationPanel — payment return", () => {
-	it("shows the paid outcome instead of the form and never prices or registers", async () => {
+	it("confirms first, then shows the survey, then the closing copy — and never loads the form", async () => {
 		const spies = armExamregSpies()
-		await renderPaymentReturn(null, "ORD-2001")
+		const status = examregPost("paymentStatus", () => paymentStatusResult())
+		server.use(status.handler)
+		const user = userEvent.setup()
 
-		// The outcome is on screen synchronously — no skeleton, no form, so
-		// there is no way to re-submit the registration that was just paid for.
+		await renderPaymentReturn(null, { statusId: "801-order" })
+
+		// Not "paid" on arrival — the poll has not answered yet.
 		expect(
-			screen.getByRole("heading", { name: "Thank you — payment received" }),
+			screen.getByRole("heading", { name: "Payment received" }),
 		).toBeInTheDocument()
-		expect(screen.getByText("ORD-2001")).toBeInTheDocument()
 		expect(screen.queryByText("Loading your registration…")).not.toBeInTheDocument()
-		expect(screen.queryByRole("button", { name: /register/i })).not.toBeInTheDocument()
 
-		// The guard against double registration: nothing that writes or prices
-		// an order may fire on this leg.
-		await flushNetwork()
-		expect(spies.fees.spy.hits).toBe(0)
-		expect(spies.register.spy.hits).toBe(0)
-		expect(spies.payOrder.spy.hits).toBe(0)
-		/*
-		 * SUSPECTED BUG, pinned deliberately: the panel's own comment says the
-		 * payment return is "shown before anything else is fetched", but the
-		 * load query (`GET examreg/info`) is mounted unconditionally above the
-		 * short-circuit, so it still fires once in the background. Harmless to
-		 * the double-registration guard (read-only, and the form never renders),
-		 * but it is a wasted request on a leg that should be network-silent. If
-		 * this assertion starts failing with 0, the query was gated — update
-		 * this pin and delete the comment.
-		 */
-		expect(spies.info.spy.hits).toBe(1)
-	})
-
-	it("renders a purely numeric order number (the JSON-parsed search param)", async () => {
-		armExamregSpies()
-		// `?on=8013` arrives as the number 8013 and is coerced back to a string
-		// by the route schema — the panel must render it, not drop it.
-		await renderPaymentReturn(null, "8013")
-
-		expect(screen.getByText("8013")).toBeInTheDocument()
-	})
-
-	it("still shows the outcome when the provider sent no order number", async () => {
-		armExamregSpies()
-		await renderPaymentReturn(null, undefined)
-
+		// Confirmed: the reference from the poll, and the survey before any action.
 		expect(
-			screen.getByRole("heading", { name: "Thank you — payment received" }),
+			await screen.findByRole("heading", { name: "Thank you — payment received" }),
 		).toBeInTheDocument()
-		expect(screen.queryByText("Order")).not.toBeInTheDocument()
-	})
+		expect(screen.getByText("ORD-1001")).toBeInTheDocument()
+		expect(
+			await screen.findByRole("heading", { name: /Help us tailor your/ }),
+		).toBeInTheDocument()
+		expect(screen.queryByRole("link", { name: "Sign in" })).not.toBeInTheDocument()
 
-	it("offers a guest only public-safe destinations", async () => {
-		armExamregSpies()
-		await renderPaymentReturn(null, "ORD-2001")
-
+		await user.click(screen.getByRole("button", { name: "Skip for now" }))
 		expect(screen.getByRole("link", { name: "Sign in" })).toBeInTheDocument()
 		expect(
 			screen.getByRole("link", { name: "Back to GARP.org" }),
 		).toHaveAttribute("href", "https://www.garp.org")
-		expect(
-			screen.queryByRole("link", { name: "Go to dashboard" }),
-		).not.toBeInTheDocument()
+
+		// The poll is the ONLY registration call this leg makes.
+		await flushNetwork()
+		expect(status.spy.bodies[0]).toEqual({ orderId: "801-order" })
+		expect(spies.info.spy.hits).toBe(0)
+		expect(spies.fees.spy.hits).toBe(0)
+		expect(spies.register.spy.hits).toBe(0)
+		expect(spies.payOrder.spy.hits).toBe(0)
+		expect(spies.rollback.spy.hits).toBe(0)
 	})
 
-	it("offers a member the in-app destinations", async () => {
-		const spies = armExamregSpies()
-		await renderPaymentReturn(MEMBER, "ORD-2001")
+	it("DEFERRED FLOW: a Paid staged row reads as finalising, under its REG- reference", async () => {
+		armExamregSpies()
+		const status = examregPost("paymentStatus", () =>
+			stagedPaymentStatus({ isComplete: false, orderNumber: null }),
+		)
+		server.use(status.handler)
+		const user = userEvent.setup()
 
+		await renderPaymentReturn(null, { statusId: "a0H-staged" })
+
+		expect(await screen.findByText("REG-000123")).toBeInTheDocument()
+		expect(screen.getByText("Reference")).toBeInTheDocument()
+		await user.click(await screen.findByRole("button", { name: "Skip for now" }))
+		expect(
+			screen.getByText(/your registration is being finalised/i),
+		).toBeInTheDocument()
+	})
+
+	it("a declined card offers Try again, pointing back at the form with the staged id", async () => {
+		const spies = armExamregSpies()
+		const status = examregPost("paymentStatus", () =>
+			stagedPaymentStatus({
+				registrationStatus: "Payment Failed",
+				isPaymentSuccess: false,
+				errorMessage: "Your card was declined.",
+			}),
+		)
+		server.use(status.handler)
+
+		await renderPaymentReturn(null, { statusId: "a0H-staged" })
+
+		expect(
+			await screen.findByRole("heading", {
+				name: "There may have been an issue processing your payment",
+			}),
+		).toBeInTheDocument()
+		expect(screen.getByText(/Your card was declined\./)).toBeInTheDocument()
+		const tryAgain = screen.getByRole("link", { name: "Try again" })
+		expect(new URL(tryAgain.getAttribute("href") ?? "", "http://x").searchParams.get("resume")).toBe(
+			"a0H-staged",
+		)
+		// A decline never reaches the survey.
+		expect(screen.queryByRole("heading", { name: /Help us tailor your/ })).not.toBeInTheDocument()
+		expect(spies.rollback.spy.hits).toBe(0)
+	})
+
+	it("paid but rolled back or Failed is a failure that needs a human, never a success", async () => {
+		armExamregSpies()
+		const status = examregPost("paymentStatus", () =>
+			paymentStatusResult({ isOrderRolledback: true }),
+		)
+		server.use(status.handler)
+
+		await renderPaymentReturn(null, { statusId: "801-rb" })
+
+		expect(
+			await screen.findByRole("heading", { name: "We could not complete your registration" }),
+		).toBeInTheDocument()
+		expect(screen.queryByRole("heading", { name: /Help us tailor your/ })).not.toBeInTheDocument()
+	})
+
+	it("an answer with no trace of the registration is an issue, not a confirmation", async () => {
+		armExamregSpies()
+		const status = examregPost("paymentStatus", () => ({}))
+		server.use(status.handler)
+
+		await renderPaymentReturn(null, { statusId: "dead" })
+
+		expect(
+			await screen.findByRole("heading", {
+				name: "There may have been an issue processing your payment",
+			}),
+		).toBeInTheDocument()
+		// It will not become right by asking again: no further polling once
+		// settled. (StrictMode's double-mounted effect may have asked twice on
+		// arrival — the point is that the count stops moving.)
+		const asked = status.spy.hits
+		await flushNetwork()
+		expect(status.spy.hits).toBe(asked)
+	})
+
+	it("a server refusal stops the poll and carries its message", async () => {
+		armExamregSpies()
+		server.use(
+			http.post(`${EXAMREG_PATH}/paymentStatus`, () =>
+				HttpResponse.json(memberPortalError(400, "Order not found"), { status: 400 }),
+			),
+		)
+
+		await renderPaymentReturn(null, { statusId: "801-x" })
+
+		const heading = await screen.findByRole("heading", {
+			name: "There may have been an issue processing your payment",
+		})
+		expect(within(heading.parentElement as HTMLElement).getByText(/Order not found/)).toBeInTheDocument()
+	})
+
+	it("with no id at all there is nothing to poll — settled as an issue at once", async () => {
+		armExamregSpies()
+		const status = examregPost("paymentStatus", () => paymentStatusResult())
+		server.use(status.handler)
+
+		await renderPaymentReturn(null, { orderNumber: "8013" })
+
+		expect(
+			screen.getByRole("heading", {
+				name: "There may have been an issue processing your payment",
+			}),
+		).toBeInTheDocument()
+		await flushNetwork()
+		expect(status.spy.hits).toBe(0)
+	})
+
+	it("offers a member the in-app destinations once the survey is done", async () => {
+		const spies = armExamregSpies()
+		const status = examregPost("paymentStatus", () => paymentStatusResult())
+		server.use(status.handler)
+		const user = userEvent.setup()
+
+		await renderPaymentReturn(MEMBER, { statusId: "801-order" })
+
+		// A member's survey reads the member portal, which is not mocked here,
+		// so the survey reports itself unavailable — and still stands between
+		// the confirmation and the actions.
+		await user.click(await screen.findByRole("button", { name: "Continue" }))
 		expect(
 			screen.getByRole("link", { name: "Go to dashboard" }),
 		).toHaveAttribute("href", "/dashboard")
-		expect(
-			screen.getByRole("link", { name: "Back to programmes" }),
-		).toHaveAttribute("href", "/programs")
 		expect(screen.queryByRole("link", { name: "Sign in" })).not.toBeInTheDocument()
-
-		// Same background-load pin as above — and still nothing order-writing.
 		await flushNetwork()
-		expect(spies.info.spy.hits).toBe(1)
+		expect(spies.info.spy.hits).toBe(0)
 		expect(spies.register.spy.hits).toBe(0)
-		expect(spies.payOrder.spy.hits).toBe(0)
 	})
 })

@@ -4,7 +4,6 @@ import { http, HttpResponse } from "msw"
 import { describe, expect, it } from "vitest"
 
 import type { CurrentUser } from "@/api/auth/current-user"
-import { personalInfoQueryKeys } from "@/api/personal-info/query-options"
 import type { EventRegisterRequest } from "@/api/registration/event-types"
 import { EventRegistrationPanel } from "@/components/forms/event-registration/event-registration-panel"
 import { memberPortalError } from "@/testing/factories/envelope"
@@ -13,7 +12,10 @@ import {
 	eventLoad,
 	eventRegisterResult,
 } from "@/testing/factories/event"
-import { personalInfoEditData } from "@/testing/factories/personal-info"
+import {
+	personalInfoEditData,
+	seedPersonalInfoCache,
+} from "@/testing/factories/personal-info"
 import { examregGet, examregPost } from "@/testing/msw/handlers/examreg"
 import { server } from "@/testing/msw/server"
 import { createTestQueryClient } from "@/testing/query-client"
@@ -102,8 +104,8 @@ describe("EventRegistrationPanel — free submit, end to end", () => {
 		)
 		const queryClient = createTestQueryClient(withContact)
 		// The profile answers from the cache — its GraphQL read stays off the wire.
-		queryClient.setQueryData(
-			personalInfoQueryKeys.edit("003-member"),
+		seedPersonalInfoCache(
+			queryClient,
 			personalInfoEditData({
 				contactId: "003-member",
 				email: "grace@example.test",

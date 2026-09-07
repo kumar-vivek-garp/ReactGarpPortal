@@ -39,6 +39,18 @@ describe("buildMembershipPresentation — intro copy", () => {
 		expect(presentation.intro).toContain("Renew your Individual Membership")
 	})
 
+	it("treats any non-Activated contract label as lapsed, not only Expired", () => {
+		// A Cancelled contract: Apex labels it Lapsed while memberStatus is not
+		// "Expired". GarpAppv1 keys off the label, and so must this.
+		const presentation = buildMembershipPresentation(
+			individual({ memberStatus: "Cancelled", statusLabel: "Lapsed" }),
+			false,
+		)
+		expect(presentation.intro).toContain("Renew your Individual Membership")
+		expect(presentation.showTurnOnCallout).toBe(false)
+		expect(presentation.statusTone).toBe("danger")
+	})
+
 	it("classifies from the Contact when there is no contract", () => {
 		const presentation = buildMembershipPresentation(
 			accountView({ identity: { isAffiliateMember: true } }),
@@ -48,10 +60,10 @@ describe("buildMembershipPresentation — intro copy", () => {
 	})
 })
 
-describe("buildMembershipPresentation — status text", () => {
+describe("buildMembershipPresentation — status and facts", () => {
 	it("shows the label with its expiry for an active membership", () => {
 		expect(buildMembershipPresentation(individual(), false).statusText).toBe(
-			"Active (Until March 1, 2027)",
+			"Active (until March 1, 2027)",
 		)
 	})
 
@@ -96,19 +108,26 @@ describe("buildMembershipPresentation — status text", () => {
 		).toBeNull()
 	})
 
-	it("overrides everything with Payment Pending", () => {
-		const presentation = buildMembershipPresentation(
-			individual({ pendingOrderId: "006x" }),
-			false,
+	it("formats Member Since from the contract, falling back to the Contact", () => {
+		expect(buildMembershipPresentation(individual(), false).memberSince).toBe(
+			"March 1, 2020",
 		)
-		expect(presentation.statusText).toBe("Payment Pending")
-		expect(presentation.statusTone).toBe("warning")
-		expect(presentation.showViewOrder).toBe(true)
-		expect(presentation.pendingOrderId).toBe("006x")
+		expect(
+			buildMembershipPresentation(
+				accountView({ identity: { memberSince: "2019-06-15" } }),
+				false,
+			).memberSince,
+		).toBe("June 15, 2019")
 	})
-})
 
-describe("buildMembershipPresentation — renewal amount", () => {
+	it("flags a certification holder", () => {
+		expect(buildMembershipPresentation(individual(), false).isCertHolder).toBe(false)
+		expect(
+			buildMembershipPresentation(individual({ isCertHolder: true }), false)
+				.isCertHolder,
+		).toBe(true)
+	})
+
 	it("quotes the cert-holder rate only to a cert holder", () => {
 		expect(buildMembershipPresentation(individual(), false).renewAmount).toBe("195")
 		expect(
@@ -118,74 +137,101 @@ describe("buildMembershipPresentation — renewal amount", () => {
 	})
 })
 
-describe("buildMembershipPresentation — auto-renew callouts", () => {
-	it("invites an Individual without auto-renew to turn it on", () => {
+describe("buildMembershipPresentation — pending order outranks everything", () => {
+	it("overrides the status, names the order and offers View Order alone", () => {
+		const presentation = buildMembershipPresentation(
+			individual({
+				isAutoRenewEnabled: true,
+				pendingOrderId: "006x",
+				pendingOrderNumber: "INV-42",
+				pendingOrderAmount: 195,
+			}),
+			false,
+		)
+		expect(presentation.statusText).toBe("Payment Pending")
+		expect(presentation.statusTone).toBe("warning")
+		expect(presentation.pendingOrderId).toBe("006x")
+		expect(presentation.pendingOrderText).toBe(
+			"Order INV-42 — $195.00 is waiting to be paid.",
+		)
+		expect(presentation.action).toBe("viewOrder")
+		expect(presentation.showOnCallout).toBe(false)
+		expect(presentation.showTurnOnCallout).toBe(false)
+	})
+
+	it("falls back to the id and omits the amount when the order carries neither", () => {
+		expect(
+			buildMembershipPresentation(individual({ pendingOrderId: "006x" }), false)
+				.pendingOrderText,
+		).toBe("Order 006x is waiting to be paid.")
+	})
+
+	it("has no order line without a pending order", () => {
+		expect(buildMembershipPresentation(individual(), false).pendingOrderText).toBeNull()
+	})
+})
+
+describe("buildMembershipPresentation — auto-renew callouts and action", () => {
+	it("invites an Individual without auto-renew to turn it on, and offers Renew Now", () => {
 		const presentation = buildMembershipPresentation(individual(), false)
 		expect(presentation.showTurnOnCallout).toBe(true)
 		expect(presentation.showOnCallout).toBe(false)
-		expect(presentation.showRenewNow).toBe(true)
-		expect(presentation.showDisable).toBe(false)
+		expect(presentation.action).toBe("renewNow")
 	})
 
-	it("confirms auto-renew when it is on", () => {
+	it("confirms auto-renew when it is on, and offers only Disable", () => {
 		const presentation = buildMembershipPresentation(
 			individual({ isAutoRenewEnabled: true }),
 			false,
 		)
 		expect(presentation.showOnCallout).toBe(true)
-		expect(presentation.showDisable).toBe(true)
 		expect(presentation.showTurnOnCallout).toBe(false)
-		expect(presentation.showRenewNow).toBe(false)
+		expect(presentation.action).toBe("disable")
 	})
 
-	it("holds the invite while Stripe setup has not landed on the contract", () => {
-		// The member just finished checkout; Apex has not flipped the flag yet.
+	it("says the card is saved while Stripe's webhook has not flipped the contract", () => {
+		// The member just came back from Stripe; Apex still reports auto-renew off.
 		const presentation = buildMembershipPresentation(individual(), true)
-		expect(presentation.isAutoRenewPending).toBe(true)
+		expect(presentation.showCardSaved).toBe(true)
+		// Not GarpAppv1's behaviour, deliberately: no second Stripe session
+		// while the first card is still landing.
 		expect(presentation.showTurnOnCallout).toBe(false)
+		// Renew Now stays offered, as in GarpAppv1.
+		expect(presentation.action).toBe("renewNow")
 	})
 
-	it("is not pending once the contract itself reports auto-renew on", () => {
+	it("drops the saved notice once the contract itself reports auto-renew on", () => {
 		const presentation = buildMembershipPresentation(
 			individual({ isAutoRenewEnabled: true }),
 			true,
 		)
-		expect(presentation.isAutoRenewPending).toBe(false)
+		expect(presentation.showCardSaved).toBe(false)
+		expect(presentation.showOnCallout).toBe(true)
 	})
 
-	it("offers nothing auto-renew to an expired or pending membership", () => {
+	it("offers a lapsed Individual Renew Now and no turn-on invitation", () => {
 		const expired = buildMembershipPresentation(
 			individual({ memberStatus: "Expired", statusLabel: "Lapsed" }),
 			false,
 		)
 		expect(expired.showTurnOnCallout).toBe(false)
-		// Renew Now is exactly what a lapsed Individual should still see.
-		expect(expired.showRenewNow).toBe(true)
-
-		const pending = buildMembershipPresentation(
-			individual({ pendingOrderId: "006x" }),
-			false,
-		)
-		expect(pending.showTurnOnCallout).toBe(false)
-		expect(pending.showRenewNow).toBe(false)
+		expect(expired.action).toBe("renewNow")
 	})
-})
 
-describe("buildMembershipPresentation — upgrade", () => {
-	it("offers the upgrade to an Affiliate without a pending order", () => {
+	it("offers an Affiliate the upgrade, unless an order is pending", () => {
 		expect(
 			buildMembershipPresentation(individual({ memberType: "Affiliate" }), false)
-				.showUpgrade,
-		).toBe(true)
+				.action,
+		).toBe("upgrade")
 		expect(
 			buildMembershipPresentation(
 				individual({ memberType: "Affiliate", pendingOrderId: "006x" }),
 				false,
-			).showUpgrade,
-		).toBe(false)
+			).action,
+		).toBe("viewOrder")
 	})
 
-	it("never offers it to an Individual", () => {
-		expect(buildMembershipPresentation(individual(), false).showUpgrade).toBe(false)
+	it("offers nothing to an account with no membership at all", () => {
+		expect(buildMembershipPresentation(accountView(), false).action).toBeNull()
 	})
 })

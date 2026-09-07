@@ -1,87 +1,68 @@
 import { screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { http, HttpResponse } from "msw"
 import { describe, expect, it } from "vitest"
 
 import { ContactPreferencesPanel } from "@/components/organisms/contact-preferences-panel"
+import { accountView } from "@/testing/factories/account"
+import { memberPortalError } from "@/testing/factories/envelope"
+import { ACCOUNT_PATH, myAccountOrg } from "@/testing/msw/handlers/account"
+import { emailPreferenceHandler } from "@/testing/msw/handlers/contact-preferences"
 import { server } from "@/testing/msw/server"
-import { sdkGraphqlHandler } from "@/testing/msw/handlers/sdk-graphql"
 import { renderWithProviders } from "@/testing/render"
 
-const CONTACT_ID = "003XX0000012345"
 const EMAIL_SUCCESS =
 	"An email has been sent to your account with instructions on how to update your preferences."
 
-type PrefsNode = {
-	smsPromotional?: boolean
-	smsRegistration?: boolean
+type Personal = {
 	email?: string | null
 	mobilePhone?: string | null
 	mobilePhoneCode?: string | null
 }
 
-function queryResult({
-	smsPromotional = false,
-	smsRegistration = false,
+/** The account view the tab reads, with the display fields under test. */
+function serveAccount({
 	email = "ada@example.com",
 	mobilePhone = "5551234567",
-	mobilePhoneCode = "1",
-}: PrefsNode = {}) {
-	return {
-		data: {
-			uiapi: {
-				query: {
-					Contact: {
-						edges: [
-							{
-								node: {
-									Id: CONTACT_ID,
-									Email: { value: email },
-									MobilePhone: { value: mobilePhone },
-									Mobile_Phone_Code__c: { value: mobilePhoneCode },
-									SMS_Promotional_Updates__c: { value: smsPromotional },
-									SMS_Registration_Updates__c: { value: smsRegistration },
-								},
-							},
-						],
-					},
-				},
-			},
-		},
-	}
-}
-
-const emailSuccessResult = {
-	data: { uiapi: { ContactUpdate: { success: true } } },
+	mobilePhoneCode = "United States (+1)",
+}: Personal = {}) {
+	server.use(
+		...myAccountOrg({
+			view: accountView({ personal: { email, mobilePhone, mobilePhoneCode } }),
+		}).handlers,
+	)
 }
 
 describe("ContactPreferencesPanel — loading and display", () => {
-	it("shows the contact's email and combined mobile number once loaded", async () => {
-		server.use(sdkGraphqlHandler({ ContactPreferences: () => queryResult() }))
-		renderWithProviders(<ContactPreferencesPanel contactId={CONTACT_ID} />)
+	it("shows the contact's email and the dialing code from the stored location", async () => {
+		serveAccount()
+		renderWithProviders(<ContactPreferencesPanel />)
 
 		expect(await screen.findByText("ada@example.com")).toBeInTheDocument()
 		expect(screen.getByText("+1 5551234567")).toBeInTheDocument()
 	})
 
+	it("still shows a bare legacy code with a plus", async () => {
+		serveAccount({ mobilePhoneCode: "44" })
+		renderWithProviders(<ContactPreferencesPanel />)
+
+		expect(await screen.findByText("+44 5551234567")).toBeInTheDocument()
+	})
+
 	it("falls back to em dashes when the contact has no email or mobile", async () => {
-		server.use(
-			sdkGraphqlHandler({
-				ContactPreferences: () =>
-					queryResult({ email: null, mobilePhone: null, mobilePhoneCode: "1" }),
-			}),
-		)
-		renderWithProviders(<ContactPreferencesPanel contactId={CONTACT_ID} />)
+		serveAccount({ email: null, mobilePhone: null })
+		renderWithProviders(<ContactPreferencesPanel />)
 
 		expect(await screen.findAllByText("—")).toHaveLength(2)
 	})
 
 	it("reports a failed load instead of rendering empty preferences", async () => {
 		server.use(
-			sdkGraphqlHandler({
-				ContactPreferences: () => ({ errors: [{ message: "no access" }] }),
-			}),
+			http.get(ACCOUNT_PATH, () =>
+				HttpResponse.json(memberPortalError(500, "no access"), { status: 500 }),
+			),
 		)
-		renderWithProviders(<ContactPreferencesPanel contactId={CONTACT_ID} />)
+		renderWithProviders(<ContactPreferencesPanel />)
 
 		expect(
 			await screen.findByText(/couldn't load your contact preferences/i),
@@ -92,23 +73,19 @@ describe("ContactPreferencesPanel — loading and display", () => {
 
 describe("ContactPreferencesPanel — the one-shot email request", () => {
 	it("swaps the button for the confirmation, and it stays swapped", async () => {
-		server.use(
-			sdkGraphqlHandler({
-				ContactPreferences: () => queryResult(),
-				RequestEmailPreferences: () => emailSuccessResult,
-			}),
-		)
+		serveAccount()
+		const email = emailPreferenceHandler()
+		server.use(email.handler)
 		const user = userEvent.setup()
-		const { queryClient } = renderWithProviders(
-			<ContactPreferencesPanel contactId={CONTACT_ID} />,
-		)
+		const { queryClient } = renderWithProviders(<ContactPreferencesPanel />)
 
 		await user.click(
 			await screen.findByRole("button", { name: /manage email preferences/i }),
 		)
 
 		expect(await screen.findByText(EMAIL_SUCCESS)).toBeInTheDocument()
-		// Success invalidates the prefs cache; the refetch must not resurrect
+		expect(email.spy.hits).toBe(1)
+		// Success invalidates the account cache; the refetch must not resurrect
 		// the button — the latch is component state, not server state.
 		await waitFor(() => expect(queryClient.isFetching()).toBe(0))
 		expect(
@@ -122,17 +99,23 @@ describe("ContactPreferencesPanel — the one-shot email request", () => {
 		const gate = new Promise<void>((resolve) => {
 			release = resolve
 		})
+		serveAccount()
 		server.use(
-			sdkGraphqlHandler({
-				ContactPreferences: () => queryResult(),
-				RequestEmailPreferences: async () => {
+			http.post(
+				"/services/apexrest/memberportal/emailPreferenceUpdate",
+				async () => {
 					await gate
-					return emailSuccessResult
+					return HttpResponse.json({
+						status: "Success",
+						statusCode: 200,
+						errorMessage: null,
+						data: { statusMessage: "Email Pref Date Updated", statusCode: 200 },
+					})
 				},
-			}),
+			),
 		)
 		const user = userEvent.setup()
-		renderWithProviders(<ContactPreferencesPanel contactId={CONTACT_ID} />)
+		renderWithProviders(<ContactPreferencesPanel />)
 
 		await user.click(
 			await screen.findByRole("button", { name: /manage email preferences/i }),
@@ -152,16 +135,15 @@ describe("ContactPreferencesPanel — the one-shot email request", () => {
 	})
 
 	it("keeps the button on failure so the member can try again", async () => {
+		serveAccount()
 		server.use(
-			sdkGraphqlHandler({
-				ContactPreferences: () => queryResult(),
-				RequestEmailPreferences: () => ({
-					errors: [{ message: "flow is broken" }],
-				}),
-			}),
+			emailPreferenceHandler(() => ({
+				statusMessage: "flow is broken",
+				statusCode: 501,
+			})).handler,
 		)
 		const user = userEvent.setup()
-		renderWithProviders(<ContactPreferencesPanel contactId={CONTACT_ID} />)
+		renderWithProviders(<ContactPreferencesPanel />)
 
 		await user.click(
 			await screen.findByRole("button", { name: /manage email preferences/i }),
@@ -174,5 +156,34 @@ describe("ContactPreferencesPanel — the one-shot email request", () => {
 		})
 		await waitFor(() => expect(manage).toBeEnabled())
 		expect(screen.queryByText(EMAIL_SUCCESS)).not.toBeInTheDocument()
+	})
+})
+
+describe("ContactPreferencesPanel — editing contact information", () => {
+	/*
+	 * The card used to be read-only. It now opens the SAME editor Account
+	 * Information uses, rather than a second one: `savePersonalInfo` already
+	 * writes these exact fields, and the save invalidates the composed account
+	 * view this card reads from, so the values come back here on their own.
+	 */
+	it("offers an Edit control that opens the personal information dialog", async () => {
+		serveAccount()
+		const user = userEvent.setup()
+		renderWithProviders(<ContactPreferencesPanel />)
+		await screen.findByText("ada@example.com")
+
+		await user.click(screen.getByRole("button", { name: "Edit" }))
+
+		expect(
+			await screen.findByRole("dialog", { name: "Edit Personal Information" }),
+		).toBeInTheDocument()
+	})
+
+	it("keeps the fields read-only until the dialog is asked for", async () => {
+		serveAccount()
+		renderWithProviders(<ContactPreferencesPanel />)
+		await screen.findByText("ada@example.com")
+
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
 	})
 })

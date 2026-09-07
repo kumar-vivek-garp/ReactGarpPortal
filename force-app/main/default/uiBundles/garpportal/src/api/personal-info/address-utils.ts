@@ -1,6 +1,6 @@
-/** Street / address helpers for Personal Information GraphQL save. */
+/** Street / address helpers for the Personal Information dialog. */
 
-import type { AddressFormFields } from "@/api/personal-info/types"
+import type { AddressFormFields, AddressInput } from "@/api/personal-info/types"
 
 export function emptyAddress(): AddressFormFields {
 	return {
@@ -30,18 +30,24 @@ export function joinStreet(address1: string, address2: string, address3: string)
 		.join("\n")
 }
 
-export function addressesMatch(a: AddressFormFields, b: AddressFormFields): boolean {
-	return (
-		a.company.trim() === b.company.trim() &&
-		a.address1.trim() === b.address1.trim() &&
-		a.address2.trim() === b.address2.trim() &&
-		a.address3.trim() === b.address3.trim() &&
-		a.country.trim() === b.country.trim() &&
-		a.city.trim() === b.city.trim() &&
-		a.state.trim() === b.state.trim() &&
-		a.postalCode.trim() === b.postalCode.trim() &&
-		a.phone.trim() === b.phone.trim()
-	)
+/**
+ * One address as `POST /memberportal/addresses` takes it: trimmed, blanks as
+ * null, and always the three-line street form so a cleared line actually
+ * clears rather than falling back to the previously joined value.
+ */
+export function toAddressInput(fields: AddressFormFields): AddressInput {
+	const orNull = (value: string) => value.trim() || null
+	return {
+		company: orNull(fields.company),
+		street1: orNull(fields.address1),
+		street2: orNull(fields.address2),
+		street3: orNull(fields.address3),
+		city: orNull(fields.city),
+		state: orNull(fields.state),
+		postalCode: orNull(fields.postalCode),
+		country: orNull(fields.country),
+		phone: orNull(fields.phone),
+	}
 }
 
 export function copyAddress(source: AddressFormFields): AddressFormFields {

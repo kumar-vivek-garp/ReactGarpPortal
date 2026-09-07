@@ -18,6 +18,8 @@ function presentation(
 		statusSummary: "You are registered for the May 2027 sitting.",
 		nextStepTitle: "Schedule your exam",
 		nextStepBody: "Pick a date and centre before the window closes.",
+		nextStepTone: "info",
+		notes: [],
 		primaryAction: null,
 		secondaryActions: [],
 		milestones: [],
@@ -76,6 +78,39 @@ describe("ProgramDetailHero — identity block", () => {
 
 		rerender(<ProgramDetailHero presentation={presentation()} logoUrl={null} />)
 		expect(document.querySelector("img")).toBeNull()
+	})
+})
+
+describe("ProgramDetailHero — the next-step card", () => {
+	it("turns into an alert when the tone is danger", async () => {
+		await renderWithRouterProviders(
+			<ProgramDetailHero
+				presentation={presentation({
+					nextStepTone: "danger",
+					nextStepTitle: "You have an unpaid exam change",
+					nextStepBody: "You must pay before April 20, 2027 to complete this request.",
+				})}
+			/>,
+		)
+		expect(screen.getByRole("alert")).toHaveTextContent(
+			"You have an unpaid exam change",
+		)
+		expect(screen.getByText("Action required")).toBeInTheDocument()
+		expect(screen.queryByText("Next step")).not.toBeInTheDocument()
+	})
+
+	it("prints the notes under the body, muted", async () => {
+		await renderWithRouterProviders(
+			<ProgramDetailHero
+				presentation={presentation({
+					notes: ["Select 'Take Exam' to check in 30 minutes prior."],
+				})}
+			/>,
+		)
+		expect(
+			screen.getByText("Select 'Take Exam' to check in 30 minutes prior."),
+		).toBeInTheDocument()
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument()
 	})
 })
 

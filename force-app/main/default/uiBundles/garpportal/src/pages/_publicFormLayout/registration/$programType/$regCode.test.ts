@@ -12,6 +12,9 @@ const NO_SEARCH: RegistrationSearch = {
 	stripe_return: undefined,
 	oid: undefined,
 	on: undefined,
+	checkout_cancelled: undefined,
+	resume: undefined,
+	track_cta: undefined,
 }
 
 type RedirectOptions = {

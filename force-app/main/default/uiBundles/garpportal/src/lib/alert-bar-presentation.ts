@@ -33,7 +33,7 @@ export type AlertBarModel = {
 	/** `FRM Part II`, `RAI`, or a fallback when Apex names no programme. */
 	programme: string
 	message: string
-	/** `Book by 7 November 2026`, or null — four statuses carry no deadline. */
+	/** `Schedule by 7 November 2026`, or null — four statuses carry no deadline. */
 	deadlineLabel: string | null
 	tone: AlertTone
 	/** Null when the destination is unknown or unavailable to this member. */

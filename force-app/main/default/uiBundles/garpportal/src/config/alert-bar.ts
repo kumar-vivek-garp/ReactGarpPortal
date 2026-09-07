@@ -62,7 +62,7 @@ export const ALERT_BAR_COPY: Record<AlertStatus, AlertCopy> = {
 	"Scheduling Incomplete": {
 		message: "You have not booked a seat for your exam yet.",
 		tone: "urgent",
-		deadlinePrefix: "Book by",
+		deadlinePrefix: "Schedule by",
 	},
 	"Scheduling Expired": {
 		message: "The window to book a seat for that exam has closed.",

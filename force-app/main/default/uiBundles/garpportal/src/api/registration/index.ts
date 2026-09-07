@@ -29,19 +29,24 @@ export {
 } from "@/api/registration/examreg-fetch"
 export {
 	calculateFees,
+	fetchExamDemographics,
 	fetchExamPaymentStatus,
 	fetchExamRegistration,
+	fetchExamResume,
 	fetchRegistrationOptions,
 	payExamOrder,
 	registerExam,
 	rollbackExamRegistration,
+	saveExamDemographics,
 	startExamCheckout,
 	verifyExamAddress,
 	verifyExamCustomer,
 } from "@/api/registration/exam-registration"
 export {
+	examDemographicsQueryOptions,
 	examFeesQueryOptions,
 	examRegistrationQueryOptions,
+	examResumeQueryOptions,
 } from "@/api/registration/query-options"
 export type {
 	AddressCheckResult,
@@ -49,6 +54,9 @@ export type {
 	CheckoutResult,
 	ConsentInput,
 	CustomerInput,
+	DemographicsOptions,
+	DemographicsSaveRequest,
+	DemographicsSaveResult,
 	ExamAdminView,
 	ExamPartView,
 	ExamProgramView,
@@ -67,6 +75,8 @@ export type {
 	ProgramKind,
 	RegistrationOptions,
 	RegistrationTracking,
+	ResumeResult,
 	SelectionInput,
+	StagedRegistrationStatus,
 	StudyMaterialView,
 } from "@/api/registration/exam-types"

@@ -22,7 +22,7 @@ type SdkGraphqlResolver = (
  *
  * The api modules do not pass `operationName` (it is dropped from the JSON
  * body as `undefined`), so operations are matched against the printed query
- * text — `query ContactPreferences(...)` / `mutation UpdateSmsPreferences(...)`.
+ * text — `query CurrentUser` / `query BillingCompany(...)`.
  *
  * GraphQL failures are HTTP 200 with a top-level `errors[]`; model them by
  * resolving `{ errors: [{ message: "…" }] }`. An operation with no resolver

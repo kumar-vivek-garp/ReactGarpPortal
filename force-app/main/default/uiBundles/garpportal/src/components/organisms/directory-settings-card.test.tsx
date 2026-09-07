@@ -44,7 +44,7 @@ function optedInAccount(): AccountView {
 }
 
 const optIn = () =>
-	screen.getByRole("checkbox", { name: "Member directory opt-in" })
+	screen.getByRole("checkbox", { name: "Directory opt-in" })
 const orgExpertise = () =>
 	screen.getByRole("checkbox", { name: "Show my organization type & expertise" })
 const jobCompany = () =>

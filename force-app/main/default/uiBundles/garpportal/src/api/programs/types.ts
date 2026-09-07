@@ -189,6 +189,20 @@ export type ProgramDetail = {
 	examNotifications: ProgramExamNotification[] | null
 }
 
+/**
+ * The programme keys `GARP_Portal_EppOptInService.ATTEMPT_KEYS` accepts —
+ * the ones with an exam attempt to stamp. ERP has none, so it has no opt-in.
+ */
+export type EppExamType = "frm" | "scr" | "riskai" | "raij"
+
+/** `POST /memberportal/eppOptIn` result (`OptInResult`). */
+export type EppOptInResult = {
+	statusMessage: string | null
+	statusCode: number | null
+	/** The answer as it now stands on the Contact. */
+	optedIn: boolean | null
+}
+
 /** `GET /memberportal/programDetail` view (`DetailView`). */
 export type ProgramDetailView = {
 	statusMessage: string | null

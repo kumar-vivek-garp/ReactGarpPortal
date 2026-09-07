@@ -1,11 +1,12 @@
 /**
- * The `needPaymentInfo` branch ends in `window.location.assign(...)` to the
- * Stripe setup URL. jsdom's Location is [LegacyUnforgeable] — its properties
- * are non-configurable own properties, so the call can be neither spied on nor
- * replaced. The line still executes (jsdom logs "Not implemented: navigation"
- * to its virtual console and returns), so the tests assert everything around
- * it instead: the mutation resolves, no cache is invalidated, and no success
- * toast fires. The assigned URL itself cannot be asserted.
+ * Turning auto-renew ON ends in `window.location.assign(setupUrl)`. jsdom's
+ * Location is [LegacyUnforgeable] — its properties are non-configurable own
+ * properties, so the call can be neither spied on nor replaced. The line
+ * still executes (jsdom logs "Not implemented: navigation" to its virtual
+ * console and returns), so the tests assert everything around it instead:
+ * the request body, that the mutation resolves, and that no cache is
+ * invalidated and no success toast fires. The assigned URL itself cannot be
+ * asserted here — the mocked e2e suite covers the navigation.
  */
 import type { QueryClient } from "@tanstack/react-query"
 import { act, waitFor } from "@testing-library/react"
@@ -15,7 +16,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { accountQueryKeys } from "@/api/account/query-options"
 import { authQueryKeys } from "@/api/auth/query-options"
-import { contactPreferencesQueryKeys } from "@/api/contact-preferences/query-options"
 import { personalInfoQueryKeys } from "@/api/personal-info"
 import {
 	useTurnOffMembershipAutoRenew,
@@ -31,16 +31,16 @@ import { renderHookWithProviders } from "@/testing/render"
 
 const OFF_PATH = "/services/apexrest/memberportal/membershipAutoRenewOff"
 const ON_PATH = "/services/apexrest/memberportal/membershipAutoRenewOn"
+const RETURN_URL = "http://localhost:3000/my-account?status=autorenewsetupcomplete"
 
 const CONTACT_ID = "003XX0000012345"
 
 /** Every cache `invalidateAccountCaches` refreshes after a successful flip. */
 const ACCOUNT_KEYS = [
 	accountQueryKeys.detail,
-	accountQueryKeys.contact(CONTACT_ID),
 	authQueryKeys.currentUser,
-	personalInfoQueryKeys.edit(CONTACT_ID),
-	contactPreferencesQueryKeys.detail(CONTACT_ID),
+	// Invalidated through the `personal-info` prefix.
+	personalInfoQueryKeys.billingCompany(CONTACT_ID),
 ]
 
 function seededClient(): QueryClient {
@@ -72,7 +72,7 @@ describe("useTurnOffMembershipAutoRenew", () => {
 		)
 
 		const { result, queryClient } = renderHookWithProviders(
-			() => useTurnOffMembershipAutoRenew(CONTACT_ID),
+			() => useTurnOffMembershipAutoRenew(),
 			{ queryClient: seededClient() },
 		)
 		act(() => {
@@ -80,13 +80,7 @@ describe("useTurnOffMembershipAutoRenew", () => {
 		})
 
 		await waitFor(() => expect(result.current.isSuccess).toBe(true))
-		expect(invalidatedFlags(queryClient)).toEqual([
-			true,
-			true,
-			true,
-			true,
-			true,
-		])
+		expect(invalidatedFlags(queryClient)).toEqual([true, true, true])
 	})
 
 	it("leaves the caches alone when the server refuses", async () => {
@@ -100,7 +94,7 @@ describe("useTurnOffMembershipAutoRenew", () => {
 		)
 
 		const { result, queryClient } = renderHookWithProviders(
-			() => useTurnOffMembershipAutoRenew(CONTACT_ID),
+			() => useTurnOffMembershipAutoRenew(),
 			{ queryClient: seededClient() },
 		)
 		act(() => {
@@ -109,84 +103,69 @@ describe("useTurnOffMembershipAutoRenew", () => {
 
 		await waitFor(() => expect(result.current.isError).toBe(true))
 		expect(result.current.error?.message).toBe("off failed")
-		expect(invalidatedFlags(queryClient)).toEqual([
-			false,
-			false,
-			false,
-			false,
-			false,
-		])
+		expect(invalidatedFlags(queryClient)).toEqual([false, false, false])
 	})
 })
 
 describe("useTurnOnMembershipAutoRenew", () => {
-	it("invalidates and toasts when no payment info is needed", async () => {
+	it("posts the return URL and leaves for Stripe without touching the caches", async () => {
+		let body: unknown
 		server.use(
-			// `needPaymentInfo` deliberately absent: the api coerces a missing
-			// flag to `false`, so this also pins the invalidation path for it.
-			http.post(ON_PATH, () =>
-				HttpResponse.json(
-					memberPortalEnvelope({ statusMessage: null, statusCode: 200 }),
-				),
-			),
-		)
-
-		const { result, queryClient } = renderHookWithProviders(
-			() => useTurnOnMembershipAutoRenew(CONTACT_ID),
-			{ queryClient: seededClient() },
-		)
-		act(() => {
-			result.current.mutate()
-		})
-
-		await waitFor(() => expect(result.current.isSuccess).toBe(true))
-		expect(result.current.data?.needPaymentInfo).toBe(false)
-		expect(invalidatedFlags(queryClient)).toEqual([
-			true,
-			true,
-			true,
-			true,
-			true,
-		])
-		expect(vi.mocked(toast.success)).toHaveBeenCalledWith(
-			"Auto-renew is on",
-			undefined,
-		)
-	})
-
-	it("skips invalidation and the toast when Stripe setup is needed", async () => {
-		server.use(
-			http.post(ON_PATH, () =>
-				HttpResponse.json(
+			http.post(ON_PATH, async ({ request }) => {
+				body = await request.json()
+				return HttpResponse.json(
 					memberPortalEnvelope({
 						statusMessage: null,
 						statusCode: 200,
 						needPaymentInfo: true,
-						orderId: "006XX0000000001",
+						setupUrl: "https://checkout.stripe.com/c/setup/abc",
 					}),
+				)
+			}),
+		)
+
+		const { result, queryClient } = renderHookWithProviders(
+			() => useTurnOnMembershipAutoRenew(),
+			{ queryClient: seededClient() },
+		)
+		act(() => {
+			result.current.mutate(RETURN_URL)
+		})
+
+		// The member leaves for Stripe (see the header comment): the mutation
+		// resolves, but nothing local is refreshed or announced — the contract
+		// only flips once the webhook lands.
+		await waitFor(() => expect(result.current.isSuccess).toBe(true))
+		expect(body).toEqual({ returnUrl: RETURN_URL })
+		expect(result.current.data?.setupUrl).toBe(
+			"https://checkout.stripe.com/c/setup/abc",
+		)
+		expect(invalidatedFlags(queryClient)).toEqual([false, false, false])
+		expect(vi.mocked(toast.success)).not.toHaveBeenCalled()
+	})
+
+	it("reports a refusal and stays on the page", async () => {
+		server.use(
+			http.post(ON_PATH, () =>
+				HttpResponse.json(
+					memberPortalError(500, "Active Membership contract not found"),
+					{ status: 500 },
 				),
 			),
 		)
 
 		const { result, queryClient } = renderHookWithProviders(
-			() => useTurnOnMembershipAutoRenew(CONTACT_ID),
+			() => useTurnOnMembershipAutoRenew(),
 			{ queryClient: seededClient() },
 		)
 		act(() => {
-			result.current.mutate()
+			result.current.mutate(RETURN_URL)
 		})
 
-		// The member leaves for Stripe (see the header comment): the mutation
-		// still resolves, but nothing local is refreshed or announced.
-		await waitFor(() => expect(result.current.isSuccess).toBe(true))
-		expect(result.current.data?.needPaymentInfo).toBe(true)
-		expect(invalidatedFlags(queryClient)).toEqual([
-			false,
-			false,
-			false,
-			false,
-			false,
-		])
-		expect(vi.mocked(toast.success)).not.toHaveBeenCalled()
+		await waitFor(() => expect(result.current.isError).toBe(true))
+		expect(result.current.error?.message).toBe(
+			"Active Membership contract not found",
+		)
+		expect(invalidatedFlags(queryClient)).toEqual([false, false, false])
 	})
 })

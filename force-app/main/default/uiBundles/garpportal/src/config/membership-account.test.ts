@@ -1,18 +1,20 @@
 import { describe, expect, it } from "vitest"
 
-import { stripeSetupCheckoutUrl } from "@/config/membership-account"
+import { buildAutoRenewReturnUrl } from "@/config/membership-account"
 
-describe("stripeSetupCheckoutUrl", () => {
-	it("matches the legacy mode=setup shape", () => {
-		expect(stripeSetupCheckoutUrl("006gP00000ABCDE")).toBe(
-			"/stripe_checkout?mode=setup&id=006gP00000ABCDE",
-		)
+describe("buildAutoRenewReturnUrl", () => {
+	it("returns to the page that started the flow, tagged with the setup status", () => {
+		expect(
+			buildAutoRenewReturnUrl({
+				origin: "https://portal.example",
+				pathname: "/garpportal/my-account",
+			}),
+		).toBe("https://portal.example/garpportal/my-account?status=autorenewsetupcomplete")
 	})
 
-	it("interpolates a missing id literally — current behavior, callers must guard", () => {
-		expect(stripeSetupCheckoutUrl(null)).toBe("/stripe_checkout?mode=setup&id=null")
-		expect(stripeSetupCheckoutUrl(undefined)).toBe(
-			"/stripe_checkout?mode=setup&id=undefined",
-		)
+	it("drops any search the page already carried — the tag is the whole query", () => {
+		expect(
+			buildAutoRenewReturnUrl({ origin: "http://localhost:5173", pathname: "/my-account" }),
+		).toBe("http://localhost:5173/my-account?status=autorenewsetupcomplete")
 	})
 })

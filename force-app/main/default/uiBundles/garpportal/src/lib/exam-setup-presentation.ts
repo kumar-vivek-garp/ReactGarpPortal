@@ -1,5 +1,6 @@
 import type {
 	ExamAdmin,
+	ExamSetupFee,
 	ExamSetupIdInfo,
 	ExamSetupIdInput,
 	ExamSetupIdSaveResult,
@@ -9,17 +10,18 @@ import type {
 	ExamSite,
 } from "@/api/exam-setup"
 import {
-	EXAM_SETUP_FEES,
 	EXAM_SETUP_ID_TYPES,
-	EXAM_SETUP_PASSPORT_PATTERN,
+	EXAM_SETUP_MESSAGES,
 } from "@/config/exam-setup"
+import type { MegaMenuHeading } from "@/config/navigation/types"
 import { toUsDateString } from "@/lib/osta-presentation"
+import { resolveExamProgram } from "@/lib/registration-programs"
 
 /**
- * Everything the exam-setup page decides, as pure functions.
+ * Everything the exam-setup wizard decides, as pure functions.
  *
- * The panel renders what these return and settles nothing itself — same split
- * as `program-detail-presentation` and `alert-bar-presentation`.
+ * The components render what these return and settle nothing themselves — same
+ * split as `program-detail-presentation` and `alert-bar-presentation`.
  */
 
 /* ===================== programme type ===================== */
@@ -44,155 +46,93 @@ export function examSetupProgramTypeFromSlug(
 		: null
 }
 
-/** FRM is the only two-part programme; everything else sits once. */
-export function isTwoPartProgram(programType: ExamSetupProgramType): boolean {
-	return programType === "frm"
+/**
+ * Whether the government-ID block applies.
+ *
+ * Keyed off the programme, not off `idInfo.isIDRequired`. Apex populates that
+ * flag from the same fact (`RPT_Exam_Program__c` containing FRM) but enforces
+ * nothing with it, and the reference implementation branches on the slug — so
+ * the two would only ever disagree by accident.
+ */
+export function isFrmProgram(programType: string): boolean {
+	return programType.toLowerCase() === "frm"
 }
 
 /* ===================== identity ===================== */
 
+const ID_TYPE_VALUES = EXAM_SETUP_ID_TYPES.map((option) => option.value)
+
 /**
  * Apex reads `Driver's License` out of the Contact as `Driver License` and
- * writes it back with the apostrophe. Our select options carry the apostrophe,
- * so an unnormalised read value matches no option and the control renders
- * blank — which reads to the member as "we lost your ID type".
+ * writes it back with the apostrophe. Our radio values are the lowercase wire
+ * strings, so an unnormalised read value matches no option and the control
+ * renders with nothing selected — which reads to the member as "we lost your
+ * ID type", and then saves whatever they pick over a document they never
+ * changed.
  *
- * Matched on the stem rather than the exact string so either spelling lands.
+ * Matched on the stem rather than the exact string, mirroring Apex's own
+ * `idType.toLowerCase().contains('driver')`, so every spelling lands.
  */
 export function normalizeIdType(raw: string | null | undefined): string {
-	const value = raw?.trim()
+	const value = raw?.trim().toLowerCase()
 	if (!value) return ""
-	// Apex matches this one on the stem — `idType.toLowerCase().contains('driver')`
-	// — so "Driver License", "Drivers License" and "Driver's License" all mean
-	// the same document. Mirroring that here keeps read and write agreeing.
-	if (value.toLowerCase().includes("driver")) return "Driver's License"
-	const match = EXAM_SETUP_ID_TYPES.find(
-		(option) => option.toLowerCase() === value.toLowerCase(),
-	)
+	if (value.includes("driver")) return "driver license"
+	const match = ID_TYPE_VALUES.find((option) => option === value)
 	return match ?? value
 }
 
-/**
- * True when the number is acceptable for the chosen document.
- *
- * Only a passport has a shape to check. Anything else is required but
- * unconstrained, which is what the legacy does.
- */
-export function isValidIdNumber(
-	idType: string | null | undefined,
-	idNumber: string | null | undefined,
-	/** True when one is already stored, so blank means "leave it as it is". */
-	alreadyOnFile = false,
-): boolean {
-	const value = idNumber?.trim() ?? ""
-	if (!value) return alreadyOnFile
-	if (normalizeIdType(idType) !== "Passport") return true
-	return EXAM_SETUP_PASSPORT_PATTERN.test(value)
-}
+/* ===================== form values ===================== */
 
-/** Empty means "the member left this alone" — omit it so Apex does not blank it. */
-function omitEmpty(value: string | undefined): string | undefined {
-	const trimmed = value?.trim()
-	return trimmed ? trimmed : undefined
-}
-
-/**
- * Form values to the write shape.
- *
- * Two things this function exists to get right.
- *
- * **Dates.** The READ returns ISO `yyyy-MM-dd` (already what
- * `<input type="date">` binds to, so the form needs no conversion coming in)
- * while the WRITE wants `MM/dd/yyyy`. Only this direction converts. Reaching
- * for `toDateInputValue` on the read would blank both date fields, because it
- * expects `MM/dd/yyyy` as ITS input.
- *
- * **Empties are omitted, never sent.** Apex guards every field with
- * `if (i.field != null)`, and an empty string is not null — so posting `""`
- * for something the member never touched overwrites their Contact with blank.
- * That is exactly the data-loss bug we reported to the backend team about
- * `cvAddress`; it is not one to reproduce here. A field left empty simply does
- * not travel, and the stored value survives.
- */
-export function toIdInput(values: {
-	idName?: string
-	idNumber?: string
-	idType?: string
-	/** ISO `yyyy-MM-dd` from the date input. */
-	idExpireDate?: string
-	mobilePhoneLocation?: string
-	mobilePhoneNumber?: string
-	ostaIDLocation?: string
-	ostaGender?: string
-	ostaFullNameInChinese?: string
-	/** ISO `yyyy-MM-dd` from the date input. */
-	ostaDateOfBirth?: string
-	ostaPhoneNumber?: string
-	ostaCurrentWorkingStatus?: string
-	ostaCompany?: string
-	ostaCurrentSchoolStatus?: string
-	ostaSchool?: string
-	ostaDegreeProgramName?: string
-}): ExamSetupIdInput {
-	const idNumber = omitEmpty(values.idNumber)
-	return {
-		idName: omitEmpty(values.idName),
-		// Apex applies idType and the expiry only inside its `idNumber != null`
-		// branch, so they travel with the number or not at all.
-		idNumber,
-		idType: idNumber ? normalizeIdType(values.idType) : undefined,
-		idExpireDate:
-			idNumber && values.idExpireDate
-				? toUsDateString(values.idExpireDate)
-				: undefined,
-		mobilePhoneLocation: omitEmpty(values.mobilePhoneLocation),
-		mobilePhoneNumber: omitEmpty(values.mobilePhoneNumber),
-		ostaIDLocation: omitEmpty(values.ostaIDLocation),
-		ostaGender: omitEmpty(values.ostaGender),
-		ostaFullNameInChinese: omitEmpty(values.ostaFullNameInChinese),
-		ostaDateOfBirth: values.ostaDateOfBirth
-			? toUsDateString(values.ostaDateOfBirth)
-			: undefined,
-		ostaPhoneNumber: omitEmpty(values.ostaPhoneNumber),
-		ostaCurrentWorkingStatus: omitEmpty(values.ostaCurrentWorkingStatus),
-		ostaCompany: omitEmpty(values.ostaCompany),
-		ostaCurrentSchoolStatus: omitEmpty(values.ostaCurrentSchoolStatus),
-		ostaSchool: omitEmpty(values.ostaSchool),
-		ostaDegreeProgramName: omitEmpty(values.ostaDegreeProgramName),
-	}
-}
-
-/** True when the member already has an ID number stored. */
-export function hasIdOnFile(
-	info: ExamSetupIdInfo | null | undefined,
-): boolean {
-	return Boolean(info?.idNumber?.trim())
+/** What the ID step's `useForm` holds. Dates are ISO here; converted on submit. */
+export type ExamSetupIdFormValues = {
+	idName: string
+	idType: string
+	idNumber: string
+	idNumberConfirm: string
+	idExpireDate: string
+	mobilePhoneLocation: string
+	mobilePhoneNumber: string
+	ostaIDLocation: string
+	ostaConsent: boolean
+	ostaFullNameInChinese: string
+	ostaDateOfBirth: string
+	ostaGender: string
+	ostaPhoneNumber: string
+	ostaCurrentWorkingStatus: string
+	ostaCompany: string
+	ostaCurrentSchoolStatus: string
+	ostaSchool: string
+	ostaDegreeProgramName: string
 }
 
 /**
  * The ID step's starting values.
  *
- * Dates pass through untouched — the read is already ISO.
+ * Dates pass through untouched — the read is already ISO `yyyy-MM-dd`, which is
+ * what `<input type="date">` binds to.
  *
- * `idNumber` is **deliberately never seeded**, the same choice `osta-id-form`
- * makes. The read returns only the last five characters in the clear
- * (`ID_Number__c`; the whole number lives in `OSTA_Full_ID__c`), so echoing it
- * back on the next save would write those five characters over a real ID.
- * Leaving it blank means an untouched field is omitted entirely and the stored
- * number survives.
+ * `idNumberConfirm` is seeded from the same stored value as `idNumber` so an
+ * untouched ID does not read as a mismatch.
+ *
+ * The consent tick always starts clear: a tick recorded against a disclosure
+ * the candidate did not read this time is worthless.
  */
-export function idDefaultsFrom(info: ExamSetupIdInfo | null | undefined) {
+export function idDefaultsFrom(
+	info: ExamSetupIdInfo | null | undefined,
+): ExamSetupIdFormValues {
 	return {
 		idName: info?.idName ?? "",
-		idNumber: "",
 		idType: normalizeIdType(info?.idType),
+		idNumber: info?.idNumber ?? "",
+		idNumberConfirm: info?.idNumber ?? "",
 		idExpireDate: info?.idExpireDate ?? "",
 		mobilePhoneLocation: info?.mobilePhoneLocation ?? "",
 		mobilePhoneNumber: info?.mobilePhoneNumber ?? "",
 		ostaIDLocation: info?.ostaIDLocation ?? "",
-		ostaGender: info?.ostaGender ?? "",
+		ostaConsent: false,
 		ostaFullNameInChinese: info?.ostaFullNameInChinese ?? "",
 		ostaDateOfBirth: info?.ostaDateOfBirth ?? "",
+		ostaGender: info?.ostaGender ?? "",
 		ostaPhoneNumber: info?.ostaPhoneNumber ?? "",
 		ostaCurrentWorkingStatus: info?.ostaCurrentWorkingStatus ?? "",
 		ostaCompany: info?.ostaCompany ?? "",
@@ -202,7 +142,157 @@ export function idDefaultsFrom(info: ExamSetupIdInfo | null | undefined) {
 	}
 }
 
+/* ===================== validation ===================== */
+
+export type ExamSetupIdErrors = Partial<
+	Record<keyof ExamSetupIdFormValues, string>
+>
+
+/**
+ * The ID step's rules.
+ *
+ * Everything here is client-side by necessity: Apex writes each field only when
+ * it is non-null and **rejects nothing**, so `isIDRequired` is a hint and this
+ * function is the only thing standing between a blank answer and a Contact
+ * record that will not get the candidate into an exam hall.
+ *
+ * The mobile pair shares one message, reported against `mobilePhoneLocation`
+ * because the two controls sit in one labelled group and a message under each
+ * would say the same thing twice.
+ */
+export function validateIdStep(
+	values: ExamSetupIdFormValues,
+	context: { isFrm: boolean; isOSTA: boolean },
+): ExamSetupIdErrors {
+	const errors: ExamSetupIdErrors = {}
+
+	if (!values.idName.trim()) errors.idName = EXAM_SETUP_MESSAGES.idName
+	if (!values.mobilePhoneLocation || !values.mobilePhoneNumber.trim()) {
+		errors.mobilePhoneLocation = EXAM_SETUP_MESSAGES.mobile
+	}
+
+	if (!context.isFrm) return errors
+
+	if (!values.idType) errors.idType = EXAM_SETUP_MESSAGES.idType
+	if (!values.idNumber.trim()) errors.idNumber = EXAM_SETUP_MESSAGES.idNumber
+	if (values.idNumber !== values.idNumberConfirm) {
+		errors.idNumberConfirm = EXAM_SETUP_MESSAGES.idNumberConfirm
+	}
+	if (!values.idExpireDate) {
+		errors.idExpireDate = EXAM_SETUP_MESSAGES.idExpireDate
+	}
+
+	if (!context.isOSTA) return errors
+
+	if (!values.ostaIDLocation) {
+		errors.ostaIDLocation = EXAM_SETUP_MESSAGES.ostaIDLocation
+	}
+	if (!values.ostaConsent) {
+		errors.ostaConsent = EXAM_SETUP_MESSAGES.ostaConsent
+	}
+	if (!values.ostaFullNameInChinese.trim()) {
+		errors.ostaFullNameInChinese = EXAM_SETUP_MESSAGES.ostaFullNameInChinese
+	}
+	if (!values.ostaDateOfBirth) {
+		errors.ostaDateOfBirth = EXAM_SETUP_MESSAGES.ostaDateOfBirth
+	}
+	if (!values.ostaGender) errors.ostaGender = EXAM_SETUP_MESSAGES.ostaGender
+	if (!values.ostaPhoneNumber.trim()) {
+		errors.ostaPhoneNumber = EXAM_SETUP_MESSAGES.ostaPhoneNumber
+	}
+
+	return errors
+}
+
+/**
+ * The selection step's rule, as one banner message or `null`.
+ *
+ * Only the administration is checked. The site is not: it is hidden entirely
+ * until an administration with open sites is chosen, so there is nothing the
+ * member could be asked to fix.
+ */
+export function validateSelectionStep(
+	selection: ExamSetupSelection,
+	context: { hasPart1: boolean; twoPart: boolean },
+): string | null {
+	if (context.hasPart1 && !selection.a1) {
+		return EXAM_SETUP_MESSAGES.selectAdmin
+	}
+	if (context.twoPart && !selection.a2) {
+		return EXAM_SETUP_MESSAGES.selectAdminPart2
+	}
+	return null
+}
+
+/* ===================== payload ===================== */
+
+/** Empty means "not supplied" — Apex skips a null, but would write a `""`. */
+function orNull(value: string): string | null {
+	const trimmed = value.trim()
+	return trimmed ? trimmed : null
+}
+
+/**
+ * Form values to the write shape.
+ *
+ * **Which keys travel depends on the programme, not on what was typed.** The
+ * name and mobile always go; the government-ID trio only for FRM; the OSTA
+ * block only for an FRM candidate whose centre demands it. Sending an OSTA
+ * field for a member who has no China sitting would write data the exam centre
+ * never asked for.
+ *
+ * **Dates convert here and only here.** The read hands back ISO `yyyy-MM-dd`
+ * (already what the date input binds to, so nothing converts on the way in);
+ * the write wants `MM/dd/yyyy`.
+ */
+export function toIdInput(
+	values: ExamSetupIdFormValues,
+	context: { isFrm: boolean; isOSTA: boolean },
+): ExamSetupIdInput {
+	return {
+		idName: values.idName,
+		mobilePhoneLocation: values.mobilePhoneLocation,
+		mobilePhoneNumber: values.mobilePhoneNumber,
+		...(context.isFrm
+			? {
+					idType: values.idType,
+					idNumber: values.idNumber,
+					idExpireDate: toUsDateString(values.idExpireDate),
+				}
+			: {}),
+		...(context.isFrm && context.isOSTA
+			? {
+					ostaIDLocation: values.ostaIDLocation,
+					ostaGender: values.ostaGender,
+					ostaFullNameInChinese: values.ostaFullNameInChinese,
+					ostaDateOfBirth: toUsDateString(values.ostaDateOfBirth),
+					ostaPhoneNumber: values.ostaPhoneNumber,
+					ostaCurrentWorkingStatus: orNull(values.ostaCurrentWorkingStatus),
+					ostaCompany: orNull(values.ostaCompany),
+					ostaCurrentSchoolStatus: orNull(values.ostaCurrentSchoolStatus),
+					ostaSchool: orNull(values.ostaSchool),
+					ostaDegreeProgramName: orNull(values.ostaDegreeProgramName),
+				}
+			: {}),
+	}
+}
+
 /* ===================== selection ===================== */
+
+/** The selects' own shape — plain strings, so a Radix `value` is never undefined. */
+export type ExamSetupSelection = {
+	a1: string
+	s1: string
+	a2: string
+	s2: string
+}
+
+export const EMPTY_SELECTION: ExamSetupSelection = {
+	a1: "",
+	s1: "",
+	a2: "",
+	s2: "",
+}
 
 /** The administration the member sits in today, per `isSelected`. */
 export function currentAdmin(
@@ -220,7 +310,7 @@ export function currentSite(
 
 export function sitesFor(
 	admins: ExamAdmin[] | null | undefined,
-	adminId: string | null,
+	adminId: string,
 ): ExamSite[] {
 	if (!adminId) return []
 	return admins?.find((admin) => admin.id === adminId)?.examSites ?? []
@@ -229,14 +319,26 @@ export function sitesFor(
 /** What the selects start on: wherever the member sits today. */
 export function selectionDefaults(
 	view: ExamSetupView | null | undefined,
-): ExamSetupSelectionInput {
+): ExamSetupSelection {
 	const admin1 = currentAdmin(view?.examPart1SelectionInfo)
 	const admin2 = currentAdmin(view?.examPart2SelectionInfo)
 	return {
-		selectedAdminPart1: admin1?.id ?? null,
-		selectedSitePart1: currentSite(admin1)?.id ?? null,
-		selectedAdminPart2: admin2?.id ?? null,
-		selectedSitePart2: currentSite(admin2)?.id ?? null,
+		a1: admin1?.id ?? "",
+		s1: currentSite(admin1)?.id ?? "",
+		a2: admin2?.id ?? "",
+		s2: currentSite(admin2)?.id ?? "",
+	}
+}
+
+/** Blank means "no choice for this part", which Apex reads as `null`. */
+export function toSelectionInput(
+	selection: ExamSetupSelection,
+): ExamSetupSelectionInput {
+	return {
+		selectedAdminPart1: selection.a1 || null,
+		selectedSitePart1: selection.s1 || null,
+		selectedAdminPart2: selection.a2 || null,
+		selectedSitePart2: selection.s2 || null,
 	}
 }
 
@@ -245,129 +347,160 @@ export function hasPart(admins: ExamAdmin[] | null | undefined): boolean {
 	return (admins?.length ?? 0) > 0
 }
 
-/* ===================== the fee gate ===================== */
+/* ===================== summary ===================== */
 
-export type ExamSetupFeeForecast = {
-	amount: number
-	reason: string
+/** One part of the sitting, as chosen right now and as it stands on record. */
+export type SittingPartSummary = {
+	label: string
+	admin: { chosen: string | null; current: string | null; changed: boolean }
+	site: { chosen: string | null; current: string | null; changed: boolean }
 }
 
-/**
- * Whether the chosen sitting costs money, decided without a server call.
- *
- * Only the ADMINISTRATION change is decidable here, and it is the expensive,
- * common one — 250 to move an FRM sitting, 150 for the single-part programmes.
- * Apex holds both as literals, so there is nothing to look up.
- *
- * **The OSTA fees deliberately are not forecast.** Apex decides those from
- * `Exam_Site__r.Site__r.Is_OSTA_Information_Required__c`, and the site list on
- * the wire carries only `{ id, name, isSelected }` — no flag, and a name is not
- * a country. Guessing from the name would gate the wrong members, so a
- * site-only change goes through and Apex answers `Pay Fees` if it turns out to
- * carry one. `examSetupPayFeesFallback` handles that second line.
- */
-export function predictFee(
-	programType: ExamSetupProgramType,
-	view: ExamSetupView | null | undefined,
-	selection: ExamSetupSelectionInput,
-): ExamSetupFeeForecast | null {
-	const admin1 = currentAdmin(view?.examPart1SelectionInfo)
-	const admin2 = currentAdmin(view?.examPart2SelectionInfo)
+function nameOf(
+	admins: ExamAdmin[] | null | undefined,
+	adminId: string,
+): string | null {
+	if (!adminId) return null
+	return admins?.find((admin) => admin.id === adminId)?.name ?? null
+}
 
-	const moved1 =
-		admin1?.id != null &&
-		selection.selectedAdminPart1 != null &&
-		admin1.id !== selection.selectedAdminPart1
-	const moved2 =
-		admin2?.id != null &&
-		selection.selectedAdminPart2 != null &&
-		admin2.id !== selection.selectedAdminPart2
+function siteNameOf(
+	admins: ExamAdmin[] | null | undefined,
+	adminId: string,
+	siteId: string,
+): string | null {
+	if (!siteId) return null
+	return sitesFor(admins, adminId).find((site) => site.id === siteId)?.name ?? null
+}
 
-	if (!moved1 && !moved2) return null
-
-	const amount =
-		programType === "frm"
-			? EXAM_SETUP_FEES.frmDeferral
-			: EXAM_SETUP_FEES.singlePartDeferral
-
-	const parts = [moved1 ? "Part I" : null, moved2 ? "Part II" : null].filter(
-		Boolean,
-	)
-
+function partSummary(
+	label: string,
+	admins: ExamAdmin[] | null | undefined,
+	adminId: string,
+	siteId: string,
+): SittingPartSummary {
+	const current = currentAdmin(admins)
+	const currentSiteName = currentSite(current)?.name ?? null
+	const chosenAdmin = nameOf(admins, adminId)
+	const chosenSite = siteNameOf(admins, adminId, siteId)
 	return {
-		amount,
-		reason:
-			parts.length && isTwoPartProgram(programType)
-				? `Moving ${parts.join(" and ")} to a different exam administration`
-				: "Moving your exam to a different administration",
+		label,
+		admin: {
+			chosen: chosenAdmin,
+			current: current?.name ?? null,
+			changed: current?.id != null && adminId !== "" && adminId !== current.id,
+		},
+		site: {
+			chosen: chosenSite,
+			current: currentSiteName,
+			changed:
+				currentSite(current)?.id != null && siteId !== "" && siteId !== currentSite(current)?.id,
+		},
 	}
 }
 
-/** True when nothing was changed — the submit button has nothing to do. */
-export function hasSelectionChanges(
+/**
+ * What the rail and the bar show: each offered part, the choice as it stands
+ * now, and whether that is a change from the sitting on record. A part the
+ * programme does not offer is simply absent.
+ */
+export function sittingSummary(
 	view: ExamSetupView | null | undefined,
-	selection: ExamSetupSelectionInput,
-): boolean {
-	const defaults = selectionDefaults(view)
-	return (
-		defaults.selectedAdminPart1 !== selection.selectedAdminPart1 ||
-		defaults.selectedSitePart1 !== selection.selectedSitePart1 ||
-		defaults.selectedAdminPart2 !== selection.selectedAdminPart2 ||
-		defaults.selectedSitePart2 !== selection.selectedSitePart2
-	)
+	selection: ExamSetupSelection,
+): SittingPartSummary[] {
+	const parts: SittingPartSummary[] = []
+	const twoPart = hasPart(view?.examPart2SelectionInfo)
+	if (hasPart(view?.examPart1SelectionInfo)) {
+		parts.push(
+			partSummary(
+				twoPart ? "Part I" : "Your exam",
+				view?.examPart1SelectionInfo,
+				selection.a1,
+				selection.s1,
+			),
+		)
+	}
+	if (twoPart) {
+		parts.push(
+			partSummary("Part II", view?.examPart2SelectionInfo, selection.a2, selection.s2),
+		)
+	}
+	return parts
 }
 
-/** Both parts landing on one administration earns the travel warning. */
-export function isSameAdministration(
-	selection: ExamSetupSelectionInput,
-): boolean {
-	return (
-		selection.selectedAdminPart1 != null &&
-		selection.selectedAdminPart1 === selection.selectedAdminPart2
-	)
+/**
+ * The sitting in one line for the sticky bar — `May 2026 · London`, or per
+ * part for FRM. `null` while nothing is chosen, so the bar shows an em-dash
+ * rather than an empty string that collapses its height.
+ */
+export function sittingLine(parts: SittingPartSummary[]): string | null {
+	const lines = parts
+		.filter((part) => part.admin.chosen)
+		.map((part) => {
+			const where = part.site.chosen ? ` · ${part.site.chosen}` : ""
+			const prefix = parts.length > 1 ? `${part.label} ` : ""
+			return `${prefix}${part.admin.chosen}${where}`
+		})
+	return lines.length ? lines.join(" / ") : null
+}
+
+/** True when anything differs from the sitting on record. */
+export function hasSelectionChanges(parts: SittingPartSummary[]): boolean {
+	return parts.some((part) => part.admin.changed || part.site.changed)
+}
+
+/* ===================== heading ===================== */
+
+/**
+ * The page title, in the registration form's shape — the certification in
+ * full with the acronym tinted through `MegaMenuHeadingText`, so it matches
+ * the nav exactly. Reuses the registration heading with its suffix swapped;
+ * a programme with no registration form yet (ERP) gets a plain fallback in
+ * the same shape rather than a bare slug.
+ */
+export function examSetupHeading(slug: string): MegaMenuHeading {
+	const program = resolveExamProgram(slug)
+	if (program) {
+		return { ...program.heading, suffix: ") Exam Setup" }
+	}
+	return {
+		prefix: "",
+		highlight: slug.trim().toUpperCase() || "Exam",
+		highlightToken: "garp-saffron",
+		suffix: " Exam Setup",
+	}
+}
+
+/* ===================== fees ===================== */
+
+/** Refunds count against the total, so a net credit shows as one. */
+export function examSetupFeesTotal(
+	fees: ExamSetupFee[] | null | undefined,
+): number {
+	return (fees ?? []).reduce((sum, fee) => {
+		const amount = fee.amount ?? 0
+		return sum + (fee.type === "refund" ? -amount : amount)
+	}, 0)
 }
 
 /* ===================== outcomes ===================== */
 
-export type ExamSetupOutcome =
-	| "complete"
-	| "scheduling"
-	| "pay-fees"
-	| "unknown"
+export type ExamSetupOutcome = "pay-fees" | "scheduling" | "complete"
 
 /**
  * Where a save lands.
  *
  * An unrecognised `nextScreen` resolves to `complete` rather than throwing —
- * Apex is free to add a fourth and a member who has already been written to
- * should see a confirmation, not an error. `unknown` is reserved for a missing
- * value, which means the save did not report at all.
+ * Apex is free to add a fourth, and a member who has already been written to
+ * should see a confirmation, not an error.
  */
 export function outcomeFrom(
 	result: ExamSetupIdSaveResult | null | undefined,
 ): ExamSetupOutcome {
 	const next = result?.nextScreen?.trim()
-	if (!next) return "unknown"
-	if (next === "Pay Fees" || result?.paymentRequired === true) return "pay-fees"
-	if (next === "Check Authorization" || result?.schedulingRequired === true) {
-		return "scheduling"
-	}
+	if (next === "Pay Fees") return "pay-fees"
+	if (next === "Check Authorization") return "scheduling"
 	return "complete"
-}
-
-/**
- * True when a save came back wanting payment despite the gate.
- *
- * Reachable only through an OSTA site change, which cannot be forecast (see
- * `predictFee`). It matters because by this point Apex HAS raised an
- * `Exam_Registration_Modification__c`, so the copy must say the change is
- * pending rather than repeat the pre-save "nothing has happened yet" wording.
- */
-export function examSetupPayFeesFallback(
-	result: ExamSetupIdSaveResult | null | undefined,
-): { modificationId: string | null } | null {
-	if (outcomeFrom(result) !== "pay-fees") return null
-	return { modificationId: result?.examModificationId ?? null }
 }
 
 /* ===================== view state ===================== */
@@ -406,18 +539,4 @@ export function examSetupViewState(
 		hasPart(view.examPart2SelectionInfo)
 		? "ready"
 		: "noAdmins"
-}
-
-/**
- * Whether the administration select is editable for a part.
- *
- * `allowAdminMod*` false does NOT hide the part — the site under it may still
- * be changeable, which is a free change and the whole point of the page for a
- * member who only needs to move across town.
- */
-export function canChangeAdmin(
-	view: ExamSetupView | null | undefined,
-	part: 1 | 2,
-): boolean {
-	return (part === 1 ? view?.allowAdminModPart1 : view?.allowAdminModPart2) === true
 }

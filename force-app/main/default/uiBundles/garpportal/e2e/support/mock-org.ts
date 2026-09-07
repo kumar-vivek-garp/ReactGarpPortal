@@ -3,6 +3,7 @@ import type { Page, Route } from "@playwright/test"
 import {
 	memberPortalEnvelope,
 	memberPortalError,
+	memberPortalRefusal,
 } from "@/testing/factories/envelope"
 import { currentUserGraphql, memberPortalMe } from "./identity"
 
@@ -70,6 +71,23 @@ export function refuse(statusCode: number, errorMessage: string): Responder {
 		route.fulfill({
 			status: statusCode,
 			json: memberPortalError(statusCode, errorMessage),
+		})
+}
+
+/**
+ * Responder for a business refusal that still carries its payload — the
+ * shape `GARP_Portal_API` uses for "Portal Access Denied" and "not available
+ * to purchase". The client renders these as a state, not an error.
+ */
+export function refuseWith<T>(
+	statusCode: number,
+	errorMessage: string,
+	data: T,
+): Responder {
+	return (route) =>
+		route.fulfill({
+			status: statusCode,
+			json: memberPortalRefusal(statusCode, errorMessage, data),
 		})
 }
 

@@ -10,6 +10,7 @@ import type {
 	ProgramAction,
 	ProgramDetailPresentation,
 } from "@/lib/program-detail-presentation"
+import { stripProgramFormalName } from "@/lib/program-formal-name"
 
 /**
  * Route slug → the `courseType` Apex matches on.
@@ -26,12 +27,20 @@ export function courseTypeFromSlug(slug: string): string | null {
 	return FIXED_COURSE_TYPES[value.toLowerCase()] ?? value.toUpperCase()
 }
 
-/** The name to show. Micro courses carry their own; the three fixed ones do not. */
+/**
+ * The name to show. Micro courses carry their own; the three fixed ones do not.
+ *
+ * `formalName` is HTML in the catalogue — FRR's is
+ * `Financial Risk and Regulation (FRR)<sup>&reg;</sup> Series` — so it goes
+ * through the same stripper the programme listing, programme detail and the
+ * dashboard all use. This was the one caller that did not, which is why the
+ * markup showed literally, and only ever on a course.
+ */
 export function courseDisplayName(detail: CourseDetail): string {
 	const fromCatalogue =
-		detail.programInformation?.formalName?.trim() ||
-		detail.microCourseInfo?.formalName?.trim() ||
-		detail.microCourseInfo?.name?.trim()
+		stripProgramFormalName(detail.programInformation?.formalName) ||
+		stripProgramFormalName(detail.microCourseInfo?.formalName) ||
+		stripProgramFormalName(detail.microCourseInfo?.name)
 	if (fromCatalogue) return fromCatalogue
 	const code = detail.programType?.trim().toUpperCase() ?? ""
 	return COURSE_NAMES[code] ?? code ?? "Course"
@@ -211,6 +220,8 @@ export function buildCourseDetailPresentation(
 		statusSummary: copy.body,
 		nextStepTitle: copy.next,
 		nextStepBody: copy.body,
+		nextStepTone: copy.tone,
+		notes: [],
 		primaryAction: primary,
 		secondaryActions: secondary,
 		milestones: courseMilestones(detail),

@@ -3,21 +3,28 @@ import userEvent from "@testing-library/user-event"
 import { http, HttpResponse } from "msw"
 import { describe, expect, it, vi } from "vitest"
 
-import type { CountryOption } from "@/api/personal-info/types"
 import type { OstaView } from "@/api/osta"
 import { OstaIdForm } from "@/components/organisms/osta-id-form"
 import { memberPortalEnvelope } from "@/testing/factories/envelope"
-import { personalInfoEditData } from "@/testing/factories/personal-info"
-import { personalInfoGraphqlResolvers } from "@/testing/factories/personal-info-graphql"
+import {
+	accountViewFromPersonalInfo,
+	billingCompanyResolver,
+	personalInfoEditData,
+} from "@/testing/factories/personal-info"
+import {
+	accountOptionsView,
+	portalCountryOption,
+} from "@/testing/factories/account-options"
+import { myAccountOrg } from "@/testing/msw/handlers/account"
 import { sdkGraphqlHandler } from "@/testing/msw/handlers/sdk-graphql"
 import { server } from "@/testing/msw/server"
 import { renderWithProviders } from "@/testing/render"
 
 const OSTA_PATH = "/services/apexrest/memberportal/osta"
 
-const COUNTRIES: CountryOption[] = [
-	{ label: "China", value: "China", phoneCode: "+86" },
-	{ label: "United States", value: "United States", phoneCode: "+1" },
+const COUNTRIES = [
+	portalCountryOption({ name: "China", phoneCode: "86" }),
+	portalCountryOption({ name: "United States", phoneCode: "1" }),
 ]
 
 function ostaView(overrides: Partial<OstaView> = {}): OstaView {
@@ -51,9 +58,11 @@ function serveOrg({
 } = {}) {
 	const saves: Array<Record<string, unknown>> = []
 	server.use(
-		sdkGraphqlHandler(
-			personalInfoGraphqlResolvers(personalInfoEditData(), COUNTRIES),
-		),
+		...myAccountOrg({
+			view: accountViewFromPersonalInfo(personalInfoEditData()),
+			options: accountOptionsView({ countries: COUNTRIES }),
+		}).handlers,
+		sdkGraphqlHandler(billingCompanyResolver(personalInfoEditData())),
 		http.get(OSTA_PATH, () => HttpResponse.json(memberPortalEnvelope(view))),
 		http.post(OSTA_PATH, async ({ request }) => {
 			saves.push((await request.json()) as Record<string, unknown>)

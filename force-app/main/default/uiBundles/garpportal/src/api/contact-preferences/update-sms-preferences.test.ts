@@ -1,73 +1,43 @@
 import { describe, expect, it } from "vitest"
 
+import { AppError } from "@/api/client"
 import { updateSmsPreferences } from "@/api/contact-preferences/update-sms-preferences"
-import { sdkGraphqlHandler } from "@/testing/msw/handlers/sdk-graphql"
+import { completeness } from "@/testing/factories/account"
+import { myAccountOrg } from "@/testing/msw/handlers/account"
 import { server } from "@/testing/msw/server"
 
-const input = { contactId: " 003xx1 ", smsPromotional: true, smsRegistration: false }
-
 describe("updateSmsPreferences", () => {
-	it("refuses a blank contact id before it reaches the network", async () => {
+	it("posts both consents through the profile action and echoes them back", async () => {
+		const org = myAccountOrg()
+		server.use(...org.handlers)
+
 		await expect(
-			updateSmsPreferences({ ...input, contactId: "  " }),
-		).rejects.toMatchObject({ messages: ["Contact Id is required."] })
-	})
+			updateSmsPreferences({ smsPromotional: true, smsRegistration: false }),
+		).resolves.toEqual({ smsPromotional: true, smsRegistration: false })
 
-	it("writes both flags and reads the saved values back", async () => {
-		const writes: Array<Record<string, unknown>> = []
-		server.use(
-			sdkGraphqlHandler({
-				UpdateSmsPreferences: (variables) => {
-					writes.push(variables)
-					return {
-						data: {
-							uiapi: {
-								ContactUpdate: {
-									success: true,
-									Record: {
-										SMS_Promotional_Updates__c: { value: true },
-										SMS_Registration_Updates__c: { value: false },
-									},
-								},
-							},
-						},
-					}
-				},
-			}),
-		)
-
-		await expect(updateSmsPreferences(input)).resolves.toEqual({
-			smsPromotional: true,
-			smsRegistration: false,
-		})
-		expect(writes).toEqual([
-			{ contactId: "003xx1", smsPromotional: true, smsRegistration: false },
+		expect(org.profileSpy.bodies).toEqual([
+			{ SMS_Promotional_Updates__c: true, SMS_Registration_Updates__c: false },
 		])
 	})
 
-	it("treats an unsuccessful update as a failure", async () => {
+	it("throws when the org rejects a consent field", async () => {
 		server.use(
-			sdkGraphqlHandler({
-				UpdateSmsPreferences: () => ({
-					data: { uiapi: { ContactUpdate: { success: false } } },
+			...myAccountOrg({
+				profileRespond: () => ({
+					applied: [],
+					rejected: ["SMS_Promotional_Updates__c"],
+					completeness: completeness(),
 				}),
-			}),
+			}).handlers,
 		)
 
-		await expect(updateSmsPreferences(input)).rejects.toMatchObject({
-			messages: ["Unable to update SMS preferences."],
+		const failure = updateSmsPreferences({
+			smsPromotional: true,
+			smsRegistration: true,
 		})
-	})
-
-	it("throws the GraphQL error messages", async () => {
-		server.use(
-			sdkGraphqlHandler({
-				UpdateSmsPreferences: () => ({ errors: [{ message: "FLS on SMS field" }] }),
-			}),
-		)
-
-		await expect(updateSmsPreferences(input)).rejects.toMatchObject({
-			messages: ["FLS on SMS field"],
+		await expect(failure).rejects.toBeInstanceOf(AppError)
+		await expect(failure).rejects.toMatchObject({
+			messages: ["These fields could not be saved: SMS_Promotional_Updates__c."],
 		})
 	})
 })

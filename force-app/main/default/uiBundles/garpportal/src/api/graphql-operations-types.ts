@@ -112,14 +112,6 @@ export enum UiBehavior {
   Required = 'REQUIRED'
 }
 
-export type AccountContactQueryVariables = Exact<{
-  contactId: Scalars['ID']['input'];
-  first: Scalars['Int']['input'];
-}>;
-
-
-export type AccountContactQuery = { uiapi: { query: { Contact?: { edges?: Array<{ node?: { Id: string, FirstName?: { value?: string | null } | null, LastName?: { value?: string | null } | null, Name?: { value?: string | null } | null, Email?: { value?: string | null } | null, Phone?: { value?: string | null } | null, Photo_URL__c?: { value?: string | null } | null, GARP_Member_ID__c?: { value?: string | null } | null, GARP_ID__c?: { value?: string | null } | null, Membership_Type__c?: { value?: string | null } | null, MPS_Membership_Status__c?: { value?: string | null } | null, KPI_Membership_Expiration_Date__c?: { value?: string | null } | null, Membership_Caluclated_Expiration_Date__c?: { value?: string | null } | null, MPS_Membership_Expire_Date__c?: { value?: string | null } | null, KPI_Membership_Since__c?: { value?: string | null } | null, MPS_Membership_Autorenew_On__c?: { value?: boolean | null } | null, Company__c?: { value?: string | null } | null, Corporate_Title__c?: { value?: string | null } | null, Job_Function__c?: { value?: string | null } | null, Company_City__c?: { value?: string | null } | null, Company_Country__c?: { value?: string | null } | null, Industry_Working_Year__c?: { value?: string | null } | null, Highest_Degree__c?: { value?: string | null } | null, School_Name__c?: { value?: string | null } | null, Degree_Program_Name__c?: { value?: string | null } | null, Currently_in_School__c?: { value?: boolean | null } | null, Risk_Specialty__c?: { value?: string | null } | null, Topics_or_Expertise__c?: { value?: string | null } | null, GARP_Directory_Opt_In__c?: { value?: boolean | null } | null, GARP_Directory_Connect_Feature__c?: { value?: boolean | null } | null, GARP_Dir_Privacy_Job_Information__c?: { value?: boolean | null } | null, GARP_Dir_Privacy_Prof_Background__c?: { value?: boolean | null } | null, GARP_Dir_Privacy_Additional_Detail__c?: { value?: boolean | null } | null, KPI_Primary_Chapter_Name__c?: { value?: string | null } | null, KPI_Secondary_Chapter_Name__c?: { value?: string | null } | null, MailingStreet?: { value?: string | null } | null, MailingCity?: { value?: string | null } | null, MailingState?: { value?: string | null } | null, MailingPostalCode?: { value?: string | null } | null, MailingCountry?: { value?: string | null } | null, OtherStreet?: { value?: string | null } | null, OtherCity?: { value?: string | null } | null, OtherState?: { value?: string | null } | null, OtherPostalCode?: { value?: string | null } | null, OtherCountry?: { value?: string | null } | null, Account?: { Id: string, BillingStreet?: { value?: string | null } | null, BillingCity?: { value?: string | null } | null, BillingState?: { value?: string | null } | null, BillingPostalCode?: { value?: string | null } | null, BillingCountry?: { value?: string | null } | null } | null } | null } | null> | null, pageInfo: { hasNextPage: boolean, endCursor?: string | null } } | null } } };
-
 export type ContactProfileExtrasQueryVariables = Exact<{
   contactId: Scalars['ID']['input'];
   first: Scalars['Int']['input'];
@@ -133,87 +125,10 @@ export type CurrentUserQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type CurrentUserQuery = { uiapi: { currentUser?: { Id: string, Name?: { value?: string | null } | null, Contact?: { Id: string, GARP_Member_ID__c?: { value?: string | null } | null, Photo_URL__c?: { value?: string | null } | null } | null } | null } };
 
-export type ContactPreferencesQueryVariables = Exact<{
+export type BillingCompanyQueryVariables = Exact<{
   contactId: Scalars['ID']['input'];
   first: Scalars['Int']['input'];
 }>;
 
 
-export type ContactPreferencesQuery = { uiapi: { query: { Contact?: { edges?: Array<{ node?: { Id: string, Email?: { value?: string | null } | null, MobilePhone?: { value?: string | null } | null, Mobile_Phone_Code__c?: { value?: string | null } | null, SMS_Promotional_Updates__c?: { value?: boolean | null } | null, SMS_Registration_Updates__c?: { value?: boolean | null } | null } | null } | null> | null } | null } } };
-
-export type RequestEmailPreferencesMutationVariables = Exact<{
-  contactId: Scalars['IdOrRef']['input'];
-  updatedAt?: InputMaybe<Scalars['DateTime']['input']>;
-}>;
-
-
-export type RequestEmailPreferencesMutation = { uiapi: { ContactUpdate?: { success?: boolean | null } | null } };
-
-export type UpdateSmsPreferencesMutationVariables = Exact<{
-  contactId: Scalars['IdOrRef']['input'];
-  smsPromotional?: InputMaybe<Scalars['Boolean']['input']>;
-  smsRegistration?: InputMaybe<Scalars['Boolean']['input']>;
-}>;
-
-
-export type UpdateSmsPreferencesMutation = { uiapi: { ContactUpdate?: { success?: boolean | null, Record?: { SMS_Promotional_Updates__c?: { value?: boolean | null } | null, SMS_Registration_Updates__c?: { value?: boolean | null } | null } | null } | null } };
-
-export type PersonalInfoCountriesQueryVariables = Exact<{
-  first: Scalars['Int']['input'];
-}>;
-
-
-export type PersonalInfoCountriesQuery = { uiapi: { query: { Country_Code__c?: { edges?: Array<{ node?: { Id: string, Country__c?: { value?: string | null } | null, Name?: { value?: string | null } | null, PhoneCode__c?: { value?: string | null } | null } | null } | null> | null, pageInfo: { hasNextPage: boolean, endCursor?: string | null } } | null } } };
-
-export type PersonalInfoEditContactQueryVariables = Exact<{
-  contactId: Scalars['ID']['input'];
-  first: Scalars['Int']['input'];
-}>;
-
-
-export type PersonalInfoEditContactQuery = { uiapi: { query: { Contact?: { edges?: Array<{ node?: { Id: string, FirstName?: { value?: string | null } | null, LastName?: { value?: string | null } | null, Email?: { value?: string | null } | null, MobilePhone?: { value?: string | null } | null, Mobile_Phone_Code__c?: { value?: string | null } | null, Photo_URL__c?: { value?: string | null } | null, Mailing_Address_Company__c?: { value?: string | null } | null, MailingStreet?: { value?: string | null } | null, MailingCity?: { value?: string | null } | null, MailingState?: { value?: string | null } | null, MailingPostalCode?: { value?: string | null } | null, MailingCountry?: { value?: string | null } | null, HomePhone?: { value?: string | null } | null, AccountId?: { value?: string | null } | null, Account?: { Id: string, Billing_Address_Company__c?: { value?: string | null } | null, BillingStreet?: { value?: string | null } | null, BillingCity?: { value?: string | null } | null, BillingState?: { value?: string | null } | null, BillingPostalCode?: { value?: string | null } | null, BillingCountry?: { value?: string | null } | null, Phone?: { value?: string | null } | null } | null } | null } | null> | null, pageInfo: { hasNextPage: boolean, endCursor?: string | null } } | null } } };
-
-export type UploadProfilePhotoAttachmentMutationVariables = Exact<{
-  parentId: Scalars['IdOrRef']['input'];
-  name: Scalars['String']['input'];
-  contentType: Scalars['String']['input'];
-  body: Scalars['Base64']['input'];
-}>;
-
-
-export type UploadProfilePhotoAttachmentMutation = { uiapi: { AttachmentCreate?: { Record?: { Id: string } | null } | null } };
-
-export type SetContactPhotoUrlMutationVariables = Exact<{
-  contactId: Scalars['IdOrRef']['input'];
-  photoUrl?: InputMaybe<Scalars['String']['input']>;
-}>;
-
-
-export type SetContactPhotoUrlMutation = { uiapi: { ContactUpdate?: { success?: boolean | null, Record?: { Photo_URL__c?: { value?: string | null } | null } | null } | null } };
-
-export type SavePersonalInfoMutationVariables = Exact<{
-  accountId: Scalars['IdOrRef']['input'];
-  contactId: Scalars['IdOrRef']['input'];
-  billingCompany?: InputMaybe<Scalars['String']['input']>;
-  billingStreet?: InputMaybe<Scalars['TextArea']['input']>;
-  billingCity?: InputMaybe<Scalars['String']['input']>;
-  billingState?: InputMaybe<Scalars['String']['input']>;
-  billingPostalCode?: InputMaybe<Scalars['String']['input']>;
-  billingCountry?: InputMaybe<Scalars['String']['input']>;
-  billingPhone?: InputMaybe<Scalars['PhoneNumber']['input']>;
-  firstName?: InputMaybe<Scalars['String']['input']>;
-  lastName?: InputMaybe<Scalars['String']['input']>;
-  email?: InputMaybe<Scalars['Email']['input']>;
-  mobilePhoneCode?: InputMaybe<Scalars['String']['input']>;
-  mobilePhone?: InputMaybe<Scalars['PhoneNumber']['input']>;
-  mailingCompany?: InputMaybe<Scalars['String']['input']>;
-  mailingStreet?: InputMaybe<Scalars['TextArea']['input']>;
-  mailingCity?: InputMaybe<Scalars['String']['input']>;
-  mailingState?: InputMaybe<Scalars['String']['input']>;
-  mailingPostalCode?: InputMaybe<Scalars['String']['input']>;
-  mailingCountry?: InputMaybe<Scalars['String']['input']>;
-  homePhone?: InputMaybe<Scalars['PhoneNumber']['input']>;
-}>;
-
-
-export type SavePersonalInfoMutation = { uiapi: { AccountUpdate?: { success?: boolean | null } | null, ContactUpdate?: { success?: boolean | null } | null } };
+export type BillingCompanyQuery = { uiapi: { query: { Contact?: { edges?: Array<{ node?: { Id: string, Account?: { Id: string, Billing_Address_Company__c?: { value?: string | null } | null } | null } | null } | null> | null, pageInfo: { hasNextPage: boolean, endCursor?: string | null } } | null } } };

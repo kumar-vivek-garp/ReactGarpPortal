@@ -4,35 +4,34 @@ import { invalidateAccountCaches } from "@/api/account/invalidate-caches"
 import { removeProfilePhoto, uploadProfilePhoto } from "@/api/personal-info"
 
 type UploadArgs = {
-	contactId: string
 	base64Body: string
 	fileName: string
 }
 
-/** Profile photo upload / remove via Attachment + Contact.Photo_URL__c. */
+/** Profile photo upload / remove via `memberPhoto` / `memberPhotoRemove`. */
 export function useProfilePhoto() {
 	const queryClient = useQueryClient()
 
 	const upload = useMutation({
-		mutationFn: ({ contactId, base64Body, fileName }: UploadArgs) =>
-			uploadProfilePhoto(contactId, base64Body, fileName),
+		mutationFn: ({ base64Body, fileName }: UploadArgs) =>
+			uploadProfilePhoto(base64Body, fileName),
 		meta: {
 			successMessage: "Profile photo updated",
 			errorTitle: "Unable to upload photo",
 		},
-		onSuccess: async (_url, variables) => {
-			await invalidateAccountCaches(queryClient, variables.contactId)
+		onSuccess: async () => {
+			await invalidateAccountCaches(queryClient)
 		},
 	})
 
 	const remove = useMutation({
-		mutationFn: (contactId: string) => removeProfilePhoto(contactId),
+		mutationFn: () => removeProfilePhoto(),
 		meta: {
 			successMessage: "Profile photo removed",
 			errorTitle: "Unable to remove photo",
 		},
-		onSuccess: async (_data, contactId) => {
-			await invalidateAccountCaches(queryClient, contactId)
+		onSuccess: async () => {
+			await invalidateAccountCaches(queryClient)
 		},
 	})
 

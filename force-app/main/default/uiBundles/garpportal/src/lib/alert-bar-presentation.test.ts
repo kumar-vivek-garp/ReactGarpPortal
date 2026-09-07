@@ -81,9 +81,9 @@ describe("toAlertBarModel — the programme label", () => {
 
 describe("toAlertBarModel — the deadline", () => {
 	it("leads the date with the status's own prefix", () => {
-		// "Book by", not the generic "Deadline" the legacy uses for everything
+		// "Schedule by", not the generic "Deadline" the legacy uses for everything
 		// that is not scheduling.
-		expect(toAlertBarModel(view())?.deadlineLabel).toMatch(/^Book by /)
+		expect(toAlertBarModel(view())?.deadlineLabel).toMatch(/^Schedule by /)
 	})
 
 	it("uses a different prefix for a payment deadline", () => {

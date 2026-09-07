@@ -245,6 +245,30 @@ describe("courseDisplayName", () => {
 		).toBe("Financial Risk and Regulation")
 	})
 
+	it("renders the catalogue's HTML as text, not as markup", () => {
+		// Verbatim from GARP_Portal_Program__mdt.frr25 in both orgs. This shipped
+		// with the tags showing literally: every other surface stripped them and
+		// the course page was the one that did not.
+		expect(
+			courseDisplayName(
+				course({
+					programInformation: {
+						programCode: "FRR25",
+						abbrevName: "FRR",
+						formalName:
+							"Financial Risk and Regulation (FRR)<sup>&reg;</sup> Series",
+						informalName: null,
+						policyURL: null,
+						regLogoURL: null,
+						myProgramsLogoURL: null,
+						description: null,
+						registrationPath: null,
+					},
+				}),
+			),
+		).toBe("Financial Risk and Regulation (FRR)® Series")
+	})
+
 	it("falls back to the known course names, then the raw code", () => {
 		expect(courseDisplayName(course({ programType: "FFR" }))).toBe(
 			"Foundations of Financial Risk",

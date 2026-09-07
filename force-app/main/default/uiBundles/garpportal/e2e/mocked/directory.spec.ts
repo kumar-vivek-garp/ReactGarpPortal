@@ -126,10 +126,13 @@ test.describe("member directory", () => {
 		await expect(
 			page.getByText("The directory is not available on your membership"),
 		).toBeVisible()
-		// The upsell says what to do about it, and points at membership.
+		// The upsell says what to do about it, and points at the tagged
+		// membership purchase form — not the benefits page.
 		const upsell = page.getByRole("link", { name: "Upgrade" })
 		await expect(upsell).toBeVisible()
-		expect(await upsell.getAttribute("href")).toBe("/membership")
+		expect(await upsell.getAttribute("href")).toBe(
+			"/membership/register?track_cta=PortalMembershipPage",
+		)
 
 		// No search box, and none run on this member's behalf.
 		await expect(
