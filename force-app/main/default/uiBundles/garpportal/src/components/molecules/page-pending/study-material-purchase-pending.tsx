@@ -6,7 +6,6 @@ import {
 	REGISTRATION_GRID,
 	REGISTRATION_MAIN_COLUMN,
 	REGISTRATION_RAIL_COLUMN,
-	REGISTRATION_SCROLL,
 	REGISTRATION_SHELL,
 	REGISTRATION_STICKY_BAR,
 } from "@/components/forms/registration-shell"
@@ -48,7 +47,7 @@ function StudyMaterialPurchaseSkeleton() {
 function StudyMaterialPurchasePendingShell() {
 	return (
 		<div className={REGISTRATION_SHELL}>
-			<div className={REGISTRATION_SCROLL}>
+			<div>
 				<StudyMaterialPurchaseSkeleton />
 			</div>
 		</div>

@@ -78,6 +78,14 @@ export const STUDY_MATERIALS_ERRATA_LABEL = "Report an error"
 /** The archive entry point, shown only to members who hold an eBook key. */
 export const STUDY_MATERIALS_ARCHIVE_LABEL = "My eBook links"
 
+/**
+ * The two blocks a programme's materials split into. "My Materials" is the
+ * reviewer's own wording for what a member already holds; the second block is
+ * everything still on sale, and it says "Purchase" on every card in it.
+ */
+export const STUDY_MATERIALS_MINE_LABEL = "My Materials"
+export const STUDY_MATERIALS_AVAILABLE_LABEL = "Available to Purchase"
+
 /** Toasted once when the provider returns to the listing with `?purchased=1`. */
 export const PURCHASE_SUCCESS_NOTICE = {
 	title: "Purchase complete",

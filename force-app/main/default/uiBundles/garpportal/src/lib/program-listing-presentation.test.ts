@@ -294,9 +294,13 @@ describe("buildProgramListingPresentation — explore", () => {
 		expect(result.registrationLink?.isExternal).toBe(false)
 		expect(result.learnMoreLink?.url).toBe("https://www.garp.org/erp")
 		expect(result.detailsLink).toBeNull()
-		expect(result.metaLines).toEqual([
-			{ icon: "registrationOpen", text: "Open for registration" },
-		])
+		/*
+		 * Nothing in the meta run while registration is open: "Open for
+		 * registration" only restated the status badge above it. The line is
+		 * reserved for which administration is open, which the listing payload
+		 * does not carry yet.
+		 */
+		expect(result.metaLines).toEqual([])
 	})
 
 	it("withholds registration and counts down when closed", () => {
@@ -326,6 +330,17 @@ describe("buildProgramListingPresentation — explore", () => {
 			icon: "microCourse",
 			text: "Micro course",
 		})
+	})
+
+	it("keeps the micro-course line while registration is open", () => {
+		// The open-registration line is gone; the micro flag is not.
+		const result = buildProgramListingPresentation(
+			"other",
+			other({ isMicroCourse: true, isRegistrationOpen: true }),
+		)
+		expect(result.metaLines).toEqual([
+			{ icon: "microCourse", text: "Micro course" },
+		])
 	})
 
 	it("maps riskai to the rai marketing slug", () => {

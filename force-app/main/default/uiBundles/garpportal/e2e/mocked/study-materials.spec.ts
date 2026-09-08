@@ -31,10 +31,21 @@ test.describe("study materials catalogue", () => {
 		await expect(
 			page.getByRole("heading", { name: /Financial Risk Manager.*\(3\)/ }),
 		).toBeVisible()
-		// Scoped to main: the footer carries its own level-3 headings.
+		/*
+		 * Each programme splits into what the member holds and what is still on
+		 * sale; the FRM part grouping runs inside those as captions rather than
+		 * headings. Scoped to main — the footer carries its own level-3s.
+		 */
 		await expect(
 			page.getByRole("main").getByRole("heading", { level: 3 }),
-		).toHaveText(["Part 1", "Part 2"])
+		).toHaveText([
+			"My Materials(2)",
+			"Available to Purchase(1)",
+			"Available to Purchase(1)",
+			"Available to Purchase(1)",
+		])
+		await expect(page.getByText("Part 1", { exact: true })).toBeVisible()
+		await expect(page.getByText("Part 2", { exact: true })).toBeVisible()
 
 		// 1. GARP Learning: the SSO button, plus the practice-exam add-on with
 		//    its pending order.
@@ -68,7 +79,8 @@ test.describe("study materials catalogue", () => {
 		await expect(
 			page.getByRole("link", { name: /Complete your order/ }),
 		).toHaveAttribute("href", "/my-account/orders/006UNPAID00000001")
-		await expect(page.getByText(/^Available /)).toBeVisible()
+		// The coming-soon line, not the "Available to Purchase" block headings.
+		await expect(page.getByText(/^Available (?!to Purchase)/)).toBeVisible()
 		await expect(page.getByRole("link", { name: /Notify me/ })).toHaveAttribute(
 			"href",
 			"https://www.garp.org/rai/notify",
@@ -91,6 +103,37 @@ test.describe("study materials catalogue", () => {
 		await expect(page.getByText(/unable to load/i)).toHaveCount(0)
 		await expect.poll(() => org.hits("studyMaterials")).toBe(1)
 		await expect.poll(() => org.hits("myEBooks")).toBe(1)
+	})
+
+	/*
+	 * Ownership is a section, not just a chip: each programme splits into what
+	 * the member holds and what is still on sale, so "is there anything here I
+	 * still need?" is answered by the headings rather than by reading cards.
+	 */
+	test("each programme splits into My Materials and Available to Purchase", async ({
+		page,
+	}) => {
+		await installMockOrg(page, { actions: studyMaterialsActions() })
+		await page.goto("/study-materials?tab=frm")
+
+		const frm = page.getByRole("region", { name: /Financial Risk Manager/ })
+		await expect(
+			frm.getByRole("heading", { name: /^My Materials/ }),
+		).toBeVisible()
+		await expect(
+			frm.getByRole("heading", { name: /^Available to Purchase/ }),
+		).toBeVisible()
+
+		// The owned material states when it was acquired, in its meta run.
+		await expect(
+			frm.getByText(/Included with your registration on /),
+		).toBeVisible()
+		// …and the one for sale keeps its Purchase link in the other block.
+		await expect(
+			frm
+				.getByRole("heading", { name: /^Available to Purchase/ })
+				.locator("xpath=following::a[contains(., 'Purchase')][1]"),
+		).toBeVisible()
 	})
 
 	test("the program pills filter the page and write ?tab=", async ({ page }) => {

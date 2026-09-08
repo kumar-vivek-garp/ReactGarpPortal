@@ -64,7 +64,7 @@ function baseActions(): Record<string, unknown> {
 }
 
 test.describe("cpd page", () => {
-	test("the current cycle renders summary, manage box and claims, with no unhandled action", async ({
+	test("the current cycle renders the summary strip, header actions and both tabs", async ({
 		page,
 	}) => {
 		const org = await installMockOrg(page, { actions: baseActions() })
@@ -82,19 +82,32 @@ test.describe("cpd page", () => {
 			page.getByRole("combobox", { name: "Cycle:" }),
 		).toContainText("2025/2027")
 
-		// Manage box — current cycle only.
-		await expect(page.getByText("Manage CPD Credits")).toBeVisible()
+		/*
+		 * The legacy "Manage CPD Credits" box is gone — its three rows are the
+		 * header toolbar now, and Add Credits stays current-cycle only.
+		 */
 		await expect(page.getByRole("button", { name: "Add Credits" })).toBeVisible()
+		await expect(
+			page.getByRole("link", { name: "Download Handbook" }),
+		).toBeVisible()
+		await expect(
+			page.getByRole("link", { name: "Browse Credit Opportunities" }),
+		).toBeVisible()
 
-		// Claims, bucketed with their counts.
-		await expect(
-			page.getByRole("heading", { name: /Pending Activities/ }),
-		).toBeVisible()
+		/*
+		 * One list at a time. The cycle has a pending claim, so Pending opens;
+		 * the approved row is real but behind its own tab.
+		 */
+		await expect(page.getByRole("tab", { name: /Pending/ })).toHaveAttribute(
+			"aria-selected",
+			"true",
+		)
 		await expect(page.getByText("Climate Risk Webinar")).toBeVisible()
-		await expect(
-			page.getByRole("heading", { name: /Approved Activities/ }),
-		).toBeVisible()
+		await expect(page.getByText("Approved Course")).toHaveCount(0)
+
+		await page.getByRole("tab", { name: /Approved/ }).click()
 		await expect(page.getByText("Approved Course")).toBeVisible()
+		await expect(page).toHaveURL(/tab=approved/)
 
 		// The credit summary card: title plus the FRM bar's approved/required.
 		await expect(page.getByText("2025/2027 Credit Summary")).toBeVisible()

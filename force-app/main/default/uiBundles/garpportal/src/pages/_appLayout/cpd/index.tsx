@@ -28,6 +28,6 @@ export const Route = createFileRoute("/_appLayout/cpd/")({
 })
 
 function Cpd() {
-	const { cycle } = Route.useSearch()
-	return <CpdPanel cycle={cycle} />
+	const { cycle, tab } = Route.useSearch()
+	return <CpdPanel cycle={cycle} tab={tab} />
 }

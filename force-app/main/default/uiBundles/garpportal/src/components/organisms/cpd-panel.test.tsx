@@ -4,6 +4,7 @@ import { http, HttpResponse } from "msw"
 import { describe, expect, it } from "vitest"
 
 import { CpdPanel } from "@/components/organisms/cpd-panel"
+import type { CpdTab } from "@/config/cpd"
 import { cpdClaim, cpdCycleInfo, cpdProgramView } from "@/testing/factories/cpd"
 import { memberPortalError } from "@/testing/factories/envelope"
 import { CPD_PROGRAM_PATH, cpdProgramOrg } from "@/testing/msw/handlers/cpd"
@@ -49,7 +50,7 @@ const WEBINAR_TYPE = {
 }
 
 async function renderPanel(
-	props: { cycle?: string } = {},
+	props: { cycle?: string; tab?: CpdTab } = {},
 	org = cpdProgramOrg({ view: twoCycles(), activityTypes: [WEBINAR_TYPE] }),
 ) {
 	server.use(...org.handlers)
@@ -63,7 +64,7 @@ async function renderPanel(
 }
 
 describe("the current cycle", () => {
-	it("offers the manage box and both activity sections", async () => {
+	it("offers the header actions and opens on the tab that has something in it", async () => {
 		await renderPanel()
 
 		await screen.findByRole("button", { name: "Add Credits" })
@@ -73,11 +74,46 @@ describe("the current cycle", () => {
 		expect(
 			screen.getByRole("link", { name: "Browse Credit Opportunities" }),
 		).toBeInTheDocument()
+
+		/*
+		 * One list at a time now. This cycle has a pending claim, so Pending is
+		 * the tab that opens and the approved row sits behind its own tab
+		 * rather than stacked under a second heading.
+		 */
 		expect(
-			screen.getByRole("heading", { name: /Pending Activities/ }),
+			screen.getByRole("tab", { name: /Pending/, selected: true }),
 		).toBeInTheDocument()
 		expect(screen.getByText("Pending Row")).toBeInTheDocument()
-		expect(screen.getByText("Approved Row")).toBeInTheDocument()
+		expect(screen.queryByText("Approved Row")).not.toBeInTheDocument()
+	})
+
+	/*
+	 * The click is asserted through the URL, not through the panel contents:
+	 * the swap is a react-spring cross-fade and jsdom does not drive it to
+	 * completion — the same reason `/programs` and `/membership` assert their
+	 * tab switches this way. What the chosen tab RENDERS is covered below by
+	 * mounting on it directly, which is a first mount and so deterministic.
+	 */
+	it("writes the chosen tab into the URL", async () => {
+		const user = userEvent.setup()
+		const { router } = await renderPanel()
+		await screen.findByText("Pending Row")
+
+		await user.click(screen.getByRole("tab", { name: /Approved/ }))
+
+		await waitFor(() => {
+			expect(router.state.location.search).toMatchObject({ tab: "approved" })
+		})
+	})
+
+	it("mounts on the approved list when the URL asks for it", async () => {
+		await renderPanel({ tab: "approved" })
+
+		expect(await screen.findByText("Approved Row")).toBeInTheDocument()
+		expect(screen.queryByText("Pending Row")).not.toBeInTheDocument()
+		expect(
+			screen.getByRole("tab", { name: /Approved/, selected: true }),
+		).toBeInTheDocument()
 	})
 
 	it("locks a past cycle down to its approved history", async () => {
@@ -148,11 +184,23 @@ describe("one dialog at a time", () => {
 
 	it("shows an approved claim read-only, reviewer comments included", async () => {
 		const user = userEvent.setup()
-		await renderPanel()
+		await renderPanel({ tab: "approved" })
 
-		await user.click(await screen.findByRole("button", { name: "Details" }))
+		/*
+		 * An approved row's only action is "see the rest of it", so the row IS
+		 * the control — there is no Details button beside it any more. Mounted
+		 * straight onto the approved tab so no cross-fade is in flight.
+		 */
+		await user.click(
+			await screen.findByRole("button", { name: "View Approved Row" }),
+		)
 		const dialog = await screen.findByRole("dialog", { name: "Credit Details" })
-		expect(within(dialog).getByText("Approved Row")).toBeInTheDocument()
+		/*
+		 * `findBy`: the claim's own title is a DYNAMIC row, built from the
+		 * activity type's labels, and that query only starts when the dialog
+		 * opens — so the row lands a tick after the dialog does.
+		 */
+		expect(await within(dialog).findByText("Approved Row")).toBeInTheDocument()
 		expect(within(dialog).getByText("Reviewer Comments")).toBeInTheDocument()
 		expect(within(dialog).getByText("Verified by GARP.")).toBeInTheDocument()
 	})

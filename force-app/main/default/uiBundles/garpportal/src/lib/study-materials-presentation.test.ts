@@ -86,10 +86,10 @@ describe("ownedLine / comingSoonLine", () => {
 		const on = formatLongDate("2026-02-11")
 		expect(
 			ownedLine({ wasOrderedWithReg: true, registrationDate: "2026-02-11", orderedDate: null }),
-		).toBe(`Included with your registration · ${on}`)
+		).toBe(`Included with your registration on ${on}`)
 		expect(
 			ownedLine({ wasOrderedWithReg: false, registrationDate: null, orderedDate: "2026-02-11" }),
-		).toBe(`Purchased · ${on}`)
+		).toBe(`Purchased on ${on}`)
 		expect(
 			ownedLine({ wasOrderedWithReg: false, registrationDate: null, orderedDate: null }),
 		).toBe("Purchased")
@@ -111,9 +111,6 @@ describe("materialStatusBadge", () => {
 			label: "Owned",
 			tone: "success",
 		})
-		expect(
-			materialStatusBadge(studyItem({ garpLearningAccessUrl: "https://l.example" })),
-		).toEqual({ label: "Access granted", tone: "success" })
 		expect(materialStatusBadge(studyItem({ accessUrl: "https://r.example" }))).toEqual({
 			label: "Access granted",
 			tone: "success",
@@ -130,6 +127,23 @@ describe("materialStatusBadge", () => {
 
 	it("chips nothing for a material that is simply for sale", () => {
 		expect(materialStatusBadge(studyItem({ canPurchase: true, price: 295 }))).toBeNull()
+	})
+
+	/*
+	 * GARP Learning is the exception to the whole chain: it is a platform the
+	 * member either can or cannot get into, and the "Access until …" line plus
+	 * the CTA say everything a chip could. Recognised by either signal, because
+	 * Apex sets the access URL only while access is live.
+	 */
+	it("chips nothing for GARP Learning, however it is recognised", () => {
+		expect(
+			materialStatusBadge(studyItem({ garpLearningAccessUrl: "https://l.example" })),
+		).toBeNull()
+		expect(
+			materialStatusBadge(
+				studyItem({ typeLabel: "GARP Learning", isOwned: true }),
+			),
+		).toBeNull()
 	})
 })
 

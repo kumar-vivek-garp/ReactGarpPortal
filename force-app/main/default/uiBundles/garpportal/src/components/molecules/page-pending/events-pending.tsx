@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/atoms/skeleton"
+import { PAGE_SHELL, PAGE_STICKY_HEADER } from "@/components/molecules/page-shell"
 
 /**
  * Mirrors `EventCard`: date tile, type + status chip row, title, then the
@@ -74,8 +75,8 @@ function EventsContentSkeleton() {
 /** Matches events panel loading chrome + content skeleton. */
 function EventsPendingShell() {
 	return (
-		<div className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]">
-			<header className="shrink-0">
+		<div className={PAGE_SHELL}>
+			<header className={PAGE_STICKY_HEADER}>
 				<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
 					My Events
 				</h1>
@@ -83,7 +84,7 @@ function EventsPendingShell() {
 					Your next commitment up top, everything else below.
 				</p>
 			</header>
-			<div className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+			<div>
 				<EventsContentSkeleton />
 			</div>
 		</div>

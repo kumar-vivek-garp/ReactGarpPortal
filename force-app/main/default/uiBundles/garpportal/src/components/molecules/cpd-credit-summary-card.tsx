@@ -2,25 +2,59 @@ import { useState } from "react"
 import { Download } from "lucide-react"
 
 import type { CpdCycleInfo } from "@/api/cpd"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/atoms/card"
+import { Button } from "@/components/atoms/button"
+import { Card } from "@/components/atoms/card"
 import { CpdAttestationDialog } from "@/components/molecules/cpd-attestation-dialog"
 import { CpdCreditBars } from "@/components/molecules/cpd-credit-bars"
 import { CPD_NO_REQUIREMENT_MESSAGE } from "@/config/cpd"
-import { cycleCertificates, cycleCreditRows } from "@/lib/cpd-presentation"
+import {
+	cycleCertificates,
+	cycleCreditRows,
+	cycleCreditTotals,
+} from "@/lib/cpd-presentation"
 import { resolveExperienceHref } from "@/lib/program-card-links"
 import { cn } from "@/lib/utils"
-
-const CERT_ROW_STYLES =
-	"flex items-center gap-2 rounded-lg px-2 py-2 text-sm font-semibold"
 
 type CpdCreditSummaryCardProps = {
 	cycle: CpdCycleInfo
 	className?: string
 }
 
+/** One figure and what it counts, on a single baseline. */
+function CreditStat({
+	label,
+	value,
+	emphasis = false,
+}: {
+	label: string
+	value: number
+	/** Approved is the number the page exists to report; the others are context. */
+	emphasis?: boolean
+}) {
+	return (
+		<div className="flex items-baseline gap-1.5">
+			<span
+				className={cn(
+					"text-base font-semibold tabular-nums",
+					emphasis ? "text-primary" : "text-foreground",
+				)}
+			>
+				{value}
+			</span>
+			<span className="text-caption text-muted-foreground">{label}</span>
+		</div>
+	)
+}
+
 /**
- * "{cycle} Credit Summary" — the bars, then a download row per earned
- * certificate.
+ * The cycle's standing, as one strip: the figures, the per-certification bars,
+ * and any certificate it has earned.
+ *
+ * It is deliberately one line tall on a wide screen. This started as a card
+ * with stat tiles over stacked bars and a bordered certificate footer, which
+ * cost roughly 200px above the activity list — a permanent tax on the thing
+ * members actually came to read. Every value it held is still here; only the
+ * padding went.
  *
  * Certificates are gated on attestation, which is where the legacy gate lives:
  * clicking a certificate before attesting opens a two-checkbox dialog and only
@@ -35,6 +69,7 @@ type CpdCreditSummaryCardProps = {
  */
 function CpdCreditSummaryCard({ cycle, className }: CpdCreditSummaryCardProps) {
 	const rows = cycleCreditRows(cycle)
+	const totals = cycleCreditTotals(cycle)
 	const certificates = cycleCertificates(cycle)
 	const isAttested = cycle.isAttested === true
 	const [pendingHref, setPendingHref] = useState<string | null>(null)
@@ -44,64 +79,78 @@ function CpdCreditSummaryCard({ cycle, className }: CpdCreditSummaryCardProps) {
 	}
 
 	return (
-		<Card className={cn("gap-0 py-0 shadow-none", className)}>
-			<CardHeader className="px-5 pt-5 pb-3">
-				<CardTitle className="font-heading text-lg tracking-wide text-foreground">
-					{cycle.cycleName ? `${cycle.cycleName} Credit Summary` : "Credit Summary"}
-				</CardTitle>
-			</CardHeader>
+		<Card
+			className={cn(
+				// `gap-4` as one value, not `gap-x`/`gap-y`: the Card base sets
+				// `gap-6`, and a single-axis utility does not reliably override it.
+				"flex-row flex-wrap items-center gap-4 px-4 py-3 shadow-none",
+				className,
+			)}
+		>
+			{/*
+			 * Still an `h2` — it names the region for a screen reader and for the
+			 * document outline — but sized as a label rather than a card title.
+			 */}
+			<h2 className="font-heading text-sm tracking-wide text-foreground">
+				{cycle.cycleName
+					? `${cycle.cycleName} Credit Summary`
+					: "Credit Summary"}
+			</h2>
 
-			<CardContent className="space-y-4 px-5 pb-5">
-				{rows.length > 0 ? (
-					<CpdCreditBars rows={rows} />
-				) : (
-					<p className="text-sm text-muted-foreground">
-						{CPD_NO_REQUIREMENT_MESSAGE}
-					</p>
-				)}
+			<div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+				<CreditStat label="Approved" value={totals.approved} emphasis />
+				<CreditStat label="Pending" value={totals.pending} />
+				<CreditStat label="Required" value={totals.required} />
+			</div>
 
-				{certificates.length > 0 ? (
-					<div className="space-y-1 border-t border-border/60 pt-4">
-						{certificates.map((certificate) => {
-							const href = resolveExperienceHref(certificate.url)
-							if (!href) return null
-							return isAttested ? (
-								<a
-									key={certificate.designation}
-									href={href}
-									target="_blank"
-									rel="noreferrer noopener"
-									className={cn(
-										CERT_ROW_STYLES,
-										"text-primary hover:bg-accent hover:text-accent-foreground",
-									)}
-								>
+			{/*
+			 * `lg:ml-auto` only: on a wide screen the bars and the certificates
+			 * sit together at the far end, but once the row wraps an auto margin
+			 * would strand the bars against the right edge of their own line.
+			 */}
+			{rows.length > 0 ? (
+				<CpdCreditBars rows={rows} inline className="lg:ml-auto" />
+			) : (
+				<p className="text-caption text-muted-foreground lg:ml-auto">
+					{CPD_NO_REQUIREMENT_MESSAGE}
+				</p>
+			)}
+
+			{certificates.length > 0 ? (
+				<div className="flex flex-wrap items-center gap-2">
+					{certificates.map((certificate) => {
+						const href = resolveExperienceHref(certificate.url)
+						if (!href) return null
+						return isAttested ? (
+							<Button
+								key={certificate.designation}
+								asChild
+								variant="outline"
+								size="sm"
+							>
+								<a href={href} target="_blank" rel="noreferrer noopener">
 									<Download className="size-4 shrink-0" aria-hidden />
 									{certificate.label}
 								</a>
-							) : (
-								<button
-									key={certificate.designation}
-									type="button"
-									onClick={() => setPendingHref(href)}
-									className={cn(
-										CERT_ROW_STYLES,
-										"w-full text-primary hover:bg-accent hover:text-accent-foreground",
-									)}
-								>
-									<Download className="size-4 shrink-0" aria-hidden />
-									{certificate.label}
-								</button>
-							)
-						})}
-						{!isAttested ? (
-							<p className="px-2 pt-1 text-xs text-muted-foreground">
-								You will be asked to attest this cycle before downloading.
-							</p>
-						) : null}
-					</div>
-				) : null}
-			</CardContent>
+							</Button>
+						) : (
+							<Button
+								key={certificate.designation}
+								type="button"
+								variant="outline"
+								size="sm"
+								// The gate is not obvious from a Download button, and
+								// there is no room on this strip to spell it out.
+								title="You will be asked to attest this cycle before downloading."
+								onClick={() => setPendingHref(href)}
+							>
+								<Download className="size-4 shrink-0" aria-hidden />
+								{certificate.label}
+							</Button>
+						)
+					})}
+				</div>
+			) : null}
 
 			<CpdAttestationDialog
 				open={pendingHref !== null}

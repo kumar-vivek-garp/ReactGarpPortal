@@ -12,6 +12,7 @@ import { Footer } from "@/components/organisms/footer"
 import { LOGIN_PATH } from "@/auth/constants"
 import { getReturnPath } from "@/auth/return-path"
 import { useScrolledNav } from "@/hooks/use-scrolled-nav"
+import { APP_SCROLL_ID } from "@/lib/app-scroll"
 import { dismissBootSplash } from "@/lib/boot-splash"
 import { cn } from "@/lib/utils"
 
@@ -22,9 +23,11 @@ import { cn } from "@/lib/utils"
  * without belonging to that layout group.
  *
  * Toolbar geometry mirrors `Navbar` exactly (`h-16` / `app:h-20` plus a spacer
- * of the same height). That is load-bearing, not cosmetic: the registration
- * forms size themselves with `h-[calc(100vh-4rem)]` / `app:h-[calc(100vh-5rem)]`,
- * so a header of any other height would leave the sticky submit bar off-screen.
+ * of the same height). Still load-bearing, though for a plainer reason than it
+ * once was: the forms no longer measure the toolbar themselves — the spacer
+ * takes its row in the frame below and the scroller gets what is left — but a
+ * form served under two shells of different heights would still pin its submit
+ * bar at two different offsets.
  */
 function PublicHeader() {
 	const location = useRouterState({ select: (state) => state.location })
@@ -79,12 +82,21 @@ function PublicShell({ children }: { children?: ReactNode }) {
 
 	return (
 		<PageEnterFade>
-			<div className="flex min-h-screen flex-col">
+			{/* Same frame as `AppLayoutShell`, minus the rail: the viewport is
+			    fixed, the main column scrolls, the footer rides inside it. The two
+			    shells must agree — a registration form is served under both. */}
+			<div className="flex h-screen flex-col overflow-hidden">
 				<PublicHeader />
-				<main className="min-h-[calc(100vh-4rem)] min-w-0 flex-1 app:min-h-[calc(100vh-5rem)]">
-					<PageContainer className="py-6">{children}</PageContainer>
-				</main>
-				<Footer />
+				<div
+					id={APP_SCROLL_ID}
+					data-scroll-restoration-id={APP_SCROLL_ID}
+					className="min-h-0 flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+				>
+					<main className="min-h-full min-w-0">
+						<PageContainer className="py-6">{children}</PageContainer>
+					</main>
+					<Footer />
+				</div>
 			</div>
 		</PageEnterFade>
 	)

@@ -88,10 +88,10 @@ describe("OrderHistoryPanel — the All view", () => {
 		await renderPanel()
 
 		expect(
-			await screen.findByRole("heading", { name: /Unpaid Purchases/ }),
+			await screen.findByRole("heading", { name: /Unpaid Orders/ }),
 		).toBeInTheDocument()
 		expect(
-			screen.getByRole("heading", { name: /Paid Purchases/ }),
+			screen.getByRole("heading", { name: /Paid Orders/ }),
 		).toBeInTheDocument()
 		expect(
 			screen.getByRole("link", { name: "View order FRM Part I Exam" }),
@@ -113,10 +113,10 @@ describe("OrderHistoryPanel — the All view", () => {
 		await renderPanel()
 
 		expect(
-			await screen.findByText("No paid purchases"),
+			await screen.findByText("No paid orders"),
 		).toBeInTheDocument()
 		expect(
-			screen.getByText("Completed purchases will appear here once they settle."),
+			screen.getByText("Completed orders will appear here once they settle."),
 		).toBeInTheDocument()
 	})
 })
@@ -130,7 +130,7 @@ describe("OrderHistoryPanel — scoping to one bucket", () => {
 			await screen.findByRole("link", { name: "View order FRM Part I Exam" }),
 		).toBeInTheDocument()
 		expect(
-			screen.queryByRole("heading", { name: /Unpaid Purchases/ }),
+			screen.queryByRole("heading", { name: /Unpaid Orders/ }),
 		).not.toBeInTheDocument()
 		expect(
 			screen.queryByRole("link", {
@@ -177,7 +177,7 @@ describe("OrderHistoryPanel — search", () => {
 			screen.queryByRole("link", { name: "View order FRM Part I Exam" }),
 		).not.toBeInTheDocument()
 		expect(
-			screen.getByText("No unpaid purchases match your search"),
+			screen.getByText("No unpaid orders match your search"),
 		).toBeInTheDocument()
 	})
 })

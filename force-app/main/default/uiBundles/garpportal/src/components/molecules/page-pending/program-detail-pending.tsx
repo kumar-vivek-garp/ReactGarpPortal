@@ -3,6 +3,7 @@ import { getRouteApi } from "@tanstack/react-router"
 import { Skeleton } from "@/components/atoms/skeleton"
 import { ProgramsSubpageHeader } from "@/components/molecules/programs-subpage-header"
 import { cn } from "@/lib/utils"
+import { PAGE_SHELL, PAGE_STICKY_SUBHEADER } from "@/components/molecules/page-shell"
 
 const routeApi = getRouteApi("/_appLayout/programs/$programType/")
 
@@ -58,9 +59,9 @@ function ProgramDetailPendingShell({
 	void programType
 
 	return (
-		<div className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]">
-			<ProgramsSubpageHeader />
-			<div className="mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+		<div className={PAGE_SHELL}>
+			<ProgramsSubpageHeader className={PAGE_STICKY_SUBHEADER} />
+			<div>
 				<ProgramDetailSkeleton />
 			</div>
 		</div>

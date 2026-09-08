@@ -134,10 +134,23 @@ function otherMetaLines(program: OtherProgram): MetaLine[] {
 		lines.push({ icon: "microCourse", text: "Micro course" })
 	}
 
-	if (program.isRegistrationOpen) {
-		lines.push({ icon: "registrationOpen", text: "Open for registration" })
-		return lines
-	}
+	/*
+	 * An open registration adds no meta line (UI/UX request, Sep 2026). "Open
+	 * for registration" restated the "Registration open" badge sitting two
+	 * lines above it, so the card spent a row saying the same thing twice.
+	 *
+	 * What belongs here instead is WHICH administration is open — "May and
+	 * November 2026". Apex computes exactly that string
+	 * (`ExamAdminWindow.currentExamAdminName` in `GARP_Portal_ProgramsService`)
+	 * but `addOther` only copies the `next*` fields onto `OtherProgramInfo`, so
+	 * it never reaches the client. Until it does there is nothing truthful to
+	 * put here — an invented sitting calendar in the client would be worse than
+	 * an empty line.
+	 *
+	 * A closed registration keeps its line: "Registration opens 3 March 2026"
+	 * carries a date the badge does not.
+	 */
+	if (program.isRegistrationOpen) return lines
 
 	const opens = registrationOpensCopy(program)
 	if (opens) lines.push({ icon: "opensLater", text: opens })

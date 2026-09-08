@@ -12,11 +12,12 @@ import {
 	groupEBooksByYear,
 } from "@/lib/ebook-archive-presentation"
 import { cn } from "@/lib/utils"
+import { PAGE_SHELL, PAGE_STICKY_SUBHEADER } from "@/components/molecules/page-shell"
 
 const SUBPAGE_SHELL =
-	"-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
+	PAGE_SHELL
 const SUBPAGE_SCROLL =
-	"mt-4 min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+	"space-y-6"
 
 function ArchiveEmpty() {
 	const Icon = EBOOK_ARCHIVE.icon
@@ -51,6 +52,7 @@ function EBookArchivePanel({ className }: { className?: string }) {
 	return (
 		<animated.div style={style} className={cn(SUBPAGE_SHELL, className)}>
 			<ProgramsSubpageHeader
+				className={PAGE_STICKY_SUBHEADER}
 				back={{ kind: "studyMaterials" }}
 				title={EBOOK_ARCHIVE.title}
 				onNavigateBack={exit}

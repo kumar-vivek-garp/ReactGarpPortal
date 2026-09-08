@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client"
 import { queryClient } from "@/api/client"
 import { installLocalDevContactFetchPatch } from "@/auth/local-dev-contacts"
 import { NotFoundPanel } from "@/components/organisms/not-found-panel"
+import { APP_SCROLL_SELECTOR } from "@/lib/app-scroll"
 import {
 	bootstrapThemeFromStore,
 	subscribeSystemColorScheme,
@@ -32,6 +33,13 @@ const router = createRouter({
 	// Safety net for a future route-thrown `notFound()`, which resolves at the
 	// throwing route's own boundary — inside chrome that already exists.
 	defaultNotFoundComponent: () => <NotFoundPanel variant="member" />,
+	// The shells scroll their main column, not the document, and the two things
+	// a browser does for free only when the *document* scrolls have to be asked
+	// for explicitly: land a new route at the top, and put a back/forward
+	// navigation back where it was. Without the first, opening a page from
+	// halfway down a long one starts you halfway down the new one.
+	scrollRestoration: true,
+	scrollToTopSelectors: [APP_SCROLL_SELECTOR],
 })
 
 declare module "@tanstack/react-router" {

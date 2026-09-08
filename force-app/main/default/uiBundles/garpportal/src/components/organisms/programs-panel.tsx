@@ -33,6 +33,8 @@ import type { ProgramCardVariant } from "@/lib/program-listing-presentation"
 import { useExamResults } from "@/hooks/use-exam-results"
 import { usePrograms } from "@/hooks/use-programs"
 import { useListViewStore } from "@/store/list-view-store"
+import { PAGE_SHELL, PAGE_STICKY_HEADER } from "@/components/molecules/page-shell"
+import { cn } from "@/lib/utils"
 
 type ProgramsPanelProps = {
 	tab: ProgramsTab | undefined
@@ -281,9 +283,9 @@ function ProgramsPanel({ tab, view }: ProgramsPanelProps) {
 		<Tabs
 			value={activeTab}
 			onValueChange={(value) => selectTab(value as ProgramsTab)}
-			className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
+			className={PAGE_SHELL}
 		>
-			<header className="shrink-0 space-y-4">
+			<header className={cn(PAGE_STICKY_HEADER, "space-y-4")}>
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
 						My Programs
@@ -323,7 +325,7 @@ function ProgramsPanel({ tab, view }: ProgramsPanelProps) {
 				/>
 			</header>
 
-			<div className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+			<div>
 				{isError ? (
 					<p className="text-sm text-muted-foreground">
 						We couldn&apos;t load your programs. Please try again later.

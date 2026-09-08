@@ -5,6 +5,7 @@ import { StaggerReveal } from "@/components/molecules/stagger-reveal"
 import { useDashboardCards } from "@/hooks/use-dashboard-cards"
 import { useDashboardCardVisibility } from "@/hooks/use-dashboard-card-visibility"
 import { cn } from "@/lib/utils"
+import { PAGE_SHELL, PAGE_STICKY_HEADER } from "@/components/molecules/page-shell"
 
 /**
  * Member home dashboard — Apex cards plus enrolled/events composed with
@@ -27,11 +28,11 @@ function DashboardPanel({ className }: { className?: string }) {
 		// scrolls the same way.
 		<PageEnterFade
 			className={cn(
-				"-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]",
+				PAGE_SHELL,
 				className,
 			)}
 		>
-			<header className="shrink-0 space-y-2">
+			<header className={cn(PAGE_STICKY_HEADER, "space-y-2")}>
 				<p className="text-xs font-semibold tracking-wider text-primary uppercase">
 					Member home
 				</p>
@@ -43,7 +44,7 @@ function DashboardPanel({ className }: { className?: string }) {
 				</p>
 			</header>
 
-			<div className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+			<div>
 				{isError ? (
 					<p className="text-sm text-muted-foreground">
 						We couldn&apos;t load your dashboard. Please try again later.

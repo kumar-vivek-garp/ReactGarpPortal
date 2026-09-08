@@ -1,6 +1,6 @@
 import { animated } from "@react-spring/web"
 import { Link, useLocation } from "@tanstack/react-router"
-import { CircleUser } from "lucide-react"
+import { User } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/atoms/avatar"
 import {
@@ -68,8 +68,12 @@ function SidebarProfileLink({
 				className="size-full object-cover"
 			/>
 			{/*
-			 * Bare like the nav icons below it — no fill while inactive. Only the
-			 * fallback glyph goes bare; a real avatar photo still fills the circle.
+			 * Matches SidebarNavLink's puck exactly: bare while inactive, filled
+			 * `bg-primary` when active — this row is one of the nav rows and must
+			 * carry the same selected state as the ones under it. The glyph itself
+			 * is the frameless `User` bust rather than `CircleUser`, so the only
+			 * circle on screen is the shared active puck, not a second outline
+			 * drawn inside it. A real avatar photo still fills the circle.
 			 */}
 			<AvatarFallback
 				className={cn(
@@ -79,7 +83,9 @@ function SidebarProfileLink({
 						: "text-muted-foreground",
 				)}
 			>
-				<CircleUser className="size-7" aria-hidden />
+				{/* Same 22px as SidebarNavLink's icons — a bare glyph reads larger
+				    than a framed one, so matching their box keeps the column even. */}
+				<User className="size-[22px]" aria-hidden />
 			</AvatarFallback>
 		</Avatar>
 	)
@@ -99,8 +105,8 @@ function SidebarProfileLink({
 			)}
 		>
 			{/*
-			 * items-center on the row prevents flex stretch turning size-11 into an
-			 * oval. The tooltip anchors here rather than to the row: the row stays
+			 * items-center on the row prevents flex stretch turning size-11 into a
+			 * rectangle. The tooltip anchors here rather than to the row: the row stays
 			 * 294px wide while collapsed so its labels never reflow, which would put
 			 * a row-anchored tooltip far off the rail's visible edge.
 			 */}
@@ -117,16 +123,29 @@ function SidebarProfileLink({
 			) : (
 				avatar
 			)}
+			{/*
+			 * `flex-1 min-w-0` is what lets the two lines truncate: without it the
+			 * column sizes to its text and a long name wraps onto a second line,
+			 * making the row taller than every nav row under it (and taller than
+			 * the skeleton it replaces). `title` gives the full name back on hover,
+			 * since the collapsed tooltip is not available while expanded.
+			 */}
 			<animated.span
-				className="flex min-w-0 flex-col leading-tight"
+				className="flex min-w-0 flex-1 flex-col leading-tight"
 				style={labelStyle}
 			>
-				<span className={cn("font-bold tracking-wide", uppercase && "uppercase")}>
+				<span
+					title={name}
+					className={cn(
+						"truncate font-bold tracking-wide",
+						uppercase && "uppercase",
+					)}
+				>
 					{name}
 				</span>
 				<span
 					className={cn(
-						"text-sm",
+						"truncate text-sm",
 						isActive ? "text-accent-foreground/80" : "text-muted-foreground",
 					)}
 				>

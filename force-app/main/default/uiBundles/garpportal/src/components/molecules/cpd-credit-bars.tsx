@@ -21,13 +21,15 @@ type CpdCreditBarProps = {
 	row: CpdCreditBarRow
 	/** Shared across every bar so 20/20 reads as half of 40/40. */
 	scale: number
+	/** Fixed-width row for the inline layout; full-width when stacked. */
+	inline?: boolean
 }
 
 /**
  * One designation's bar. A separate component rather than a `.map` body so the
  * spring hook count stays static when the row list changes.
  */
-function CpdCreditBar({ row, scale }: CpdCreditBarProps) {
+function CpdCreditBar({ row, scale, inline = false }: CpdCreditBarProps) {
 	const meta = CPD_DESIGNATION_META[row.designation]
 	const approved = Math.max(0, Math.min(row.approved, scale))
 	const remaining = Math.max(0, row.required - row.approved)
@@ -39,7 +41,14 @@ function CpdCreditBar({ row, scale }: CpdCreditBarProps) {
 	})
 
 	return (
-		<li className="grid grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-3">
+		<li
+			className={cn(
+				"grid grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-2",
+				// A flex child sizes to content, so the bar's `w-full` would
+				// collapse to nothing without a width to fill.
+				inline && "w-52 shrink-0",
+			)}
+		>
 			<span className="text-xs font-semibold tracking-wide text-muted-foreground">
 				{meta.label}
 			</span>
@@ -86,6 +95,11 @@ function CpdCreditBar({ row, scale }: CpdCreditBarProps) {
 
 type CpdCreditBarsProps = {
 	rows: CpdCreditBarRow[]
+	/**
+	 * Lay the bars out in a wrapping row rather than stacked. The CPD summary
+	 * strip is one line tall by design; stacked bars are what made it four.
+	 */
+	inline?: boolean
 	className?: string
 }
 
@@ -101,7 +115,7 @@ type CpdCreditBarsProps = {
  * same trick `CompletionRing` uses, so dark mode needs no second palette.
  * Reduced motion is handled globally by `useReducedMotion()` in `__root.tsx`.
  */
-function CpdCreditBars({ rows, className }: CpdCreditBarsProps) {
+function CpdCreditBars({ rows, inline = false, className }: CpdCreditBarsProps) {
 	if (rows.length === 0) return null
 
 	const scale = Math.max(
@@ -110,9 +124,21 @@ function CpdCreditBars({ rows, className }: CpdCreditBarsProps) {
 	)
 
 	return (
-		<ul className={cn("space-y-3", className)}>
+		<ul
+			className={cn(
+				inline
+					? "flex flex-wrap items-center gap-x-6 gap-y-2"
+					: "space-y-3",
+				className,
+			)}
+		>
 			{rows.map((row) => (
-				<CpdCreditBar key={row.designation} row={row} scale={scale} />
+				<CpdCreditBar
+					key={row.designation}
+					row={row}
+					scale={scale}
+					inline={inline}
+				/>
 			))}
 		</ul>
 	)

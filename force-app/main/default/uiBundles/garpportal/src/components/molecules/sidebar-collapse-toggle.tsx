@@ -29,11 +29,14 @@ type SidebarCollapseToggleProps = {
  * The offset is deliberately half the width: any other value reads as a button
  * placed *near* the edge rather than one straddling it.
  *
- * Vertically it sits flush against the navbar. The rail wrapper is
- * `sticky top-20` under a `fixed h-20` navbar, so the wrapper's own y=0 *is*
- * the navbar's bottom edge — centring the 24px pill on `top-3` puts its top
- * edge exactly on that line. Do not push it to `top-0` to straddle the seam:
- * the navbar is `z-[1000]` and would cover the overlapping half.
+ * Vertically it sits flush against the navbar. The rail wrapper fills the row
+ * directly below the toolbar's spacer, so the wrapper's own y=0 *is* the
+ * navbar's bottom edge — centring the 24px pill on `top-3` puts its top edge
+ * exactly on that line. (It used to reach the same y through `sticky top-20`,
+ * back when the document scrolled; the shell now frames the viewport and the
+ * rail simply fills its row.) Do not push it to `top-0` to straddle the seam:
+ * the navbar is `z-[1000]` and would cover the overlapping half — which is
+ * what "the toggle looks half hidden" looks like when this drifts.
  *
  * The icon crossfades on a spring rather than swapping, so a fast double-toggle
  * reads as one control changing its mind, not a flicker.

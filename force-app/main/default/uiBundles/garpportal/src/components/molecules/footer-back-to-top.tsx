@@ -4,6 +4,7 @@ import { ArrowUp } from "lucide-react"
 
 import { Button } from "@/components/atoms/button"
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion"
+import { getAppScroller } from "@/lib/app-scroll"
 
 const SHOW_AFTER_PX = 280
 const RING_R = 10
@@ -12,10 +13,20 @@ const SHELL_SPRING = { mass: 0.9, tension: 320, friction: 26 }
 const PROGRESS_SPRING = { mass: 0.8, tension: 280, friction: 26 }
 const SCROLL_SPRING = { mass: 1, tension: 170, friction: 28, clamp: true }
 
-function pageScrollProgress() {
-	const max = document.documentElement.scrollHeight - window.innerHeight
+/*
+ * The shell's main column scrolls, not the document — and this button lives at
+ * the bottom of that same column, so it reads and drives the element it is
+ * inside of. Falling back to the document keeps it honest if it is ever
+ * rendered outside a shell.
+ */
+function scrollTarget() {
+	return getAppScroller() ?? document.documentElement
+}
+
+function pageScrollProgress(el: HTMLElement) {
+	const max = el.scrollHeight - el.clientHeight
 	if (max <= 0) return 0
-	return Math.min(1, Math.max(0, window.scrollY / max))
+	return Math.min(1, Math.max(0, el.scrollTop / max))
 }
 
 function FooterBackToTop() {
@@ -24,13 +35,14 @@ function FooterBackToTop() {
 	const [progress, setProgress] = useState(0)
 
 	useEffect(() => {
+		const el = scrollTarget()
 		const onScroll = () => {
-			setVisible(window.scrollY > SHOW_AFTER_PX)
-			setProgress(pageScrollProgress())
+			setVisible(el.scrollTop > SHOW_AFTER_PX)
+			setProgress(pageScrollProgress(el))
 		}
 		onScroll()
-		window.addEventListener("scroll", onScroll, { passive: true })
-		return () => window.removeEventListener("scroll", onScroll)
+		el.addEventListener("scroll", onScroll, { passive: true })
+		return () => el.removeEventListener("scroll", onScroll)
 	}, [])
 
 	const shell = useSpring({
@@ -64,10 +76,11 @@ function FooterBackToTop() {
 	}, [scrollApi])
 
 	function handleClick() {
-		const from = window.scrollY
+		const el = scrollTarget()
+		const from = el.scrollTop
 		if (from <= 0) return
 		if (reduceMotion) {
-			window.scrollTo(0, 0)
+			el.scrollTop = 0
 			return
 		}
 		void scrollApi.start({
@@ -75,7 +88,7 @@ function FooterBackToTop() {
 			to: { y: 0 },
 			onChange: ({ value }) => {
 				if (typeof value.y === "number") {
-					window.scrollTo(0, value.y)
+					el.scrollTop = value.y
 				}
 			},
 		})

@@ -15,6 +15,7 @@ import {
 	examResultsRouteSlug,
 } from "@/lib/exam-results-presentation"
 import { cn } from "@/lib/utils"
+import { PAGE_SHELL, PAGE_STICKY_SUBHEADER } from "@/components/molecules/page-shell"
 
 type ExamResultsPanelProps = {
 	programType: string
@@ -79,9 +80,10 @@ function ExamResultsPanelView({ programType }: ExamResultsPanelProps) {
 	return (
 		<animated.div
 			style={style}
-			className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
+			className={PAGE_SHELL}
 		>
 			<ProgramsSubpageHeader
+				className={PAGE_STICKY_SUBHEADER}
 				onNavigateBack={exit}
 				back={{
 					kind: "program",
@@ -90,7 +92,7 @@ function ExamResultsPanelView({ programType }: ExamResultsPanelProps) {
 				}}
 			/>
 
-			<div className="mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+			<div>
 				{isLoading ? <ExamResultsPendingSkeleton /> : null}
 
 				{isError ? (

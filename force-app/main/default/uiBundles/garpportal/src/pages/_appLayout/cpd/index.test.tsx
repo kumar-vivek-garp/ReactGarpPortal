@@ -58,9 +58,14 @@ describe("/cpd page", () => {
 				name: "Continuing Professional Development",
 			}),
 		).toBeInTheDocument()
+		/*
+		 * No pending claims in this payload, so the page opens on Approved —
+		 * landing on an empty Pending tab with the member's credits one click
+		 * away is the case `resolveCpdTab` exists to avoid.
+		 */
 		expect(await screen.findByText("Risk seminar")).toBeInTheDocument()
 		expect(
-			screen.getByRole("heading", { name: /Approved Activities/ }),
+			screen.getByRole("tab", { name: /Approved/, selected: true }),
 		).toBeInTheDocument()
 	})
 
@@ -103,10 +108,13 @@ describe("/cpd page", () => {
 		)
 		await mount()
 
+		/*
+		 * The shared `EmptyState`: headline then supporting line, both plain
+		 * paragraphs — it is a state, not a section, so it claims no heading.
+		 */
 		expect(
-			await screen.findByText(
-				"We couldn't load your CPD record. Please try again later.",
-			),
+			await screen.findByText("We couldn't load your CPD record"),
 		).toBeInTheDocument()
+		expect(screen.getByText("Please try again later.")).toBeInTheDocument()
 	})
 })

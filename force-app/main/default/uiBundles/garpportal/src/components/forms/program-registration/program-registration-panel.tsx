@@ -3,7 +3,6 @@ import { animated } from "@react-spring/web"
 import { Card } from "@/components/atoms/card"
 import { ExamRegistrationPanel } from "@/components/forms/exam-registration/exam-registration-panel"
 import {
-	REGISTRATION_SCROLL,
 	REGISTRATION_SHELL,
 } from "@/components/forms/registration-shell"
 import { ProgramsSubpageHeader } from "@/components/molecules/programs-subpage-header"
@@ -65,7 +64,7 @@ function ProgramRegistrationPanel({
 	if (program) {
 		return (
 			<animated.div style={style} className={cn(REGISTRATION_SHELL, className)}>
-				<div className={REGISTRATION_SCROLL}>
+				<div>
 					<ExamRegistrationPanel
 						program={program}
 						programType={program.registrationType}

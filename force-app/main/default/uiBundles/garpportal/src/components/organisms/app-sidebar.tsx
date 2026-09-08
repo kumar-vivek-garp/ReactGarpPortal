@@ -89,12 +89,24 @@ function AppSidebar({ forceSkeleton = false }: { forceSkeleton?: boolean }) {
 		 * so must be free to overhang; the aside inside it does the clipping. One
 		 * element cannot do both — it would slice the toggle in half.
 		 *
-		 * `sticky` already establishes the positioned ancestor the toggle resolves
-		 * against, so no `relative` here — the two would conflict.
+		 * `relative` establishes the positioned ancestor the toggle resolves
+		 * against. It used to be `sticky top-20` doing that job, back when the
+		 * document scrolled and the rail had to hold itself against it; the shell
+		 * now frames the viewport and hands the overflow to the main column
+		 * (`lib/app-scroll.ts`), so the rail simply fills its row and never moves.
+		 *
+		 * `z-40` is load-bearing, not spare headroom. The collapse toggle
+		 * overhangs 16px into the main column, and that strip is exactly what a
+		 * pinned page header covers: `PAGE_STICKY_HEADER` is opaque and bleeds
+		 * `-mx-shell-gutter` over the container's gutter. The rail therefore has
+		 * to outrank everything the main column can pin — page headers at `z-20`,
+		 * the registration submit bar at `z-30` — or the pill loses its outer
+		 * half to whichever of them renders later in the DOM. It stays below the
+		 * toolbar (`z-[1000]`), which is what keeps the pill's top edge honest.
 		 */
 		<animated.div
 			style={widthStyle}
-			className="sticky top-20 z-20 hidden h-[calc(100vh-5rem)] shrink-0 self-start will-change-[width] app:block"
+			className="relative z-40 hidden h-full shrink-0 will-change-[width] app:block"
 		>
 			{/*
 			 * `overflow-x-hidden` is load-bearing, not tidiness: `overflow-y-auto`

@@ -66,11 +66,20 @@ describe("the attestation gate on certificates", () => {
 		const user = userEvent.setup()
 		renderWithProviders(<CpdCreditSummaryCard cycle={certCycle()} />)
 
-		expect(screen.getByText(/asked to attest this cycle/)).toBeInTheDocument()
+		/*
+		 * The gate is stated on the control itself now: the summary is one line
+		 * tall and has no room for a sentence beside the buttons, so the
+		 * warning moved onto the button as its `title`.
+		 */
+		const gated = screen.getByRole("button", { name: /FRM/ })
+		expect(gated).toHaveAttribute(
+			"title",
+			expect.stringMatching(/attest this cycle/),
+		)
 		// Not a link — an unattested member must not reach the PDF directly.
 		expect(screen.queryByRole("link")).not.toBeInTheDocument()
 
-		await user.click(screen.getByRole("button", { name: /FRM/ }))
+		await user.click(gated)
 		const dialog = await screen.findByRole("dialog")
 		expect(open).not.toHaveBeenCalled()
 

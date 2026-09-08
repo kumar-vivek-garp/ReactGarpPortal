@@ -63,7 +63,14 @@ export function purchasePath(productCode: string | null | undefined): string | n
 	return `/study-materials/purchase/${encodeURIComponent(code)}`
 }
 
-/** "Included with your registration · 11 February 2026" / "Purchased". */
+/**
+ * "Purchased on 11 February 2026" / "Included with your registration on …",
+ * degrading to the bare phrase when Apex sent no date.
+ *
+ * Reads as a sentence rather than the old "Purchased · 11 February 2026": this
+ * is a fact about the member's copy, not a status chip, and it now sits in the
+ * meta run beside the access expiry (UI/UX request, Sep 2026).
+ */
 export function ownedLine(
 	item: Pick<
 		StudyMaterialItem,
@@ -74,7 +81,64 @@ export function ownedLine(
 		? "Included with your registration"
 		: "Purchased"
 	const on = formatLongDate(item.registrationDate ?? item.orderedDate)
-	return on ? `${label} · ${on}` : label
+	return on ? `${label} on ${on}` : label
+}
+
+/**
+ * True for the GARP Learning platform itself — access granted by an open
+ * sitting or an active contract, not a product with a copy to own.
+ */
+export function isGarpLearning(item: StudyMaterialItem): boolean {
+	return (
+		Boolean(item.garpLearningAccessUrl) ||
+		item.typeLabel?.trim().toLowerCase() === "garp learning"
+	)
+}
+
+/**
+ * Is this material the member's already?
+ *
+ * An unpaid order counts: it is theirs pending payment, and listing it beside
+ * things they could still buy invites a second purchase of the same book.
+ * Access granted by a sitting or a contract counts too — nothing is for sale
+ * on a card that already opens.
+ */
+export function isOwnedMaterial(item: StudyMaterialItem): boolean {
+	return (
+		item.isOwned ||
+		item.isUnPaidOrder ||
+		Boolean(item.accessUrl) ||
+		Boolean(item.garpLearningAccessUrl) ||
+		Boolean(item.downloadUrl) ||
+		Boolean(item.eBookSet)
+	)
+}
+
+export type MaterialOwnershipSplit = {
+	/** Already theirs — "My Materials". */
+	mine: StudyMaterialItem[]
+	/** Still buyable, coming soon, or out of stock. */
+	available: StudyMaterialItem[]
+}
+
+/**
+ * Splits a programme's materials into what the member holds and what is still
+ * on sale, preserving Apex's order within each.
+ *
+ * The page used to interleave the two and carry ownership only as a chip on
+ * each card, which left "is there anything here I still need?" as a question
+ * you answered by reading every card (UI/UX request, Sep 2026).
+ */
+export function splitByOwnership(
+	items: StudyMaterialItem[],
+): MaterialOwnershipSplit {
+	const mine: StudyMaterialItem[] = []
+	const available: StudyMaterialItem[] = []
+	for (const item of items) {
+		if (isOwnedMaterial(item)) mine.push(item)
+		else available.push(item)
+	}
+	return { mine, available }
 }
 
 /** "Available 1 June 2026", or "Available soon" when Apex gave no date. */
@@ -98,7 +162,6 @@ export type MaterialAction =
 			icon: "read" | "download"
 	  }
 	| { kind: "completeOrder"; path: string }
-	| { kind: "owned"; text: string }
 	| { kind: "comingSoon"; text: string; notifyUrl: string | null }
 	| { kind: "outOfStock"; text: string }
 	| { kind: "purchase"; priceLabel: string | null; path: string }
@@ -122,7 +185,12 @@ export function resolveMaterialAction(item: StudyMaterialItem): MaterialAction {
 	const orderPath = item.isUnPaidOrder ? orderDetailsPath(item.orderId) : null
 	if (orderPath) return { kind: "completeOrder", path: orderPath }
 
-	if (item.isOwned) return { kind: "owned", text: ownedLine(item) }
+	/*
+	 * No "owned" action any more: what the member paid and when is stated in
+	 * the meta run by `materialMetaLines`, and an owned material with nothing
+	 * to open has no action left to offer.
+	 */
+	if (item.isOwned) return { kind: "none" }
 
 	if (item.isComingSoon) {
 		return {
@@ -151,9 +219,16 @@ export function materialStatusBadge(
 	item: StudyMaterialItem,
 ): { label: string; tone: StatusTone } | null {
 	if (item.isUnPaidOrder) return { label: "Unpaid order", tone: "warning" }
+	/*
+	 * GARP Learning carries no status at all (UI/UX request, Sep 2026). It is a
+	 * platform the member either can or cannot get into, and "Owned" / "Access
+	 * granted" says nothing the "Access until …" line and the CTA do not — the
+	 * date is the fact that matters about it.
+	 */
+	if (isGarpLearning(item)) return null
 	if (item.isOwned) return { label: "Owned", tone: "success" }
 	// Granted by an open sitting or contract rather than bought.
-	if (item.garpLearningAccessUrl || item.accessUrl) {
+	if (item.accessUrl) {
 		return { label: "Access granted", tone: "success" }
 	}
 	if (item.isComingSoon) return { label: "Coming soon", tone: "info" }
@@ -161,11 +236,24 @@ export function materialStatusBadge(
 	return null
 }
 
-/** The icon-prefixed facts under the copy — today, only the eBook key's expiry. */
+/**
+ * The icon-prefixed facts under the copy: when access ends, and — for anything
+ * the member already holds — when they got it.
+ *
+ * The purchase date used to live in the footer as the "owned" action's text,
+ * where it read as the card's call to action rather than as a fact about it.
+ */
 export function materialMetaLines(item: StudyMaterialItem): MetaLine[] {
 	const lines: MetaLine[] = []
 	const expiry = accessExpiryLine(item.eBookSet?.expireDate)
 	if (expiry) lines.push(expiry)
+	/*
+	 * Not for GARP Learning: access there comes with the sitting, so there is
+	 * no purchase to date, and not for an unpaid order — nothing is owned yet.
+	 */
+	if (item.isOwned && !item.isUnPaidOrder && !isGarpLearning(item)) {
+		lines.push({ icon: "purchased", text: ownedLine(item) })
+	}
 	return lines
 }
 

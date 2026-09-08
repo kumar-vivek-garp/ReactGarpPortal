@@ -17,6 +17,7 @@ export type MetaIcon =
 	| "location"
 	| "eventType"
 	// study materials
+	| "purchased"
 	| "accessUntil"
 	| "expiringSoon"
 	| "lastOpened"
@@ -28,6 +29,9 @@ export type MetaIcon =
 	| "phone"
 	| "memberSince"
 	| "renews"
+	// cpd
+	| "completed"
+	| "areaOfStudy"
 	// order history
 	| "invoice"
 	| "paymentMethod"

@@ -27,6 +27,7 @@ import { useMembership } from "@/hooks/use-membership"
 import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
 import { cn } from "@/lib/utils"
 import { useListViewStore } from "@/store/list-view-store"
+import { PAGE_SHELL, PAGE_STICKY_HEADER } from "@/components/molecules/page-shell"
 
 type MembershipPanelProps = {
 	tab: MembershipTab
@@ -155,7 +156,7 @@ function DirectoryTabBody({
 	 * links from outside; both mount this same panel.
 	 */
 	return (
-		<div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+		<div className="flex flex-col gap-3">
 			<p className="shrink-0 text-sm text-muted-foreground">
 				Find and connect with opted-in members of the global risk community.
 			</p>
@@ -208,9 +209,9 @@ function MembershipPanel({ tab, view }: MembershipPanelProps) {
 					replace: true,
 				})
 			}}
-			className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
+			className={PAGE_SHELL}
 		>
-			<header className="shrink-0 space-y-4">
+			<header className={cn(PAGE_STICKY_HEADER, "space-y-4")}>
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
 						Membership Benefits
@@ -249,18 +250,13 @@ function MembershipPanel({ tab, view }: MembershipPanelProps) {
 				/>
 			</header>
 
-			<div className="mt-6 flex min-h-0 flex-1 flex-col overflow-hidden">
+			<div>
 				{tabTransitions((style, currentTab) => (
 					<animated.div
 						key={currentTab}
 						role="tabpanel"
 						style={style}
-						className={cn(
-							"flex min-h-0 flex-1 flex-col",
-							currentTab === "benefits" &&
-								"overflow-y-auto overscroll-contain pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-							currentTab === "directory" && "overflow-hidden pb-2",
-						)}
+						className="flex flex-col pb-2"
 					>
 						{currentTab === "benefits" ? (
 							<BenefitsTabBody

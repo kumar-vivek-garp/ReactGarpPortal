@@ -1,4 +1,5 @@
-import { ScrollText } from "lucide-react"
+import { CalendarCheck, ClipboardList, ScrollText } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import { z } from "zod"
 
 import type { CpdDesignation } from "@/api/cpd"
@@ -53,6 +54,31 @@ export const CPD_CONTACT_EMAIL = "cpd@garp.com"
 
 export const CPD_PAGE_TITLE = "Continuing Professional Development"
 
+/** One line under the title, in the shape every other module's header uses. */
+export const CPD_PAGE_SUBTITLE =
+	"Log the activities you complete, track them through review, and download your certificates."
+
+/**
+ * The two states an activity can be in. They are tabs rather than two stacked
+ * lists: a member with a dozen approved claims had to scroll past all of them
+ * to reach anything, and the two are read for different reasons — "did my
+ * submission land?" against "what have I banked?".
+ */
+export const CPD_TABS = ["pending", "approved"] as const
+
+export type CpdTab = (typeof CPD_TABS)[number]
+
+export const DEFAULT_CPD_TAB: CpdTab = "pending"
+
+export const CPD_TAB_ITEMS: ReadonlyArray<{
+	value: CpdTab
+	label: string
+	icon: LucideIcon
+}> = [
+	{ value: "pending", label: "Pending", icon: ClipboardList },
+	{ value: "approved", label: "Approved", icon: CalendarCheck },
+]
+
 /**
  * `?cycle=2026/2027`. Optional so an absent value stays distinguishable from an
  * explicit one — the panel then opens on the server's `currentCycle`. A name
@@ -61,6 +87,7 @@ export const CPD_PAGE_TITLE = "Continuing Professional Development"
  */
 export const cpdSearchSchema = z.object({
 	cycle: z.string().optional().catch(undefined),
+	tab: z.enum(CPD_TABS).optional().catch(undefined),
 })
 
 export type CpdSearch = z.infer<typeof cpdSearchSchema>

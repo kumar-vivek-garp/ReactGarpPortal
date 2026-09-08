@@ -26,7 +26,6 @@ import {
 	REGISTRATION_GRID,
 	REGISTRATION_MAIN_COLUMN,
 	REGISTRATION_RAIL_COLUMN,
-	REGISTRATION_SCROLL,
 	REGISTRATION_SHELL,
 	REGISTRATION_STICKY_BAR,
 } from "@/components/forms/registration-shell"
@@ -431,7 +430,7 @@ function ExamSetupPanel({ programType, className }: ExamSetupPanelProps) {
 
 	const shell = (children: ReactNode) => (
 		<animated.div style={style} className={cn(REGISTRATION_SHELL, className)}>
-			<div className={REGISTRATION_SCROLL}>{children}</div>
+			<div>{children}</div>
 		</animated.div>
 	)
 

@@ -22,6 +22,12 @@ type DatePickerProps = {
 	startMonth?: Date
 	endMonth?: Date
 	captionLayout?: DayPickerProps["captionLayout"]
+	/**
+	 * Days the calendar refuses, as a react-day-picker matcher
+	 * (`{ after: new Date() }` for "nothing in the future"). Distinct from
+	 * `disabled`, which disables the trigger button itself.
+	 */
+	disabledDates?: DayPickerProps["disabled"]
 	disabled?: boolean
 	"aria-invalid"?: boolean
 	className?: string
@@ -53,6 +59,7 @@ function DatePicker({
 	startMonth,
 	endMonth,
 	captionLayout = "dropdown",
+	disabledDates,
 	disabled,
 	className,
 	...aria
@@ -85,6 +92,7 @@ function DatePicker({
 					selected={date}
 					defaultMonth={date}
 					captionLayout={captionLayout}
+					disabled={disabledDates}
 					startMonth={startMonth}
 					endMonth={endMonth}
 					onSelect={(next) => {

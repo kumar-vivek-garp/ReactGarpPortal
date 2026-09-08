@@ -1,6 +1,5 @@
 import { Download, ExternalLink, GraduationCap } from "lucide-react"
 
-import { Button } from "@/components/atoms/button"
 import { CardCta } from "@/components/molecules/card-cta"
 import type { MaterialAction } from "@/lib/study-materials-presentation"
 import { cn } from "@/lib/utils"
@@ -20,13 +19,22 @@ const NOTE = "text-sm text-muted-foreground"
 function StudyMaterialAction({ action, className }: StudyMaterialActionProps) {
 	switch (action.kind) {
 		case "garpLearning":
+			/*
+			 * A link, not a button (UI/UX request, Sep 2026). Every other card
+			 * offers its destination as a primary-tinted CTA, and a filled button
+			 * here made GARP Learning read as the page's main action rather than
+			 * as one material among several.
+			 */
 			return (
-				<Button asChild size="sm" className={className}>
-					<a href={action.url} target="_blank" rel="noreferrer noopener">
-						<GraduationCap aria-hidden />
-						Access GARP Learning
-					</a>
-				</Button>
+				<span className={cn("inline-flex items-center gap-2", className)}>
+					<GraduationCap className="size-4 text-muted-foreground" aria-hidden />
+					<CardCta
+						label="Access GARP Learning"
+						url={action.url}
+						isExternal
+						newWindow
+					/>
+				</span>
 			)
 		case "external":
 			return (
@@ -68,7 +76,6 @@ function StudyMaterialAction({ action, className }: StudyMaterialActionProps) {
 					<CardCta label="Purchase" url={action.path} isExternal={false} />
 				</div>
 			)
-		case "owned":
 		case "outOfStock":
 		case "contact":
 			return <p className={cn(NOTE, className)}>{action.text}</p>

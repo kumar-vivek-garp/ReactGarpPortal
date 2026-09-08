@@ -50,12 +50,12 @@ test.describe("order history list", () => {
 		await page.goto("/my-account?tab=order-history")
 
 		// ^-anchored: the accessible names carry counts, and a bare
-		// "Paid Purchases" substring-matches "Unpaid Purchases (1)" too.
+		// "Paid Orders" substring-matches "Unpaid Orders (1)" too.
 		await expect(
-			page.getByRole("heading", { name: /^Unpaid Purchases/ }),
+			page.getByRole("heading", { name: /^Unpaid Orders/ }),
 		).toBeVisible()
 		await expect(
-			page.getByRole("heading", { name: /^Paid Purchases/ }),
+			page.getByRole("heading", { name: /^Paid Orders/ }),
 		).toBeVisible()
 		await expect(page.getByText("INV-0001")).toBeVisible()
 		await expect(page.getByText("INV-0002")).toBeVisible()
@@ -138,7 +138,7 @@ test.describe("pay and cancel", () => {
 
 		await expect(page).toHaveURL(/\/my-account\?tab=order-history/)
 		await expect(
-			page.getByRole("heading", { name: "Unpaid Purchases" }),
+			page.getByRole("heading", { name: "Unpaid Orders" }),
 		).toBeVisible()
 		expect(org.hits("payOrder")).toBe(1)
 		expect(org.of("payOrder")[0].postData).toBe('{"orderId":"006xx1"}')

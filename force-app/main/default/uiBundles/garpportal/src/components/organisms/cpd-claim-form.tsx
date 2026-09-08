@@ -17,6 +17,7 @@ import {
 } from "@/components/atoms/select"
 import { Skeleton } from "@/components/atoms/skeleton"
 import { Textarea } from "@/components/atoms/textarea"
+import { DatePicker } from "@/components/molecules/date-picker"
 import { CPD_CONTACT_EMAIL } from "@/config/cpd"
 import { useAccountOptions } from "@/hooks/use-account-options"
 import { useCpdActivityTypes } from "@/hooks/use-cpd-activity-types"
@@ -180,9 +181,14 @@ function AreaOfStudyField({
 			render={({ field }) => (
 				<div className="flex flex-col gap-1.5">
 					<Label htmlFor={`${formId}-areaOfStudy`}>Area of Study</Label>
+					{/*
+					 * Two columns from `sm` up: the picklist runs to a dozen values,
+					 * and a single column put most of them behind a scroll inside a
+					 * dialog that already scrolls.
+					 */}
 					<div
 						id={`${formId}-areaOfStudy`}
-						className="max-h-36 space-y-2 overflow-y-auto rounded-xl border border-input p-3"
+						className="grid max-h-44 gap-x-4 gap-y-2 overflow-y-auto rounded-xl border border-input p-3 sm:grid-cols-2"
 					>
 						{options.length === 0 ? (
 							<p className="text-xs text-muted-foreground">
@@ -252,6 +258,12 @@ type CpdClaimFormProps = {
 function CpdClaimForm({ claim, onSaved, onCancel }: CpdClaimFormProps) {
 	const formId = useId()
 	const isEdit = Boolean(claim?.claimId)
+	/*
+	 * Stable for the life of the dialog. A fresh `new Date()` each render would
+	 * hand the calendar a new `disabled` matcher on every keystroke elsewhere in
+	 * the form, remounting days for no reason.
+	 */
+	const today = useMemo(() => new Date(), [])
 	const activityTypes = useCpdActivityTypes()
 	const options = useAccountOptions()
 	const mutation = useSaveCpdClaim(isEdit)
@@ -398,24 +410,45 @@ function CpdClaimForm({ claim, onSaved, onCancel }: CpdClaimFormProps) {
 				<AreaOfStudyField control={control} options={areaOptions} formId={formId} />
 
 				<div className="grid gap-4 sm:grid-cols-2">
-					<FormField
-						label="Date of Completion*"
-						htmlFor={`${formId}-dateOfCompletion`}
-						error={errors.dateOfCompletion?.message}
-					>
-						<Input
-							id={`${formId}-dateOfCompletion`}
-							type="date"
-							max={todayInputValue()}
-							aria-invalid={Boolean(errors.dateOfCompletion)}
-							{...register("dateOfCompletion", {
-								required: "Date of Completion is required",
-								validate: (value) =>
-									value <= todayInputValue() ||
-									"Date must be on or before today",
-							})}
-						/>
-					</FormField>
+					<Controller
+						control={control}
+						name="dateOfCompletion"
+						rules={{
+							required: "Date of Completion is required",
+							validate: (value) =>
+								value <= todayInputValue() ||
+								"Date must be on or before today",
+						}}
+						render={({ field }) => (
+							<FormField
+								label="Date of Completion*"
+								htmlFor={`${formId}-dateOfCompletion`}
+								error={errors.dateOfCompletion?.message}
+							>
+								{/*
+								 * The shared Popover + Calendar control, not a native
+								 * `type="date"` — the native input renders as the
+								 * browser's own widget, which ignores the theme and
+								 * looks nothing like the rest of the form.
+								 *
+								 * Credits are claimed for something already done, so
+								 * the future is closed off in the calendar as well as
+								 * in the rule above: `endMonth` stops the month/year
+								 * dropdowns walking forward, `disabledDates` stops a
+								 * later day in THIS month being clickable.
+								 */}
+								<DatePicker
+									id={`${formId}-dateOfCompletion`}
+									value={field.value}
+									onChange={field.onChange}
+									placeholder="Select the completion date"
+									endMonth={today}
+									disabledDates={{ after: today }}
+									aria-invalid={Boolean(errors.dateOfCompletion)}
+								/>
+							</FormField>
+						)}
+					/>
 
 					<FormField
 						label="Number of Credits*"

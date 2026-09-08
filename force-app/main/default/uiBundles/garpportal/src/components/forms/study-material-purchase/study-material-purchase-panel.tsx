@@ -10,7 +10,6 @@ import { Button } from "@/components/atoms/button"
 import {
 	REGISTRATION_BAR_TITLE,
 	REGISTRATION_BAR_TITLE_GROUP,
-	REGISTRATION_SCROLL,
 	REGISTRATION_SHELL,
 	REGISTRATION_STICKY_BAR,
 } from "@/components/forms/registration-shell"
@@ -98,7 +97,7 @@ function StudyMaterialPurchasePanel({
 
 	return (
 		<animated.div style={style} className={cn(REGISTRATION_SHELL, className)}>
-			<div className={REGISTRATION_SCROLL}>
+			<div>
 				{quote.isPending ? <StudyMaterialPurchaseSkeleton /> : null}
 
 				{quote.isError ? (

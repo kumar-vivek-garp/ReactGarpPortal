@@ -3,6 +3,7 @@ import { getRouteApi } from "@tanstack/react-router"
 import { Skeleton } from "@/components/atoms/skeleton"
 import { ProgramsSubpageHeader } from "@/components/molecules/programs-subpage-header"
 import { examResultsRouteSlug } from "@/lib/exam-results-presentation"
+import { PAGE_SHELL, PAGE_STICKY_SUBHEADER } from "@/components/molecules/page-shell"
 
 const routeApi = getRouteApi(
 	"/_appLayout/programs/$programType/results/",
@@ -50,15 +51,16 @@ function ExamResultsPendingSkeleton() {
 function ExamResultsPendingShell({ programType }: { programType: string }) {
 	const slug = examResultsRouteSlug(programType)
 	return (
-		<div className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]">
+		<div className={PAGE_SHELL}>
 			<ProgramsSubpageHeader
+				className={PAGE_STICKY_SUBHEADER}
 				back={{
 					kind: "program",
 					programType: slug,
 					label: slug.toUpperCase() || "Program",
 				}}
 			/>
-			<div className="mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+			<div>
 				<ExamResultsPendingSkeleton />
 			</div>
 		</div>

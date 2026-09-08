@@ -1,3 +1,5 @@
+import { ExternalLink } from "lucide-react"
+
 import {
 	Card,
 	CardContent,
@@ -11,6 +13,7 @@ import { MetaLines } from "@/components/molecules/meta-lines"
 import { ProgramResultsChip } from "@/components/molecules/program-results-chip"
 import { StatusBadge } from "@/components/molecules/status-badge"
 import { programBrandSurface } from "@/config/program-brand"
+import { useCardActivation } from "@/hooks/use-card-activation"
 import { localizeProgramLogoUrl } from "@/config/program-logos"
 import {
 	buildProgramListingPresentation,
@@ -34,8 +37,11 @@ type ProgramCardProps = {
  * Grid card for one program. Content comes from
  * `buildProgramListingPresentation` so the list row renders the same facts.
  *
- * Deliberately not clickable as a whole — the CTA is the only hit target, so
- * there is no card-level hover state to imply otherwise.
+ * A card whose only destination is View Details IS that link — the whole
+ * surface activates and the CTA is dropped, because a lone CTA beside a fully
+ * clickable card is a second target for one job. An Explore card offers two
+ * different destinations (Register Now, Learn more), so it stays a flat
+ * surface with real buttons and no hover lift to imply otherwise.
  */
 function ProgramCard({
 	variant,
@@ -65,12 +71,21 @@ function ProgramCard({
 		learnMoreLink,
 	} = presentation
 
-	const showFooter = Boolean(detailsLink || registrationLink || learnMoreLink)
+	const activation = useCardActivation(
+		detailsLink,
+		`View details for ${displayName}`,
+	)
+	const cardIsDetails = activation.interactive
+
+	const showFooter = Boolean(registrationLink || learnMoreLink)
 
 	return (
 		<Card
+			{...activation}
 			className={cn(
-				"h-full gap-4 overflow-hidden py-0 shadow-none",
+				"h-full gap-4 overflow-hidden py-0",
+				// An interactive card owns its elevation through the spring.
+				!cardIsDetails && "shadow-none",
 				className,
 			)}
 		>
@@ -124,14 +139,6 @@ function ProgramCard({
 
 			{showFooter ? (
 				<CardFooter className="mt-auto flex flex-wrap items-center gap-x-6 gap-y-2 px-5 pb-5">
-					{detailsLink ? (
-						<CardCta
-							label={detailsLink.label}
-							url={detailsLink.url}
-							isExternal={detailsLink.isExternal}
-						/>
-					) : null}
-
 					{registrationLink ? (
 						<CardCta
 							label={registrationLink.label}
@@ -140,6 +147,11 @@ function ProgramCard({
 						/>
 					) : null}
 
+					{/*
+					 * New-tab glyph rather than the CTA's forward arrow (UI/UX
+					 * request, Sep 2026) — this one leaves the portal for garp.org,
+					 * and the arrow promises an in-app step.
+					 */}
 					{learnMoreLink ? (
 						<CardCta
 							label="Learn more"
@@ -147,6 +159,7 @@ function ProgramCard({
 							url={learnMoreLink.url}
 							isExternal
 							newWindow
+							icon={<ExternalLink className="size-4" />}
 						/>
 					) : null}
 				</CardFooter>

@@ -60,18 +60,18 @@ type OrderSectionMeta = {
 
 export const ORDER_SECTION_META: Record<OrderSection, OrderSectionMeta> = {
 	unpaid: {
-		heading: "Unpaid Purchases",
+		heading: "Unpaid Orders",
 		icon: Clock,
-		emptyTitle: "No unpaid purchases",
+		emptyTitle: "No unpaid orders",
 		emptyMessage: "Anything awaiting payment will appear here.",
-		searchEmptyTitle: "No unpaid purchases match your search",
+		searchEmptyTitle: "No unpaid orders match your search",
 	},
 	paid: {
-		heading: "Paid Purchases",
+		heading: "Paid Orders",
 		icon: CircleCheck,
-		emptyTitle: "No paid purchases",
-		emptyMessage: "Completed purchases will appear here once they settle.",
-		searchEmptyTitle: "No paid purchases match your search",
+		emptyTitle: "No paid orders",
+		emptyMessage: "Completed orders will appear here once they settle.",
+		searchEmptyTitle: "No paid orders match your search",
 	},
 }
 

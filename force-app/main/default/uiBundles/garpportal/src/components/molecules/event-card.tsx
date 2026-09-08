@@ -1,3 +1,5 @@
+import { ExternalLink } from "lucide-react"
+
 import type { MemberEvent } from "@/api/events"
 import { Badge } from "@/components/atoms/badge"
 import {
@@ -111,11 +113,18 @@ function EventCard({ event, isAttending = false, className }: EventCardProps) {
 							url={item.registerUrl}
 							isExternal={false}
 						/>
+						{/*
+						 * The new-tab glyph rather than the CTA's usual forward
+						 * arrow (UI/UX request, Sep 2026): this one leaves the
+						 * portal for garp.org in a new tab, and the arrow every
+						 * other CTA carries promises an in-app step forward.
+						 */}
 						<CardCta
 							label="View event"
 							url={item.eventUrl}
 							isExternal
 							newWindow
+							icon={<ExternalLink className="size-4" />}
 						/>
 						<CardCta
 							label="Manage Attendance"

@@ -13,7 +13,7 @@ import { CpdPagination } from "@/components/molecules/cpd-pagination"
 import { Button } from "@/components/atoms/button"
 import { SpringNudge } from "@/components/atoms/spring-nudge"
 import { CpdActivitiesContentSkeleton } from "@/components/molecules/page-pending"
-import { PageEnterFade } from "@/components/molecules/page-enter-fade"
+import { PAGE_SHELL, PAGE_STICKY_SUBHEADER } from "@/components/molecules/page-shell"
 import { StaggerReveal } from "@/components/molecules/stagger-reveal"
 import {
 	CPD_ACTIVITIES_PAGE_SIZE,
@@ -40,7 +40,7 @@ import { cn } from "@/lib/utils"
 function CpdActivitiesHeader() {
 	const nudge = useSpringNudge({ direction: "backward" })
 	return (
-		<header className="shrink-0 space-y-3">
+		<header className={cn(PAGE_STICKY_SUBHEADER, "space-y-3")}>
 			<Link
 				to="/cpd"
 				className="inline-flex text-lg font-bold text-foreground hover:text-primary"
@@ -178,112 +178,114 @@ function CpdActivitiesPanel({
 	}
 
 	return (
-		<PageEnterFade className={cn("space-y-6", className)}>
+		<div className={cn(PAGE_SHELL, className)}>
 			<CpdActivitiesHeader />
 
-			{isLoading ? <CpdActivitiesContentSkeleton /> : null}
+			<div className="space-y-6">
+				{isLoading ? <CpdActivitiesContentSkeleton /> : null}
 
-			{!isLoading && isError ? (
-				<p className="text-sm text-muted-foreground">
-					We couldn&apos;t load credit opportunities. Please try again later.
-				</p>
-			) : null}
+				{!isLoading && isError ? (
+					<p className="text-sm text-muted-foreground">
+						We couldn&apos;t load credit opportunities. Please try again later.
+					</p>
+				) : null}
 
-			{!isLoading && !isError ? (
-				<div
-					className={cn(
-						"grid items-start gap-6",
-						singleId ? null : "app:grid-cols-[minmax(0,1fr)_18rem]",
-					)}
-				>
-					<div className="min-w-0 space-y-4">
-						{singleId ? (
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								onClick={viewAllActivities}
-							>
-								<ArrowLeft className="size-4" aria-hidden />
-								View all activities
-							</Button>
-						) : null}
+				{!isLoading && !isError ? (
+					<div
+						className={cn(
+							"grid items-start gap-6",
+							singleId ? null : "app:grid-cols-[minmax(0,1fr)_18rem]",
+						)}
+					>
+						<div className="min-w-0 space-y-4">
+							{singleId ? (
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									onClick={viewAllActivities}
+								>
+									<ArrowLeft className="size-4" aria-hidden />
+									View all activities
+								</Button>
+							) : null}
 
-						{activities.length === 0 ? (
-							singleId ? (
-								<ActivityNotFound onViewAll={viewAllActivities} />
+							{activities.length === 0 ? (
+								singleId ? (
+									<ActivityNotFound onViewAll={viewAllActivities} />
+								) : (
+									<ActivitiesEmptyState />
+								)
 							) : (
-								<ActivitiesEmptyState />
-							)
-						) : (
-							<>
-								<StaggerReveal className="flex flex-col gap-4">
-									{activities.map((activity) => (
-										<CpdActivityCard
-											key={activity.id}
-											activity={activity}
-											onSubmitCredits={setSeed}
-											showPermalink={!singleId}
-										/>
-									))}
-								</StaggerReveal>
-								{singleId ? null : (
-								<CpdPagination
-									page={activePage}
-									pageSize={CPD_ACTIVITIES_PAGE_SIZE}
-									pageCount={totalPages}
-									totalCount={data?.totalCount ?? 0}
-									busy={isFetching}
-									onPageChange={(next) => {
-										void navigate({
-											search: (prev) => ({
-												...prev,
-												page: next === 1 ? undefined : next,
-											}),
-										})
-									}}
-								/>
-								)}
-							</>
+								<>
+									<StaggerReveal className="flex flex-col gap-4">
+										{activities.map((activity) => (
+											<CpdActivityCard
+												key={activity.id}
+												activity={activity}
+												onSubmitCredits={setSeed}
+												showPermalink={!singleId}
+											/>
+										))}
+									</StaggerReveal>
+									{singleId ? null : (
+									<CpdPagination
+										page={activePage}
+										pageSize={CPD_ACTIVITIES_PAGE_SIZE}
+										pageCount={totalPages}
+										totalCount={data?.totalCount ?? 0}
+										busy={isFetching}
+										onPageChange={(next) => {
+											void navigate({
+												search: (prev) => ({
+													...prev,
+													page: next === 1 ? undefined : next,
+												}),
+											})
+										}}
+									/>
+									)}
+								</>
+							)}
+						</div>
+
+						{singleId ? null : (
+						<CpdActivityFilters
+							options={{
+								type: data?.activityTypes ?? [],
+								area: data?.areasOfStudy ?? [],
+								provider: data?.providers ?? [],
+							}}
+							selected={selected}
+							sort={activeSort}
+							onToggle={toggleFacet}
+							onSortChange={(next) => {
+								void navigate({
+									search: (prev) => ({
+										...prev,
+										sort: next === DEFAULT_CPD_SORT ? undefined : next,
+										page: undefined,
+									}),
+									replace: true,
+								})
+							}}
+							onClear={() => {
+								void navigate({
+									search: (prev) => ({
+										...prev,
+										...Object.fromEntries(
+											CPD_FACETS.map((facet) => [facet.key, undefined]),
+										),
+										page: undefined,
+									}),
+									replace: true,
+								})
+							}}
+						/>
 						)}
 					</div>
-
-					{singleId ? null : (
-					<CpdActivityFilters
-						options={{
-							type: data?.activityTypes ?? [],
-							area: data?.areasOfStudy ?? [],
-							provider: data?.providers ?? [],
-						}}
-						selected={selected}
-						sort={activeSort}
-						onToggle={toggleFacet}
-						onSortChange={(next) => {
-							void navigate({
-								search: (prev) => ({
-									...prev,
-									sort: next === DEFAULT_CPD_SORT ? undefined : next,
-									page: undefined,
-								}),
-								replace: true,
-							})
-						}}
-						onClear={() => {
-							void navigate({
-								search: (prev) => ({
-									...prev,
-									...Object.fromEntries(
-										CPD_FACETS.map((facet) => [facet.key, undefined]),
-									),
-									page: undefined,
-								}),
-								replace: true,
-							})
-						}}
-					/>
-					)}
-				</div>
-			) : null}
+				) : null}
+			</div>
 
 			{/* Picking an activity opens the Phase B form, pre-filled. */}
 			<CpdClaimDialog
@@ -293,7 +295,7 @@ function CpdActivitiesPanel({
 				}}
 				claim={seed ? activityToClaimSeed(seed) : null}
 			/>
-		</PageEnterFade>
+		</div>
 	)
 }
 

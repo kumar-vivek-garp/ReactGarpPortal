@@ -1,5 +1,6 @@
 import { Skeleton } from "@/components/atoms/skeleton"
 import { cn } from "@/lib/utils"
+import { PAGE_SHELL, PAGE_STICKY_HEADER } from "@/components/molecules/page-shell"
 
 type DashboardCardSkeletonProps = {
 	withImage?: boolean
@@ -65,11 +66,11 @@ function DashboardCardSkeleton({
 function DashboardPending() {
 	return (
 		<div
-			className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
+			className={PAGE_SHELL}
 			aria-busy
 			aria-label="Loading dashboard"
 		>
-			<header className="shrink-0 space-y-2">
+			<header className={cn(PAGE_STICKY_HEADER, "space-y-2")}>
 				<p className="text-xs font-semibold tracking-wider text-primary uppercase">
 					Member home
 				</p>
@@ -80,7 +81,7 @@ function DashboardPending() {
 					Your next steps, programs, and events — in one place.
 				</p>
 			</header>
-			<div className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+			<div>
 				<div className="grid gap-6 pb-2 sm:grid-cols-2 xl:grid-cols-3">
 					<DashboardCardSkeleton body="lines" />
 					<DashboardCardSkeleton body="lines" />

@@ -18,6 +18,7 @@ import {
 	courseRetakeCopy,
 } from "@/lib/course-detail-presentation"
 import { resolvePortalAssetUrl } from "@/lib/resolve-portal-asset-url"
+import { PAGE_SHELL, PAGE_STICKY_SUBHEADER } from "@/components/molecules/page-shell"
 
 function asDate(iso: string | null | undefined): string | null {
 	const value = iso?.trim()
@@ -174,14 +175,15 @@ function CourseDetailPanelView({ courseType }: { courseType: string }) {
 	return (
 		<animated.div
 			style={style}
-			className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
+			className={PAGE_SHELL}
 		>
 			<ProgramsSubpageHeader
+				className={PAGE_STICKY_SUBHEADER}
 				title={isLoading || data ? undefined : "Course"}
 				onNavigateBack={exit}
 			/>
 
-			<div className="mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+			<div>
 				{isLoading ? <ProgramDetailSkeleton /> : null}
 
 				{isError ? (

@@ -13,7 +13,6 @@ import {
 	REGISTRATION_BAR_SUBMIT,
 	REGISTRATION_MAIN_COLUMN,
 	REGISTRATION_RAIL_COLUMN,
-	REGISTRATION_SCROLL,
 	REGISTRATION_SHELL,
 	REGISTRATION_STICKY_BAR,
 } from "@/components/forms/registration-shell"
@@ -133,7 +132,7 @@ function AffiliateRegistrationPanel({ className }: { className?: string }) {
 
 	return (
 		<animated.div style={style} className={cn(REGISTRATION_SHELL, className)}>
-			<div className={REGISTRATION_SCROLL}>{body}</div>
+			<div>{body}</div>
 		</animated.div>
 	)
 }

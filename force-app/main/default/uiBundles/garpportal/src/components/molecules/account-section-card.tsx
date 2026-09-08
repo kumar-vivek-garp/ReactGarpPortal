@@ -113,7 +113,8 @@ function SaveIndicator({ state }: { state: AccountSaveState }) {
  *
  * Deliberately not clickable as a whole — the header action and the controls
  * inside are the only hit targets, so there is no card-level hover state to
- * imply otherwise (same rule as `ProgramCard`).
+ * imply otherwise. Same rule an Explore `ProgramCard` follows: a card becomes
+ * clickable only when it has exactly one destination.
  */
 function AccountSectionCard({
 	section,

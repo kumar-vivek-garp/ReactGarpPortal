@@ -20,6 +20,7 @@ import {
 } from "@/config/my-account"
 import type { OrderFilter } from "@/config/order-history"
 import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
+import { PAGE_SHELL, PAGE_STICKY_HEADER } from "@/components/molecules/page-shell"
 
 type MyAccountPanelProps = {
 	tab: MyAccountTab
@@ -66,12 +67,12 @@ function MyAccountPanel({ tab, status, orders }: MyAccountPanelProps) {
 					replace: true,
 				})
 			}}
-			className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
+			className={PAGE_SHELL}
 		>
 			{/* Fixed chrome: heading + tabs — does not scroll. Completeness now
 			    lives in the Account Information hero, next to the identity it
 			    describes, rather than as a bare rail above every tab. */}
-			<header className="shrink-0">
+			<header className={PAGE_STICKY_HEADER}>
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
 						My Account
@@ -82,7 +83,7 @@ function MyAccountPanel({ tab, status, orders }: MyAccountPanelProps) {
 			</header>
 
 			{/* Only this region scrolls; cards stagger in via StaggerReveal inside panels. */}
-			<div className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+			<div>
 				{tabTransitions((style, currentTab) => (
 					<animated.div
 						key={currentTab}

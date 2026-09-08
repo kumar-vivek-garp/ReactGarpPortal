@@ -68,7 +68,7 @@ test.describe("my-account tabs and laziness", () => {
 		await page.goto("/my-account?tab=order-history")
 
 		await expect(
-			page.getByRole("heading", { name: "Unpaid Purchases" }),
+			page.getByRole("heading", { name: "Unpaid Orders" }),
 		).toBeVisible()
 		await expect(page.getByText("INV-0001")).toBeVisible()
 
@@ -93,7 +93,7 @@ test.describe("my-account tabs and laziness", () => {
 
 		await expect(page).toHaveURL(/\/my-account\?tab=order-history/)
 		await expect(
-			page.getByRole("heading", { name: "Unpaid Purchases" }),
+			page.getByRole("heading", { name: "Unpaid Orders" }),
 		).toBeVisible()
 		await expect.poll(() => org.hits("orders")).toBe(1)
 	})

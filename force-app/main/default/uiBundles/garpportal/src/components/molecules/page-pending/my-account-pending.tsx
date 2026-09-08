@@ -7,6 +7,7 @@ import { AccountInformationSkeleton } from "@/components/organisms/account-infor
 import { ContactPreferencesSkeleton } from "@/components/organisms/contact-preferences-skeleton"
 import type { MyAccountTab } from "@/config/my-account"
 import { DEFAULT_MY_ACCOUNT_TAB, MY_ACCOUNT_TAB_ITEMS } from "@/config/my-account"
+import { PAGE_SHELL, PAGE_STICKY_HEADER } from "@/components/molecules/page-shell"
 
 const routeApi = getRouteApi("/_appLayout/my-account/")
 
@@ -26,10 +27,10 @@ function MyAccountPendingShell({
 	return (
 		<Tabs
 			value={tab}
-			className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
+			className={PAGE_SHELL}
 		>
 			{/* Same single-row chrome as the loaded panel, so nothing shifts. */}
-			<header className="shrink-0">
+			<header className={PAGE_STICKY_HEADER}>
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
 						My Account
@@ -37,7 +38,7 @@ function MyAccountPendingShell({
 					<PillTabs items={MY_ACCOUNT_TAB_ITEMS} value={tab} />
 				</div>
 			</header>
-			<div className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+			<div>
 				<div className="pb-2">
 					<TabBodySkeleton tab={tab} />
 				</div>

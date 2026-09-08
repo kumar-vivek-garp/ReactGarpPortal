@@ -88,6 +88,13 @@ test.describe("add credits", () => {
 		const org = await installMockOrg(page, { actions: claimsActions() })
 		await page.goto("/cpd")
 
+		const today = new Date()
+		const todayIso = [
+			today.getFullYear(),
+			String(today.getMonth() + 1).padStart(2, "0"),
+			String(today.getDate()).padStart(2, "0"),
+		].join("-")
+
 		// Lazy: neither GET fires until the form actually mounts.
 		await expect(page.getByRole("button", { name: "Add Credits" })).toBeVisible()
 		expect(org.hits("cpdActivityTypes")).toBe(0)
@@ -106,16 +113,28 @@ test.describe("add credits", () => {
 		await page.getByRole("option", { name: "Webinar" }).click()
 
 		await dialog.getByRole("checkbox", { name: "Credit Risk" }).click()
-		await dialog
-			.getByLabel("Date of Completion*", { exact: true })
-			.fill("2026-02-01")
+
+		/*
+		 * The date is picked from a calendar now, not typed. Today is the one
+		 * day guaranteed to be both visible in the opening month and allowed —
+		 * the picker refuses everything after today, because credits are
+		 * claimed for something already done.
+		 */
+		await dialog.getByLabel("Date of Completion*", { exact: true }).click()
+		await page
+			.getByRole("button", {
+				name: new RegExp(`\\b${today.getDate()}(st|nd|rd|th), ${today.getFullYear()}`),
+			})
+			.click()
 		await dialog.getByLabel("Number of Credits*", { exact: true }).fill("2.5")
 		await dialog.getByLabel("Organization*", { exact: true }).fill("GARP")
 		await dialog.getByLabel("Title*", { exact: true }).fill("Climate Webinar")
 		// Provider is the one shown-but-optional extra; left empty on purpose.
 		await dialog.getByRole("button", { name: "Submit", exact: true }).click()
 
-		await expect(page.getByRole("dialog")).toBeHidden()
+		// Named: the date picker's popover is a `role="dialog"` too, and it
+		// lingers in the DOM closed after a day is chosen.
+		await expect(dialog).toBeHidden()
 		await expect(page.getByText("Activity submitted")).toBeVisible()
 
 		// The wire shape: exactly the chosen type's fields, no claimId on create.
@@ -123,7 +142,7 @@ test.describe("add credits", () => {
 		expect(JSON.parse(org.of("cpdClaim")[0].postData ?? "{}")).toEqual({
 			activityType: "type-webinar",
 			credits: 2.5,
-			dateOfCompletionString: "2026-02-01",
+			dateOfCompletionString: todayIso,
 			areaOfStudy: "Credit Risk",
 			comments: null,
 			URL: null,

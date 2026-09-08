@@ -19,6 +19,7 @@ import type { OrderDetailCallout } from "@/lib/order-detail-presentation"
 import { buildOrderDetailPresentation } from "@/lib/order-detail-presentation"
 import type { MetaLine } from "@/lib/meta-line"
 import { cn } from "@/lib/utils"
+import { PAGE_SHELL, PAGE_STICKY_SUBHEADER } from "@/components/molecules/page-shell"
 
 /** Forward-nav feel when opening `/my-account/orders/$orderNumber`. */
 const DETAIL_ENTER_SPRING = { mass: 0.9, tension: 320, friction: 26 }
@@ -223,11 +224,11 @@ function OrderDetailPanelView({ orderNumber }: OrderDetailPanelProps) {
 	return (
 		<animated.div
 			style={enter}
-			className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
+			className={PAGE_SHELL}
 		>
-			<OrderDetailHeader />
+			<OrderDetailHeader className={PAGE_STICKY_SUBHEADER} />
 
-			<div className="mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+			<div>
 				<DetailBody orderNumber={orderNumber} />
 			</div>
 		</animated.div>

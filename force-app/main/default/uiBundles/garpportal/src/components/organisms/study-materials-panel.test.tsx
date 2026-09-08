@@ -42,7 +42,13 @@ beforeEach(() => {
 })
 
 describe("StudyMaterialsPanel — one card per material", () => {
-	it("files every material once under its programme, owned or not", async () => {
+	/*
+	 * Ownership is a section again, not just a chip: a programme's materials
+	 * split into what the member holds and what is still on sale, so "is there
+	 * anything here I still need?" is answered by the headings rather than by
+	 * reading every card.
+	 */
+	it("files every material once, under My Materials or Available to Purchase", async () => {
 		serveMaterials()
 		await renderPanel()
 
@@ -52,11 +58,14 @@ describe("StudyMaterialsPanel — one card per material", () => {
 		expect(
 			screen.getByRole("heading", { name: /Sustainability & Climate Risk.*\(1\)/ }),
 		).toBeInTheDocument()
-		// The owned eBook set is a card with an Owned chip — not a second section.
+		// Once, in exactly one of the two blocks — never duplicated across them.
 		expect(screen.getAllByText("2026 FRM Exam Part I eBooks")).toHaveLength(1)
-		expect(screen.getByText("Owned")).toBeInTheDocument()
-		expect(screen.queryByRole("heading", { name: /My Materials/ })).not.toBeInTheDocument()
-		expect(screen.queryByRole("heading", { name: /Catalogue/ })).not.toBeInTheDocument()
+		expect(
+			screen.getByRole("heading", { name: /My Materials/ }),
+		).toBeInTheDocument()
+		expect(
+			screen.getAllByRole("heading", { name: /Available to Purchase/ }).length,
+		).toBeGreaterThan(0)
 	})
 
 	it("earns no filter pills for a single programme", async () => {

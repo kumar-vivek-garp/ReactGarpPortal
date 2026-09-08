@@ -1,6 +1,12 @@
 import type { ReactNode } from "react"
 import { useNavigate } from "@tanstack/react-router"
-import { CalendarDays, Clock, MapPin, TriangleAlert } from "lucide-react"
+import {
+	CalendarDays,
+	Clock,
+	ExternalLink,
+	MapPin,
+	TriangleAlert,
+} from "lucide-react"
 
 import type { MemberEvent } from "@/api/events"
 import { Badge } from "@/components/atoms/badge"
@@ -30,6 +36,7 @@ import {
 	eventWeekday,
 } from "@/lib/events-presentation"
 import { cn } from "@/lib/utils"
+import { PAGE_SHELL, PAGE_STICKY_HEADER } from "@/components/molecules/page-shell"
 
 type EventsPanelProps = {
 	/** Type filter from `?type=`; absent means all types. */
@@ -120,11 +127,13 @@ function UpNextHero({ event }: { event: MemberEvent }) {
 
 				<div className="mt-2 flex flex-wrap items-center gap-5">
 					{item.hasCalendar ? <AddToCalendarButton event={event} /> : null}
+					{/* Same new-tab glyph as the cards below — one link, one icon. */}
 					<CardCta
 						label="View event details"
 						url={item.eventUrl}
 						isExternal
 						newWindow
+						icon={<ExternalLink className="size-4" />}
 					/>
 				</div>
 			</div>
@@ -210,8 +219,8 @@ function EventsPanel({ type }: EventsPanelProps) {
 	}
 
 	return (
-		<div className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]">
-			<header className="shrink-0">
+		<div className={PAGE_SHELL}>
+			<header className={PAGE_STICKY_HEADER}>
 				<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
 					My Events
 				</h1>
@@ -220,7 +229,7 @@ function EventsPanel({ type }: EventsPanelProps) {
 				</p>
 			</header>
 
-			<div className="mt-6 min-h-0 flex-1 space-y-8 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+			<div className="space-y-8">
 				{isError ? (
 					<EmptyState
 						icon={TriangleAlert}

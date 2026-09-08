@@ -25,6 +25,16 @@ function CpdClaimDialog({ open, onOpenChange, claim }: CpdClaimDialogProps) {
 			trigger={null}
 			open={open}
 			onOpenChange={onOpenChange}
+			/*
+			 * Sized to its content instead of the shell's fixed 52rem. The form is
+			 * short — five controls unless the activity type asks for extras — and
+			 * at a fixed height the footer sat a screen below the last field with
+			 * nothing in between. `min-h` keeps the loading skeleton and the shortest
+			 * form the same size, so nothing jumps as it hydrates, and `max-h` caps
+			 * it at the viewport, at which point the form body scrolls (it already
+			 * owns `overflow-y-auto` between the pinned header and footer).
+			 */
+			contentClassName="h-auto max-h-[min(90vh,44rem)] min-h-[26rem]"
 		>
 			{/*
 			 * Remount per claim so the form re-seeds cleanly — react-hook-form's

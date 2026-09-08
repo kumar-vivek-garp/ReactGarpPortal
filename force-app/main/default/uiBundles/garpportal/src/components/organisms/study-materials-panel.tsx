@@ -24,19 +24,26 @@ import { programBrandSurface } from "@/config/program-brand"
 import {
 	DEFAULT_STUDY_MATERIALS_TAB,
 	STUDY_MATERIALS_ARCHIVE_LABEL,
+	STUDY_MATERIALS_AVAILABLE_LABEL,
 	STUDY_MATERIALS_DENIED,
 	STUDY_MATERIALS_EMPTY,
 	STUDY_MATERIALS_ERRATA_LABEL,
+	STUDY_MATERIALS_MINE_LABEL,
 	STUDY_MATERIALS_TITLE,
 	resolveStudyMaterialsView,
 } from "@/config/study-materials"
 import { useHasEBookArchive } from "@/hooks/use-ebook-archive"
 import { useStudyMaterials } from "@/hooks/use-study-materials"
 import { programErrataPath } from "@/lib/program-card-links"
-import { groupByPart, studyCodeLabel } from "@/lib/study-materials-presentation"
+import {
+	groupByPart,
+	splitByOwnership,
+	studyCodeLabel,
+} from "@/lib/study-materials-presentation"
 import { TAB_PANEL_TRANSITION } from "@/lib/tab-panel-spring"
 import { cn } from "@/lib/utils"
 import { useListViewStore } from "@/store/list-view-store"
+import { PAGE_SHELL, PAGE_STICKY_HEADER } from "@/components/molecules/page-shell"
 
 type StudyMaterialsPanelProps = {
 	tab: string
@@ -94,8 +101,59 @@ function StudyItemCollection({
 }
 
 /**
- * One programme: heading, its errata link, and its materials — FRM split by
- * exam part, every other programme as one list.
+ * One ownership bucket inside a programme — FRM split by exam part, every
+ * other programme as one list.
+ */
+function MaterialBlock({
+	title,
+	items,
+	view,
+	priority,
+}: {
+	/** Null when the programme has only one bucket and needs no label. */
+	title: string | null
+	items: StudyMaterialItem[]
+	view: ListView
+	priority: boolean
+}) {
+	if (items.length === 0) return null
+
+	return (
+		<div className="space-y-4">
+			{title ? (
+				<h3 className="font-heading text-lg font-semibold tracking-wide text-foreground">
+					{title}
+					<span className="ml-2 text-base font-normal text-muted-foreground">
+						({items.length})
+					</span>
+				</h3>
+			) : null}
+
+			{groupByPart(items).map((group, index) => (
+				<div key={group.part ?? "all"} className="space-y-3">
+					{group.part ? (
+						<p className="text-caption font-semibold tracking-wide text-muted-foreground uppercase">
+							{group.part}
+						</p>
+					) : null}
+					<StudyItemCollection
+						items={group.items}
+						view={view}
+						priority={priority && index === 0}
+					/>
+				</div>
+			))}
+		</div>
+	)
+}
+
+/**
+ * One programme: heading, its errata link, then what the member holds and what
+ * they can still buy — in that order, as two labelled blocks.
+ *
+ * The two used to be interleaved, with ownership carried only as a chip on
+ * each card, which made "is there anything here I still need?" a question you
+ * answered by reading every card (UI/UX request, Sep 2026).
  */
 function ProgramSection({
 	program,
@@ -107,10 +165,12 @@ function ProgramSection({
 	priority: boolean
 }) {
 	const errataPath = programErrataPath(program.key)
-	const groups = groupByPart(program.items)
+	const { mine, available } = splitByOwnership(program.items)
+	// One bucket needs no label — the programme heading already names it.
+	const labelBlocks = mine.length > 0 && available.length > 0
 
 	return (
-		<section className="space-y-4" aria-labelledby={`study-${program.key}`}>
+		<section className="space-y-6" aria-labelledby={`study-${program.key}`}>
 			<div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
 				<h2
 					id={`study-${program.key}`}
@@ -138,20 +198,24 @@ function ProgramSection({
 				) : null}
 			</div>
 
-			{groups.map((group, index) => (
-				<div key={group.part ?? "all"} className="space-y-3">
-					{group.part ? (
-						<h3 className="font-heading text-lg font-semibold tracking-wide text-foreground">
-							{group.part}
-						</h3>
-					) : null}
-					<StudyItemCollection
-						items={group.items}
-						view={view}
-						priority={priority && index === 0}
-					/>
-				</div>
-			))}
+			<MaterialBlock
+				title={labelBlocks ? STUDY_MATERIALS_MINE_LABEL : null}
+				items={mine}
+				view={view}
+				priority={priority}
+			/>
+
+			{/*
+			 * Always labelled when present, even as the only block: "you own none
+			 * of this" is exactly what a member needs told, and an unlabelled list
+			 * of Purchase buttons under the programme name does not say it.
+			 */}
+			<MaterialBlock
+				title={STUDY_MATERIALS_AVAILABLE_LABEL}
+				items={available}
+				view={view}
+				priority={priority && mine.length === 0}
+			/>
 		</section>
 	)
 }
@@ -241,10 +305,10 @@ function StudyMaterialsPanel({ tab, view }: StudyMaterialsPanelProps) {
 					replace: true,
 				})
 			}}
-			className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
+			className={PAGE_SHELL}
 		>
 			{/* Fixed chrome: heading + program tabs — does not scroll. */}
-			<header className="shrink-0 space-y-4">
+			<header className={cn(PAGE_STICKY_HEADER, "space-y-4")}>
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
 						{STUDY_MATERIALS_TITLE}
@@ -306,7 +370,7 @@ function StudyMaterialsPanel({ tab, view }: StudyMaterialsPanelProps) {
 			</header>
 
 			{/* Only this region scrolls; cards stagger in via StaggerReveal inside grids. */}
-			<div className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+			<div>
 				{isError ? (
 					<p className="text-sm text-muted-foreground">
 						We couldn&apos;t load your study materials. Please try again later.

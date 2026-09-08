@@ -11,6 +11,8 @@ import {
 	type ProgramsView,
 } from "@/config/programs"
 import { useListViewStore } from "@/store/list-view-store"
+import { PAGE_SHELL, PAGE_STICKY_HEADER } from "@/components/molecules/page-shell"
+import { cn } from "@/lib/utils"
 
 const routeApi = getRouteApi("/_appLayout/programs/")
 
@@ -132,9 +134,9 @@ function ProgramsPendingShell({ tab, view }: ProgramsPendingProps) {
 	return (
 		<Tabs
 			value={tab ?? ""}
-			className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
+			className={PAGE_SHELL}
 		>
-			<header className="shrink-0 space-y-4">
+			<header className={cn(PAGE_STICKY_HEADER, "space-y-4")}>
 				<div className="flex flex-wrap items-center justify-between gap-3">
 					<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
 						My Programs
@@ -143,7 +145,7 @@ function ProgramsPendingShell({ tab, view }: ProgramsPendingProps) {
 				</div>
 				<PillTabs items={PROGRAM_TAB_ITEMS} value={tab ?? ""} />
 			</header>
-			<div className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+			<div>
 				<ProgramsContentSkeleton view={resolvedView} />
 			</div>
 		</Tabs>

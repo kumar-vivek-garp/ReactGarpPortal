@@ -3,6 +3,8 @@ import {
 	HELP_CENTER_TAB_ITEMS,
 	type HelpCenterTab,
 } from "@/config/help-center"
+import { PAGE_SHELL, PAGE_STICKY_HEADER } from "@/components/molecules/page-shell"
+import { cn } from "@/lib/utils"
 
 // Lives apart from help-center-panel.tsx on purpose: the route pending
 // skeleton shares this chrome and is eager, and importing it from the panel
@@ -13,9 +15,9 @@ import {
  * cannot drift — same shape as Programs / My Account / Events.
  */
 const HELP_CENTER_SHELL =
-	"-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
+	PAGE_SHELL
 const HELP_CENTER_SCROLL =
-	"mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+	""
 const GET_HELP_GRID =
 	"grid items-start gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,3fr)] lg:gap-10"
 
@@ -28,7 +30,7 @@ function HelpCenterHeader({
 	requestCount?: number
 }) {
 	return (
-		<header className="shrink-0 space-y-4">
+		<header className={cn(PAGE_STICKY_HEADER, "space-y-4")}>
 			<div>
 				<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
 					Help Center

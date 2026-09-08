@@ -5,7 +5,7 @@ import { StudyMaterialAction } from "@/components/molecules/study-material-actio
 import { renderWithRouterProviders } from "@/testing/router"
 
 describe("StudyMaterialAction — links", () => {
-	it("renders GARP Learning as a primary button opening the SSO in a new tab", async () => {
+	it("renders GARP Learning as a link CTA opening the SSO in a new tab", async () => {
 		await renderWithRouterProviders(
 			<StudyMaterialAction
 				action={{ kind: "garpLearning", url: "https://learning.garp.org/sso?prog=FRM" }}
@@ -69,17 +69,19 @@ describe("StudyMaterialAction — links", () => {
 })
 
 describe("StudyMaterialAction — statements", () => {
-	it("renders owned, out of stock and contact as plain text with no link", async () => {
+	/*
+	 * There is no `owned` action any more — what the member paid and when is a
+	 * meta line on the card (`materialMetaLines`), not the card's action.
+	 */
+	it("renders out of stock and contact as plain text with no link", async () => {
 		await renderWithRouterProviders(
 			<>
-				<StudyMaterialAction action={{ kind: "owned", text: "Purchased" }} />
 				<StudyMaterialAction action={{ kind: "outOfStock", text: "Out of stock" }} />
 				<StudyMaterialAction
 					action={{ kind: "contact", text: "Contact member services to buy this." }}
 				/>
 			</>,
 		)
-		expect(screen.getByText("Purchased")).toBeInTheDocument()
 		expect(screen.getByText("Out of stock")).toBeInTheDocument()
 		expect(screen.getByText("Contact member services to buy this.")).toBeInTheDocument()
 		expect(screen.queryByRole("link")).not.toBeInTheDocument()

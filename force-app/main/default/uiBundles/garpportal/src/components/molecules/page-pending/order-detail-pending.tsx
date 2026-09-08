@@ -2,6 +2,7 @@ import { getRouteApi } from "@tanstack/react-router"
 
 import { Skeleton } from "@/components/atoms/skeleton"
 import { OrderDetailHeader } from "@/components/molecules/order-detail-header"
+import { PAGE_SHELL, PAGE_STICKY_SUBHEADER } from "@/components/molecules/page-shell"
 
 const routeApi = getRouteApi(
 	"/_appLayout/my-account/orders/$orderNumber/",
@@ -53,9 +54,9 @@ function OrderDetailSkeleton() {
 
 function OrderDetailPendingShell() {
 	return (
-		<div className="-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]">
-			<OrderDetailHeader />
-			<div className="mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+		<div className={PAGE_SHELL}>
+			<OrderDetailHeader className={PAGE_STICKY_SUBHEADER} />
+			<div>
 				<OrderDetailSkeleton />
 			</div>
 		</div>

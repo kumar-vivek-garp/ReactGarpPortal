@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from "@testing-library/react"
+import { screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { http, HttpResponse } from "msw"
 import { describe, expect, it, vi } from "vitest"
@@ -61,8 +61,12 @@ function renderDialog(claim: ReturnType<typeof cpdClaim> | null = null) {
 
 describe("CpdClaimDialog", () => {
 	it("closes itself after one full successful submission", async () => {
+		// Fixed today: the calendar opens on this month and 1 February is a
+		// past date it will accept.
+		vi.useFakeTimers({ shouldAdvanceTime: true })
+		vi.setSystemTime(new Date(2026, 1, 15, 12))
 		const org = serveOrg()
-		const user = userEvent.setup()
+		const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
 		const { onOpenChange } = renderDialog()
 
 		const dialog = within(
@@ -76,9 +80,11 @@ describe("CpdClaimDialog", () => {
 			await dialog.findByRole("combobox", { name: "Activity Type*" }),
 		)
 		await user.click(await screen.findByRole("option", { name: "Seminar" }))
-		fireEvent.change(dialog.getByLabelText("Date of Completion*"), {
-			target: { value: "2026-02-01" },
-		})
+		// Picked from the calendar — the field is a Popover trigger, not an input.
+		await user.click(dialog.getByLabelText("Date of Completion*"))
+		await user.click(
+			await screen.findByRole("button", { name: /February 1st, 2026/ }),
+		)
 		await user.type(dialog.getByLabelText("Number of Credits*"), "3")
 		await user.click(dialog.getByRole("button", { name: "Submit" }))
 

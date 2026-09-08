@@ -80,3 +80,33 @@ describe("DatePicker", () => {
 		expect(screen.queryByRole("grid")).not.toBeInTheDocument()
 	})
 })
+
+describe("DatePicker — refused days", () => {
+	it("disables everything after the matcher and will not walk past it", async () => {
+		const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+		renderWithProviders(
+			<DatePicker
+				id="completed"
+				value=""
+				onChange={() => {}}
+				placeholder="Pick a date"
+				endMonth={new Date(2026, 8, 7)}
+				disabledDates={{ after: new Date(2026, 8, 7) }}
+			/>,
+		)
+
+		await user.click(screen.getByRole("button", { name: /Pick a date/ }))
+
+		expect(
+			screen.getByRole("button", { name: /September 7th, 2026/ }),
+		).toBeEnabled()
+		expect(
+			screen.getByRole("button", { name: /September 8th, 2026/ }),
+		).toBeDisabled()
+		// rdp marks the nav button `aria-disabled` so it stays focusable.
+		expect(screen.getByRole("button", { name: /next month/i })).toHaveAttribute(
+			"aria-disabled",
+			"true",
+		)
+	})
+})

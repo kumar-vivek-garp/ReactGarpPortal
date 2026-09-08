@@ -17,7 +17,6 @@ import {
 	REGISTRATION_BAR_TITLE,
 	REGISTRATION_BAR_TITLE_GROUP,
 	REGISTRATION_RAIL_COLUMN,
-	REGISTRATION_SCROLL,
 	REGISTRATION_SHELL,
 	REGISTRATION_SINGLE_COLUMN,
 	REGISTRATION_STICKY_BAR,
@@ -411,7 +410,7 @@ function EventRegistrationPanel({
 			style={transitionStyle}
 			className={cn(REGISTRATION_SHELL, className)}
 		>
-			<div className={REGISTRATION_SCROLL}>
+			<div>
 				{withChrome ? (
 					<ScreenChrome
 						title={screenTitle}

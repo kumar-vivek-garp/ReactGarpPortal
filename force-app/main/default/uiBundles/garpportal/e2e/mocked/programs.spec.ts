@@ -131,6 +131,55 @@ test.describe("programs listing", () => {
 		).toBeVisible()
 	})
 
+	/*
+	 * An In Progress card's only destination is View Details, so the card IS
+	 * that link — the CTA is gone and the whole surface activates. An Explore
+	 * card has two destinations (Register Now, Learn more), so it stays flat.
+	 */
+	test("an enrolled card is itself the link to the programme; an Explore card is not", async ({
+		page,
+	}) => {
+		await installMockOrg(page, { actions: baseActions() })
+		await page.goto("/programs?tab=in-progress")
+
+		await expect(
+			page.getByRole("link", { name: /^View Details/ }),
+		).toHaveCount(0)
+
+		await page
+			.getByRole("link", { name: "View details for Financial Risk Manager" })
+			.click()
+		await expect(page).toHaveURL(/\/programs\/frm$/)
+
+		await page.goto("/programs?tab=explore")
+		await expect(
+			page.getByRole("link", { name: /^View details for/ }),
+		).toHaveCount(0)
+		await expect(
+			page.getByRole("link", { name: "Register Now" }).first(),
+		).toBeVisible()
+		// Learn more leaves for garp.org, so it carries the new-tab glyph.
+		const learnMore = page.getByRole("link", { name: /Learn more/ }).first()
+		await expect(learnMore).toHaveAttribute("target", "_blank")
+	})
+
+	/*
+	 * "Open for registration" used to sit under the description, restating the
+	 * "Registration open" badge above it. The badge is the only place that
+	 * fact is stated now.
+	 */
+	test("an open Explore card states its registration status once", async ({
+		page,
+	}) => {
+		await installMockOrg(page, { actions: baseActions() })
+		await page.goto("/programs?tab=explore")
+
+		await expect(
+			page.getByText("Registration open", { exact: true }).first(),
+		).toBeVisible()
+		await expect(page.getByText("Open for registration")).toHaveCount(0)
+	})
+
 	test("the grid/list toggle writes ?view= and keeps the bucket rendered", async ({
 		page,
 	}) => {

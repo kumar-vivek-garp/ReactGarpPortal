@@ -43,6 +43,14 @@ function ProgramResultsChip({ programType, className }: ProgramResultsChipProps)
 				to="/programs/$programType/results"
 				params={{ programType: slug }}
 				aria-label={`View exam results for ${programType}`}
+				/*
+				 * The chip sits inside a card that is itself a link to the
+				 * programme. Without this both destinations fire — the chip's
+				 * immediately, the card's after its press spring settles — and the
+				 * member lands on the programme they did not click.
+				 */
+				onClick={(event) => event.stopPropagation()}
+				onPointerDown={(event) => event.stopPropagation()}
 				className={cn(
 					"inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-2 py-0.5",
 					"text-xs font-bold tracking-wide text-primary",

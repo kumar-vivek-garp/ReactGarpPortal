@@ -1,31 +1,20 @@
+import { PAGE_SHELL } from "@/components/molecules/page-shell"
+
 /**
  * The page shell every registration form is served in — shared so the exam
  * dispatcher and the affiliate form cannot drift apart.
  *
- * A registration form carries its own sticky header bar, which only works if
- * the form is the thing that scrolls rather than the document. So the shell
- * takes a fixed height (viewport minus the fixed toolbar, which is `h-16` /
- * `app:h-20` in both `_appLayout` and `_publicFormLayout`) and puts the
- * overflow on the inner column.
+ * It used to take a fixed height (viewport minus the toolbar) and put the
+ * overflow on an inner column, because a form with a sticky bar only works if
+ * something other than the document is scrolling. The shell now provides that
+ * for every page (`lib/app-scroll.ts`), so this is the same `PAGE_SHELL` the
+ * rest of the portal uses and the bar sticks to the shell's scroller.
  *
- * `-my-6` cancels the `PageContainer`'s own `py-6`, then `py-6` puts it back
- * inside the fixed-height box — otherwise the container's padding is added to
- * a height already equal to the viewport and the page gains a scrollbar the
- * shell was built to remove.
+ * Kept as its own name rather than collapsed into the import: six panels and
+ * two skeletons read it, and the alias documents that a registration form is
+ * shaped exactly like every other page — which was the thing in doubt.
  */
-export const REGISTRATION_SHELL =
-	"-my-6 flex h-[calc(100vh-4rem)] flex-col gap-0 py-6 app:h-[calc(100vh-5rem)]"
-
-/**
- * The scrolling column, flush to the top — a form with its own sticky bar must
- * start at the top of its scroll parent or the bar has nothing to stick to.
- *
- * The horizontal padding is not cosmetic. `overflow-y-auto` also clips the X
- * axis, and the back link inside the bar nudges 5px left on hover; sitting
- * flush against this edge, that nudge would be cut off.
- */
-export const REGISTRATION_SCROLL =
-	"min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+export const REGISTRATION_SHELL = PAGE_SHELL
 
 /**
  * The checkout split: form on the left, order rail pinned on the right.
@@ -47,27 +36,48 @@ export const REGISTRATION_MAIN_COLUMN = "flex flex-col gap-6 lg:col-span-6"
  * `h-fit` + `sticky` is what pins the rail: it sizes to its content and stays
  * put while the form column scrolls past it.
  *
- * `top-22` is not a taste choice — it must equal the element's natural offset,
- * the sticky bar (4rem) plus the grid gap (1.5rem). A `sticky` element with a
- * `top` *larger* than its natural offset is pushed down immediately, at rest,
- * on first paint: at `top-28` the rail sat 24px below the column beside it.
+ * `top-28` is not a taste choice — it must equal the element's natural offset,
+ * measured from the top of whatever scrolls. That is now the shell's column
+ * rather than a scroller this form owned, so the offset gained the container's
+ * own top padding: 1.5rem `PageContainer` padding + 4rem of bar + 1.5rem grid
+ * gap = 7rem. (It read `top-22` when the scroller started *below* that
+ * padding; the bar itself has not moved.) A `sticky` element with a `top`
+ * *larger* than its natural offset is pushed down immediately, at rest, on
+ * first paint — which is what `top-28` did under the old geometry and what
+ * `top-22` would do under this one.
  *
- * Coupled to the rail's own `max-h-[calc(100vh-13.5rem)]` — change this offset
- * and that cap has to follow, or the rail overhangs its slot and clips.
+ * Coupled to the rail's own `max-h-[calc(100vh-13.5rem)]`, which still holds:
+ * the scroller is `100vh` less the 5rem toolbar, the rail starts 7rem into it,
+ * and the last 1.5rem is the container's bottom padding.
  */
 export const REGISTRATION_RAIL_COLUMN =
-	"lg:sticky lg:top-22 lg:col-span-4 lg:h-fit"
+	"lg:sticky lg:top-28 lg:col-span-4 lg:h-fit"
 
 /**
  * The one bar carrying the title, the running total and the submit.
  *
  * Fully opaque: content scrolling under a translucent bar reads as a rendering
- * fault rather than as depth. No negative margin: bleeding it past the
- * container makes it wider than its scroll parent, which buys a few pixels of
- * horizontal scroll and clips the back arrow.
+ * fault rather than as depth.
+ *
+ * The bleed is what makes "opaque" true. `PageContainer` pads `py-6` /
+ * `px-shell-gutter` and the bar is now pinned against the *shell's* scroller,
+ * so without pulling back over that padding the form would be visible through
+ * a 24px band above the bar and a 16px strip down each side while it is
+ * pinned. The old warning here — that a negative margin makes the bar wider
+ * than its scroll parent, buying horizontal scroll and clipping the back arrow
+ * — was true of the inner scroller this form used to own, whose `overflow-y`
+ * clipped the X axis too. `-mx-shell-gutter` exactly cancels the container's
+ * gutter rather than exceeding it, and nothing clips, so the arrow's 5px hover
+ * nudge has room again.
+ *
+ * `pt-9 pb-3` rather than `py-3`: the 24px the container used to hold above
+ * the bar is now the bar's own, which keeps the resting layout pixel-identical
+ * to the fixed-height shell this replaced and keeps the bar exactly 5.5rem
+ * tall. `REGISTRATION_RAIL_COLUMN` is derived from that height — change either
+ * number and the rail's `top` has to follow.
  */
 export const REGISTRATION_STICKY_BAR =
-	"sticky top-0 z-30 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 bg-background py-3"
+	"sticky top-0 z-30 -mx-shell-gutter -mt-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 bg-background px-shell-gutter pt-9 pb-3"
 
 /**
  * The total block, and the submit beside it.

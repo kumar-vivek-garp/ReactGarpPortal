@@ -7,8 +7,9 @@ import type {
 	CpdProgramView,
 	CpdView,
 } from "@/api/cpd"
-import { CPD_DESIGNATIONS } from "@/config/cpd"
+import { CPD_DESIGNATIONS, DEFAULT_CPD_TAB, type CpdTab } from "@/config/cpd"
 import { formatLongDate } from "@/lib/account-format"
+import type { MetaLine } from "@/lib/meta-line"
 
 /**
  * Pure derivations for the CPD page and the dashboard CPD card.
@@ -105,6 +106,25 @@ export function isCurrentCycle(
 }
 
 /**
+ * Which activity tab a load opens on.
+ *
+ * A closed cycle is pinned to Approved whatever the URL says: Apex only ever
+ * attaches pending claims to the CURRENT cycle, so a Pending tab there is
+ * guaranteed empty and reads as data loss rather than as the absence of it.
+ * Otherwise an explicit `?tab=` wins, and the default falls to whichever list
+ * has something in it — landing on an empty Pending tab while approved credits
+ * sit one click away is the same mistake in a smaller form.
+ */
+export function resolveCpdTab(
+	tab: CpdTab | undefined,
+	{ isCurrent, pendingCount }: { isCurrent: boolean; pendingCount: number },
+): CpdTab {
+	if (!isCurrent) return "approved"
+	if (tab) return tab
+	return pendingCount > 0 ? DEFAULT_CPD_TAB : "approved"
+}
+
+/**
  * Bars for the CPD page — one per designation the cycle is answerable for.
  * The same `creditsApproved` total feeds every row; Apex does not attribute
  * credits per designation.
@@ -133,6 +153,44 @@ export function cycleCreditRows(
 		approved,
 		required: toNumber(required[designation]),
 	}))
+}
+
+export type CpdCycleTotals = {
+	approved: number
+	/** Submitted but not yet reviewed. */
+	pending: number
+	required: number
+	/** Never negative — an over-achieved cycle owes nothing, not "-4". */
+	remaining: number
+}
+
+/**
+ * The four numbers the cycle overview states in words rather than as bars.
+ *
+ * Pending is counted from `pendingClaims` when the cycle carries them, and
+ * falls back to `creditsSubmitted - creditsApproved` when it does not. Apex
+ * only ever attaches pending claims to the CURRENT cycle, yet a closed cycle's
+ * `creditsSubmitted` still includes what was pending against it — the fallback
+ * is what keeps a past cycle honest instead of silently reporting zero.
+ */
+export function cycleCreditTotals(
+	cycle: CpdCycleInfo | null | undefined,
+): CpdCycleTotals {
+	const approved = toNumber(cycle?.creditsApproved)
+	const required = toNumber(cycle?.creditsRequired)
+
+	const claims = cycle?.pendingClaims
+	const pending =
+		claims && claims.length > 0
+			? claims.reduce((total, claim) => total + toNumber(claim.credits), 0)
+			: Math.max(0, toNumber(cycle?.creditsSubmitted) - approved)
+
+	return {
+		approved,
+		pending,
+		required,
+		remaining: Math.max(0, required - approved),
+	}
 }
 
 /**
@@ -245,19 +303,36 @@ export type CpdClaimRowPresentation = {
 	title: string
 	dateLabel: string | null
 	creditsLabel: string
+	/** Icon-prefixed rows under the title, in the shared vocabulary. */
+	metaLines: MetaLine[]
 }
 
 /**
  * One activity row. Apex already falls `title` back to the activity type
  * name, so this only has to cover a claim with neither.
+ *
+ * The activity type is suppressed from the meta lines when it IS the title —
+ * a row reading "Webinar / Webinar" states the same fact twice.
  */
 export function buildClaimRowPresentation(
 	claim: CpdClaim,
 ): CpdClaimRowPresentation {
+	const title = claim.title?.trim() || claim.activityTypeName?.trim() || "Activity"
+	const dateLabel = formatLongDate(claim.dateOfCompletion)
+	const typeName = claim.activityTypeName?.trim()
+	const areas = formatAreaOfStudy(claim.areaOfStudy)
+
+	const metaLines: MetaLine[] = []
+	if (dateLabel) metaLines.push({ icon: "completed", text: dateLabel })
+	if (typeName && typeName !== title)
+		metaLines.push({ icon: "eventType", text: typeName })
+	if (areas) metaLines.push({ icon: "areaOfStudy", text: areas })
+
 	return {
-		title: claim.title?.trim() || claim.activityTypeName?.trim() || "Activity",
-		dateLabel: formatLongDate(claim.dateOfCompletion),
+		title,
+		dateLabel,
 		creditsLabel: formatCredits(claim.credits),
+		metaLines,
 	}
 }
 

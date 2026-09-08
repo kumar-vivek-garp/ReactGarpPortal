@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react"
+import { screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { http, HttpResponse } from "msw"
 import { describe, expect, it, vi } from "vitest"
@@ -149,20 +149,37 @@ describe("fixed-field validation", () => {
 		expect(onSaved).not.toHaveBeenCalled()
 	})
 
-	it("refuses a completion date in the future", async () => {
-		const org = serveOrg()
-		const user = userEvent.setup()
-		renderForm()
+	/*
+	 * Credits are claimed for something already done, so the future is closed
+	 * off in the calendar itself — there is no longer a text input to type
+	 * "2999-01-01" into. The RHF rule stays as the backstop for a seeded value;
+	 * what a member can actually DO is what this asserts.
+	 */
+	it("offers no future date to pick", async () => {
+		vi.useFakeTimers({ shouldAdvanceTime: true })
+		vi.setSystemTime(new Date(2026, 8, 7, 12))
+		try {
+			serveOrg()
+			const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+			renderForm()
 
-		fireEvent.change(await screen.findByLabelText("Date of Completion*"), {
-			target: { value: "2999-01-01" },
-		})
-		await user.click(screen.getByRole("button", { name: "Submit" }))
+			await user.click(await screen.findByLabelText("Date of Completion*"))
 
-		expect(
-			await screen.findByText("Date must be on or before today"),
-		).toBeInTheDocument()
-		expect(org.saves).toHaveLength(0)
+			// Today is selectable; tomorrow is not, and the month cannot advance.
+			expect(
+				screen.getByRole("button", { name: /September 7th, 2026/ }),
+			).toBeEnabled()
+			expect(
+				screen.getByRole("button", { name: /September 8th, 2026/ }),
+			).toBeDisabled()
+			// rdp marks the nav button `aria-disabled`, not `disabled`, so that
+			// it stays focusable.
+			expect(
+				screen.getByRole("button", { name: /next month/i }),
+			).toHaveAttribute("aria-disabled", "true")
+		} finally {
+			vi.useRealTimers()
+		}
 	})
 
 	it("holds credits to the 0.5–50 band", async () => {

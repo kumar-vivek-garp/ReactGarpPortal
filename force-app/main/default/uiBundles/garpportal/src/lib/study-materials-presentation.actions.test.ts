@@ -71,14 +71,19 @@ describe("resolveMaterialAction — the chain", () => {
 		).toEqual({ kind: "completeOrder", path: "/my-account/orders/006UNPAID" })
 	})
 
-	it("4a. an unpaid order WITHOUT an id falls through", () => {
+	it("4a. an unpaid order WITHOUT an id offers nothing", () => {
 		expect(
 			resolveMaterialAction(studyItem({ isUnPaidOrder: true, orderId: null, isOwned: true })),
-		).toMatchObject({ kind: "owned" })
+		).toEqual({ kind: "none" })
 	})
 
-	it("5. owned — with and without a date, registration date first", () => {
-		const on = formatLongDate("2026-02-11")
+	/*
+	 * Owning a material is no longer an ACTION — the purchase and its date are
+	 * a meta line on the card (`materialMetaLines`). Ownership still has to cut
+	 * the chain off here, though: without it an owned material would fall
+	 * through to Purchase and offer to sell the member their own book.
+	 */
+	it("5. owned — no action, and it stops coming-soon and purchase behind it", () => {
 		expect(
 			resolveMaterialAction(
 				studyItem({
@@ -90,14 +95,11 @@ describe("resolveMaterialAction — the chain", () => {
 					canPurchase: true,
 				}),
 			),
-		).toEqual({ kind: "owned", text: `Included with your registration · ${on}` })
+		).toEqual({ kind: "none" })
 		expect(
 			resolveMaterialAction(studyItem({ isOwned: true, orderedDate: "2026-02-11" })),
-		).toEqual({ kind: "owned", text: `Purchased · ${on}` })
-		expect(resolveMaterialAction(studyItem({ isOwned: true }))).toEqual({
-			kind: "owned",
-			text: "Purchased",
-		})
+		).toEqual({ kind: "none" })
+		expect(resolveMaterialAction(studyItem({ isOwned: true }))).toEqual({ kind: "none" })
 	})
 
 	it("6. coming soon — with and without a date and a notify link", () => {

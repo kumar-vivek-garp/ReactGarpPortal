@@ -1,4 +1,8 @@
 import { Skeleton } from "@/components/atoms/skeleton"
+import {
+	PAGE_SHELL,
+	PAGE_STICKY_SUBHEADER,
+} from "@/components/molecules/page-shell"
 import { CPD_ACTIVITIES_TITLE } from "@/config/cpd"
 
 /** The results + facet columns while the first page loads. */
@@ -32,8 +36,8 @@ function CpdActivitiesContentSkeleton() {
 
 function CpdActivitiesPendingShell() {
 	return (
-		<div className="space-y-6">
-			<header className="space-y-3">
+		<div className={PAGE_SHELL}>
+			<header className={`${PAGE_STICKY_SUBHEADER} space-y-3`}>
 				<Skeleton className="h-6 w-32" />
 				<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
 					{CPD_ACTIVITIES_TITLE}

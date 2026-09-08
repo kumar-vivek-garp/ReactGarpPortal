@@ -41,14 +41,25 @@ const mount = (entry = "/study-materials") =>
 	})
 
 describe("StudyMaterialsPanel — grouping", () => {
-	it("splits FRM by exam part — Part 1, Part 2, then the rest — and leaves other programmes flat", async () => {
+	/*
+	 * Two levels now: the programme splits into what the member holds and what
+	 * is still for sale, and the FRM part grouping runs inside each of those.
+	 * The part label is a caption rather than a heading — it qualifies the
+	 * cards under it, it does not open a section of its own.
+	 */
+	it("splits FRM into owned and available, each grouped by exam part", async () => {
 		serve()
 		await mount("/study-materials?tab=frm")
 
 		await screen.findByRole("heading", { name: /Financial Risk Manager.*\(4\)/ })
-		const parts = screen.getAllByRole("heading", { level: 3 })
-		expect(parts.map((h) => h.textContent)).toEqual(["Part 1", "Part 2"])
-		// The un-parted item follows the part groups without a heading of its own.
+		const blocks = screen.getAllByRole("heading", { level: 3 })
+		expect(blocks.map((h) => h.textContent)).toEqual([
+			"My Materials(2)",
+			"Available to Purchase(2)",
+		])
+		expect(screen.getByText("Part 1")).toBeInTheDocument()
+		expect(screen.getByText("Part 2")).toBeInTheDocument()
+		// The un-parted item still follows its group without a label of its own.
 		expect(screen.getByText("FRM Practice Exams")).toBeInTheDocument()
 	})
 
@@ -64,8 +75,22 @@ describe("StudyMaterialsPanel — grouping", () => {
 		expect(programmes[1]).toContain("Sustainability & Climate Risk")
 		expect(programmes[2]).toContain("Risk & AI")
 		expect(programmes[3]).toContain("Financial Risk and Regulation")
-		// SCR has no parts, so no level-3 heading under it.
-		expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(2)
+		/*
+		 * One level-3 heading per ownership block: FRM has both, the other
+		 * three programmes hold nothing yet and so carry only Available to
+		 * Purchase. A programme with a single block still labels it — "you own
+		 * none of this" is worth saying.
+		 */
+		const blocks = screen
+			.getAllByRole("heading", { level: 3 })
+			.map((h) => h.textContent)
+		expect(blocks).toEqual([
+			"My Materials(2)",
+			"Available to Purchase(2)",
+			"Available to Purchase(1)",
+			"Available to Purchase(1)",
+			"Available to Purchase(1)",
+		])
 	})
 
 	it("offers Report an error per programme, on the route each programme's errata lives at", async () => {
@@ -94,7 +119,11 @@ describe("StudyMaterialsPanel — grouping", () => {
 			"href",
 			"/study-materials/purchase/FRM2H",
 		)
-		expect(screen.getByText(/^Available /)).toBeInTheDocument()
+		// The coming-soon line ("Available December 1, 2026"), not the
+		// "Available to Purchase" block headings that now share the prefix.
+		expect(
+			screen.getByText(/^Available (?!to Purchase)/),
+		).toBeInTheDocument()
 		expect(screen.getByRole("link", { name: /Notify me/ })).toBeInTheDocument()
 		expect(screen.getAllByText("Out of stock").length).toBeGreaterThan(0)
 	})

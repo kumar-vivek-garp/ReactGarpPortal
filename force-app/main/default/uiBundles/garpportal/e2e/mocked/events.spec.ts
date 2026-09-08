@@ -108,6 +108,41 @@ test.describe("events listing", () => {
 		).toEqual([])
 	})
 
+	/*
+	 * View event leaves the portal for garp.org in a new tab, so it carries the
+	 * new-tab glyph rather than the forward arrow every in-app CTA uses. The
+	 * hero and the cards must not disagree about that — one link, one icon.
+	 */
+	test("View event opens garp.org in a new tab, with the new-tab glyph", async ({
+		page,
+	}) => {
+		await installMockOrg(page, {
+			actions: baseActions({
+				...eventsListData(),
+				upcomingOtherEvents: [
+					memberEvent({
+						eventId: "W-URL",
+						eventType: "Webcast",
+						eventName: "Model Risk Briefing",
+						eventStartDate: "2026-12-05",
+						eventURL: "https://www.garp.org/events/model-risk",
+					}),
+				],
+			}),
+		})
+		await page.goto("/events")
+
+		const card = page.getByRole("link", { name: "View event", exact: true })
+		await expect(card).toHaveAttribute(
+			"href",
+			"https://www.garp.org/events/model-risk",
+		)
+		await expect(card).toHaveAttribute("target", "_blank")
+		await expect(card).toHaveAttribute("rel", /noopener/)
+		// The glyph itself: an icon rides with the label, not a bare text link.
+		await expect(card.locator("svg")).toBeVisible()
+	})
+
 	test("the type filter narrows the grid, writes ?type=, and clears back to all", async ({
 		page,
 	}) => {

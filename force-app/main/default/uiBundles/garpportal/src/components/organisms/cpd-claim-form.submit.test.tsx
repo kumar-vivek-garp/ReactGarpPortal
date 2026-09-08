@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react"
+import { screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { http, HttpResponse } from "msw"
 import { describe, expect, it, vi } from "vitest"
@@ -81,8 +81,12 @@ async function chooseType(user: User, name: string) {
 
 describe("creating a claim", () => {
 	it("posts exactly the chosen type's fields — no claimId, stale extras dropped", async () => {
+		// A fixed today so the calendar opens on a known month and 1 February
+		// is a past date the picker will accept.
+		vi.useFakeTimers({ shouldAdvanceTime: true })
+		vi.setSystemTime(new Date(2026, 1, 15, 12))
 		const org = serveOrg()
-		const user = userEvent.setup()
+		const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
 		const { onSaved } = renderForm()
 
 		// Type into a Webinar-only extra first, then switch type: the value
@@ -93,9 +97,11 @@ describe("creating a claim", () => {
 
 		await user.click(screen.getByRole("checkbox", { name: "Credit Risk" }))
 		await user.click(screen.getByRole("checkbox", { name: "Market Risk" }))
-		fireEvent.change(screen.getByLabelText("Date of Completion*"), {
-			target: { value: "2026-02-01" },
-		})
+		// The date is picked from the calendar now, not typed.
+		await user.click(screen.getByLabelText("Date of Completion*"))
+		await user.click(
+			await screen.findByRole("button", { name: /February 1st, 2026/ }),
+		)
 		await user.type(screen.getByLabelText("Number of Credits*"), "2.5")
 		await user.type(screen.getByLabelText("Journal*"), "Risk Journal")
 		await user.type(screen.getByLabelText("Contact email*"), "editor@garp.org")
@@ -116,6 +122,7 @@ describe("creating a claim", () => {
 			publication: "Risk Journal",
 			contactEmail: "editor@garp.org",
 		})
+		vi.useRealTimers()
 	})
 })
 
@@ -127,7 +134,10 @@ describe("editing a claim", () => {
 		expect(
 			await screen.findByRole("combobox", { name: "Activity Type*" }),
 		).toHaveTextContent("Webinar")
-		expect(screen.getByLabelText("Date of Completion*")).toHaveValue("2026-02-01")
+		// The trigger states the seeded date in words; there is no input value.
+		expect(screen.getByLabelText("Date of Completion*")).toHaveTextContent(
+			"February 1st, 2026",
+		)
 		expect(screen.getByLabelText("Number of Credits*")).toHaveValue(2)
 		expect(screen.getByRole("checkbox", { name: "Credit Risk" })).toBeChecked()
 		expect(
