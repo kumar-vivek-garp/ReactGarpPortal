@@ -6,6 +6,7 @@ import {
 	programTypeSlug,
 	supportsInAppProgramDetail,
 } from "@/lib/program-card-links"
+import { ValueChip } from "@/components/molecules/value-chip"
 import { cn } from "@/lib/utils"
 
 /*
@@ -34,7 +35,7 @@ function DashboardEnrolledItem({
 	const coursePath = inApp ? null : programCoursePath(program.programType)
 
 	return (
-		<li className="rounded-xl border border-border/60 bg-background/50 p-3">
+		<li className="rounded-xl border border-inset-border bg-inset p-3">
 			{routeSlug ? (
 				<Link
 					to="/programs/$programType"
@@ -56,15 +57,15 @@ function DashboardEnrolledItem({
 					{program.name}
 				</Link>
 			)}
-			{program.adminPartIName ? (
-				<p className="mt-1 text-sm text-muted-foreground">
-					{program.adminPartIName}
-				</p>
-			) : null}
-			{program.adminPartIIName ? (
-				<p className="text-sm text-muted-foreground">
-					{program.adminPartIIName}
-				</p>
+			{program.adminPartIName || program.adminPartIIName ? (
+				<div className="mt-1.5 flex flex-wrap gap-1.5">
+					{program.adminPartIName ? (
+						<ValueChip>{program.adminPartIName}</ValueChip>
+					) : null}
+					{program.adminPartIIName ? (
+						<ValueChip>{program.adminPartIIName}</ValueChip>
+					) : null}
+				</div>
 			) : null}
 		</li>
 	)

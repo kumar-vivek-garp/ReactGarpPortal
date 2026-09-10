@@ -284,12 +284,18 @@ src/
     └── sections/                            # one file per card
 ```
 
-`registration-shell.ts` holds the fixed-height, internally-scrolling shell
-(`REGISTRATION_SHELL` + `REGISTRATION_SCROLL`) every registration form is
-served in. It is shared because a form's sticky bar only sticks if the *form*
-scrolls and the document does not — and because two copies of that geometry
-drifted apart is a submit bar that leaves the screen on one route and not its
-sibling.
+`registration-shell.ts` holds the shell (`REGISTRATION_SHELL`) and the
+checkout geometry (`REGISTRATION_GRID`, `REGISTRATION_STICKY_BAR`, the rail and
+bar constants) every registration form is served in. It is shared because two
+copies of that geometry drifted apart is a submit bar that leaves the screen on
+one route and not its sibling.
+
+`REGISTRATION_SHELL` is now just an alias for `PAGE_SHELL`
+(`"flex flex-col gap-0"`): the form no longer scrolls itself — the app shell
+owns scrolling (`lib/app-scroll.ts`) and the bar sticks to the shell's
+scroller. **There is no `REGISTRATION_SCROLL` constant**; it went with that
+change, and only a stale doc-comment in `program-registration-panel.tsx` still
+names it.
 
 `components/forms/program-registration/program-registration-panel.tsx` is the
 dispatcher: it branches on programme slug and renders the built form, falling
@@ -374,8 +380,10 @@ The registration form is a **checkout**, not a settings page.
 - **Every field the payload sends needs a control, or a deliberate default.**
   `smsPromotionalUpdates` sat in `buildRegisterRequest` for weeks with nothing
   rendering it, so every registration posted `false` — a marketing consent
-  answered on the candidate's behalf. When adding a programme, walk the request
-  builder and confirm each field is either on screen or intentionally fixed.
+  answered on the candidate's behalf. (It has since been removed from the exam
+  form entirely, but the lesson is the field, not that field.) When adding a
+  programme, walk the request builder and confirm each field is either on screen
+  or intentionally fixed.
 - **Confirm before submitting** (`ConfirmRegistrationDialog`). Order of
   operations matters: `handleSubmit` validates, the built request is then
   *staged* in state, and only the dialog's confirm fires the mutation. Past that
@@ -391,22 +399,81 @@ The registration form is a **checkout**, not a settings page.
 - **One icon per card title**, muted and `aria-hidden` — the text still carries
   the meaning. A form this long needs fixed points to scan by.
 
-### What a member does **not** see
+### The cards, and what belongs on each
 
-Ported from GarpAppv1, which is the authority on this — the branches are its
-`IndividualDetailsCard`.
+The exam form's main column, in order. The four marked *conditional* are the
+ones most often got wrong.
 
-| Hidden for a member | Why |
+| Card | Shown when |
 |---|---|
-| First name, last name, email | Already on their record, and registering does not change it. Showing them invites edits that look saved to the account but are not. The values stay in the form and still travel with the order — only the controls go |
-| Nothing else | In particular **not** the phone or the promotional-SMS opt-in: GarpAppv1 shows both to everyone, and the phone is how exam-day changes reach a candidate |
+| Individual Details | Guest only — see below |
+| Your Exam | Exam kinds |
+| Membership offer / Risk.net | *Conditional* — course upsell, membership add-on |
+| OSTA identity | *Conditional* — a chosen exam centre is in China |
+| Payment | There is something to pay |
+| Complimentary Membership | *Conditional* — `hasCompMembership` **or** the auto-renew offer applies |
+| Exam Preparation Assistance | *Conditional* — the programme has an `examPrepProvidersUrl` |
+| Candidate Acknowledgements | Always |
 
-**Location is not part of this.** It is gated on `!showAddresses`, for both
-audiences — visible while no billing address card is on screen, hidden once one
-is, because that card carries its own country and asking twice is two chances to
-disagree. Gating it on login instead looks reasonable and is wrong: a member
-with no billing country on file then has a required field they cannot see, and
-Register stays disabled with nothing on screen to fix.
+**Auto-renew lives on the Complimentary Membership card, not on Payment.** It
+used to hang off Payment's bottom edge, reasoning that it only applies to a card
+order. True — and it is still gated on exactly that (`showAutorenew`) — but the
+gate is not the subject: a year of free membership was never stated anywhere on
+the form, and the one control that followed from it read as payment small print.
+Being conditional on the payment method is not the same as being about payment.
+
+**Exam Preparation Assistance is optional and must stay optional.** It releases
+personal data to third parties, so an unticked box is a complete answer.
+Never give it a `required` rule. It renders only where GARP publishes a provider
+list — consenting to a network you cannot look at is consent in name only. The
+slugs genuinely differ per programme (FRM/SCR `exam-preparation-providers`, RAI
+`exam-prep-providers`); all three are verified against the live site, so do not
+"regularise" them.
+
+**Candidate Acknowledgements is four ticks, all shown to everyone.** Candidate
+Responsibility and Exam Policies (exam kinds only — Apex requires them for
+`kind == 'exam'` and nothing else), the combined policies attestation, and the
+marketing-email opt-in. This replaced a split worth remembering, because it was
+wrong in a specific way: a GDPR/CASL country got three separate attestations
+while everyone else got one "by selecting Register you agree…" line and had
+`consent.privacyPolicy` posted `true` on their behalf — consent recorded from
+people who were never shown the statements. It also depended on a Location field
+that no longer exists. Everyone ticking the same boxes is both simpler and
+strictly better consent; do not reintroduce the branch.
+
+Two known gaps in that card, neither a code bug:
+
+- **There is no Refund Policy URL.** Every candidate path 404s
+  (`/refund-policy`, `/refunds`, `/policies/refund-policy`, the per-programme
+  variants). It renders as plain text inside the tick until GARP publishes one.
+- **`marketingEmails` and `examPrepProviders` are provisional wire names.**
+  `GARP_ExamReg_Dto.ConsentInput` has no member for either, and
+  `JSON.deserialize` drops unknown members silently, so today they travel and
+  are discarded. They are sent anyway so the shape is right the moment the
+  backend adds them — and so nobody later concludes the answer was never
+  collected. Confirm the names before treating either as stored.
+
+### Individual Details, and what a member does **not** see
+
+The 2027 Reg Redesign cut this card down to **email, first name, last name** —
+nothing else. Location, the mobile phone (country code + number) and the
+promotional-SMS opt-in were all removed from the **exam** form, and with them
+their `customer` fields and the `fees` request's `mobilePhoneCodeDigits`. The
+card is therefore **guest-only**: a member's name and email are already on their
+record, so for them it would be a heading over nothing.
+
+**Exam form only.** Affiliate, Event registration and Exam Setup keep their own
+phone and Location fields — they were deliberately left alone.
+
+Two consequences that will look like bugs if you meet them cold:
+
+- **No country is lost for tax.** Stripe derives the jurisdiction from the
+  address it is sent, and the one locally-taxed path (wire/ACH) still shows the
+  billing address card, which carries its own country. The billing country is
+  now the *only* country the form knows.
+- **The address card is the sole entry point for the country cascade.** §6's
+  "wire it from **both** entry points" had two because Location was one of them.
+  There is one now.
 
 ### The guest byline
 
@@ -429,9 +496,57 @@ It is the upfront half of the same conversation the server has at submit via
 | The portal sidebar / alert bar | `_publicFormLayout` has its own chrome |
 
 `_publicFormLayout`'s toolbar **must** stay `h-16` / `app:h-20` with a matching
-spacer. This is load-bearing, not cosmetic: the forms size themselves with
-`h-[calc(100vh-4rem)]` / `app:h-[calc(100vh-5rem)]`, so any other header height
-pushes the sticky submit bar off-screen.
+spacer — the same geometry `Navbar` uses. Still load-bearing, though for a
+plainer reason than it once was: the forms no longer measure the toolbar
+themselves (they did, with `h-[calc(100vh-4rem)]` / `app:h-[calc(100vh-5rem)]`
+— that is gone; the spacer takes its row in the frame and the scroller gets
+what is left). What remains is that **the same form is served under both
+shells**, so two shells of different heights would pin its submit bar at two
+different offsets, and `REGISTRATION_RAIL_COLUMN`'s `lg:top-28` is derived from
+that height.
+
+The 2027 Reg Redesign draws the guest bar 77px tall. It is deliberately **not**
+matched: 3px nobody can see is not worth breaking the agreement above.
+
+### The guest chrome is per-programme (2027 Reg Redesign)
+
+Comparing the four redesign frames (FRM, FRM-OSTA, SCR, RAI) showed the chrome
+is the **only** thing that varies between programmes — the Sign In pill, the
+footer and every card inside the form are identical. So adding a programme is
+a data change:
+
+1. three assets in `src/assets/brand/programs/chrome/` — knockout navbar
+   wordmark, circular seal, wide banner art (the art is painterly; no CSS
+   gradient reproduces it, so it is a raster);
+2. one row in **`config/program-chrome.ts`**;
+3. its canvas tint — the `--canvas-<slug>` token in `theme.css` and the
+   `.canvas-<slug>` class in `layout.css`. FRM, SCR and RAI are already there,
+   measured from their own frames.
+
+`lib/guest-registration-chrome.ts` is the single rule both consumers ask, and
+they must not diverge: `PublicShell` asks it by pathname (it is an *ancestor*
+of the route owning `$programType`, so it cannot read the param) to decide the
+banner, and the public route asks it by slug to set the form's `titleInBanner`.
+It returns `undefined` unless the programme has **both** artwork and
+registration config — which is what holds the guest 404, `/registration/
+affiliate` and every not-yet-redesigned programme on the old GARP chrome
+instead of painting them half-redesigned.
+
+Two traps in this area:
+
+- **The banner owns the page's `h1`, so the sticky bar stands its own down.**
+  Both ways of getting that wrong are invisible in a browser: leave the bar
+  title in and the guest page has two `h1`s; hardcode `titleInBanner` and every
+  programme without a banner has none. Pinned by
+  `exam-registration-form.heading.test.tsx`.
+- **The canvas tint reassigns `--background`; it is not a `bg-*` utility.**
+  `@theme inline` inlines the variable into the utility, so overriding
+  `--background` on the scroller re-tints everything inside that paints
+  `bg-background` — including `REGISTRATION_STICKY_BAR`, which paints it so
+  cards do not show through. A `bg-canvas-frm` utility on the page instead
+  leaves that bar the old colour, and the mismatch only appears once someone
+  scrolls. The scroller must also carry `bg-background` itself, or the tint
+  paints nothing.
 
 ### Sign-in offers must be honest
 
@@ -454,17 +569,45 @@ Follow `forms.md`. Registration forms add these, all learned the hard way:
   `getValues` — never through a toggled `rules` object.** RHF registers `rules`
   once at mount and never re-reads them, so a rule switched off by a later
   choice carries on being enforced and the form becomes unsubmittable.
-- **The submit button is disabled until the form is valid.** That needs
-  `mode: "onTouched"` (not `onSubmit`, where `isValid` is not maintained;
-  `onChange` re-renders far more and shouts at people mid-typing).
-- **Anything not owned by RHF must be checked separately.** The exam selection
-  is cascading state in a hook, so `isValid` cannot see it — sitting and exam
-  centre are validated alongside it. Whatever else lives outside the form must
-  be too.
+- **The submit button is never disabled for an incomplete form.** It is held
+  only while a mutation (or, on the exam form, a price fetch) is in flight. A
+  click runs validation; every invalid control gets its red border and inline
+  error; and the FIRST invalid control is scrolled into view and focused.
+  Three lines per form, and the next form gets it the same way:
+
+  ```ts
+  const { formState: { errors, submitCount } } = useForm({ …, shouldFocusError: false })
+  const { formRef } = useRevealInvalidField(submitCount)   // hooks/use-reveal-invalid-field
+  <form ref={formRef} onSubmit={handleSubmit(onValid)} noValidate>
+  ```
+
+  `shouldFocusError: false` is not optional: RHF's own focus jumps without
+  `preventScroll` (the spring then glides back — a visible jerk), walks fields
+  in registration order rather than DOM order, and cannot see a `Controller`.
+  Keep `mode: "onTouched"` — a field still shows its error on first blur, and
+  after the first attempt every field re-validates on change. Do **not** read
+  `isValid` any more; nothing needs it, and while something subscribes to it
+  RHF revalidates the whole form on every keystroke.
+- **The reveal finds controls by `aria-invalid="true"`, in DOM order.** That is
+  the attribute the atoms already paint red from, and ids do not follow field
+  names anywhere consistently. Consequence: a required control that does not
+  set `aria-invalid` is invisible to it. `lib/first-invalid-control.ts` also
+  descends into a flagged `div[role=radiogroup]` to its first live radio — the
+  payment tiles — and never treats `[tabindex]` as focusable (a Radix
+  `RadioGroup` root would forward focus with the very jump being avoided).
+- **Anything not owned by RHF must be checked in `onValid`, first, and flagged
+  the same way.** The exam selection is cascading state in a hook, so RHF cannot
+  see it: `examSelectionErrors` (`lib/registration-presentation.ts`) says what
+  to flag, `YourExamSection` sets `aria-invalid` on the part select, the
+  sitting radios and the centre select, and the form gates those messages on
+  an `attempted` flag set in both `handleSubmit` callbacks. Set in the same
+  submit tick, it batches with RHF's `submitCount` push and lands in the same
+  commit the reveal effect runs after. When there is no control to flag (no
+  sittings published), report at form level — `noSittingAvailable` — rather
+  than doing nothing visible.
 - Conditionally-rendered required fields are safe: a field that unmounts stops
-  counting towards `isValid`. Verified against the current version — if it ever
-  changes, switching payment type would strand the button disabled with no
-  visible field to fix.
+  being validated, so switching payment type cannot strand a submit behind a
+  rule with no visible control.
 - **`useWatch`, never the destructured `watch()`** — the latter returns a fresh
   function each render and opts the component out of memoisation.
 - **Never hand a Radix `Select` a `value` of `undefined`.** It latches into
@@ -479,9 +622,11 @@ Follow `forms.md`. Registration forms add these, all learned the hard way:
 
 ### Changing the billing country is not a field write
 
-It has three consequences, all applied together, and GarpAppv1 applies all
-three from **both** entry points — the Location select *and* the billing address
-card's own country select. Wiring only one leaves the other broken:
+It has three consequences, all applied together. On the **exam** form there is
+now one entry point — the billing address card's own country select, since the
+Location field is gone. Every other form still has two (Location *and* the
+address card), and GarpAppv1 applies all three from both; wiring only one
+leaves the other broken:
 
 1. the address card's country follows it — they are the same country;
 2. the province is cleared, because it belonged to the old country;
@@ -517,9 +662,11 @@ Each of these shipped as a bug once. Recognise them by symptom.
 | Whole screen flashes navigating into one route but not its siblings | That route was put in its own pathless layout group, so the shared shell unmounts and remounts across the boundary | Keep it in `_appLayout` and put the exception in the parent guard (§2) |
 | A pinned column sits lower than the one beside it, before any scrolling | `sticky` with a `top` greater than the element's natural offset pushes it down immediately | Make `top` equal the natural offset (§5) |
 | A value is posted that nobody chose | A field is in `buildRegisterRequest` with no control rendering it, so it ships as its default | Walk the request builder against the UI (§5) |
-| A payment method the country forbids survives a country change | The tile de-selects visually but the form value does not change, because nothing re-runs `defaultPaymentType` | Wire the country-change effects from **both** entry points (§6) |
+| A payment method the country forbids survives a country change | The tile de-selects visually but the form value does not change, because nothing re-runs `defaultPaymentType` | Wire the country-change effects from **every** entry point the form has (§6) |
 | A cleared sub-field still shows its old text | `setValue` on the parent object does not refresh individually-registered child inputs | Set the leaf paths (§6) |
 | Whole files reformatted, huge spurious diff | Running `npx prettier --write` inside the UI bundle. The root `.prettierrc` targets **Apex/XML metadata only**, so it applies 2-space/single-quote defaults to a tabs/double-quote/no-semicolon codebase | **Never run prettier in the UI bundle.** `npm run lint` is the formatter of record |
+| Clicking Submit on an incomplete form does nothing visible | A required control the reveal cannot see: it has no `aria-invalid`, or it is state outside RHF that nothing flags, or nothing is rendered to flag at all | Set `aria-invalid` on the control (§6); check non-RHF state in `onValid` and flag it; fall back to a form-level Alert when there is no control |
+| The page jumps, then glides back, on a failed submit | `shouldFocusError` left at its default — RHF focused the field without `preventScroll` before the spring ran | `shouldFocusError: false` on every form wired to `useRevealInvalidField` (§6) |
 
 Local dev caveat worth knowing before debugging auth: the CLI gateway signs
 every request as an **admin**, so Apex sees a non-community user and reports
@@ -540,8 +687,10 @@ From the UI Bundle directory (`commands.md`): `npm run build`, `npm run lint`,
 - Member → public route redirects to the in-portal form, `regCode` intact
 - Either → `?stripe_return=1&oid=…&on=…` **does not redirect** and shows the
   confirmation, including a purely numeric order number
-- Submit disabled on an empty form, enabled only when complete, and **disabled
-  again** if a required answer is removed
+- Submit **enabled** on an empty form; clicking it lands on the first required
+  control — red, its message under it, scrolled clear of the sticky bar,
+  focused — and each fix clears live; a fully valid click opens the confirm
+  dialog
 - The cart prices end to end
 - Both themes
 

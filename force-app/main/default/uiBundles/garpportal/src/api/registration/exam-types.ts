@@ -170,8 +170,6 @@ export type FeesRequest = {
 	shippingAddress: AddressInput
 	billingAndShippingSame: boolean
 	autoRenew: boolean
-	/** Digits pulled out of `"United States (+1)"` — a VAT-country signal. */
-	mobilePhoneCodeDigits: string | null
 }
 
 export type FeeLine = {
@@ -234,10 +232,6 @@ export type CustomerInput = {
 	firstName: string
 	lastName: string
 	email: string
-	/** `"<countryCode> (+<phoneCode>)"` — Apex reads the digits back out. */
-	mobilePhoneCode: string
-	mobilePhone: string
-	smsPromotionalUpdates: boolean
 	title: string
 	company: string
 }
@@ -278,16 +272,28 @@ export type PersonalInput = {
 /**
  * Consent, stored by Apex as timestamps on the Exam_Attempt__c.
  *
- * `privacyPolicy` is the three compliance ticks collapsed into one, and is
- * true outright for a country that carries no compliance tag. `examPolicy`
- * is the exam-policy AND candidate-responsibility acknowledgements together —
- * Apex refuses the registration outright unless it is true.
+ * `privacyPolicy` carries the policy attestation (privacy notice, code of
+ * conduct, limitation of liability, waiver and release, refunds) — one tick
+ * since the 2027 designs, where it was previously three, and only in a
+ * GDPR/CASL country. `examPolicy` is the exam-policy AND
+ * candidate-responsibility acknowledgements together — Apex refuses the
+ * registration outright unless it is true.
+ *
+ * `marketingEmails` and `examPrepProviders` are the two opt-INS the designs
+ * added. **Both are provisional names**: `GARP_ExamReg_Dto.ConsentInput` has
+ * no member for either, and `JSON.deserialize` drops unknown members silently,
+ * so today they travel and are discarded. They are sent anyway so the wire
+ * shape is right the moment the backend adds them — and so nobody later
+ * concludes the answer was never collected. Confirm the names with the backend
+ * team before treating either as stored.
  */
 export type ConsentInput = {
 	privacyPolicy: boolean
 	examPolicy: boolean
 	osta: boolean
 	releaseExamResults: boolean
+	marketingEmails?: boolean
+	examPrepProviders?: boolean
 }
 
 /** The body for BOTH `verifyAddress` and `register` — they are identical. */

@@ -42,7 +42,7 @@ function CvProgressBar({ progress, className }: CvProgressBarProps) {
 			)}
 		>
 			<div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-				<p className="font-heading text-lg tracking-wide text-foreground">
+				<p className="font-heading text-lg tracking-wide text-heading">
 					<animated.span className="tabular-nums">
 						{count.value.to((value) => Math.round(value))}
 					</animated.span>

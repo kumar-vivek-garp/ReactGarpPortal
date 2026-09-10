@@ -33,7 +33,7 @@ export const PAGE_SHELL = "flex flex-col gap-0"
  * identical to the fixed-height shell it replaced.
  */
 const PAGE_STICKY_HEADER_BASE =
-	"sticky top-0 z-20 -mx-shell-gutter -mt-6 bg-background px-shell-gutter pt-6"
+	"sticky top-0 z-20 -mx-shell-gutter -mt-6 bg-linear-to-b from-surface-gradient-start to-background px-shell-gutter pt-6"
 
 /**
  * A page header that pins while the page's content passes beneath it.

@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { useForm, useWatch } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { Link } from "@tanstack/react-router"
 
 import { AppError } from "@/api/client"
@@ -33,8 +33,8 @@ import {
 	CheckoutUnavailableError,
 	useMaterialPurchaseSubmit,
 } from "@/hooks/use-material-purchase"
+import { useRevealInvalidField } from "@/hooks/use-reveal-invalid-field"
 import { orderDetailsPath } from "@/lib/order-paths"
-import { isShippingAddressComplete } from "@/lib/study-material-checkout"
 import { cn } from "@/lib/utils"
 
 type StudyMaterialPurchaseFormProps = {
@@ -74,18 +74,14 @@ function StudyMaterialPurchaseForm({
 		register,
 		control,
 		handleSubmit,
-		formState: { errors, isValid },
+		formState: { errors, submitCount },
 	} = useForm<PurchaseFormValues>({
 		mode: "onTouched",
+		// One focus, ours — see `useRevealInvalidField`.
+		shouldFocusError: false,
 		defaultValues: toPurchaseFormValues(quote),
 	})
-
-	const [street, city, country] = useWatch({
-		control,
-		name: ["street", "city", "country"],
-	})
-	const addressComplete =
-		!quote.isShippable || isShippingAddressComplete({ street, city, country })
+	const { formRef } = useRevealInvalidField(submitCount)
 
 	/*
 	 * Back from the hosted checkout restores this page from the browser's
@@ -103,9 +99,9 @@ function StudyMaterialPurchaseForm({
 	}, [resetSubmit])
 
 	// Disabled after success too: the browser is on its way to the provider,
-	// and a re-armed button in that gap is a second order.
+	// and a re-armed button in that gap is a second order. Never disabled for
+	// an incomplete address: the click lands on the first missing line.
 	const busy = submit.isPending || submit.isSuccess
-	const canPay = !busy && isValid && addressComplete
 
 	// The order exists but checkout would not open: point at the order, never
 	// at a second Pay.
@@ -123,7 +119,7 @@ function StudyMaterialPurchaseForm({
 	})
 
 	return (
-		<form noValidate onSubmit={onSubmit}>
+		<form ref={formRef} noValidate onSubmit={onSubmit}>
 			<div className={REGISTRATION_STICKY_BAR}>
 				<div className={REGISTRATION_BAR_TITLE_GROUP}>
 					<ProgramsSubpageHeader
@@ -163,12 +159,7 @@ function StudyMaterialPurchaseForm({
 							type="submit"
 							size="lg"
 							className={REGISTRATION_BAR_SUBMIT}
-							disabled={!canPay}
-							title={
-								canPay || busy
-									? undefined
-									: STUDY_MATERIAL_PURCHASE.addressIncomplete
-							}
+							disabled={busy}
 						>
 							{busy
 								? STUDY_MATERIAL_PURCHASE.payBusyLabel
@@ -207,11 +198,6 @@ function StudyMaterialPurchaseForm({
 								recordCountry={quote.shipTo?.country ?? null}
 								disabled={busy}
 							/>
-							{!addressComplete ? (
-								<p className="text-caption text-muted-foreground">
-									{STUDY_MATERIAL_PURCHASE.addressIncomplete}
-								</p>
-							) : null}
 						</>
 					) : null}
 				</div>

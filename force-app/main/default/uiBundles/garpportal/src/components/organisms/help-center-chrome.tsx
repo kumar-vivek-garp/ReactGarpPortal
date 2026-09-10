@@ -32,7 +32,7 @@ function HelpCenterHeader({
 	return (
 		<header className={cn(PAGE_STICKY_HEADER, "space-y-4")}>
 			<div>
-				<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+				<h1 className="font-heading text-3xl font-semibold tracking-wide text-heading">
 					Help Center
 				</h1>
 				<p className="mt-1 max-w-2xl text-sm text-muted-foreground">

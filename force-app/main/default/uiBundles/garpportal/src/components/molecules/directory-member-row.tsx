@@ -54,7 +54,7 @@ function DirectoryMemberRow({
 			</Avatar>
 
 			<div className="min-w-0 flex-1">
-				<h3 className="truncate font-heading text-base leading-snug tracking-wide text-foreground">
+				<h3 className="truncate font-heading text-base leading-snug tracking-wide text-heading">
 					{name}
 				</h3>
 				{subtitle ? (

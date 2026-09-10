@@ -9,10 +9,11 @@ import { AffiliateOutcome } from "@/components/forms/affiliate/sections/affiliat
 import {
 	REGISTRATION_BAR_CONTROL_HEIGHT,
 	REGISTRATION_GRID,
-	REGISTRATION_BAR_CONTROL_GROUP,
 	REGISTRATION_BAR_SUBMIT,
 	REGISTRATION_MAIN_COLUMN,
 	REGISTRATION_RAIL_COLUMN,
+	REGISTRATION_RAIL_CONTROLS,
+	REGISTRATION_RAIL_STACK,
 	REGISTRATION_SHELL,
 	REGISTRATION_STICKY_BAR,
 } from "@/components/forms/registration-shell"
@@ -40,21 +41,11 @@ function AffiliateRegistrationSkeleton() {
 		<div className="flex flex-col gap-6" aria-busy aria-live="polite">
 			<span className="sr-only">Loading Affiliate membership registration…</span>
 
-			{/* The header bar: title, total, submit. */}
+			{/* The header bar carries only the title now — the total and submit
+			    moved into the rail, and this has to mirror that or the page steps
+			    sideways when the payload lands. */}
 			<div className={REGISTRATION_STICKY_BAR}>
 				<Skeleton className="h-8 w-80 max-w-full" />
-				<div className={REGISTRATION_BAR_CONTROL_GROUP}>
-					<Skeleton
-						className={cn(REGISTRATION_BAR_CONTROL_HEIGHT, "w-16 shrink-0")}
-					/>
-					<Skeleton
-						className={cn(
-							REGISTRATION_BAR_CONTROL_HEIGHT,
-							REGISTRATION_BAR_SUBMIT,
-							"rounded-xl sm:w-32",
-						)}
-					/>
-				</div>
 			</div>
 
 			<div className={REGISTRATION_GRID}>
@@ -73,7 +64,21 @@ function AffiliateRegistrationSkeleton() {
 					<SkeletonCard rows={<SkeletonRows count={3} />} />
 				</div>
 
-				<aside className={REGISTRATION_RAIL_COLUMN}>
+				<aside
+					className={cn(REGISTRATION_RAIL_COLUMN, REGISTRATION_RAIL_STACK)}
+				>
+					<div className={REGISTRATION_RAIL_CONTROLS}>
+						<Skeleton
+							className={cn(REGISTRATION_BAR_CONTROL_HEIGHT, "w-16 shrink-0")}
+						/>
+						<Skeleton
+							className={cn(
+								REGISTRATION_BAR_CONTROL_HEIGHT,
+								REGISTRATION_BAR_SUBMIT,
+								"rounded-xl sm:w-32",
+							)}
+						/>
+					</div>
 					<div className="flex flex-col gap-4">
 						<SkeletonCard rows={<SkeletonRows count={4} />} />
 					</div>

@@ -25,7 +25,7 @@ function ExpiredLink() {
 			<div className="flex items-start gap-3">
 				<Icon className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
 				<div className="space-y-1">
-					<p className="font-heading text-lg font-semibold tracking-wide text-foreground">
+					<p className="font-heading text-lg font-semibold tracking-wide text-heading">
 						{copy.title}
 					</p>
 					<p className="text-sm text-muted-foreground">{copy.body}</p>
@@ -78,7 +78,7 @@ function GatedContentPanel({ className }: GatedContentPanelProps) {
 
 	return (
 		<div className={cn("max-w-2xl space-y-6", className)}>
-			<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+			<h1 className="font-heading text-3xl font-semibold tracking-wide text-heading">
 				{GATED_CONTENT_TITLE}
 			</h1>
 

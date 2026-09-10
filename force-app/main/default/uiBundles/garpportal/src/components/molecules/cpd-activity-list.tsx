@@ -74,7 +74,7 @@ function CpdActivityList({
 	return (
 		<section className={cn("space-y-3", className)}>
 			{showTitle ? (
-				<h2 className="font-heading text-xl font-semibold tracking-wide text-foreground">
+				<h2 className="font-heading text-xl font-semibold tracking-wide text-heading">
 					{copy.title}
 					{claims.length > 0 ? (
 						<span className="ml-2 text-base font-normal text-muted-foreground">
@@ -124,7 +124,7 @@ function CpdActivityList({
 									</span>
 
 									<div className="min-w-0 flex-1 space-y-1.5">
-										<h3 className="font-heading text-base leading-snug tracking-wide text-foreground">
+										<h3 className="font-heading text-base leading-snug tracking-wide text-heading">
 											{row.title}
 										</h3>
 										<MetaLines

@@ -83,7 +83,7 @@ function PartPicker({
 	return (
 		<div className="flex flex-col gap-4 rounded-xl border border-border p-4">
 			{heading ? (
-				<h3 className="font-heading text-base tracking-wide text-foreground">
+				<h3 className="font-heading text-base tracking-wide text-heading">
 					{heading}
 				</h3>
 			) : null}

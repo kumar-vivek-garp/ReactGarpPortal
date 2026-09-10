@@ -158,6 +158,49 @@ export function publicRegistrationFallback(
 }
 
 /**
+ * The programme slug a PUBLIC registration path is for, or `undefined` when the
+ * path is not one.
+ *
+ * `PublicShell` needs this to pick the guest chrome (navbar wordmark, banner,
+ * page canvas), and it cannot read `$programType` from route context: it is an
+ * *ancestor* of the route that owns the param. Deriving it from the pathname
+ * keeps that a pure, synchronous read — the shell already subscribes to
+ * `state.location` for the Sign In return path, so this costs nothing and adds
+ * no effect. Setting it from the leaf via a store instead would paint the
+ * default chrome for one frame first, then swap.
+ *
+ * `/registration/affiliate` returns `undefined` on purpose. It is a static
+ * sibling of `/registration/$programType`, not a programme — it has no exam,
+ * no seal and no banner in the designs — and TanStack Router matches it ahead
+ * of the dynamic segment for exactly that reason.
+ */
+/**
+ * True for any public registration FORM path — every programme plus affiliate.
+ *
+ * Broader than `publicRegistrationProgramSlug` on purpose, and the two answer
+ * different questions. This one decides page *layout* (the wider gutter the
+ * 2027 designs use), which every guest form gets. That one decides *chrome*
+ * (banner, wordmark, canvas), which only the programmes with a Figma frame get.
+ *
+ * Excludes the guest 404, which wears this same shell but is not a form.
+ */
+export function isPublicRegistrationFormPath(pathname: string): boolean {
+	return /^\/registration\/[^/]+\/?$/.test(pathname)
+}
+
+export function publicRegistrationProgramSlug(
+	pathname: string,
+): string | undefined {
+	const match = /^\/registration\/([^/]+)\/?$/.exec(pathname)
+	if (!match) return undefined
+
+	const slug = match[1].toLowerCase()
+	if (slug === "affiliate") return undefined
+
+	return slug
+}
+
+/**
  * True when this load is the payment provider returning from a CANCELLED
  * checkout. Suppresses guard redirects for the same reason `isPaymentReturn`
  * does — this leg carries the `oid` the rollback needs, and a bounce drops it,

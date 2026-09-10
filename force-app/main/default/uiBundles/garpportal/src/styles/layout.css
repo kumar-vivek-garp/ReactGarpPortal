@@ -4,4 +4,50 @@
 		@apply w-full px-shell-gutter;
 	}
 
+	/*
+	 * Per-programme page canvas for the guest registration forms (2027 Reg
+	 * Redesign). These reassign `--background` rather than painting a
+	 * background themselves, which is the whole point: `@theme inline` inlines
+	 * the variable into the utility, so `.bg-background` compiles to
+	 * `background-color: var(--background)` and every descendant that uses it
+	 * re-tints from here. That matters most for `REGISTRATION_STICKY_BAR`,
+	 * which paints `bg-background` to stop cards showing through it — a plain
+	 * `bg-canvas-*` utility on the page would have left the bar the old colour,
+	 * and the mismatch would only have shown up once someone scrolled.
+	 *
+	 * Same mechanism `.dark` already uses. Written out one class per programme
+	 * because Tailwind's scanner cannot see a composed `canvas-${slug}`.
+	 * Resolved from a programme slug in `config/program-chrome.ts`.
+	 */
+	/*
+	 * The wider inset the 2027 guest registration forms sit in — 104px at the
+	 * designs' 1440 frame, against the portal's own 1rem.
+	 *
+	 * Set as the gutter TOKEN rather than as padding on any one element, so
+	 * everything derived from it moves together: the banner's inner row, the
+	 * page container, and — the one that matters — the sticky submit bar, whose
+	 * `-mx-shell-gutter` bleed has to keep exactly cancelling the container's
+	 * `px-shell-gutter` inset. Padding one element instead would leave the bar
+	 * short of the page edges, visible only once cards scroll beneath it.
+	 *
+	 * Desktop only: 104px of gutter each side on a phone would leave almost
+	 * nothing for the form, and the designs specify 1440 only.
+	 */
+	.guest-form-gutter {
+		@media (width >= 60rem) {
+			--shell-gutter: 6.5rem;
+		}
+	}
+
+	.canvas-frm {
+		--background: var(--canvas-frm);
+	}
+
+	.canvas-scr {
+		--background: var(--canvas-scr);
+	}
+
+	.canvas-rai {
+		--background: var(--canvas-rai);
+	}
 }

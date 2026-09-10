@@ -164,7 +164,7 @@ function RegistrationOutcome({
 					<div className="flex items-center gap-3">
 						<Icon className={cn("size-7 shrink-0", TONE_TEXT[tone])} aria-hidden />
 						<div className="flex flex-col">
-							<h2 className="font-heading text-xl font-semibold tracking-wide text-foreground">
+							<h2 className="font-heading text-xl font-semibold tracking-wide text-heading">
 								{copy.title}
 							</h2>
 							<p className="text-caption leading-relaxed text-muted-foreground">

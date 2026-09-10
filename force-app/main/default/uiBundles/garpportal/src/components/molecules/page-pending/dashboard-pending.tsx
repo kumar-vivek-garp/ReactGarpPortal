@@ -74,7 +74,7 @@ function DashboardPending() {
 				<p className="text-xs font-semibold tracking-wider text-primary uppercase">
 					Member home
 				</p>
-				<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+				<h1 className="font-heading text-3xl font-semibold tracking-wide text-heading">
 					Dashboard
 				</h1>
 				<p className="max-w-2xl text-sm text-muted-foreground">

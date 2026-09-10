@@ -78,7 +78,9 @@ export function buildDashboardCardPresentation(
 		const sitting = [examType, administration ?? period]
 			.filter(Boolean)
 			.join(" · ")
-		if (sitting) metaLines.push({ icon: "administration", text: sitting })
+		if (sitting) {
+			metaLines.push({ icon: "administration", text: sitting, emphasis: "value" })
+		}
 
 		const window = registrationWindowLine(
 			meta.isRegistrationOpen,

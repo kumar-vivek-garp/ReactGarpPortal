@@ -218,4 +218,73 @@ describe("ProgramDetailHero — actions", () => {
 		rerender(<ProgramDetailHero presentation={presentation()} />)
 		expect(screen.queryByRole("link")).not.toBeInTheDocument()
 	})
+
+	/*
+	 * The detail page and the Register page name the same programme, so they must
+	 * not do it in two different typefaces. `base.css` gives every h1 Klinic Slab,
+	 * so the sans family has to be stated explicitly here.
+	 */
+	it("names the programme in the same family the registration bar uses", async () => {
+		await renderWithRouterProviders(<ProgramDetailHero presentation={presentation()} />)
+
+		const heading = screen.getByRole("heading", { level: 1 })
+		expect(heading).toHaveClass("font-sans", "font-extrabold")
+		expect(heading).not.toHaveClass("font-heading")
+	})
+
+	describe("the logo tile", () => {
+		const CHROME = {
+			wordmark: "/wordmark.png",
+			label: "FRM",
+			seal: "/seal.png",
+			bannerArt: "/banner.jpg",
+			canvas: "canvas-frm",
+			barWash: "bg-linear-to-b from-garp-cyan/12 to-transparent",
+		}
+
+		it("sits the API logo on the programme's own hue", async () => {
+			const { container } = await renderWithRouterProviders(
+				<ProgramDetailHero
+					presentation={presentation()}
+					logoUrl="/api-logo.png"
+					chrome={CHROME}
+				/>,
+			)
+
+			const img = container.querySelector("img")
+			expect(img).toHaveAttribute("src", "/api-logo.png")
+			expect(img?.parentElement?.className).toContain("from-garp-cyan/12")
+		})
+
+		/*
+		 * The API has no logo for every programme, and an empty tile reads as a
+		 * failed load. The seal is the same asset the registration bar shows.
+		 */
+		it("falls back to the seal when the API has no logo", async () => {
+			const { container } = await renderWithRouterProviders(
+				<ProgramDetailHero presentation={presentation()} chrome={CHROME} />,
+			)
+
+			expect(container.querySelector("img")).toHaveAttribute("src", "/seal.png")
+		})
+
+		/* No chrome, no logo — the tile stays away rather than showing an empty box. */
+		it("renders no tile at all for a programme with neither", async () => {
+			const { container } = await renderWithRouterProviders(
+				<ProgramDetailHero presentation={presentation()} />,
+			)
+
+			expect(container.querySelector("img")).toBeNull()
+		})
+
+		it("keeps the neutral tile when the programme has no chrome", async () => {
+			const { container } = await renderWithRouterProviders(
+				<ProgramDetailHero presentation={presentation()} logoUrl="/api-logo.png" />,
+			)
+
+			expect(container.querySelector("img")?.parentElement?.className).toContain(
+				"bg-muted/40",
+			)
+		})
+	})
 })

@@ -15,7 +15,6 @@ import type {
 	SelectionInput,
 	StudyMaterialView,
 } from "@/api/registration/exam-types"
-import { phoneCodeDigits } from "@/lib/registration-presentation"
 
 export type RegistrationAddress = {
 	company: string
@@ -129,7 +128,6 @@ export type FeesInput = {
 	autoRenew: boolean
 	membershipSelected: boolean
 	riskNetSelected: boolean
-	mobilePhoneCode: string
 }
 
 /**
@@ -156,7 +154,6 @@ export function buildFeesRequest(input: FeesInput): FeesRequest {
 		),
 		billingAndShippingSame: input.billingAndShippingSame === true,
 		autoRenew: input.autoRenew === true,
-		mobilePhoneCodeDigits: phoneCodeDigits(input.mobilePhoneCode),
 	}
 }
 
@@ -234,33 +231,32 @@ export type RegisterInput = FeesInput & {
 	firstName: string
 	lastName: string
 	email: string
-	mobilePhone: string
-	smsPromotionalUpdates: boolean
 	title?: string
 	company?: string
 	/** Only sent when a chosen exam centre is an OSTA site. */
 	personal: PersonalInput | null
-	/** True when the billing country carries a GDPR/CASL tag. */
-	isComplianceCountry: boolean
-	attestPrivacyNotice: boolean
-	attestLimitationOfLiability: boolean
-	attestReleaseAndWaiver: boolean
+	/** Privacy notice, conduct, liability, waiver and refunds — one tick. */
+	attestPolicies: boolean
 	examPolicy: boolean
 	candidateResponsibility: boolean
 	consentReleaseExamResults?: boolean
+	/** Opt-INs. Unticked is a real answer, so neither defaults to true. */
+	marketingEmails?: boolean
+	examPrepProviders?: boolean
 }
 
 /**
  * The body for BOTH `verifyAddress` and `register` — Apex takes the identical
  * shape for each, so building it twice would be two chances to diverge.
  *
- * Two collapses happen here, and both are the server's model rather than ours:
+ * One collapse happens here, and it is the server's model rather than ours:
+ * `examPolicy` is the exam-policy AND candidate-responsibility
+ * acknowledgements. Apex refuses the whole registration unless it is true.
  *
- * - `privacyPolicy` is the three compliance ticks ANDed together, and is
- *   simply `true` for a country with no compliance tag — those candidates
- *   agree by submitting, which is what the notice above the button says.
- * - `examPolicy` is the exam-policy AND candidate-responsibility
- *   acknowledgements. Apex refuses the whole registration unless it is true.
+ * `privacyPolicy` is now a straight pass-through of a tick the candidate
+ * actually made. It used to be `true` outright outside a GDPR/CASL country —
+ * consent recorded from people who had never been shown the statements — and
+ * the 2027 designs put the tick in front of everyone, so the branch is gone.
  */
 export function buildRegisterRequest(input: RegisterInput): ExamRegisterRequest {
 	return {
@@ -277,9 +273,6 @@ export function buildRegisterRequest(input: RegisterInput): ExamRegisterRequest 
 			firstName: input.firstName,
 			lastName: input.lastName,
 			email: input.email,
-			mobilePhoneCode: input.mobilePhoneCode,
-			mobilePhone: input.mobilePhone,
-			smsPromotionalUpdates: input.smsPromotionalUpdates === true,
 			title: input.title ?? "",
 			company: input.company ?? "",
 		},
@@ -296,15 +289,13 @@ export function buildRegisterRequest(input: RegisterInput): ExamRegisterRequest 
 		billingAndShippingSame: input.billingAndShippingSame === true,
 		autoRenew: input.autoRenew === true,
 		consent: {
-			privacyPolicy: input.isComplianceCountry
-				? input.attestPrivacyNotice === true &&
-					input.attestLimitationOfLiability === true &&
-					input.attestReleaseAndWaiver === true
-				: true,
+			privacyPolicy: input.attestPolicies === true,
 			examPolicy:
 				input.examPolicy === true && input.candidateResponsibility === true,
 			osta: input.personal?.ostaConsent === true,
 			releaseExamResults: input.consentReleaseExamResults === true,
+			marketingEmails: input.marketingEmails === true,
+			examPrepProviders: input.examPrepProviders === true,
 		},
 	}
 }

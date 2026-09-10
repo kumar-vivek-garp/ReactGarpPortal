@@ -40,7 +40,7 @@ function BenefitsEmptyState() {
 	return (
 		<div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-16 text-center">
 			<Icon className="size-10 text-muted-foreground" aria-hidden />
-			<p className="mt-4 font-heading text-lg font-semibold tracking-wide text-foreground">
+			<p className="mt-4 font-heading text-lg font-semibold tracking-wide text-heading">
 				{title}
 			</p>
 			<p className="mt-2 max-w-md text-sm text-muted-foreground">{message}</p>
@@ -119,7 +119,7 @@ function BenefitsTabBody({
 						 * rhythm as the Programs / Study Materials / Events headings
 						 * without pretending to classify a name we have not seen.
 						 */}
-						<h2 className="flex items-center gap-2 font-heading text-xl font-semibold tracking-wide text-foreground">
+						<h2 className="flex items-center gap-2 font-heading text-xl font-semibold tracking-wide text-heading">
 							<BadgeCheck className="size-5 shrink-0 text-primary" aria-hidden />
 							{section.name}
 							<span className="text-base font-normal text-muted-foreground">
@@ -213,7 +213,7 @@ function MembershipPanel({ tab, view }: MembershipPanelProps) {
 		>
 			<header className={cn(PAGE_STICKY_HEADER, "space-y-4")}>
 				<div className="flex flex-wrap items-center justify-between gap-3">
-					<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+					<h1 className="font-heading text-3xl font-semibold tracking-wide text-heading">
 						Membership Benefits
 					</h1>
 

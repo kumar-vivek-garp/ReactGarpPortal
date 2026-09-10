@@ -64,8 +64,6 @@ type ExamRegistrationStateArgs = {
 	 * and the address decides shipping — so a stale value here means a total
 	 * that does not match the order.
 	 */
-	billingCountry: string
-	mobilePhoneCode: string
 	paymentType: string
 	billingAddress: RegistrationAddress
 	shippingAddress: RegistrationAddress
@@ -98,8 +96,6 @@ export function useExamRegistrationState({
 	programType,
 	regCode,
 	courseCode,
-	billingCountry,
-	mobilePhoneCode,
 	paymentType,
 	billingAddress,
 	shippingAddress,
@@ -218,17 +214,12 @@ export function useExamRegistrationState({
 		)
 	}, [])
 
-	/**
-	 * A card order shows no address card, so the Location select is the only
-	 * country there is — fall back to it rather than pricing against a blank.
+	/*
+	 * The billing address card is the only country source since the Location
+	 * select was removed. Stripe derives tax from the address it is sent, and
+	 * the locally-taxed wire/ACH paths are exactly the ones that show the card.
 	 */
-	const pricedBilling: RegistrationAddress = useMemo(
-		() => ({
-			...billingAddress,
-			country: billingAddress.country || billingCountry,
-		}),
-		[billingAddress, billingCountry],
-	)
+	const pricedBilling: RegistrationAddress = billingAddress
 
 	const feesRequest = useMemo(
 		() =>
@@ -248,8 +239,7 @@ export function useExamRegistrationState({
 				autoRenew,
 				membershipSelected,
 				riskNetSelected,
-				mobilePhoneCode,
-			}),
+					}),
 		[
 			programType,
 			courseCode,
@@ -264,8 +254,7 @@ export function useExamRegistrationState({
 			autoRenew,
 			membershipSelected,
 			riskNetSelected,
-			mobilePhoneCode,
-		],
+			],
 	)
 
 	const debouncedRequest = useDebouncedValue(feesRequest, FEES_DEBOUNCE_MS)

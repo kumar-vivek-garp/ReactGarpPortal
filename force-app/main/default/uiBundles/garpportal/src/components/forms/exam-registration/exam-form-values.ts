@@ -1,12 +1,8 @@
 import type { PersonalInfoEditData } from "@/api/personal-info/types"
-import type {
-	ExamRegisterRequest,
-	RegistrationCountry,
-} from "@/api/registration/exam-types"
+import type { ExamRegisterRequest } from "@/api/registration/exam-types"
 import {
 	emptyAddress,
 	toRegistrationAddress,
-	toRegistrationPhoneCode,
 	type RegistrationAddress,
 } from "@/lib/registration-payloads"
 
@@ -37,20 +33,6 @@ export type ExamFormValues = {
 	firstName: string
 	lastName: string
 	email: string
-	/** `"<countryCode> (+<phoneCode>)"` — Apex reads the digits back out. */
-	mobilePhoneCode: string
-	mobilePhone: string
-	smsPromotionalUpdates: boolean
-
-	/**
-	 * Billing country, shown as "Location" when the address cards are hidden.
-	 *
-	 * Kept alongside `billing.country` rather than derived from it because a
-	 * card order never shows an address card at all, and something still has to
-	 * establish the country — it decides tax, shipping and which payment types
-	 * are even offered.
-	 */
-	country: string
 
 	paymentType: string
 	billing: RegistrationAddress
@@ -77,10 +59,18 @@ export type ExamFormValues = {
 	candidateResponsibility: boolean
 	examPolicy: boolean
 
-	/** Only asked for in GDPR/CASL countries; collapse into `privacyPolicy`. */
-	attestPrivacyNotice: boolean
-	attestLimitationOfLiability: boolean
-	attestReleaseAndWaiver: boolean
+	/**
+	 * The privacy / conduct / liability / waiver / refund confirmation, asked of
+	 * everyone since the 2027 designs. Collapses into `consent.privacyPolicy`,
+	 * which is the only slot the contract has for it.
+	 */
+	attestPolicies: boolean
+
+	/** Opt-IN to GARP marketing email. Unticked is a real answer. */
+	marketingEmails: boolean
+
+	/** Opt-IN to GARP sharing contact details with third-party prep providers. */
+	examPrepProviders: boolean
 
 	osta: ExamOstaValues
 }
@@ -108,10 +98,6 @@ export const EMPTY_EXAM_FORM_VALUES: ExamFormValues = {
 	firstName: "",
 	lastName: "",
 	email: "",
-	mobilePhoneCode: "",
-	mobilePhone: "",
-	smsPromotionalUpdates: false,
-	country: "",
 	paymentType: "",
 	billing: emptyAddress(),
 	shipping: emptyAddress(),
@@ -122,9 +108,9 @@ export const EMPTY_EXAM_FORM_VALUES: ExamFormValues = {
 	riskNetSelected: false,
 	candidateResponsibility: false,
 	examPolicy: false,
-	attestPrivacyNotice: false,
-	attestLimitationOfLiability: false,
-	attestReleaseAndWaiver: false,
+	attestPolicies: false,
+	marketingEmails: false,
+	examPrepProviders: false,
 	osta: EMPTY_EXAM_OSTA_VALUES,
 }
 
@@ -147,7 +133,6 @@ export const EMPTY_EXAM_FORM_VALUES: ExamFormValues = {
  */
 export function toExamFormValues(
 	data: PersonalInfoEditData | null,
-	countries: RegistrationCountry[],
 ): ExamFormValues {
 	if (!data) return EMPTY_EXAM_FORM_VALUES
 
@@ -158,13 +143,6 @@ export function toExamFormValues(
 		firstName: data.firstName ?? "",
 		lastName: data.lastName ?? "",
 		email: data.email ?? "",
-		mobilePhoneCode: toRegistrationPhoneCode(
-			data.mobilePhoneCode,
-			data.billing?.country,
-			countries,
-		),
-		mobilePhone: data.mobilePhone ?? "",
-		country: billing.country,
 		billing,
 		shipping: data.sameAsBilling
 			? billing
@@ -188,9 +166,8 @@ export function toExamFormValues(
  * unticked" (registration-forms.md §6), matching GarpAppv1: this is the same
  * registration, the same session and the same candidate, who ticked them
  * minutes ago before pressing Back on the payment page. The payload holds
- * them collapsed (three compliance ticks as one `privacyPolicy`; exam policy
- * and candidate responsibility as one `examPolicy`), so they can only come
- * back together.
+ * them collapsed (exam policy and candidate responsibility as one
+ * `examPolicy`), so those two can only come back together.
  */
 export function toExamFormValuesFromRequest(
 	request: ExamRegisterRequest,
@@ -225,10 +202,6 @@ export function toExamFormValuesFromRequest(
 		firstName: customer.firstName ?? base.firstName,
 		lastName: customer.lastName ?? base.lastName,
 		email: customer.email ?? base.email,
-		mobilePhoneCode: customer.mobilePhoneCode ?? base.mobilePhoneCode,
-		mobilePhone: customer.mobilePhone ?? base.mobilePhone,
-		smsPromotionalUpdates: customer.smsPromotionalUpdates === true,
-		country: billingAddress?.country ?? base.country,
 		paymentType: request.paymentType ?? "",
 		billing: { ...emptyAddress(), ...billingAddress },
 		shipping: { ...emptyAddress(), ...shippingAddress },
@@ -238,9 +211,9 @@ export function toExamFormValuesFromRequest(
 		riskNetSelected: request.riskNetSelected === true,
 		candidateResponsibility: consent?.examPolicy === true,
 		examPolicy: consent?.examPolicy === true,
-		attestPrivacyNotice: consent?.privacyPolicy === true,
-		attestLimitationOfLiability: consent?.privacyPolicy === true,
-		attestReleaseAndWaiver: consent?.privacyPolicy === true,
+		attestPolicies: consent?.privacyPolicy === true,
+		marketingEmails: consent?.marketingEmails === true,
+		examPrepProviders: consent?.examPrepProviders === true,
 		osta: restoredOsta,
 	}
 }

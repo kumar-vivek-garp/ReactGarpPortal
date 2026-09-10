@@ -127,7 +127,7 @@ function DashboardCard({ card, onDismiss, className }: DashboardCardProps) {
 							</p>
 						) : null}
 						<div className="flex flex-wrap items-center gap-2">
-							<CardTitle className="font-heading text-lg tracking-wide text-foreground">
+							<CardTitle className="font-heading text-lg tracking-wide text-heading">
 								{card.title}
 							</CardTitle>
 							{presentation.badgeLabel && presentation.badgeTone ? (
@@ -155,7 +155,7 @@ function DashboardCard({ card, onDismiss, className }: DashboardCardProps) {
 
 			<CardContent className="flex-1 space-y-3 px-5 pb-4">
 				{isProfile && percent != null ? (
-					<div className="rounded-xl border border-border/60 bg-background/50 p-3">
+					<div className="rounded-xl border border-inset-border bg-inset p-3">
 						<ProfileCompletenessMeter
 							percent={percent}
 							missing={meta.missing}
@@ -189,7 +189,7 @@ function DashboardCard({ card, onDismiss, className }: DashboardCardProps) {
 
 				{isEvents ? (
 					(meta.upcomingEvents ?? []).length > 0 ? (
-						<div className="rounded-xl border border-border/60 bg-background/50 p-3">
+						<div className="rounded-xl border border-inset-border bg-inset p-3">
 							<DashboardEventsList events={meta.upcomingEvents ?? []} />
 						</div>
 					) : (
@@ -200,7 +200,7 @@ function DashboardCard({ card, onDismiss, className }: DashboardCardProps) {
 				) : null}
 
 				{isCpd && (meta.cpdRows ?? []).length > 0 ? (
-					<div className="space-y-2 rounded-xl border border-border/60 bg-background/50 p-3">
+					<div className="space-y-2 rounded-xl border border-inset-border bg-inset p-3">
 						<CpdCreditBars rows={meta.cpdRows ?? []} />
 						{meta.cpdRemaining ? (
 							<p className="text-xs text-muted-foreground">
@@ -211,7 +211,7 @@ function DashboardCard({ card, onDismiss, className }: DashboardCardProps) {
 				) : null}
 
 				{isDirectory && meta.searchEnabled ? (
-					<div className="rounded-xl border border-border/60 bg-background/50 p-3">
+					<div className="rounded-xl border border-inset-border bg-inset p-3">
 						<DirectorySearch className="min-h-40" />
 					</div>
 				) : null}
@@ -223,7 +223,7 @@ function DashboardCard({ card, onDismiss, className }: DashboardCardProps) {
 							.map((notice, index) => (
 								<li
 									key={`${notice.notificationTitle ?? "notice"}-${index}`}
-									className="rounded-xl border border-border/60 bg-background/50 p-3"
+									className="rounded-xl border border-inset-border bg-inset p-3"
 								>
 									<p className="text-sm font-semibold text-foreground">
 										{notice.notificationTitle ?? "Notification"}

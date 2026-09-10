@@ -121,7 +121,7 @@ function MaterialBlock({
 	return (
 		<div className="space-y-4">
 			{title ? (
-				<h3 className="font-heading text-lg font-semibold tracking-wide text-foreground">
+				<h3 className="font-heading text-lg font-semibold tracking-wide text-heading">
 					{title}
 					<span className="ml-2 text-base font-normal text-muted-foreground">
 						({items.length})
@@ -174,7 +174,7 @@ function ProgramSection({
 			<div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
 				<h2
 					id={`study-${program.key}`}
-					className="flex items-center gap-2 font-heading text-xl font-semibold tracking-wide text-foreground"
+					className="flex items-center gap-2 font-heading text-xl font-semibold tracking-wide text-heading"
 				>
 					<Badge
 						className={cn(
@@ -310,7 +310,7 @@ function StudyMaterialsPanel({ tab, view }: StudyMaterialsPanelProps) {
 			{/* Fixed chrome: heading + program tabs — does not scroll. */}
 			<header className={cn(PAGE_STICKY_HEADER, "space-y-4")}>
 				<div className="flex flex-wrap items-center justify-between gap-3">
-					<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+					<h1 className="font-heading text-3xl font-semibold tracking-wide text-heading">
 						{STUDY_MATERIALS_TITLE}
 					</h1>
 

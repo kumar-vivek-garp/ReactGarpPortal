@@ -38,11 +38,11 @@ function NotFoundPanel({ variant, attemptedPath, className }: NotFoundPanelProps
 		>
 			<p
 				aria-hidden
-				className="font-heading text-7xl font-bold tracking-tight text-foreground sm:text-8xl"
+				className="font-heading text-7xl font-bold tracking-tight text-heading sm:text-8xl"
 			>
 				4<span className="text-primary">0</span>4
 			</p>
-			<h1 className="mt-4 font-heading text-2xl font-semibold tracking-wide text-foreground">
+			<h1 className="mt-4 font-heading text-2xl font-semibold tracking-wide text-heading">
 				Page not found
 			</h1>
 			<p className="mt-2 max-w-md text-sm text-muted-foreground">

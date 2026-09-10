@@ -74,7 +74,7 @@ function MyAccountPanel({ tab, status, orders }: MyAccountPanelProps) {
 			    describes, rather than as a bare rail above every tab. */}
 			<header className={PAGE_STICKY_HEADER}>
 				<div className="flex flex-wrap items-center justify-between gap-3">
-					<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+					<h1 className="font-heading text-3xl font-semibold tracking-wide text-heading">
 						My Account
 					</h1>
 

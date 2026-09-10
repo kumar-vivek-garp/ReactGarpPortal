@@ -44,7 +44,7 @@ function OrdersEmptyState({
 	return (
 		<div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
 			<Icon className="size-10 text-muted-foreground" aria-hidden />
-			<p className="mt-4 font-heading text-lg font-semibold tracking-wide text-foreground">
+			<p className="mt-4 font-heading text-lg font-semibold tracking-wide text-heading">
 				{title}
 			</p>
 			{message ? (
@@ -72,7 +72,7 @@ function OrderSectionBlock({
 	return (
 		<section className="space-y-4">
 			{showHeading ? (
-				<h2 className="flex items-center gap-2 font-heading text-xl font-semibold tracking-wide text-foreground">
+				<h2 className="flex items-center gap-2 font-heading text-xl font-semibold tracking-wide text-heading">
 					<Icon className="size-5 shrink-0 text-primary" aria-hidden />
 					{meta.heading}
 					<span className="text-base font-normal text-muted-foreground">

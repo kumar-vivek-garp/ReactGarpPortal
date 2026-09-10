@@ -350,6 +350,100 @@ export function showAutorenew(
 	)
 }
 
+/**
+ * How long the included membership runs, as the fragment the card's copy
+ * interpolates — "you've unlocked {term} Individual Membership".
+ *
+ * Prose, not a number: "12 months of" is clumsy where "one year of" is not. It
+ * carries its own trailing "of" so the no-term case can drop the preposition
+ * and stay grammatical ("unlocked complimentary Individual Membership") — a
+ * missing term must not be filled with a guessed length, because the server
+ * owns this figure and being wrong on a benefit statement is worse than being
+ * vague.
+ */
+export function compMembershipTerm(months: number | null | undefined): string {
+	if (typeof months !== "number" || !Number.isFinite(months) || months <= 0) {
+		return "complimentary"
+	}
+	if (months === 1) return "one month of"
+	if (months === 6) return "six months of"
+	if (months === 12) return "one year of"
+	if (months === 24) return "two years of"
+	if (months % 12 === 0) return `${months / 12} years of`
+	return `${months} months of`
+}
+
+/** What the exam section can be told is missing, one message per control. */
+export type ExamSelectionErrors = {
+	part?: string
+	part1Sitting?: string
+	part1Site?: string
+	part2Sitting?: string
+	part2Site?: string
+}
+
+type ExamSelectionErrorArgs = {
+	partsAvailable: string[]
+	selection: {
+		partSelected: string
+		part1: { rateId: string; siteId: string }
+		part2: { rateId: string; siteId: string }
+	}
+	part1Active: boolean
+	part2Active: boolean
+	part1Admins: ReadonlyArray<{ id: string; sites: ReadonlyArray<unknown> }>
+	part2Admins: ReadonlyArray<{ id: string; sites: ReadonlyArray<unknown> }>
+}
+
+/**
+ * The exam choice's own validation, run at submit — it is cascading state in
+ * `useExamRegistrationState`, not a form field, so react-hook-form cannot see
+ * it and the section has to be told what to flag.
+ *
+ * Only a control that is actually rendered as a CHOICE is flagged. A
+ * single-option part, sitting or centre is auto-resolved and shown as text,
+ * so there is nothing there to mark red; and an empty list ("No exam dates
+ * available") is a fact about the programme, not an answer the candidate
+ * failed to give — that case is `examChosen === false` with an empty result
+ * here, and the form reports it at form level instead.
+ */
+export function examSelectionErrors(
+	args: ExamSelectionErrorArgs,
+	copy: { choosePart: string; chooseSitting: string; chooseSite: string },
+): ExamSelectionErrors {
+	const errors: ExamSelectionErrors = {}
+	const { partsAvailable, selection } = args
+
+	if (partsAvailable.length > 1 && !selection.partSelected) {
+		errors.part = copy.choosePart
+		return errors
+	}
+
+	const part = (
+		active: boolean,
+		chosen: { rateId: string; siteId: string },
+		admins: ExamSelectionErrorArgs["part1Admins"],
+	): { sitting?: string; site?: string } => {
+		if (!active) return {}
+		if (!chosen.rateId) {
+			return admins.length > 1 ? { sitting: copy.chooseSitting } : {}
+		}
+		const admin = admins.find((candidate) => candidate.id === chosen.rateId)
+		if (!chosen.siteId && admin && admin.sites.length > 1) {
+			return { site: copy.chooseSite }
+		}
+		return {}
+	}
+
+	const one = part(args.part1Active, selection.part1, args.part1Admins)
+	const two = part(args.part2Active, selection.part2, args.part2Admins)
+	if (one.sitting) errors.part1Sitting = one.sitting
+	if (one.site) errors.part1Site = one.site
+	if (two.sitting) errors.part2Sitting = two.sitting
+	if (two.site) errors.part2Site = two.site
+	return errors
+}
+
 /** A country tagged GDPR/CASL needs the policies ticked, not just implied. */
 export function isComplianceCountry(
 	countries: Array<{ countryCode: string; compliance?: boolean | null }>,

@@ -47,7 +47,7 @@ function SectionCard({
 }) {
 	return (
 		<Card className="gap-0 px-5 py-4 shadow-none">
-			<h2 className="flex items-center gap-2 font-heading text-base font-semibold tracking-wide text-foreground">
+			<h2 className="flex items-center gap-2 font-heading text-base font-semibold tracking-wide text-heading">
 				<Icon className="size-4 shrink-0 text-primary" aria-hidden />
 				{title}
 			</h2>
@@ -61,7 +61,7 @@ function CourseUnavailable() {
 	return (
 		<div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
 			<Icon className="size-10 text-muted-foreground" aria-hidden />
-			<p className="mt-4 font-heading text-lg font-semibold tracking-wide text-foreground">
+			<p className="mt-4 font-heading text-lg font-semibold tracking-wide text-heading">
 				{COURSE_UNAVAILABLE.title}
 			</p>
 			<p className="mt-2 max-w-md text-sm text-muted-foreground">
@@ -147,7 +147,7 @@ function CourseBody({ detail }: { detail: CourseDetail }) {
 					<div className="sticky top-4">
 						{detail.onlineExamSchedulingInformationPageURL ? (
 							<Card className="gap-2 px-5 py-4 shadow-none">
-								<h2 className="font-heading text-base font-semibold tracking-wide text-foreground">
+								<h2 className="font-heading text-base font-semibold tracking-wide text-heading">
 									Exam information
 								</h2>
 								<a

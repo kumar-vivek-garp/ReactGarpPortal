@@ -53,7 +53,7 @@ function OrderRow({ order, className }: OrderRowProps) {
 			</span>
 
 			<div className="min-w-0 flex-1 space-y-1.5">
-				<h3 className="font-heading text-base leading-snug tracking-wide text-foreground">
+				<h3 className="font-heading text-base leading-snug tracking-wide text-heading">
 					{description}
 				</h3>
 				{/* Horizontal run rather than the default stack, so a row stays a row. */}

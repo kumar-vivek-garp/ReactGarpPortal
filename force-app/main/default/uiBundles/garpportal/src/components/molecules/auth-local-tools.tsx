@@ -240,13 +240,23 @@ function LocalDevContactPanel({ onEntered }: { onEntered?: () => void }) {
 			}
 
 			setLocalDevContact(contact)
-			await enterAsUser({
-				id: contact.id,
-				name: contact.name,
-				garpId: contact.garpId,
-				contactId: contact.id,
-				photoUrl: null,
-			})
+			/*
+			 * Resolve the identity the same way a page load does, now that the dev
+			 * Contact header is set. The list-view row carries no photo and its id
+			 * is a Contact id, not a User id — seeding the cache from it wrote a
+			 * `photoUrl: null` that `staleTime` then held for a minute, so the rail
+			 * showed the fallback glyph until the member refreshed by hand.
+			 */
+			const resolved = await fetchCurrentUserViaLocalCli()
+			await enterAsUser(
+				resolved ?? {
+					id: contact.id,
+					name: contact.name,
+					garpId: contact.garpId,
+					contactId: contact.id,
+					photoUrl: null,
+				},
+			)
 		} catch (error) {
 			setErrors([
 				error instanceof Error

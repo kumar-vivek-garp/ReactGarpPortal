@@ -11,14 +11,16 @@ import {
 	type AffiliateFormValues,
 } from "@/components/forms/affiliate/affiliate-form-values"
 import {
-	REGISTRATION_BAR_CONTROL_GROUP,
 	REGISTRATION_BAR_CONTROL_HEIGHT,
 	REGISTRATION_BAR_SUBMIT,
 	REGISTRATION_BAR_TITLE,
 	REGISTRATION_BAR_TOTAL_BLOCK,
 	REGISTRATION_GRID,
 	REGISTRATION_MAIN_COLUMN,
+	REGISTRATION_BAR_TOTAL_LEADING,
 	REGISTRATION_RAIL_COLUMN,
+	REGISTRATION_RAIL_CONTROLS,
+	REGISTRATION_RAIL_STACK,
 	REGISTRATION_STICKY_BAR,
 } from "@/components/forms/registration-shell"
 import { AffiliateRail } from "@/components/forms/affiliate/sections/affiliate-rail"
@@ -37,6 +39,7 @@ import {
 	useAffiliateSignUp,
 	useVerifyAffiliateEmail,
 } from "@/hooks/use-affiliate-registration"
+import { useRevealInvalidField } from "@/hooks/use-reveal-invalid-field"
 
 type AffiliateRegistrationFormProps = {
 	load: AffiliateRegistrationLoad
@@ -82,18 +85,19 @@ function AffiliateRegistrationForm({
 		register,
 		handleSubmit,
 		getValues,
-		formState: { errors, isValid },
+		formState: { errors, submitCount },
 	} = useForm<AffiliateFormValues>({
 		defaultValues: EMPTY_AFFILIATE_VALUES,
 		/*
-		 * `onTouched`, not `onSubmit`: the button below stays disabled until the
-		 * form is valid, and `isValid` is only maintained when the mode is not
-		 * `onSubmit`. `onTouched` waits for a first blur before showing a field's
-		 * error, so nobody is told their email is invalid halfway through typing
-		 * it, and it re-renders far less than `onChange`.
+		 * `onTouched`: a field shows its error after its first blur, so nobody is
+		 * told their email is invalid halfway through typing it; after the first
+		 * submit attempt every field re-validates on change.
 		 */
 		mode: "onTouched",
+		// One focus, ours — see `useRevealInvalidField`.
+		shouldFocusError: false,
 	})
+	const { formRef } = useRevealInvalidField(submitCount)
 
 	// `useWatch`, not the destructured `watch()` — the latter returns a fresh
 	// function each render, which opts the whole component out of memoization.
@@ -162,8 +166,54 @@ function AffiliateRegistrationForm({
 			? AppError.fromUnknown(signUp.error).messages[0]
 			: null
 
+	/*
+	 * The total and the submit. The 2027 guest layout puts these at the top of
+	 * the ORDER RAIL rather than in the bar, and this form is guest-only — it
+	 * has no member twin — so it takes that layout unconditionally.
+	 *
+	 * The bar stays for the title: with no programme banner above it, that `h1`
+	 * is the page's only heading.
+	 */
+	const submitControls = (
+		<div className={REGISTRATION_RAIL_CONTROLS}>
+			{/*
+			 * Pinned to the button's own height, matching the exam forms' total
+			 * block, so the two bars line up. Nothing arrives late here — the
+			 * figure is a constant — but the geometry is shared.
+			 */}
+			<div
+				className={cn(
+					REGISTRATION_BAR_CONTROL_HEIGHT,
+					REGISTRATION_BAR_TOTAL_BLOCK,
+					REGISTRATION_BAR_TOTAL_LEADING,
+				)}
+			>
+				<p className="text-caption leading-none text-muted-foreground">
+					Total
+				</p>
+				<span className="text-lg leading-tight font-semibold text-primary">
+					Free
+				</span>
+			</div>
+
+			{/*
+			 * Never disabled for an incomplete form: the click runs validation
+			 * and the first missing answer is scrolled to and focused instead.
+			 */}
+			<Button
+				type="submit"
+				size="lg"
+				className={REGISTRATION_BAR_SUBMIT}
+				disabled={isBusy}
+			>
+				{isBusy ? "Registering…" : label}
+			</Button>
+		</div>
+	)
+
 	return (
 		<form
+			ref={formRef}
 			className="flex flex-col gap-6"
 			onSubmit={(event) => {
 				void handleSubmit(onSubmit)(event)
@@ -200,47 +250,6 @@ function AffiliateRegistrationForm({
 					{AFFILIATE_REGISTRATION_HEADING.suffix}
 				</h1>
 
-				<div className={REGISTRATION_BAR_CONTROL_GROUP}>
-					{/*
-					 * Pinned to the button's own height, matching the exam forms' total
-					 * block, so the two bars line up. Nothing arrives late here — the
-					 * figure is a constant — but the geometry is shared.
-					 */}
-					<div
-						className={cn(
-							REGISTRATION_BAR_CONTROL_HEIGHT,
-							REGISTRATION_BAR_TOTAL_BLOCK,
-						)}
-					>
-						<p className="text-caption leading-none text-muted-foreground">
-							Total
-						</p>
-						<span className="text-lg leading-tight font-semibold text-primary">
-							Free
-						</span>
-					</div>
-
-					{/*
-					 * Disabled until every required answer is in, so the first thing
-					 * somebody learns about a missing field is not a failed submission.
-					 * Everything this form validates is owned by react-hook-form, so
-					 * `isValid` alone is the whole answer — unlike the exam forms,
-					 * whose exam selection lives outside it.
-					 */}
-					<Button
-						type="submit"
-						size="lg"
-						className={REGISTRATION_BAR_SUBMIT}
-						disabled={isBusy || !isValid}
-						title={
-							isValid || isBusy
-								? undefined
-								: "Complete the required fields to continue."
-						}
-					>
-						{isBusy ? "Registering…" : label}
-					</Button>
-				</div>
 			</div>
 
 			{/*
@@ -328,7 +337,10 @@ function AffiliateRegistrationForm({
 				 * the sticky bar (4rem) plus the grid gap (1.5rem) — a larger `top`
 				 * pushes the rail down below the column beside it on first paint.
 				 */}
-				<aside className={REGISTRATION_RAIL_COLUMN}>
+				<aside
+					className={cn(REGISTRATION_RAIL_COLUMN, REGISTRATION_RAIL_STACK)}
+				>
+					{submitControls}
 					<AffiliateRail />
 				</aside>
 			</div>

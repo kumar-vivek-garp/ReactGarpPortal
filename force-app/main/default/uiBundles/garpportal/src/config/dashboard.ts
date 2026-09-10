@@ -58,24 +58,6 @@ export const DASHBOARD_DIRECTORY_CARD = {
 	ctaUrl: "/member-directory",
 } as const
 
-/**
- * Where the Advertisement card's Register Now goes.
- *
- * **This is not interchangeable with the other registration links.** Four URL
- * shapes reach the same flow — `/sfdcApp#!/registration/…`, the same with a
- * `track_cta` query, this one, and a `window.open` variant — and they carry
- * different attribution. The dashboard advertisement uses exactly this one, so
- * `programRegistrationHref()` (which builds the `/sfdcApp#!/` shape) is the
- * wrong helper here.
- *
- * `adType` is FRM / SCR / RAI; the path wants the lower-cased form.
- */
-export function adRegistrationHref(adType: string | null | undefined): string | null {
-	const slug = adType?.trim().toLowerCase()
-	if (!slug) return null
-	return `/Login?start=registration/${slug}`
-}
-
 export const DASHBOARD_AD_CARD = {
 	/** The legacy ships no creative at all — this is a text cross-sell. */
 	eyebrow: "Recommended for you",

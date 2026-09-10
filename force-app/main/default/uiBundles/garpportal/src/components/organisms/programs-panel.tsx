@@ -49,7 +49,7 @@ function ProgramsEmptyState({ tab }: { tab: ProgramsTab }) {
 	return (
 		<div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-16 text-center">
 			<Icon className="size-10 text-muted-foreground" aria-hidden />
-			<p className="mt-4 font-heading text-lg font-semibold tracking-wide text-foreground">
+			<p className="mt-4 font-heading text-lg font-semibold tracking-wide text-heading">
 				{emptyTitle}
 			</p>
 			<p className="mt-2 max-w-md text-sm text-muted-foreground">
@@ -129,7 +129,7 @@ function ProgramsSection({
 
 	return (
 		<section className="space-y-4">
-			<h2 className="flex items-center gap-2 font-heading text-xl font-semibold tracking-wide text-foreground">
+			<h2 className="flex items-center gap-2 font-heading text-xl font-semibold tracking-wide text-heading">
 				<Icon className="size-5 shrink-0 text-primary" aria-hidden />
 				{heading}
 				<span className="text-base font-normal text-muted-foreground">
@@ -287,7 +287,7 @@ function ProgramsPanel({ tab, view }: ProgramsPanelProps) {
 		>
 			<header className={cn(PAGE_STICKY_HEADER, "space-y-4")}>
 				<div className="flex flex-wrap items-center justify-between gap-3">
-					<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+					<h1 className="font-heading text-3xl font-semibold tracking-wide text-heading">
 						My Programs
 					</h1>
 

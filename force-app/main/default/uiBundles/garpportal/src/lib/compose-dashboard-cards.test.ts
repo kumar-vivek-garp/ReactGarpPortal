@@ -325,18 +325,19 @@ describe("the Advertisement card", () => {
 	})
 
 	/**
-	 * The dashboard advert uses `/Login?start=registration/…`. Four URL shapes
-	 * reach the same flow and they carry different attribution, so this must
-	 * not quietly become the `/sfdcApp#!/` one.
+	 * The dashboard is member-only, so Register Now goes straight to the in-app
+	 * registration route as a `Link` — no full page reload, and no round trip
+	 * through `/Login` (which only exists for guest entry points and, before
+	 * this, silently stranded an already-signed-in member back on `/dashboard`).
 	 */
-	it("sends Register Now to the Login registration path", () => {
+	it("sends Register Now to the in-app registration route", () => {
 		const [card] = composeDashboardCards({
 			...noContent,
 			components: listed,
 			ad: ad(),
 		})
-		expect(card.ctaUrl).toBe("/Login?start=registration/scr")
-		expect(card.ctaIsExternal).toBe(true)
+		expect(card.ctaUrl).toBe("/programs/scr/register")
+		expect(card.ctaIsExternal).toBe(false)
 		expect(card.title).toBe("Take the SCR exam")
 	})
 

@@ -39,4 +39,9 @@ export type MetaIcon =
 export type MetaLine = {
 	icon: MetaIcon
 	text: string
+	/**
+	 * `"value"` renders the text as a `ValueChip` — for the one line on a tile
+	 * that IS the actionable fact (an exam sitting), never for a sentence.
+	 */
+	emphasis?: "value"
 }

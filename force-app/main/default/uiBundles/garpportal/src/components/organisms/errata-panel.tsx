@@ -42,7 +42,7 @@ function EmptyState({
 	return (
 		<div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
 			<Icon className="size-10 text-muted-foreground" aria-hidden />
-			<p className="mt-4 font-heading text-lg font-semibold tracking-wide text-foreground">
+			<p className="mt-4 font-heading text-lg font-semibold tracking-wide text-heading">
 				{state.title}
 			</p>
 			<p className="mt-2 max-w-md text-sm text-muted-foreground">
@@ -61,7 +61,7 @@ function ErrataSheet({ programType }: { programType: string }) {
 		<Card className="gap-3 px-5 py-4 shadow-none">
 			<div className="flex flex-wrap items-start justify-between gap-4">
 				<div className="min-w-0 space-y-1">
-					<h2 className="font-heading text-base font-semibold tracking-wide text-foreground">
+					<h2 className="font-heading text-base font-semibold tracking-wide text-heading">
 						Check the published sheet first
 					</h2>
 					<p className="text-sm text-muted-foreground">
@@ -212,7 +212,7 @@ function ErrataPanel({ programType, className }: ErrataPanelProps) {
 						) : hasOptions ? (
 							<div className="space-y-5">
 								<section className="space-y-2">
-									<h2 className="font-heading text-lg font-semibold tracking-wide text-foreground">
+									<h2 className="font-heading text-lg font-semibold tracking-wide text-heading">
 										Report an error
 									</h2>
 									<p className="text-sm text-muted-foreground">

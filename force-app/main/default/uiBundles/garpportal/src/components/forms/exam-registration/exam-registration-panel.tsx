@@ -21,6 +21,9 @@ import {
 	REGISTRATION_GRID,
 	REGISTRATION_MAIN_COLUMN,
 	REGISTRATION_RAIL_COLUMN,
+	REGISTRATION_RAIL_COLUMN_GUEST,
+	REGISTRATION_RAIL_CONTROLS,
+	REGISTRATION_RAIL_STACK,
 	REGISTRATION_STICKY_BAR,
 } from "@/components/forms/registration-shell"
 import { type EmptyStateTone } from "@/components/molecules/empty-state"
@@ -44,6 +47,8 @@ import type { ExamSubmitOutcome } from "@/hooks/use-exam-registration-submit"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { useExamRegistrationLoad } from "@/hooks/use-exam-registration"
 import { usePersonalInfoEditData } from "@/hooks/use-personal-info-edit-data"
+import type { ProgramChrome } from "@/config/program-chrome"
+import { registrationChromeForSlug } from "@/lib/registration-chrome"
 import { cn } from "@/lib/utils"
 
 type ExamRegistrationPanelProps = {
@@ -70,6 +75,18 @@ type ExamRegistrationPanelProps = {
 	resumeStagedId?: string
 	/** The `?track_cta=` attribution tag, for the identity call. */
 	trackCta?: string
+	/**
+	 * True when the shell above already shows the programme title, so the
+	 * form's sticky bar drops its own. Set by the public route, whose shell
+	 * renders the banner; the member route leaves it alone.
+	 */
+	titleInBanner?: boolean
+	/**
+	 * True when the total and submit belong in the order rail instead of the
+	 * sticky bar — the 2027 guest layout, which applies to every guest form,
+	 * not only the ones with a banner.
+	 */
+	controlsInRail?: boolean
 }
 
 /**
@@ -100,38 +117,67 @@ function RegistrationSkeleton({
 	 * arrival, never taken away — the less jarring of the two mistakes.
 	 */
 	hasBackLink,
+	titleInBanner = false,
+	controlsInRail = false,
+	chrome,
 }: {
 	hasBackLink: boolean
+	titleInBanner?: boolean
+	controlsInRail?: boolean
+	/** Mirrors the real bar's seal and wash so neither arrives late. */
+	chrome?: ProgramChrome
 }) {
+	/* Mirrors the form's own derivation — see `showBar` there. */
+	const showBar = hasBackLink || !titleInBanner || !controlsInRail
+	const controls = (
+		<div
+			className={
+				controlsInRail
+					? REGISTRATION_RAIL_CONTROLS
+					: REGISTRATION_BAR_CONTROL_GROUP
+			}
+		>
+			<Skeleton className={cn(REGISTRATION_BAR_CONTROL_HEIGHT, "w-24 shrink-0")} />
+			<Skeleton
+				className={cn(
+					REGISTRATION_BAR_CONTROL_HEIGHT,
+					REGISTRATION_BAR_SUBMIT,
+					"rounded-xl sm:w-40",
+				)}
+			/>
+		</div>
+	)
+
 	return (
 		<div className="flex flex-col gap-6" aria-busy aria-live="polite">
 			<span className="sr-only">Loading your registration…</span>
 
-			{/* The header bar: back link, title, total, submit. */}
-			<div className={REGISTRATION_STICKY_BAR}>
-				<div className={REGISTRATION_BAR_TITLE_GROUP}>
-					{hasBackLink ? (
-						<>
-							{/* Arrow-only below `sm`, like the real back link. */}
-							<Skeleton className="h-6 w-6 shrink-0 sm:w-28" />
-							<div className="hidden h-6 w-px shrink-0 bg-border sm:block" />
-						</>
-					) : null}
-					<Skeleton className="h-8 w-64 max-w-full" />
-				</div>
-				<div className={REGISTRATION_BAR_CONTROL_GROUP}>
-					<Skeleton
-						className={cn(REGISTRATION_BAR_CONTROL_HEIGHT, "w-24 shrink-0")}
-					/>
-					<Skeleton
-						className={cn(
-							REGISTRATION_BAR_CONTROL_HEIGHT,
-							REGISTRATION_BAR_SUBMIT,
-							"rounded-xl sm:w-40",
+			{/* The header bar: back link, title, total, submit — each of which the
+			    real bar can lose, so this one has to lose them on the same terms. */}
+			{showBar ? (
+				<div className={cn(REGISTRATION_STICKY_BAR, chrome?.barWash)}>
+					<div className={REGISTRATION_BAR_TITLE_GROUP}>
+						{hasBackLink ? (
+							<>
+								{/* Arrow-only below `sm`, like the real back link. */}
+								<Skeleton className="h-6 w-6 shrink-0 sm:w-28" />
+								<div className="hidden h-6 w-px shrink-0 bg-border sm:block" />
+							</>
+						) : null}
+						{titleInBanner ? null : (
+							<>
+								{/* Same 36px box the real seal takes, so the row does not
+								    reflow when the payload lands. */}
+								{chrome ? (
+									<Skeleton className="size-9 shrink-0 rounded-full" />
+								) : null}
+								<Skeleton className="h-8 w-64 max-w-full" />
+							</>
 						)}
-					/>
+					</div>
+					{controlsInRail ? null : controls}
 				</div>
-			</div>
+			) : null}
 
 			<div className={REGISTRATION_GRID}>
 				<div className={REGISTRATION_MAIN_COLUMN}>
@@ -164,7 +210,13 @@ function RegistrationSkeleton({
 					<SkeletonCard rows={<SkeletonRows count={3} />} />
 				</div>
 
-				<aside className={REGISTRATION_RAIL_COLUMN}>
+				<aside
+					className={cn(
+						showBar ? REGISTRATION_RAIL_COLUMN : REGISTRATION_RAIL_COLUMN_GUEST,
+						controlsInRail && REGISTRATION_RAIL_STACK,
+					)}
+				>
+					{controlsInRail ? controls : null}
 					{/* Materials, then the order summary — the rail's two cards. */}
 					<div className="flex flex-col gap-4">
 						<SkeletonCard
@@ -204,6 +256,7 @@ function RegistrationNotice({
 	message,
 	isAuthenticated,
 	onNavigateBack,
+	titleInBanner = false,
 }: {
 	program: ExamProgramConfig
 	icon: LucideIcon
@@ -212,6 +265,13 @@ function RegistrationNotice({
 	message: string
 	isAuthenticated: boolean
 	onNavigateBack: (run: () => void) => void
+	/**
+	 * True when the shell's banner is already showing this title above. Without
+	 * it a guest hitting a CLOSED registration on a redesigned programme got the
+	 * banner's `h1` and this one, in two different fonts — the exact thing the
+	 * flag exists to stop, missed because this screen never received it.
+	 */
+	titleInBanner?: boolean
 }) {
 	const heading = <MegaMenuHeadingText heading={program.heading} />
 
@@ -219,8 +279,8 @@ function RegistrationNotice({
 		<div className="flex flex-col gap-6">
 			{isAuthenticated ? (
 				<ProgramsSubpageHeader title={heading} onNavigateBack={onNavigateBack} />
-			) : (
-				<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+			) : titleInBanner ? null : (
+				<h1 className="font-sans text-3xl font-extrabold text-foreground">
 					{heading}
 				</h1>
 			)}
@@ -267,6 +327,8 @@ function ExamRegistrationPanel({
 	checkoutCancelled,
 	resumeStagedId,
 	trackCta,
+	titleInBanner = false,
+	controlsInRail = false,
 }: ExamRegistrationPanelProps) {
 	const [outcome, setOutcome] = useState<{
 		kind: RegistrationOutcomeKind
@@ -294,6 +356,8 @@ function ExamRegistrationPanel({
 	/* Empty for a guest — the public route serves this form with no session. */
 	const hasContact = Boolean(contactId)
 	const isAuthenticated = Boolean(currentUser.data)
+	/* Seal + wash for the signed-in bar; undefined for an un-redesigned one. */
+	const chrome = registrationChromeForSlug(programType)?.chrome
 	const profile = usePersonalInfoEditData(hasContact)
 
 	/*
@@ -364,12 +428,20 @@ function ExamRegistrationPanel({
 		(hasContact && profile.isPending) ||
 		(Boolean(resumeStagedId) && resume.isPending)
 	) {
-		return <RegistrationSkeleton hasBackLink={isAuthenticated} />
+		return (
+			<RegistrationSkeleton
+				hasBackLink={isAuthenticated}
+				titleInBanner={titleInBanner}
+				controlsInRail={controlsInRail}
+				chrome={chrome}
+			/>
+		)
 	}
 
 	if (load.isError) {
 		return (
 			<RegistrationNotice
+				titleInBanner={titleInBanner}
 				program={program}
 				icon={TriangleAlert}
 				tone="error"
@@ -391,6 +463,7 @@ function ExamRegistrationPanel({
 			 * server's own sentence is kept: it is the only thing that knows why.
 			 */
 			<RegistrationNotice
+				titleInBanner={titleInBanner}
 				program={program}
 				icon={CalendarClock}
 				tone="notice"
@@ -412,6 +485,8 @@ function ExamRegistrationPanel({
 			programType={programType}
 			regCode={regCode}
 			trackCta={trackCta}
+			titleInBanner={titleInBanner}
+			controlsInRail={controlsInRail}
 			onNavigateBack={onNavigateBack}
 			onRegistered={(result: ExamSubmitOutcome) => {
 				if (result.kind === "redirecting") return

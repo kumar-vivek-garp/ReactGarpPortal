@@ -8,7 +8,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/atoms/card"
-import { Checkbox } from "@/components/atoms/checkbox"
 import { Label } from "@/components/atoms/label"
 import { FieldError, RequiredMark } from "@/components/molecules/form-field"
 import type { ExamFormValues } from "@/components/forms/exam-registration/exam-form-values"
@@ -30,14 +29,6 @@ type PaymentSectionProps = {
 	/** Org-level Stripe switch from the load payload. */
 	useStripe: boolean
 	paymentType: string
-	/** Card orders with a membership in the cart can opt into auto-renew. */
-	showAutorenew: boolean
-	/**
-	 * The consent wording. Defaults to the complimentary-membership line the
-	 * exams and courses use; the membership programme passes its own, because
-	 * the membership it renews is the one being paid for, not a free one.
-	 */
-	autoRenewLabel?: string
 	disabled?: boolean
 }
 
@@ -49,9 +40,10 @@ type PaymentSectionProps = {
  * forbidden method is shown disabled rather than hidden, so the absence is
  * explained rather than mysterious.
  *
- * Auto-renew lives here rather than in its own card because it is a property
- * of paying by card: there is no saved payment method to renew against
- * otherwise.
+ * Auto-renew used to hang off the bottom of this card, because it only applies
+ * to a card order. It now lives in `CompMembershipSection` alongside the
+ * membership it renews — being conditional on the payment method is not the
+ * same as being about payment.
  */
 function PaymentSection({
 	control,
@@ -59,8 +51,6 @@ function PaymentSection({
 	country,
 	useStripe,
 	paymentType,
-	showAutorenew,
-	autoRenewLabel = OFFLINE_PAYMENT_COPY.autoRenew,
 	disabled,
 }: PaymentSectionProps) {
 	const isOffline = paymentType === "Wire Transfer" || paymentType === "ACH"
@@ -82,11 +72,14 @@ function PaymentSection({
 					control={control}
 					name="paymentType"
 					rules={{ required: "Please choose how you would like to pay." }}
+					// Flagged as a group so a missing method is found by the submit-time
+					// reveal; the first live tile is what takes focus.
 					render={({ field }) => (
 						<div
 							className="grid grid-cols-1 gap-3 sm:grid-cols-3"
 							role="radiogroup"
 							aria-label="Payment type"
+							aria-invalid={errors.paymentType ? true : undefined}
 						>
 							{PAYMENT_TILES.map((tile) => {
 								const allowed = isPaymentAllowed(tile.value, country, useStripe)
@@ -138,30 +131,6 @@ function PaymentSection({
 					<p className="text-caption text-muted-foreground">
 						{OFFLINE_PAYMENT_COPY.cardNotice}
 					</p>
-				) : null}
-
-				{showAutorenew ? (
-					<div className="flex items-start gap-3 border-t border-border pt-4">
-						<Controller
-							control={control}
-							name="autoRenew"
-							render={({ field }) => (
-								<Checkbox
-									id="autoRenew"
-									checked={field.value}
-									onCheckedChange={(next) => field.onChange(next === true)}
-									disabled={disabled}
-									className="mt-0.5"
-								/>
-							)}
-						/>
-						<Label
-							htmlFor="autoRenew"
-							className="text-body leading-5 font-normal"
-						>
-							{autoRenewLabel}
-						</Label>
-					</div>
 				) : null}
 			</CardContent>
 		</Card>

@@ -50,6 +50,7 @@ import {
 	showQuestionCard,
 	submitLabel,
 } from "@/lib/event-registration-presentation"
+import { useRevealInvalidField } from "@/hooks/use-reveal-invalid-field"
 import { formatMoney } from "@/lib/account-format"
 import { cn } from "@/lib/utils"
 
@@ -89,11 +90,17 @@ function EventRegistrationForm({
 		register,
 		control,
 		handleSubmit,
-		formState: { errors, isValid },
+		formState: { errors, submitCount },
 	} = useForm<EventFormValues>({
+		// `onTouched`: a field shows its error after its first blur, not while
+		// it is still being typed; after the first submit attempt every field
+		// re-validates on change, so a fixed field clears at once.
 		mode: "onTouched",
+		// One focus, ours — see `useRevealInvalidField`.
+		shouldFocusError: false,
 		defaultValues: seededValues,
 	})
+	const { formRef } = useRevealInvalidField(submitCount)
 
 	// The disabled-query trap: only a webcast ever asks for countries, and a
 	// disabled query sits `pending` forever — so it exists only for webcasts
@@ -161,7 +168,7 @@ function EventRegistrationForm({
 	}
 
 	return (
-		<form noValidate onSubmit={submit}>
+		<form ref={formRef} noValidate onSubmit={submit}>
 			<div className={REGISTRATION_STICKY_BAR}>
 				<div className={REGISTRATION_BAR_TITLE_GROUP}>
 					{/*
@@ -208,14 +215,15 @@ function EventRegistrationForm({
 							{amountDue > 0 ? formatMoney(amountDue, "USD") : "Free"}
 						</span>
 					</div>
+					{/*
+					 * Never disabled for an incomplete form: the click runs validation
+					 * and the first missing answer is scrolled to and focused instead.
+					 */}
 					<Button
 						type="submit"
 						size="lg"
 						className={REGISTRATION_BAR_SUBMIT}
-						disabled={submitting || !isValid}
-						title={
-							!isValid ? "Complete the required fields to continue." : undefined
-						}
+						disabled={submitting}
 					>
 						{submitting ? "Submitting…" : submitLabel(amountDue)}
 					</Button>

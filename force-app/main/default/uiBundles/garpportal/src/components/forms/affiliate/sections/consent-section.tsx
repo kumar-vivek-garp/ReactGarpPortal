@@ -69,7 +69,15 @@ function Tick({
 						disabled={disabled}
 						className="mt-0.5"
 					/>
-					<Label htmlFor={id} className="text-body leading-5 font-normal">
+					{/*
+					 * `block`, not the Label atom's default `flex`. These labels are prose
+					 * with policy links in them, and a flex container makes every link and
+					 * text node its own column, stranding the commas between them.
+					 */}
+					<Label
+						htmlFor={id}
+						className="block text-body leading-6 font-normal"
+					>
 						{children}
 					</Label>
 				</div>

@@ -19,7 +19,7 @@ function CvEmptyState() {
 	return (
 		<div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-10 text-center">
 			<Icon className="size-9 text-muted-foreground" aria-hidden />
-			<p className="mt-3 font-heading text-base font-semibold tracking-wide text-foreground">
+			<p className="mt-3 font-heading text-base font-semibold tracking-wide text-heading">
 				{CV_ZERO_STATE.title}
 			</p>
 			<p className="mt-1 max-w-sm text-sm text-muted-foreground">
@@ -66,7 +66,7 @@ function CvExperienceList({
 						>
 							<div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
 								<div className="min-w-0 flex-1 space-y-0.5">
-									<p className="font-heading text-base leading-snug tracking-wide text-foreground">
+									<p className="font-heading text-base leading-snug tracking-wide text-heading">
 										{row.title}
 									</p>
 									{row.subtitle ? (

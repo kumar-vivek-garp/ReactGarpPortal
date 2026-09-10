@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
+import { ValueChip } from "@/components/molecules/value-chip"
 import type { MetaIcon, MetaLine } from "@/lib/meta-line"
 import type { StatusTone } from "@/lib/status-tone"
 import { cn } from "@/lib/utils"
@@ -92,7 +93,11 @@ function MetaLines({ lines, className }: MetaLinesProps) {
 							className={cn("mt-0.5 size-4 shrink-0", ICON_TONE_CLASS[tone])}
 							aria-hidden
 						/>
-						<span className="min-w-0">{line.text}</span>
+						{line.emphasis === "value" ? (
+							<ValueChip>{line.text}</ValueChip>
+						) : (
+							<span className="min-w-0">{line.text}</span>
+						)}
 					</li>
 				)
 			})}

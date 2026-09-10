@@ -53,7 +53,7 @@ function DashboardNotificationsDialog({
 									key={`${notice.notificationTitle ?? "notice"}-${index}`}
 									className="space-y-1 py-3 first:pt-0 last:pb-0"
 								>
-									<p className="font-heading text-base leading-snug tracking-wide text-foreground">
+									<p className="font-heading text-base leading-snug tracking-wide text-heading">
 										{notice.notificationTitle ?? "Notification"}
 									</p>
 									{notice.notificationDate ? (

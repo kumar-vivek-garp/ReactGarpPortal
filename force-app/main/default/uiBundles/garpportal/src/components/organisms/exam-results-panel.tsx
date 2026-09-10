@@ -129,7 +129,7 @@ function ExamResultsPanelView({ programType }: ExamResultsPanelProps) {
 											tone="info"
 										/>
 									</div>
-									<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+									<h1 className="font-heading text-3xl font-semibold tracking-wide text-heading">
 										{codeLabel} Exam Results
 									</h1>
 									<p className="max-w-2xl text-sm text-muted-foreground">
@@ -147,7 +147,7 @@ function ExamResultsPanelView({ programType }: ExamResultsPanelProps) {
 
 						{presentation.results.length === 0 ? (
 							<div className="rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
-								<p className="font-heading text-lg font-semibold tracking-wide text-foreground">
+								<p className="font-heading text-lg font-semibold tracking-wide text-heading">
 									No exam results for {codeLabel} yet
 								</p>
 								<p className="mt-2 text-sm text-muted-foreground">

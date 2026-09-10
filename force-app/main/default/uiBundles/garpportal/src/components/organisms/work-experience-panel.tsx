@@ -60,7 +60,7 @@ function CvUnavailable() {
 	return (
 		<div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-12 text-center">
 			<Icon className="size-10 text-muted-foreground" aria-hidden />
-			<p className="mt-4 font-heading text-lg font-semibold tracking-wide text-foreground">
+			<p className="mt-4 font-heading text-lg font-semibold tracking-wide text-heading">
 				{CV_UNAVAILABLE_STATE.title}
 			</p>
 			<p className="mt-2 max-w-md text-sm text-muted-foreground">

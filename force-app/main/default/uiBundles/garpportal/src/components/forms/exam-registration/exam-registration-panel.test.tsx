@@ -32,10 +32,12 @@ async function renderPanel({
 	user = null,
 	seedProfile = true,
 	regCode,
+	titleInBanner = false,
 }: {
 	user?: CurrentUser | null
 	seedProfile?: boolean
 	regCode?: string
+	titleInBanner?: boolean
 } = {}) {
 	const queryClient = createTestQueryClient(user)
 	if (user?.contactId && seedProfile) {
@@ -49,6 +51,7 @@ async function renderPanel({
 			program={EXAM_PROGRAMS.frm}
 			programType="frm"
 			regCode={regCode}
+			titleInBanner={titleInBanner}
 			onNavigateBack={vi.fn()}
 		/>,
 		{ user, queryClient },
@@ -215,5 +218,45 @@ describe("ExamRegistrationPanel — load branches", () => {
 				"Registration is not currently open for this exam.",
 			),
 		).toBeInTheDocument()
+	})
+})
+
+/*
+ * The notice screens are rendered by the panel, but the BANNER is rendered by
+ * the shell above it — so the panel has to be told when a title is already on
+ * screen. It was not, and a guest hitting a closed registration on a redesigned
+ * programme got two `h1`s naming the same exam in two different fonts.
+ */
+describe("ExamRegistrationPanel — the notice screen's heading", () => {
+	function armClosed() {
+		const info = examregGet("info", () =>
+			examLoad({
+				isAuthenticated: false,
+				eligibility: { isEligible: false, message: "Registration opens in March." },
+				examSelection: null,
+			}),
+		)
+		server.use(info.handler)
+	}
+
+	it("titles the notice when nothing above it does", async () => {
+		armClosed()
+		await renderPanel()
+
+		expect(
+			await screen.findByRole("heading", { name: "Registration is not open" }),
+		).toBeInTheDocument()
+		expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1)
+	})
+
+	it("stands its title down when a banner already carries it", async () => {
+		armClosed()
+		await renderPanel({ titleInBanner: true })
+
+		expect(
+			await screen.findByRole("heading", { name: "Registration is not open" }),
+		).toBeInTheDocument()
+		// The banner owns the page's h1 on those routes, so this screen adds none.
+		expect(screen.queryAllByRole("heading", { level: 1 })).toHaveLength(0)
 	})
 })

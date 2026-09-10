@@ -26,6 +26,7 @@ import {
 	AccordionTrigger,
 } from "@/components/atoms/accordion"
 import { Button } from "@/components/atoms/button"
+import { Card } from "@/components/atoms/card"
 import { AccountFieldGrid } from "@/components/molecules/account-field-grid"
 import { MEMBER_SERVICES_MAILTO } from "@/config/help-center"
 import { formatLongDate } from "@/lib/account-format"
@@ -83,36 +84,38 @@ export function flattenDeadlines(
 function DeadlinesBlock({ items }: { items: DeadlineItem[] }) {
 	if (items.length === 0) return null
 	return (
-		<section className="rounded-xl border border-border bg-muted/40 p-5">
-			<h2 className="flex items-center gap-2 font-heading text-lg tracking-wide text-foreground">
-				<CalendarClock className="size-5 shrink-0 text-primary" aria-hidden />
-				Deadlines
-			</h2>
-			<ul className="mt-4 space-y-4">
-				{items.map((item) => (
-					<li key={item.key}>
-						<p
-							className={cn(
-								"text-sm font-semibold",
-								item.urgent ? "text-accent-vermillion" : "text-foreground",
-							)}
-						>
-							{formatLongDate(item.date)}
-							{item.urgent ? (
-								<span className="ml-2 text-xs font-medium uppercase tracking-wide">
-									Soon
-								</span>
-							) : null}
-						</p>
-						{item.labels.map((label) => (
-							<p key={label} className="text-sm text-muted-foreground">
-								{label}
+		<Card asChild className="gap-4 py-5 shadow-none">
+			<section>
+				<h2 className="flex items-center gap-2 px-5 font-heading text-lg tracking-wide text-heading">
+					<CalendarClock className="size-5 shrink-0 text-primary" aria-hidden />
+					Deadlines
+				</h2>
+				<ul className="px-5 space-y-4">
+					{items.map((item) => (
+						<li key={item.key}>
+							<p
+								className={cn(
+									"text-sm font-semibold",
+									item.urgent ? "text-accent-vermillion" : "text-foreground",
+								)}
+							>
+								{formatLongDate(item.date)}
+								{item.urgent ? (
+									<span className="ml-2 text-xs font-medium uppercase tracking-wide">
+										Soon
+									</span>
+								) : null}
 							</p>
-						))}
-					</li>
-				))}
-			</ul>
-		</section>
+							{item.labels.map((label) => (
+								<p key={label} className="text-sm text-muted-foreground">
+									{label}
+								</p>
+							))}
+						</li>
+					))}
+				</ul>
+			</section>
+		</Card>
 	)
 }
 
@@ -127,37 +130,39 @@ function NotificationsBlock({
 	if (items.length === 0) return null
 
 	return (
-		<section className="rounded-xl border border-border bg-muted/40 p-5">
-			<h2 className="flex items-center gap-2 font-heading text-lg tracking-wide text-foreground">
-				<Bell className="size-5 shrink-0 text-primary" aria-hidden />
-				Notifications
-			</h2>
-			<ul className="mt-4 space-y-4">
-				{items.map((n, index) => (
-					<li
-						key={`${n.notificationTitle ?? "n"}-${n.notificationDate ?? index}`}
-						className="rounded-lg border border-border/60 bg-background/50 p-3"
-					>
-						{n.notificationTitle ? (
-							<p className="text-sm font-semibold text-foreground">
-								{n.notificationTitle}
-							</p>
-						) : null}
-						{n.notificationDetails ? (
-							<p className="mt-1 text-sm text-muted-foreground">
-								{n.notificationDetails}
-							</p>
-						) : null}
-						{n.notificationDate ? (
-							<p className="mt-1 text-xs text-muted-foreground">
-								{formatLongDate(n.notificationDate.slice(0, 10)) ??
-									n.notificationDate}
-							</p>
-						) : null}
-					</li>
-				))}
-			</ul>
-		</section>
+		<Card asChild className="gap-4 py-5 shadow-none">
+			<section>
+				<h2 className="flex items-center gap-2 px-5 font-heading text-lg tracking-wide text-heading">
+					<Bell className="size-5 shrink-0 text-primary" aria-hidden />
+					Notifications
+				</h2>
+				<ul className="px-5 space-y-4">
+					{items.map((n, index) => (
+						<li
+							key={`${n.notificationTitle ?? "n"}-${n.notificationDate ?? index}`}
+							className="rounded-lg border border-inset-border bg-inset p-3"
+						>
+							{n.notificationTitle ? (
+								<p className="text-sm font-semibold text-foreground">
+									{n.notificationTitle}
+								</p>
+							) : null}
+							{n.notificationDetails ? (
+								<p className="mt-1 text-sm text-muted-foreground">
+									{n.notificationDetails}
+								</p>
+							) : null}
+							{n.notificationDate ? (
+								<p className="mt-1 text-xs text-muted-foreground">
+									{formatLongDate(n.notificationDate.slice(0, 10)) ??
+										n.notificationDate}
+								</p>
+							) : null}
+						</li>
+					))}
+				</ul>
+			</section>
+		</Card>
 	)
 }
 
@@ -248,73 +253,75 @@ function ResourcesBlock({
 		: undefined
 
 	return (
-		<section className="rounded-xl border border-border bg-muted/40 p-5">
-			<h2 className="flex items-center gap-2 font-heading text-lg tracking-wide text-foreground">
-				<BookOpen className="size-5 shrink-0 text-primary" aria-hidden />
-				Exam Resources
-			</h2>
-			<div className="mt-4 space-y-5">
-				{glpUrl ? (
-					<ResourceLinkRow
-						href={glpUrl}
-						label="GARP Learning Platform"
-						via={via}
-						external
-					>
-						Practice exams, multimedia content, and more.
-					</ResourceLinkRow>
-				) : null}
-				{/* Filtered to this programme rather than dumping the member on the
-				    full list. */}
-				<ResourceLinkRow
-					to={programStudyMaterialsPath(programType)}
-					label="Study Materials"
-				>
-					Official documents to help you prepare for your Exam
-				</ResourceLinkRow>
-				{errataPath ? (
-					<ResourceLinkRow to={errataPath} label="Submit Errata">
-						Report an error or discrepancy in the curriculum.
-					</ResourceLinkRow>
-				) : null}
-				{adaUrl ? (
-					<div className="rounded-xl border border-primary/25 bg-accent/50 p-4">
-						<p className="text-sm font-semibold text-foreground">
-							ADA accommodations
-						</p>
-						<p className="mt-1 text-sm text-muted-foreground">
-							Request testing accommodations for your exam.
-						</p>
-						<Button asChild size="sm" className="mt-3 rounded-full px-5">
-							<a
-								href={adaUrl}
-								target="_blank"
-								rel="noreferrer noopener"
-							>
-								ADA Application
-							</a>
-						</Button>
-					</div>
-				) : null}
-				{offersEpp ? (
-					<>
-						<hr className="border-border" />
-						<button
-							type="button"
-							onClick={() => setEppOpen(true)}
-							className="text-sm font-semibold text-primary hover:text-primary/80"
+		<Card asChild className="gap-4 py-5 shadow-none">
+			<section>
+				<h2 className="flex items-center gap-2 px-5 font-heading text-lg tracking-wide text-heading">
+					<BookOpen className="size-5 shrink-0 text-primary" aria-hidden />
+					Exam Resources
+				</h2>
+				<div className="px-5 space-y-5">
+					{glpUrl ? (
+						<ResourceLinkRow
+							href={glpUrl}
+							label="GARP Learning Platform"
+							via={via}
+							external
 						>
-							Need Help Studying?
-						</button>
-						<EppOptInDialog
-							open={isEppOpen}
-							onOpenChange={setEppOpen}
-							programType={programType}
-						/>
-					</>
-				) : null}
-			</div>
-		</section>
+							Practice exams, multimedia content, and more.
+						</ResourceLinkRow>
+					) : null}
+					{/* Filtered to this programme rather than dumping the member on the
+					    full list. */}
+					<ResourceLinkRow
+						to={programStudyMaterialsPath(programType)}
+						label="Study Materials"
+					>
+						Official documents to help you prepare for your Exam
+					</ResourceLinkRow>
+					{errataPath ? (
+						<ResourceLinkRow to={errataPath} label="Submit Errata">
+							Report an error or discrepancy in the curriculum.
+						</ResourceLinkRow>
+					) : null}
+					{adaUrl ? (
+						<div className="rounded-xl border border-primary/25 bg-accent/50 p-4">
+							<p className="text-sm font-semibold text-foreground">
+								ADA accommodations
+							</p>
+							<p className="mt-1 text-sm text-muted-foreground">
+								Request testing accommodations for your exam.
+							</p>
+							<Button asChild size="sm" className="mt-3 rounded-full px-5">
+								<a
+									href={adaUrl}
+									target="_blank"
+									rel="noreferrer noopener"
+								>
+									ADA Application
+								</a>
+							</Button>
+						</div>
+					) : null}
+					{offersEpp ? (
+						<>
+							<hr className="border-border" />
+							<button
+								type="button"
+								onClick={() => setEppOpen(true)}
+								className="text-sm font-semibold text-primary hover:text-primary/80"
+							>
+								Need Help Studying?
+							</button>
+							<EppOptInDialog
+								open={isEppOpen}
+								onOpenChange={setEppOpen}
+								programType={programType}
+							/>
+						</>
+					) : null}
+				</div>
+			</section>
+		</Card>
 	)
 }
 
@@ -385,66 +392,68 @@ function MemberDetailsBlock({ detail }: { detail: ProgramDetail }) {
 	if (!hasId && !hasOsta && !canEditId) return null
 
 	return (
-		<section className="rounded-xl border border-border bg-muted/40 p-5">
-			<h2 className="flex items-center gap-2 font-heading text-lg tracking-wide text-foreground">
-				<IdCard className="size-5 shrink-0 text-primary" aria-hidden />
-				Member details
-			</h2>
-			{hasId || canEditId ? (
-				<div className="mt-4">
-					<p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-						ID information
-					</p>
-					<AccountFieldGrid rows={idRows} emptyMessage="No ID on file." />
-					<div className="mt-3 flex flex-wrap items-center gap-2">
-						{idNumber && !isIdRevealed ? (
-							<Button
-								type="button"
-								variant="ghost"
-								size="sm"
-								onClick={() => setIdRevealed(true)}
-							>
-								<Eye className="size-3.5" aria-hidden />
-								Show ID number
-							</Button>
-						) : null}
-						{canEditId ? (
-							<Button
-								type="button"
-								variant="outline"
-								size="sm"
-								onClick={() => setIdOpen(true)}
-							>
-								<Pencil className="size-3.5" aria-hidden />
-								{hasId ? "Update ID" : "Add your ID"}
-							</Button>
+		<Card asChild className="gap-4 py-5 shadow-none">
+			<section>
+				<h2 className="flex items-center gap-2 px-5 font-heading text-lg tracking-wide text-heading">
+					<IdCard className="size-5 shrink-0 text-primary" aria-hidden />
+					Member details
+				</h2>
+				{hasId || canEditId ? (
+					<div className="px-5">
+						<p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+							ID information
+						</p>
+						<AccountFieldGrid rows={idRows} emptyMessage="No ID on file." />
+						<div className="mt-3 flex flex-wrap items-center gap-2">
+							{idNumber && !isIdRevealed ? (
+								<Button
+									type="button"
+									variant="ghost"
+									size="sm"
+									onClick={() => setIdRevealed(true)}
+								>
+									<Eye className="size-3.5" aria-hidden />
+									Show ID number
+								</Button>
+							) : null}
+							{canEditId ? (
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									onClick={() => setIdOpen(true)}
+								>
+									<Pencil className="size-3.5" aria-hidden />
+									{hasId ? "Update ID" : "Add your ID"}
+								</Button>
+							) : null}
+						</div>
+						{detail.IDName?.trim() ? (
+							<p className="mt-3 text-xs text-muted-foreground">
+								Something wrong?{" "}
+								<a
+									href={MEMBER_SERVICES_MAILTO}
+									className="font-semibold text-primary hover:text-primary/80"
+								>
+									Contact Member Services
+								</a>
+							</p>
 						) : null}
 					</div>
-					{detail.IDName?.trim() ? (
-						<p className="mt-3 text-xs text-muted-foreground">
-							Something wrong?{" "}
-							<a
-								href={MEMBER_SERVICES_MAILTO}
-								className="font-semibold text-primary hover:text-primary/80"
-							>
-								Contact Member Services
-							</a>
+				) : null}
+				{hasOsta ? (
+					<div className="px-5">
+						<p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+							OSTA details
 						</p>
-					) : null}
-				</div>
-			) : null}
-			{hasOsta ? (
-				<div className="mt-5">
-					<p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-						OSTA details
-					</p>
-					<AccountFieldGrid rows={ostaRows} />
-				</div>
-			) : null}
-			{canEditId ? (
-				<OstaIdDialog open={isIdOpen} onOpenChange={setIdOpen} />
-			) : null}
-		</section>
+						<AccountFieldGrid rows={ostaRows} />
+					</div>
+				) : null}
+				{canEditId ? (
+					<OstaIdDialog open={isIdOpen} onOpenChange={setIdOpen} />
+				) : null}
+			</section>
+		</Card>
 	)
 }
 

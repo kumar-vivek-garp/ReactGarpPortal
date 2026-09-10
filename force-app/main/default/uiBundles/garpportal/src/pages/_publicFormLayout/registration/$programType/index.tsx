@@ -7,6 +7,7 @@ import {
 	registrationSearchSchema,
 } from "@/config/registration"
 import { pageTitle } from "@/lib/document-title"
+import { registrationChromeForSlug } from "@/lib/registration-chrome"
 import { registrationLegProps } from "@/lib/registration-paths"
 import { resolveExamProgram } from "@/lib/registration-programs"
 
@@ -59,6 +60,20 @@ function PublicRegistrationPage() {
 			programType={programType}
 			regCode={search.regCode ?? search.teamCode}
 			trackCta={search.track_cta}
+			/*
+			 * Only when `PublicShell` is actually rendering a banner for this
+			 * programme, because that banner owns the page's `h1`. Asking the same
+			 * rule the shell asks is the point: hardcoding `true` here would strip
+			 * the title from every programme whose chrome has not landed yet,
+			 * leaving those pages with no heading at all.
+			 */
+			titleInBanner={Boolean(registrationChromeForSlug(programType))}
+			/*
+			 * Every guest form, not just the redesigned ones: the rail placement
+			 * is a layout decision, where `titleInBanner` tracks whether artwork
+			 * exists. `raij` and `ffr` get the new layout under the old chrome.
+			 */
+			controlsInRail
 			{...registrationLegProps(search)}
 		/>
 	)

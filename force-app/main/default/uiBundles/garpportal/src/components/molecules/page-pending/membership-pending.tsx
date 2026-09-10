@@ -146,7 +146,7 @@ function MembershipPendingShell({
 		>
 			<header className={cn(PAGE_STICKY_HEADER, "space-y-4")}>
 				<div className="flex flex-wrap items-center justify-between gap-3">
-					<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+					<h1 className="font-heading text-3xl font-semibold tracking-wide text-heading">
 						Membership Benefits
 					</h1>
 					{tab === "benefits" ? (

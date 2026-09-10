@@ -87,7 +87,7 @@ function Stat({ label, value }: { label: string; value: number }) {
 	return (
 		<div className="flex items-center justify-between gap-2.5 sm:flex-1 sm:justify-start">
 			<StatLabel>{label}</StatLabel>
-			<p className="font-heading text-2xl tabular-nums text-foreground">
+			<p className="font-heading text-2xl tabular-nums text-heading">
 				{value}
 			</p>
 		</div>

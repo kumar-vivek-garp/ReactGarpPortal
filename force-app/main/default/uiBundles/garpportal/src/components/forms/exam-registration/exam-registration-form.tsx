@@ -11,7 +11,7 @@ import type {
 import type { PersonalInfoEditData } from "@/api/personal-info/types"
 import { Alert, AlertDescription, AlertTitle } from "@/components/atoms/alert"
 import { Button } from "@/components/atoms/button"
-import { MegaMenuHeadingText } from "@/components/molecules/mega-menu-heading"
+import { ProgramBarIdentity } from "@/components/molecules/program-bar-identity"
 import { ProgramsSubpageHeader } from "@/components/molecules/programs-subpage-header"
 import { AnimatedAmount } from "@/components/forms/exam-registration/animated-amount"
 import {
@@ -21,19 +21,24 @@ import {
 } from "@/components/forms/exam-registration/exam-form-values"
 import { AcknowledgementsSection } from "@/components/forms/exam-registration/sections/acknowledgements-section"
 import { AddressesSection } from "@/components/forms/exam-registration/sections/addresses-section"
+import { CompMembershipSection } from "@/components/forms/exam-registration/sections/comp-membership-section"
 import { ConfirmRegistrationDialog } from "@/components/forms/exam-registration/sections/confirm-registration-dialog"
+import { ExamPrepSection } from "@/components/forms/exam-registration/sections/exam-prep-section"
 import { OstaSection } from "@/components/forms/exam-registration/sections/osta-section"
 import { PaymentSection } from "@/components/forms/exam-registration/sections/payment-section"
 import {
 	REGISTRATION_BAR_CONTROL_GROUP,
 	REGISTRATION_BAR_CONTROL_HEIGHT,
 	REGISTRATION_BAR_SUBMIT,
-	REGISTRATION_BAR_TITLE,
 	REGISTRATION_BAR_TITLE_GROUP,
 	REGISTRATION_BAR_TOTAL_BLOCK,
+	REGISTRATION_BAR_TOTAL_LEADING,
 	REGISTRATION_GRID,
 	REGISTRATION_MAIN_COLUMN,
 	REGISTRATION_RAIL_COLUMN,
+	REGISTRATION_RAIL_COLUMN_GUEST,
+	REGISTRATION_RAIL_CONTROLS,
+	REGISTRATION_RAIL_STACK,
 	REGISTRATION_STICKY_BAR,
 } from "@/components/forms/registration-shell"
 import { MembershipOfferSection } from "@/components/forms/exam-registration/sections/membership-offer-section"
@@ -42,6 +47,7 @@ import { RiskNetOfferSection } from "@/components/forms/exam-registration/sectio
 import { YourDetailsSection } from "@/components/forms/exam-registration/sections/your-details-section"
 import { YourExamSection } from "@/components/forms/exam-registration/sections/your-exam-section"
 import { useExamRegistrationState } from "@/hooks/use-exam-registration"
+import { useRevealInvalidField } from "@/hooks/use-reveal-invalid-field"
 import {
 	MustSignInError,
 	useExamRegistrationSubmit,
@@ -49,14 +55,16 @@ import {
 	type ExamSubmitInput,
 	type ExamSubmitOutcome,
 } from "@/hooks/use-exam-registration-submit"
+import { registrationChromeForSlug } from "@/lib/registration-chrome"
 import { registrationOptionsQueryOptions } from "@/api/registration/query-options"
 import {
 	buildRegisterRequest,
 	selectionFromInput,
 } from "@/lib/registration-payloads"
 import {
+	compMembershipTerm,
 	defaultPaymentType,
-	isComplianceCountry as isComplianceCountryFor,
+	examSelectionErrors,
 	isExamKind,
 	isMembershipKind,
 	memberBackKind,
@@ -70,7 +78,9 @@ import {
 } from "@/lib/registration-presentation"
 import {
 	EMAIL_PATTERN,
+	EXAM_REGISTRATION_COPY,
 	MEMBERSHIP_REGISTRATION_COPY,
+	OFFLINE_PAYMENT_COPY,
 	type ExamProgramConfig,
 } from "@/config/registration"
 import { LOGIN_PATH } from "@/auth/constants"
@@ -119,6 +129,27 @@ type ExamRegistrationFormProps = {
 	 * The staged id travels with the next submit so the retry reuses the row.
 	 */
 	resume?: { stagedId: string; request: ExamRegisterRequest } | null
+	/**
+	 * True when the shell above already renders the programme title — the guest
+	 * banner does (`RegistrationBanner`, 2027 Reg Redesign). The sticky bar then
+	 * drops its own `h1` so the page has exactly one.
+	 *
+	 * An explicit prop rather than the form reading the pathname: a form that
+	 * inspects the route to decide what to render hides that coupling from both
+	 * call sites. Defaults to `false`, so the member route — which has no banner
+	 * and would otherwise be left with no `h1` at all — is unchanged.
+	 */
+	titleInBanner?: boolean
+	/**
+	 * True when the total and submit belong at the top of the ORDER RAIL rather
+	 * than in the sticky bar — the 2027 layout, which every GUEST form uses.
+	 *
+	 * Deliberately separate from `titleInBanner`. That one tracks whether a
+	 * banner exists, which only the redesigned programmes have; this one is a
+	 * layout choice that applies to all of them, `raij` and `ffr` included. One
+	 * flag doing both jobs would have tied the new layout to having artwork.
+	 */
+	controlsInRail?: boolean
 }
 
 /**
@@ -146,6 +177,8 @@ function ExamRegistrationForm({
 	onNavigateBack,
 	onRegistered,
 	resume = null,
+	titleInBanner = false,
+	controlsInRail = false,
 }: ExamRegistrationFormProps) {
 	const submit = useExamRegistrationSubmit()
 	const verifyEmail = useVerifyExamCustomer()
@@ -164,35 +197,37 @@ function ExamRegistrationForm({
 		getValues,
 		setValue,
 		trigger,
-		formState: { errors, isValid },
+		formState: { errors, submitCount },
 	} = useForm<ExamFormValues>({
 		defaultValues: resume
 			? toExamFormValuesFromRequest(
 					resume.request,
-					toExamFormValues(profile, load.countries),
+					toExamFormValues(profile),
 				)
-			: toExamFormValues(profile, load.countries),
+			: toExamFormValues(profile),
 		/*
-		 * `onTouched`, not `onChange`: Register stays disabled until the form is
-		 * valid, which needs validity recomputed as fields change — but `isValid`
-		 * is only maintained when the mode is not `onSubmit`. `onTouched` waits
-		 * for a first blur before showing a field's error, so nobody is told
-		 * their email is invalid while they are still halfway through typing it,
-		 * and it re-renders less than `onChange` on a form this size.
-		 *
-		 * Conditional sections are safe here: a field that unmounts (the address
-		 * cards under a card payment, the compliance attestations outside a
-		 * GDPR/CASL country) stops counting towards `isValid`, verified against
-		 * this version rather than assumed. Were it otherwise, switching payment
-		 * type would strand Register disabled with no visible field to fix.
+		 * `onTouched`: a field shows its error after its first blur, so nobody is
+		 * told their email is invalid while still halfway through typing it, and
+		 * it re-renders less than `onChange` on a form this size. After the first
+		 * submit attempt every field re-validates on change, so a fixed field
+		 * clears at once. Nothing here reads `isValid` any more — Register is
+		 * never disabled for an incomplete form — which also spares the form a
+		 * whole-form revalidation on every keystroke.
 		 */
 		mode: "onTouched",
+		// One focus, ours — see `useRevealInvalidField`.
+		shouldFocusError: false,
 	})
+	const { formRef } = useRevealInvalidField(submitCount)
+	/*
+	 * Whether Register has been pressed. The exam choice is not a form field,
+	 * so react-hook-form's `isSubmitted` cannot gate its errors — this does.
+	 * Never reset: once attempted, the section revalidates live, as RHF does.
+	 */
+	const [attempted, setAttempted] = useState(false)
 
 	// `useWatch`, not the destructured `watch()` — the latter returns a fresh
 	// function each render, which opts the whole component out of memoization.
-	const country = useWatch({ control, name: "country" })
-	const mobilePhoneCode = useWatch({ control, name: "mobilePhoneCode" })
 	const paymentType = useWatch({ control, name: "paymentType" })
 	const billing = useWatch({ control, name: "billing" })
 	const shipping = useWatch({ control, name: "shipping" })
@@ -208,8 +243,6 @@ function ExamRegistrationForm({
 		load,
 		programType,
 		regCode,
-		billingCountry: country,
-		mobilePhoneCode,
 		paymentType,
 		billingAddress: billing,
 		shippingAddress: shipping,
@@ -226,6 +259,7 @@ function ExamRegistrationForm({
 	const { fees } = state
 	const currency = fees?.currencyCode || "USD"
 	const hasBilling = fees?.hasBilling === true
+	const hasCompMembership = fees?.hasCompMembership === true
 	/*
 	 * Which sections apply at all. The server's `kind` decides, not our config:
 	 * `GARP_ExamReg_RegService` requires a selection and the exam-policy
@@ -248,18 +282,24 @@ function ExamRegistrationForm({
 	const showAddresses = showAddressesFor(paymentType)
 	const label = submitLabelFor(hasBilling, paymentType)
 
-	/** The billing country actually in force — the address card, or Location. */
-	const effectiveCountry = showAddresses ? billing.country : country
+	/*
+	 * The billing country in force. Since the Location select was removed, the
+	 * billing address card is the only control that carries one — so this is
+	 * that card's country for wire/ACH, and for a card order it is whatever the
+	 * member's profile seeded. A guest on a card order has none.
+	 *
+	 * It no longer decides tax (Stripe derives that from the address it is
+	 * sent, and the locally-taxed wire/ACH paths still show the card), and it no
+	 * longer decides which attestations render either — the 2027 designs put the
+	 * same ticks in front of every candidate. It survives only to name the
+	 * country record the payment section shows.
+	 */
 	const selectedCountry = useMemo(
 		() =>
 			load.countries.find(
-				(candidate) => candidate.countryCode === effectiveCountry,
+				(candidate) => candidate.countryCode === billing.country,
 			) ?? null,
-		[load.countries, effectiveCountry],
-	)
-	const isComplianceCountry = isComplianceCountryFor(
-		load.countries,
-		effectiveCountry,
+		[load.countries, billing.country],
 	)
 	const showAutorenew = showAutorenewFor(
 		load.contact?.isAutoRenewEnabled,
@@ -300,6 +340,26 @@ function ExamRegistrationForm({
 				Boolean(state.selection.part1.rateId && state.selection.part1.siteId)) &&
 			(!state.part2Active ||
 				Boolean(state.selection.part2.rateId && state.selection.part2.siteId)))
+
+	/*
+	 * What the exam section should flag — computed always (it is cheap and it
+	 * tells submit whether there is anything on screen to point at), shown only
+	 * once Register has been pressed.
+	 */
+	const missingSelection = isExam
+		? examSelectionErrors(
+				{
+					partsAvailable: load.examSelection?.partsAvailable ?? [],
+					selection: state.selection,
+					part1Active: state.part1Active,
+					part2Active: state.part2Active,
+					part1Admins: state.part1Admins,
+					part2Admins: state.part2Admins,
+				},
+				EXAM_REGISTRATION_COPY,
+			)
+		: {}
+	const selectionErrors = attempted ? missingSelection : {}
 
 	/*
 	 * Changing the billing country has three consequences, all of which the
@@ -370,97 +430,116 @@ function ExamRegistrationForm({
 		})
 	}
 
-	const onSubmit = handleSubmit(async (values) => {
-		setSubmitError(null)
+	const onSubmit = handleSubmit(
+		async (values) => {
+			setSubmitError(null)
+			setAttempted(true)
 
-		const billingAddress = {
-			...values.billing,
-			// A card order never shows the address card, so Location is the only
-			// country there is.
-			country: values.billing.country || values.country,
-		}
+			/*
+			 * The exam choice lives outside react-hook-form, so it is checked here,
+			 * after RHF's own rules passed. Its messages are already on screen by
+			 * the time this render commits (`attempted` batches with `submitCount`),
+			 * and the reveal hook scrolls to the first of them. When there is no
+			 * control to flag — no sittings published at all — say so at form level
+			 * instead of doing nothing visible.
+			 */
+			if (!examChosen || state.outOfOrder) {
+				if (!examChosen && Object.keys(missingSelection).length === 0) {
+					setSubmitError(EXAM_REGISTRATION_COPY.noSittingAvailable)
+				}
+				return
+			}
+			// `register` re-prices server-side, so submitting before a total exists
+			// means agreeing to a figure nobody has seen.
+			if (!fees) {
+				setSubmitError(EXAM_REGISTRATION_COPY.notPricedYet)
+				return
+			}
 
-		const request = buildRegisterRequest({
-			type: programType,
-			regCode,
-			contactId: load.contact?.id ?? null,
-			selection: state.selection,
-			materials: state.materials,
-			paymentType: values.paymentType,
-			billingAddress,
-			shippingAddress: values.billingAndShippingSame
-				? billingAddress
-				: values.shipping,
-			billingAndShippingSame: values.billingAndShippingSame,
-			autoRenew: values.autoRenew,
-			membershipSelected: values.membershipSelected,
-			riskNetSelected: values.riskNetSelected,
-			mobilePhoneCode: values.mobilePhoneCode,
-			firstName: values.firstName,
-			lastName: values.lastName,
-			email: values.email,
-			mobilePhone: values.mobilePhone,
-			smsPromotionalUpdates: values.smsPromotionalUpdates,
-			// No controls behind these — they ride through from the member's own
-			// record, exactly as the legacy carries them. Posting `""` instead
-			// would blank the contact's stored values on an OSTA registration.
-			title: load.contact?.title ?? "",
-			company: load.contact?.company ?? "",
-			// Sent only when a chosen exam centre demands it — Apex writes the
-			// block whenever an ID number is present, so an unwanted one would
-			// silently overwrite the member's stored identity.
-			personal: state.ostaRequired
-				? {
-						gender: values.osta.gender,
-						idType: values.osta.idType,
-						idLocation: values.osta.idLocation,
-						idNumber: values.osta.idNumber.trim(),
-						nameOnId: values.osta.nameOnId,
-						ostaConsent: values.osta.ostaConsent,
-						fullNameInChinese: values.osta.fullNameInChinese,
-						dateOfBirth: values.osta.dateOfBirth || null,
-						idExpireDate: values.osta.idExpireDate || null,
-						phone: values.osta.phone,
-						workStatus: values.osta.workStatus,
-						companyName: values.osta.company,
-						schoolName: values.osta.schoolName,
-						studentStatus: values.osta.studentStatus,
-						degreeName: values.osta.degreeName,
-						// From the contact record, not "" — Apex writes this block
-						// whenever it arrives, and the legacy prefills all four.
-						businessEmail: load.contact?.businessEmail ?? "",
-						professionalLevel: load.contact?.professionalLevel ?? "",
-						jobFunction: load.contact?.jobFunction ?? "",
-						riskSpecialty: load.contact?.riskSpecialty ?? "",
-					}
-				: null,
-			isComplianceCountry,
-			attestPrivacyNotice: values.attestPrivacyNotice,
-			attestLimitationOfLiability: values.attestLimitationOfLiability,
-			attestReleaseAndWaiver: values.attestReleaseAndWaiver,
-			examPolicy: values.examPolicy,
-			candidateResponsibility: values.candidateResponsibility,
-		})
+			// The address card is the only country source now; a card order simply
+			// posts whatever the profile seeded, or nothing for a guest.
+			const billingAddress = { ...values.billing }
 
-		/*
-		 * Staged, not sent. Everything past this point writes records — the order
-		 * is created and `payOrder` cannot be called twice — so the figures get
-		 * one more look first. Validation has already run: `handleSubmit` only
-		 * reaches here on a valid form.
-		 */
-		setPendingSubmit({
-			request,
-			checkAddress:
-				showAddresses && load.program.addressVerificationDisabled !== true,
-			// The blur check's answer, reused when it covered this same email.
-			session: verifyEmail.data ?? null,
-			// Only set when this form was rebuilt from a staged registration, so
-			// submitting again updates that row instead of stranding it.
-			resumeStagedId: resume?.stagedId ?? null,
-			// For the in-submit identity call — a member never blurred an email.
-			trackCta,
-		})
-	})
+			const request = buildRegisterRequest({
+				type: programType,
+				regCode,
+				contactId: load.contact?.id ?? null,
+				selection: state.selection,
+				materials: state.materials,
+				paymentType: values.paymentType,
+				billingAddress,
+				shippingAddress: values.billingAndShippingSame
+					? billingAddress
+					: values.shipping,
+				billingAndShippingSame: values.billingAndShippingSame,
+				autoRenew: values.autoRenew,
+				membershipSelected: values.membershipSelected,
+				riskNetSelected: values.riskNetSelected,
+				firstName: values.firstName,
+				lastName: values.lastName,
+				email: values.email,
+				// No controls behind these — they ride through from the member's own
+				// record, exactly as the legacy carries them. Posting `""` instead
+				// would blank the contact's stored values on an OSTA registration.
+				title: load.contact?.title ?? "",
+				company: load.contact?.company ?? "",
+				// Sent only when a chosen exam centre demands it — Apex writes the
+				// block whenever an ID number is present, so an unwanted one would
+				// silently overwrite the member's stored identity.
+				personal: state.ostaRequired
+					? {
+							gender: values.osta.gender,
+							idType: values.osta.idType,
+							idLocation: values.osta.idLocation,
+							idNumber: values.osta.idNumber.trim(),
+							nameOnId: values.osta.nameOnId,
+							ostaConsent: values.osta.ostaConsent,
+							fullNameInChinese: values.osta.fullNameInChinese,
+							dateOfBirth: values.osta.dateOfBirth || null,
+							idExpireDate: values.osta.idExpireDate || null,
+							phone: values.osta.phone,
+							workStatus: values.osta.workStatus,
+							companyName: values.osta.company,
+							schoolName: values.osta.schoolName,
+							studentStatus: values.osta.studentStatus,
+							degreeName: values.osta.degreeName,
+							// From the contact record, not "" — Apex writes this block
+							// whenever it arrives, and the legacy prefills all four.
+							businessEmail: load.contact?.businessEmail ?? "",
+							professionalLevel: load.contact?.professionalLevel ?? "",
+							jobFunction: load.contact?.jobFunction ?? "",
+							riskSpecialty: load.contact?.riskSpecialty ?? "",
+						}
+					: null,
+				attestPolicies: values.attestPolicies,
+				examPolicy: values.examPolicy,
+				candidateResponsibility: values.candidateResponsibility,
+				marketingEmails: values.marketingEmails,
+				examPrepProviders: values.examPrepProviders,
+			})
+
+			/*
+			 * Staged, not sent. Everything past this point writes records — the order
+			 * is created and `payOrder` cannot be called twice — so the figures get
+			 * one more look first. Validation has already run: `handleSubmit` only
+			 * reaches here on a valid form.
+			 */
+			setPendingSubmit({
+				request,
+				checkAddress:
+					showAddresses && load.program.addressVerificationDisabled !== true,
+				// The blur check's answer, reused when it covered this same email.
+				session: verifyEmail.data ?? null,
+				// Only set when this form was rebuilt from a staged registration, so
+				// submitting again updates that row instead of stranding it.
+				resumeStagedId: resume?.stagedId ?? null,
+				// For the in-submit identity call — a member never blurred an email.
+				trackCta,
+			})
+		},
+		// RHF's rules failed: the errors render, the reveal hook lands on the first.
+		() => setAttempted(true),
+	)
 
 	const confirmSubmit = async () => {
 		if (!pendingSubmit) return
@@ -498,110 +577,147 @@ function ExamRegistrationForm({
 	const inlineSubmitError =
 		isAuthenticated && submit.error instanceof MustSignInError ? null : submitError
 	const isBusy = submit.isPending
-	const canSubmit =
-		isValid && examChosen && !state.outOfOrder && Boolean(fees)
+
+	/*
+	 * Whether the sticky bar has anything left to carry. It holds three things,
+	 * each of which can move out: the back link (members only), the title (the
+	 * banner takes it) and the controls (the rail takes them). A guest on a
+	 * redesigned programme loses all three, so the bar is not rendered at all —
+	 * an empty sticky bar would still paint a 5.5rem band over the page.
+	 *
+	 * A guest on a programme with no banner keeps it for the title alone, which
+	 * is what preserves that page's only `h1`.
+	 */
+	const showBar = isAuthenticated || !titleInBanner || !controlsInRail
+
+	/*
+	 * The programme's seal and bar wash, for the signed-in bar. Undefined for a
+	 * programme with no designed chrome, which then keeps the plain bar — the
+	 * same fallback the guest pages use. Resolved from the slug, so it needs no
+	 * API data.
+	 */
+	const chrome = registrationChromeForSlug(programType)?.chrome
+
+	/*
+	 * The total and the submit, defined once and placed differently by audience:
+	 * a member gets them in the sticky bar, a guest at the top of the order rail
+	 * (2027 Reg Redesign). One definition rather than two rendered copies — a
+	 * duplicated submit button and a duplicated `aria-live` total would both be
+	 * announced twice.
+	 */
+	const submitControls = (
+		<div
+			className={cn(
+				controlsInRail
+					? REGISTRATION_RAIL_CONTROLS
+					: cn(REGISTRATION_BAR_CONTROL_GROUP, "sm:ml-auto"),
+			)}
+		>
+			{/*
+			 * Always rendered, and pinned to the button's own height, so
+			 * neither the arrival of a price nor a longer figure moves the bar.
+			 */}
+			<div
+				className={cn(
+					REGISTRATION_BAR_CONTROL_HEIGHT,
+					REGISTRATION_BAR_TOTAL_BLOCK,
+					controlsInRail && REGISTRATION_BAR_TOTAL_LEADING,
+				)}
+				aria-live="polite"
+				aria-busy={state.isPricing}
+			>
+				<p className="text-caption leading-none text-muted-foreground">
+					{state.isPricing ? "Updating…" : "Total"}
+				</p>
+				{fees?.total != null ? (
+					<AnimatedAmount
+						amount={fees.total}
+						currency={currency}
+						pending={state.isPricing}
+						className="text-lg leading-tight font-semibold text-primary"
+					/>
+				) : (
+					<span className="text-lg leading-tight font-semibold text-muted-foreground">
+						&mdash;
+					</span>
+				)}
+			</div>
+			{/*
+			 * Never disabled for an incomplete form: the click runs validation
+			 * and the first missing answer is scrolled to and focused instead.
+			 * Held only while a price is being fetched — the total beside it
+			 * reads "Updating…" at that moment, so the two agree — and while
+			 * the registration itself is in flight.
+			 */}
+			<Button
+				type="submit"
+				size="lg"
+				className={REGISTRATION_BAR_SUBMIT}
+				disabled={isBusy || state.isPricing}
+			>
+				{isBusy ? "Submitting…" : label}
+			</Button>
+		</div>
+	)
 
 	return (
-		<form className="flex flex-col gap-6" onSubmit={onSubmit} noValidate>
+		<form
+			ref={formRef}
+			className="flex flex-col gap-6"
+			onSubmit={onSubmit}
+			noValidate
+		>
 			{/*
-			 * One bar: where you came from, what you are doing, what it costs and
-			 * the commitment. Folding Back into it keeps all of that on a single
-			 * line, leaving the viewport for the form itself.
+			 * The member bar: where you came from, what you are doing, what it
+			 * costs and the commitment, on a single line.
+			 *
+			 * Not rendered for a guest at all. The 2027 designs put the total and
+			 * submit at the top of the ORDER RAIL instead, and with the title in
+			 * the banner the bar would have nothing else left to carry.
 			 *
 			 * Two things here are deliberate and easy to "tidy" back into bugs:
 			 * it is fully opaque, because content scrolling under a translucent
-			 * bar reads as a rendering fault rather than as depth; and it has no
-			 * negative margin, because bleeding it past the container makes it
-			 * wider than its scroll parent, which buys a few pixels of horizontal
-			 * scroll and clips the back arrow.
+			 * bar reads as a rendering fault rather than as depth; and its
+			 * negative margin exactly cancels the container's gutter — both
+			 * derive from `--shell-gutter`, so the bar keeps reaching the page
+			 * edges even where the guest forms widen that gutter.
 			 */}
-			<div className={REGISTRATION_STICKY_BAR}>
-				<div className={REGISTRATION_BAR_TITLE_GROUP}>
-					{/*
-					 * No back link for a guest. Every in-app parent is behind the
-					 * session guard, and sending them out to garp.org is not "back" —
-					 * it is leaving, which is not what a back arrow promises halfway
-					 * through a form. The divider goes with it; on its own it would
-					 * sit in front of the title separating it from nothing.
-					 */}
-					{isAuthenticated ? (
-						<>
-							<ProgramsSubpageHeader
-								onNavigateBack={onNavigateBack}
-								back={{ kind: memberBackKind(load.program.kind) }}
-								iconOnlyBackOnMobile
-							/>
-							<div
-								className="hidden h-6 w-px shrink-0 bg-border sm:block"
-								aria-hidden
-							/>
-						</>
-					) : null}
-					{/*
-					 * An `h1`, not an `h2`: on the public route this is the page's
-					 * only heading, and that page is linked from marketing email.
-					 * It was previously the sole `h2` on a document with no `h1`.
-					 *
-					 * Same title for both audiences — it names the certification in
-					 * full, so the supporting line a guest used to get underneath it
-					 * would now just repeat the title.
-					 */}
-					<h1 className={REGISTRATION_BAR_TITLE}>
-						<MegaMenuHeadingText heading={program.heading} />
-					</h1>
-				</div>
-
-				<div className={REGISTRATION_BAR_CONTROL_GROUP}>
-					{/*
-					 * Always rendered, and pinned to the button's own height, so
-					 * neither the arrival of a price nor a longer figure moves the bar.
-					 */}
-					<div
-						className={cn(
-							REGISTRATION_BAR_CONTROL_HEIGHT,
-							REGISTRATION_BAR_TOTAL_BLOCK,
-						)}
-						aria-live="polite"
-						aria-busy={state.isPricing}
-					>
-						<p className="text-caption leading-none text-muted-foreground">
-							{state.isPricing ? "Updating…" : "Total"}
-						</p>
-						{fees?.total != null ? (
-							<AnimatedAmount
-								amount={fees.total}
-								currency={currency}
-								pending={state.isPricing}
-								className="text-lg leading-tight font-semibold text-primary"
-							/>
-						) : (
-							<span className="text-lg leading-tight font-semibold text-muted-foreground">
-								&mdash;
-							</span>
+			{showBar ? (
+				<div className={cn(REGISTRATION_STICKY_BAR, chrome?.barWash)}>
+					<div className={REGISTRATION_BAR_TITLE_GROUP}>
+						{/*
+						 * No back link for a guest. Every in-app parent is behind the
+						 * session guard, and sending them out to garp.org is not "back" —
+						 * it is leaving, which is not what a back arrow promises halfway
+						 * through a form. The divider goes with it; on its own it would
+						 * sit in front of the title separating it from nothing.
+						 */}
+						{isAuthenticated ? (
+							<>
+								<ProgramsSubpageHeader
+									onNavigateBack={onNavigateBack}
+									back={{ kind: memberBackKind(load.program.kind) }}
+									iconOnlyBackOnMobile
+								/>
+								<div
+									className="hidden h-6 w-px shrink-0 bg-border sm:block"
+									aria-hidden
+								/>
+							</>
+						) : null}
+						{/*
+						 * Seal plus an `h1` — wherever this bar renders, that heading is
+						 * the page's only one. Both stand down together when a banner is
+						 * carrying the title above instead, so no page ends up with two
+						 * headings, or — just as bad — none.
+						 */}
+						{titleInBanner ? null : (
+							<ProgramBarIdentity chrome={chrome} heading={program.heading} />
 						)}
 					</div>
-					{/*
-					 * Blocked until the cart has priced: `register` re-prices
-					 * server-side, so submitting before a total exists means agreeing
-					 * to a figure nobody has seen. And blocked until every required
-					 * answer is in, so the first thing a candidate learns about a
-					 * missing field is not a failed submission.
-					 */}
-					<Button
-						type="submit"
-						size="lg"
-						className={REGISTRATION_BAR_SUBMIT}
-						disabled={isBusy || !canSubmit}
-						title={
-							canSubmit || isBusy
-								? undefined
-								: "Complete the required fields to continue."
-						}
-					>
-						{isBusy ? "Submitting…" : label}
-					</Button>
+					{controlsInRail ? null : submitControls}
 				</div>
-			</div>
+			) : null}
 
 			{/*
 			 * Guest-only, and above the form rather than beside the email field:
@@ -675,17 +791,19 @@ function ExamRegistrationForm({
 
 			<div className={REGISTRATION_GRID}>
 				<div className={REGISTRATION_MAIN_COLUMN}>
-					<YourDetailsSection
-						register={register}
-						control={control}
-						errors={errors}
-						countries={load.countries}
-						isAuthenticated={isAuthenticated}
-						showLocation={!showAddresses}
-						onCountryChange={handleCountryChange}
-						onIdentityBlur={handleIdentityBlur}
-						disabled={isBusy}
-					/>
+					{/*
+					 * Guest-only. A member has their name and email on file, and the
+					 * 2027 designs cut the rest of this card, so for them it would be
+					 * a heading over nothing.
+					 */}
+					{isAuthenticated ? null : (
+						<YourDetailsSection
+							register={register}
+							errors={errors}
+							onIdentityBlur={handleIdentityBlur}
+							disabled={isBusy}
+						/>
+					)}
 
 					{isExam ? (
 						<YourExamSection
@@ -702,6 +820,7 @@ function ExamRegistrationForm({
 							onSelectAdmin={state.selectAdmin}
 							onSelectSite={state.selectSite}
 							outOfOrder={state.outOfOrder}
+							errors={selectionErrors}
 							disabled={isBusy}
 						/>
 					) : null}
@@ -764,9 +883,26 @@ function ExamRegistrationForm({
 							country={selectedCountry}
 							useStripe={load.stripe?.useStripe === true}
 							paymentType={paymentType}
-							showAutorenew={showAutorenew}
+							disabled={isBusy}
+						/>
+					) : null}
+
+					{/*
+					 * The free membership and the offer to keep it. Rendered when there
+					 * is either a membership to announce or a renewal to offer — with
+					 * both off the card would be a heading over nothing, and on the
+					 * membership programme itself the first half is simply false.
+					 */}
+					{hasCompMembership || showAutorenew ? (
+						<CompMembershipSection
+							control={control}
+							hasCompMembership={hasCompMembership}
+							term={compMembershipTerm(fees?.compMembershipTermMonths)}
+							showAutoRenew={showAutorenew}
 							autoRenewLabel={
-								isMembership ? MEMBERSHIP_REGISTRATION_COPY.autoRenew : undefined
+								isMembership
+									? MEMBERSHIP_REGISTRATION_COPY.autoRenew
+									: OFFLINE_PAYMENT_COPY.autoRenew
 							}
 							disabled={isBusy}
 						/>
@@ -793,12 +929,23 @@ function ExamRegistrationForm({
 					) : null}
 
 					{/*
-					 * Never gated away: the card is never actually empty. An exam adds
-					 * the candidate acknowledgements, a compliance country adds the
-					 * three ticks, and everyone else still gets the implicit "by
-					 * selecting Register you agree…" paragraph — which the legacy
-					 * shows for every kind, and which is the only agreement a course
-					 * registrant outside a GDPR/CASL country ever sees.
+					 * Optional, and only where GARP publishes a provider list to link
+					 * to — FRM, SCR and RAI. Consenting to a network you cannot look
+					 * at is consent in name only.
+					 */}
+					{program.examPrepProvidersUrl ? (
+						<ExamPrepSection
+							control={control}
+							providersUrl={program.examPrepProvidersUrl}
+							abbrev={program.heading.highlight}
+							disabled={isBusy}
+						/>
+					) : null}
+
+					{/*
+					 * Never gated away: the card is never empty. Everyone ticks the
+					 * policy and marketing lines, and an exam adds the candidate
+					 * acknowledgements on top.
 					 */}
 					<AcknowledgementsSection
 						control={control}
@@ -807,13 +954,23 @@ function ExamRegistrationForm({
 						showCandidateAcknowledgements={showCandidateAcknowledgementsFor(
 							load.program.kind,
 						)}
-						isComplianceCountry={isComplianceCountry}
-						submitLabel={label}
 						disabled={isBusy}
 					/>
 				</div>
 
-				<aside className={REGISTRATION_RAIL_COLUMN}>
+				{/*
+				 * For a guest the rail is also where the total and submit live, so
+				 * the column becomes a stack. Its pin offset follows the BAR, not the
+				 * controls: `top-28` leaves room for a bar that is there, `top-6` is
+				 * right only when nothing sits above the grid.
+				 */}
+				<aside
+					className={cn(
+						showBar ? REGISTRATION_RAIL_COLUMN : REGISTRATION_RAIL_COLUMN_GUEST,
+						controlsInRail && REGISTRATION_RAIL_STACK,
+					)}
+				>
+					{controlsInRail ? submitControls : null}
 					<RegistrationRail
 						materials={state.visibleMaterials}
 						onToggleMaterial={state.toggleMaterial}

@@ -57,7 +57,7 @@ function EmptyState({
 	return (
 		<div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-6 py-14 text-center">
 			<Icon className="size-9 text-muted-foreground" aria-hidden />
-			<p className="mt-4 font-heading text-lg font-semibold tracking-wide text-foreground">
+			<p className="mt-4 font-heading text-lg font-semibold tracking-wide text-heading">
 				{state.title}
 			</p>
 			<p className="mt-2 max-w-sm text-sm text-muted-foreground">
@@ -155,7 +155,7 @@ function MemberDirectoryPanel({
 
 	const heading = showHeading ? (
 		<header className="space-y-1">
-			<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+			<h1 className="font-heading text-3xl font-semibold tracking-wide text-heading">
 				{MEMBER_DIRECTORY_TITLE}
 			</h1>
 			<p className="text-sm text-muted-foreground">

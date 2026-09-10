@@ -122,7 +122,7 @@ function ProgramCard({
 						<ProgramResultsChip programType={program.programType} />
 					) : null}
 				</div>
-				<CardTitle className="font-heading text-lg leading-snug tracking-wide text-foreground">
+				<CardTitle className="font-heading text-lg leading-snug tracking-wide text-heading">
 					{displayName}
 				</CardTitle>
 			</CardHeader>

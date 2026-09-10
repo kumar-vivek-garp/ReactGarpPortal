@@ -17,7 +17,6 @@ import {
 	CANDIDATE_RESPONSIBILITY_URL,
 	POLICY_LINKS,
 } from "@/config/registration"
-import { cn } from "@/lib/utils"
 
 function PolicyLink({ href, children }: { href: string; children: string }) {
 	return (
@@ -37,21 +36,32 @@ type TickProps = {
 	name:
 		| "candidateResponsibility"
 		| "examPolicy"
-		| "attestPrivacyNotice"
-		| "attestLimitationOfLiability"
-		| "attestReleaseAndWaiver"
+		| "attestPolicies"
+		| "marketingEmails"
 	control: Control<ExamFormValues>
-	invalid: boolean
+	/** Optional ticks carry no `*` and no rule — see `marketingEmails` below. */
+	required?: boolean
+	invalid?: boolean
 	disabled?: boolean
 	children: React.ReactNode
 }
 
-function Tick({ id, name, control, invalid, disabled, children }: TickProps) {
+function Tick({
+	id,
+	name,
+	control,
+	required = false,
+	invalid = false,
+	disabled,
+	children,
+}: TickProps) {
 	return (
 		<Controller
 			control={control}
 			name={name}
-			rules={{ required: ACKNOWLEDGEMENT_COPY.policiesRequired }}
+			rules={
+				required ? { required: ACKNOWLEDGEMENT_COPY.policiesRequired } : undefined
+			}
 			render={({ field }) => (
 				<div className="flex items-start gap-3">
 					<Checkbox
@@ -62,7 +72,22 @@ function Tick({ id, name, control, invalid, disabled, children }: TickProps) {
 						disabled={disabled}
 						className="mt-0.5"
 					/>
-					<Label htmlFor={id} className="text-body leading-5 font-normal">
+					{/*
+					 * `block`, not the Label atom's default `flex`. These labels are
+					 * PROSE with links in it, and a flex container turns every link and
+					 * text node into a separate column — which is exactly how this
+					 * rendered the first time: four stacked link columns with the commas
+					 * stranded between them.
+					 */}
+					<Label
+						htmlFor={id}
+						className="block text-body leading-6 font-normal"
+					>
+						{required ? (
+							<span className="text-destructive" aria-hidden>
+								*{" "}
+							</span>
+						) : null}
 						{children}
 					</Label>
 				</div>
@@ -83,48 +108,34 @@ type AcknowledgementsSectionProps = {
 	 * requires the attestation for `kind == 'exam'` and for nothing else.
 	 */
 	showCandidateAcknowledgements: boolean
-	/** True when the billing country carries a GDPR or CASL tag. */
-	isComplianceCountry: boolean
-	submitLabel: string
 	disabled?: boolean
 }
 
 /**
- * What the candidate is agreeing to.
+ * What the candidate is agreeing to — three required confirmations and one
+ * optional opt-in.
  *
- * Two blocks with different audiences, which is why they are gated separately
- * rather than as one card:
+ * The 2027 designs replaced a split that is worth remembering, because this is
+ * the second time it has changed: a GDPR/CASL country used to get three
+ * separate attestations while everyone else got a single "by selecting Register
+ * you agree…" line and had `privacyPolicy: true` posted on their behalf. That
+ * meant consent was recorded for people who had never been shown the
+ * statements, and it depended on a Location field that no longer exists.
  *
- * - The **candidate acknowledgements** are exam-only, and on an exam they are
- *   mandatory — Apex refuses the whole registration unless both are ticked,
- *   and records each as a timestamp on the exam attempt.
- * - The **compliance ticks** apply to every programme kind, because a GDPR or
- *   CASL registrant has to answer them whatever they are buying. Hiding them
- *   for a course would post `privacyPolicy: false` for every EU course
- *   registrant, which Apex accepts in silence.
+ * Now every candidate ticks the same boxes, so there is no country to resolve
+ * and no implicit branch. Strictly better consent, and materially simpler.
  *
- * Outside a compliance country, submitting IS the agreement and the notice
- * says so — the legacy's behaviour, and the reason all three collapse into one
- * boolean server-side.
- *
- * The caller decides whether this card renders at all: with neither block it
- * would be a heading and nothing to do. See `showAcknowledgementsCard`.
+ * The first two are exam-only: a course has no exam policy, and Apex requires
+ * the attestation for `kind == 'exam'` and nothing else. The caller decides
+ * whether the card renders at all — see `showAcknowledgementsCard`.
  */
 function AcknowledgementsSection({
 	control,
 	errors,
 	examPolicyUrl,
 	showCandidateAcknowledgements,
-	isComplianceCountry,
-	submitLabel,
 	disabled,
 }: AcknowledgementsSectionProps) {
-	const policiesInvalid = Boolean(
-		errors.attestPrivacyNotice ||
-			errors.attestLimitationOfLiability ||
-			errors.attestReleaseAndWaiver,
-	)
-
 	return (
 		<Card>
 			<CardHeader>
@@ -137,133 +148,96 @@ function AcknowledgementsSection({
 				{showCandidateAcknowledgements ? (
 					<>
 						<Tick
-					id="candidateResponsibility"
-					name="candidateResponsibility"
-					control={control}
-					invalid={Boolean(errors.candidateResponsibility)}
-					disabled={disabled}
-				>
-					{ACKNOWLEDGEMENT_COPY.candidateResponsibility}{" "}
-					<PolicyLink href={CANDIDATE_RESPONSIBILITY_URL}>
-						{ACKNOWLEDGEMENT_COPY.candidateResponsibilityLink}
-					</PolicyLink>
-					.
-				</Tick>
+							id="candidateResponsibility"
+							name="candidateResponsibility"
+							control={control}
+							required
+							invalid={Boolean(errors.candidateResponsibility)}
+							disabled={disabled}
+						>
+							{ACKNOWLEDGEMENT_COPY.candidateResponsibility}{" "}
+							<PolicyLink href={CANDIDATE_RESPONSIBILITY_URL}>
+								{ACKNOWLEDGEMENT_COPY.candidateResponsibilityLink}
+							</PolicyLink>
+							.
+						</Tick>
 
-				<Tick
-					id="examPolicy"
-					name="examPolicy"
-					control={control}
-					invalid={Boolean(errors.examPolicy)}
-					disabled={disabled}
-				>
-					{ACKNOWLEDGEMENT_COPY.examPolicy}{" "}
-					<PolicyLink href={examPolicyUrl}>
-						{ACKNOWLEDGEMENT_COPY.examPolicyLink}
-					</PolicyLink>
-					.
-				</Tick>
-
-						<FieldError
-							message={
-								errors.candidateResponsibility?.message ??
-								errors.examPolicy?.message
-							}
-						/>
+						<Tick
+							id="examPolicy"
+							name="examPolicy"
+							control={control}
+							required
+							invalid={Boolean(errors.examPolicy)}
+							disabled={disabled}
+						>
+							{ACKNOWLEDGEMENT_COPY.examPolicy}{" "}
+							<PolicyLink href={examPolicyUrl}>
+								{ACKNOWLEDGEMENT_COPY.examPolicyLink}
+							</PolicyLink>
+							.
+						</Tick>
 					</>
 				) : null}
 
-				{isComplianceCountry ? (
-					<fieldset
-						className={cn(
-							"flex flex-col gap-3",
-							// Nothing above it on a course — a rule under the heading
-							// would divide the card from itself.
-							showCandidateAcknowledgements && "border-t border-border pt-4",
-						)}
-					>
-						<legend className="sr-only">Policy confirmations</legend>
-						<p className="text-caption text-muted-foreground">
-							{ACKNOWLEDGEMENT_COPY.complianceIntro}
-						</p>
+				{/*
+				 * One tick over all five policies, as the designs draw it. Apex
+				 * collapses them into a single `privacyPolicy` boolean anyway, so
+				 * splitting them would record a distinction the server cannot keep.
+				 */}
+				<Tick
+					id="attestPolicies"
+					name="attestPolicies"
+					control={control}
+					required
+					invalid={Boolean(errors.attestPolicies)}
+					disabled={disabled}
+				>
+					Yes, I have read GARP&rsquo;s{" "}
+					<PolicyLink href={POLICY_LINKS.privacyNotice}>
+						Privacy Notice
+					</PolicyLink>
+					,{" "}
+					<PolicyLink href={POLICY_LINKS.codeOfConduct}>
+						Code of Conduct
+					</PolicyLink>
+					,{" "}
+					<PolicyLink href={POLICY_LINKS.limitationOfLiability}>
+						Limitation of Liability
+					</PolicyLink>
+					,{" "}
+					<PolicyLink href={POLICY_LINKS.releaseAndWaiver}>
+						Waiver and Release
+					</PolicyLink>{" "}
+					{/*
+					 * Plain text, not a link: GARP publishes no Refund Policy page —
+					 * every candidate path 404s. Wrap it in a `PolicyLink` as soon as
+					 * there is a URL to point at.
+					 */}
+					and Refund Policy.
+				</Tick>
 
-						<Tick
-							id="attestPrivacyNotice"
-							name="attestPrivacyNotice"
-							control={control}
-							invalid={policiesInvalid}
-							disabled={disabled}
-						>
-							I have read GARP&rsquo;s{" "}
-							<PolicyLink href={POLICY_LINKS.privacyNotice}>
-								Privacy Notice
-							</PolicyLink>{" "}
-							and{" "}
-							<PolicyLink href={POLICY_LINKS.codeOfConduct}>
-								Code of Conduct
-							</PolicyLink>
-							.
-						</Tick>
+				{/*
+				 * OPT-IN, and deliberately not required. Bundling marketing consent
+				 * into a registration nobody can complete without it is not consent —
+				 * it is the pattern GDPR Art. 7(4) exists to forbid. Unticked is a
+				 * complete answer; do not add a `required` rule here.
+				 */}
+				<Tick
+					id="marketingEmails"
+					name="marketingEmails"
+					control={control}
+					disabled={disabled}
+				>
+					{ACKNOWLEDGEMENT_COPY.marketingEmails}
+				</Tick>
 
-						<Tick
-							id="attestLimitationOfLiability"
-							name="attestLimitationOfLiability"
-							control={control}
-							invalid={policiesInvalid}
-							disabled={disabled}
-						>
-							I have read GARP&rsquo;s{" "}
-							<PolicyLink href={POLICY_LINKS.limitationOfLiability}>
-								Limitation of Liability
-							</PolicyLink>
-							.
-						</Tick>
-
-						<Tick
-							id="attestReleaseAndWaiver"
-							name="attestReleaseAndWaiver"
-							control={control}
-							invalid={policiesInvalid}
-							disabled={disabled}
-						>
-							I have read GARP&rsquo;s{" "}
-							<PolicyLink href={POLICY_LINKS.releaseAndWaiver}>
-								Waiver and Release
-							</PolicyLink>
-							.
-						</Tick>
-
-						{policiesInvalid ? (
-							<FieldError message={ACKNOWLEDGEMENT_COPY.policiesRequired} />
-						) : null}
-					</fieldset>
-				) : (
-					<p
-						className={cn(
-							"text-caption text-muted-foreground",
-							showCandidateAcknowledgements && "border-t border-border pt-4",
-						)}
-					>
-						By selecting <strong>{submitLabel}</strong> you agree to the{" "}
-						<PolicyLink href={POLICY_LINKS.privacyNotice}>
-							Privacy Notice
-						</PolicyLink>
-						,{" "}
-						<PolicyLink href={POLICY_LINKS.codeOfConduct}>
-							Code of Conduct
-						</PolicyLink>
-						,{" "}
-						<PolicyLink href={POLICY_LINKS.limitationOfLiability}>
-							Limitation of Liability
-						</PolicyLink>{" "}
-						and{" "}
-						<PolicyLink href={POLICY_LINKS.releaseAndWaiver}>
-							Waiver and Release
-						</PolicyLink>
-						, and to receiving emails from GARP and selected third-party
-						providers.
-					</p>
-				)}
+				<FieldError
+					message={
+						errors.candidateResponsibility?.message ??
+						errors.examPolicy?.message ??
+						errors.attestPolicies?.message
+					}
+				/>
 			</CardContent>
 		</Card>
 	)

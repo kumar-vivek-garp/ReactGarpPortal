@@ -127,6 +127,16 @@ export type ExamProgramConfig = {
 	/** Shown to guests under the title, never to members. */
 	publicByLine: string
 	examPolicyUrl: string
+	/**
+	 * The programme's Exam Prep Providers page, for the Exam Preparation
+	 * Assistance card.
+	 *
+	 * Optional, and the card does not render without it — GARP only publishes
+	 * one for FRM, SCR and RAI. Note the slugs genuinely differ: FRM and SCR use
+	 * `exam-preparation-providers`, RAI uses `exam-prep-providers`. All three
+	 * verified against the live site; do not "regularise" them.
+	 */
+	examPrepProvidersUrl?: string
 }
 
 /** The document title for a programme's registration page. */
@@ -155,6 +165,7 @@ export const EXAM_PROGRAMS: Record<string, ExamProgramConfig> = {
 		publicByLine:
 			"Returning candidates registering for the FRM Part II Exam must sign in to continue with registration.",
 		examPolicyUrl: "https://www.garp.org/frm/exam-policies",
+		examPrepProvidersUrl: "https://www.garp.org/frm/exam-preparation-providers",
 	},
 	scr: {
 		registrationType: "scr",
@@ -175,6 +186,7 @@ export const EXAM_PROGRAMS: Record<string, ExamProgramConfig> = {
 		publicByLine:
 			"A Certified FRM® / ERP® / RAI™ Holder or individual member may sign in for a discounted rate.",
 		examPolicyUrl: "https://www.garp.org/scr/exam-policies",
+		examPrepProvidersUrl: "https://www.garp.org/scr/exam-preparation-providers",
 	},
 	riskai: {
 		registrationType: "riskai",
@@ -196,6 +208,7 @@ export const EXAM_PROGRAMS: Record<string, ExamProgramConfig> = {
 		 * not porting.
 		 */
 		examPolicyUrl: "https://www.garp.org/rai/exam-policies",
+		examPrepProvidersUrl: "https://www.garp.org/rai/exam-prep-providers",
 	},
 	raij: {
 		registrationType: "raij",
@@ -361,6 +374,14 @@ export const MEMBERSHIP_OFFER_COPY = {
 } as const
 
 export const EXAM_REGISTRATION_COPY = {
+	/* Submit-time messages for the exam choice, which react-hook-form does not own. */
+	choosePart: "Please choose an exam.",
+	chooseSitting: "Please choose a sitting.",
+	chooseSite: "Please choose where you will sit.",
+	noSittingAvailable:
+		"There is no exam sitting available to register for at the moment.",
+	notPricedYet:
+		"Your order has not been priced yet. Please try again in a moment.",
 	bothPartsAlert:
 		"Exam centres may not be in the same location. If you sit both parts on the same day, plan for travel between centres — late arrivals cannot sit the exam.",
 	ostaSiteNotice:
@@ -387,19 +408,56 @@ export const OFFLINE_PAYMENT_COPY = {
 export const CANDIDATE_RESPONSIBILITY_URL =
 	"https://www.garp.org/candidate-responsibility"
 
+/**
+ * The four confirmations the 2027 designs put on every registration.
+ *
+ * They replace the old split, where a GDPR/CASL country got three separate
+ * attestations and everyone else got a single "by selecting Register you
+ * agree…" line. Now everybody ticks the same four, which is both simpler and
+ * strictly better consent — the implicit variant recorded agreement from
+ * people who had never been shown the statements.
+ */
 export const ACKNOWLEDGEMENT_COPY = {
-	title: "Before you register",
+	title: "Candidate Acknowledgements",
 	/** Apex refuses the whole registration unless both of these are ticked. */
-	candidateResponsibility: "I have read and agree to the",
+	candidateResponsibility: "I confirm that I have read and agree to the",
 	candidateResponsibilityLink: "Candidate Responsibility Statement",
-	examPolicy: "I have read and agree to the",
+	examPolicy: "I confirm that I have read and agree to the",
 	examPolicyLink: "Exam Policies",
-	complianceIntro:
-		"Your location requires us to record these separately, so please confirm each one.",
-	privacyNotice: "I have read GARP's Privacy Notice and Code of Conduct.",
-	limitationOfLiability: "I have read GARP's Limitation of Liability.",
-	releaseAndWaiver: "I have read GARP's Waiver and Release.",
 	policiesRequired: "Please confirm you have read our policies.",
+	marketingEmails:
+		"I agree to receiving emails from GARP and select third party providers with news, special offers, promotions and future messages that may be of interest to me.",
+} as const
+
+/**
+ * The Exam Preparation Assistance card — an OPTIONAL opt-in to GARP passing
+ * contact details to its third-party prep providers.
+ *
+ * Rendered only for a programme with an `examPrepProvidersUrl`, since the link
+ * is the whole point of the card and GARP publishes that page for FRM, SCR and
+ * RAI only.
+ */
+export const EXAM_PREP_COPY = {
+	title: "Exam Preparation Assistance",
+	optIn:
+		"I agree to GARP sharing my contact information with its network of third-party Exam Preparation Providers.",
+	linkIntro: "View a list of",
+	/** `{abbrev}` is the programme code, e.g. "FRM Exam Preparation Providers". */
+	linkLabel: "{abbrev} Exam Preparation Providers",
+} as const
+
+/** The complimentary membership a programme includes, and its renewal offer. */
+export const COMP_MEMBERSHIP_COPY = {
+	title: "Complimentary Membership",
+	/**
+	 * `{term}` comes from `compMembershipTerm` and carries its own "of", so the
+	 * no-term case reads "unlocked complimentary Individual Membership".
+	 */
+	body: "By registering, you've unlocked {term} Individual Membership at no additional cost. Capitalize on this benefit by exploring premium content, discounted rates on products and services, priority registration for Chapter meetings, preferential rates at GARP events, and more.",
+	/** Shown in place of the above when the membership is the purchase itself. */
+	renewalOnlyTitle: "Automatic Renewal",
+	autoRenewTitle: "Automatic Renewal",
+	optional: "(optional)",
 } as const
 
 /** The China identity block. Shown only when an OSTA exam centre is chosen. */

@@ -53,7 +53,7 @@ function CpdActivityCard({
 			</div>
 
 			<div className="space-y-1">
-				<h3 className="font-heading text-base leading-snug tracking-wide text-foreground">
+				<h3 className="font-heading text-base leading-snug tracking-wide text-heading">
 					{presentation.title}
 				</h3>
 				{presentation.areasOfStudy ? (

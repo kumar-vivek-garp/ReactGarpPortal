@@ -138,7 +138,7 @@ function RegistrationSurveyForm({
 				{/* Why answer, in one glance: pitch left, progress right. */}
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
 					<div className="flex flex-col gap-2">
-						<h3 className="font-heading text-xl font-semibold tracking-wide text-foreground">
+						<h3 className="font-heading text-xl font-semibold tracking-wide text-heading">
 							{title}
 						</h3>
 						<p className="text-sm text-muted-foreground">{REGISTRATION_SURVEY_COPY.intro}</p>

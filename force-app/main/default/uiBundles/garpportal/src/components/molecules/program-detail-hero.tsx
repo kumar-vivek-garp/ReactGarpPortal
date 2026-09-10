@@ -10,12 +10,20 @@ import {
 import { CardCta } from "@/components/molecules/card-cta"
 import { StatusBadge } from "@/components/molecules/status-badge"
 import { parseInternalAppHref } from "@/lib/parse-internal-app-href"
+import type { ProgramChrome } from "@/config/program-chrome"
 import type { ProgramDetailPresentation } from "@/lib/program-detail-presentation"
 import { cn } from "@/lib/utils"
 
 type ProgramDetailHeroProps = {
 	presentation: ProgramDetailPresentation
 	logoUrl?: string | null
+	/**
+	 * The programme's designed chrome, when it has any. Supplies the brand hue
+	 * behind the logo and a seal to fall back on, so the tile is never empty for
+	 * a redesigned programme. Undefined leaves the neutral tile exactly as it
+	 * was — the same fallback every other chrome consumer uses.
+	 */
+	chrome?: ProgramChrome
 	className?: string
 }
 
@@ -58,8 +66,15 @@ function PrimaryActionButton({
 function ProgramDetailHero({
 	presentation,
 	logoUrl,
+	chrome,
 	className,
 }: ProgramDetailHeroProps) {
+	/*
+	 * The API logo when there is one, our bundled seal when there is not. The
+	 * seal is the same asset the registration bar shows, so a programme reads
+	 * the same from its detail page through to its form.
+	 */
+	const tileArt = logoUrl ?? chrome?.seal
 	const {
 		displayName,
 		description,
@@ -79,10 +94,16 @@ function ProgramDetailHero({
 		<section className={cn("space-y-5", className)}>
 			<Card className="gap-0 overflow-hidden py-0 shadow-none">
 				<div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-start">
-					{logoUrl ? (
-						<div className="flex h-28 w-full shrink-0 items-center justify-center rounded-xl bg-muted/40 p-3 sm:h-32 sm:w-40">
+					{tileArt ? (
+						<div
+							className={cn(
+								"flex h-28 w-full shrink-0 items-center justify-center rounded-xl p-3 sm:h-32 sm:w-40",
+								/* Brand hue for a redesigned programme, neutral otherwise. */
+								chrome?.barWash ?? "bg-muted/40",
+							)}
+						>
 							<img
-								src={logoUrl}
+								src={tileArt}
 								alt=""
 								className="max-h-full max-w-full object-contain"
 								onError={(event) => {
@@ -101,7 +122,13 @@ function ProgramDetailHero({
 								</span>
 							) : null}
 						</div>
-						<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+						{/*
+						 * `font-sans` ExtraBold, matching the registration and exam-setup
+						 * bars — `base.css` would otherwise give this h1 Klinic Slab, and
+						 * a programme would be named in two typefaces between its detail
+						 * page and its own Register page.
+						 */}
+						<h1 className="font-sans text-3xl font-extrabold text-foreground">
 							{displayName}
 						</h1>
 						{description ? (
@@ -136,7 +163,7 @@ function ProgramDetailHero({
 					>
 						{nextStepTone === "danger" ? "Action required" : "Next step"}
 					</p>
-					<h2 className="font-heading text-xl tracking-wide text-foreground">
+					<h2 className="font-heading text-xl tracking-wide text-heading">
 						{nextStepTitle}
 					</h2>
 				</CardHeader>

@@ -25,6 +25,17 @@ type ProgramRegistrationPanelProps = Partial<RegistrationLegProps> & {
 	regCode?: string
 	/** The `?track_cta=` attribution tag the entry link carried. */
 	trackCta?: string
+	/**
+	 * True when the shell above already shows the programme title, so the
+	 * form's sticky bar drops its own. The public route sets it — its shell
+	 * renders the guest banner — and the member route does not.
+	 */
+	titleInBanner?: boolean
+	/**
+	 * True when the total and submit belong in the order rail rather than the
+	 * sticky bar — the 2027 guest layout, set for every guest form.
+	 */
+	controlsInRail?: boolean
 	className?: string
 }
 
@@ -47,6 +58,8 @@ function ProgramRegistrationPanel({
 	paymentReturn,
 	checkoutCancelled,
 	resumeStagedId,
+	titleInBanner = false,
+	controlsInRail = false,
 	className,
 }: ProgramRegistrationPanelProps) {
 	const { style, exit } = useSubpageTransition()
@@ -73,6 +86,8 @@ function ProgramRegistrationPanel({
 						paymentReturn={paymentReturn}
 						checkoutCancelled={checkoutCancelled}
 						resumeStagedId={resumeStagedId}
+						titleInBanner={titleInBanner}
+						controlsInRail={controlsInRail}
 						onNavigateBack={exit}
 					/>
 				</div>

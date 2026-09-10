@@ -14,6 +14,7 @@ import {
 	MEMBERSHIP_MEMBER_REGISTRATION_ROUTE,
 	PUBLIC_EVENT_REGISTRATION_ROUTES,
 	publicRegistrationFallback,
+	publicRegistrationProgramSlug,
 	registrationLegProps,
 } from "./registration-paths"
 
@@ -182,5 +183,45 @@ describe("the membership twin", () => {
 		expect(isMembershipProgramSlug("membership")).toBe(true)
 		expect(isMembershipProgramSlug("mem")).toBe(true)
 		expect(isMembershipProgramSlug("frm")).toBe(false)
+	})
+})
+
+describe("publicRegistrationProgramSlug", () => {
+	it("names the programme a public registration path is for", () => {
+		expect(publicRegistrationProgramSlug("/registration/frm")).toBe("frm")
+		expect(publicRegistrationProgramSlug("/registration/scr")).toBe("scr")
+		expect(publicRegistrationProgramSlug("/registration/riskai")).toBe("riskai")
+		expect(publicRegistrationProgramSlug("/registration/membership")).toBe(
+			"membership",
+		)
+	})
+
+	it("tolerates a trailing slash and mixed case", () => {
+		expect(publicRegistrationProgramSlug("/registration/frm/")).toBe("frm")
+		expect(publicRegistrationProgramSlug("/registration/FRM")).toBe("frm")
+	})
+
+	/*
+	 * Affiliate is a STATIC sibling of `/registration/$programType`, not a
+	 * programme — it has no exam, no seal and no banner. Treating it as one
+	 * would put a programme banner on the membership sign-up.
+	 */
+	it("does not treat affiliate as a programme", () => {
+		expect(publicRegistrationProgramSlug("/registration/affiliate")).toBeUndefined()
+	})
+
+	it("ignores paths that are not a public registration form", () => {
+		// The member twin — it wears `_appLayout`, which has no guest banner.
+		expect(
+			publicRegistrationProgramSlug("/programs/frm/register"),
+		).toBeUndefined()
+		expect(publicRegistrationProgramSlug("/dashboard")).toBeUndefined()
+		expect(publicRegistrationProgramSlug("/registration")).toBeUndefined()
+		expect(publicRegistrationProgramSlug("/")).toBeUndefined()
+		// Deeper than one segment: the legacy `?regCode=` path has already
+		// redirected by the time any chrome renders.
+		expect(
+			publicRegistrationProgramSlug("/registration/frm/TEAM24"),
+		).toBeUndefined()
 	})
 })

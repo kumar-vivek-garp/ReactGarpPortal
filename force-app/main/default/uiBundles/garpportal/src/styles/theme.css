@@ -20,7 +20,20 @@
 	 *   ^ shell-inset  ^ first nav label
 	 */
 	--spacing-shell-rail: 294px; /* sidebar width — the toolbar logo slot matches it */
-	--spacing-shell-gutter: 1rem; /* main column gutter (.page-container) */
+	/*
+	 * Main column gutter (.page-container). Declared as a REFERENCE, not the
+	 * literal `1rem`, so a subtree can widen it: `@theme inline` inlines a
+	 * literal straight into the utility (`padding-inline:1rem`, unoverridable)
+	 * but inlines a `var()` as the reference, which then cascades.
+	 *
+	 * The guest registration forms use that (`.guest-form-gutter` in
+	 * layout.css) to sit in the 2027 designs' wider inset. Doing it through the
+	 * one token is what keeps the sticky submit bar's `-mx-shell-gutter` bleed
+	 * exactly cancelling the container's `px-shell-gutter` inset — set them
+	 * from two different numbers and the bar stops reaching the page edges,
+	 * which only shows once cards scroll under it.
+	 */
+	--spacing-shell-gutter: var(--shell-gutter);
 	--spacing-shell-inset: 1.5rem; /* sidebar p-3 + row px-3 — where the avatar's left edge lands */
 	/*
 	 * Collapsed rail width = shell-inset (24) + puck (44) + row px-3 (12) +
@@ -50,6 +63,14 @@
 	--text-section--line-height: 1.25rem;
 	--text-title: 1.875rem; /* 30px — page / login titles */
 	--text-title--line-height: 2.25rem;
+	/*
+	 * 40px — the largest heading role: a guest registration banner title, where
+	 * the heading sits over full-bleed artwork rather than on the page canvas.
+	 * RAI's 2027 frame (264:6763) is the only place it is called for so far;
+	 * FRM's and SCR's frames both set 30px and stay on `--text-title`.
+	 */
+	--text-banner: 2.5rem;
+	--text-banner--line-height: 2.75rem;
 
 	--color-background: var(--background);
 	--color-foreground: var(--foreground);
@@ -97,6 +118,11 @@
 	--color-inverse-urgent: var(--inverse-urgent);
 	--color-inverse-notice: var(--inverse-notice);
 	--color-inverse-hover: var(--inverse-hover);
+	--color-heading: var(--heading);
+	--color-inset: var(--inset);
+	--color-inset-border: var(--inset-border);
+	/* `shadow-card` — the resting lift of a non-interactive Card; mode-specific so light can tint it. */
+	--shadow-card: var(--card-shadow);
 
 	--font-sans: 'Nunito Sans', sans-serif;
 	--font-heading: 'Klinic Slab', 'Nunito Sans', sans-serif;
@@ -143,10 +169,22 @@
 	--color-rai-blue-foreground: var(--rai-blue-foreground);
 	--color-surface-gradient-start: var(--surface-gradient-start);
 	--color-surface-gradient-end: var(--surface-gradient-end);
+
+	/*
+	 * The `--canvas-*` programme tints are deliberately NOT mirrored here: no
+	 * `bg-canvas-frm` utility is ever used. They are consumed by the
+	 * `.canvas-<slug>` classes in layout.css, which reassign `--background`
+	 * itself so every `bg-background` inside the form re-tints with it — the
+	 * sticky submit bar included. A utility would have left that bar the old
+	 * colour, visible only once someone scrolled.
+	 */
 }
 
 :root {
 	--radius: 0.25rem; /* live-verified: --radius-xl (+4px) = 8px = measured mat-card radius */
+
+	/* Backing value for `--spacing-shell-gutter`; see the note beside it. */
+	--shell-gutter: 1rem;
 
 	/* GARP brand tokens (mode-invariant — same fixed brand hues in light and dark) */
 	--deep-purple: oklch(0.5836 0.2367 283.6); /* live-verified: #7257FF, CTA buttons */
@@ -184,24 +222,39 @@
 	--surface-gradient-start: oklch(0.9583 0.0214 291.7); /* live-verified: #F1EFFF, top stop of the sidebar/footer chrome gradient */
 	--surface-gradient-end: oklch(0.9649 0.0116 197); /* live-verified: #EBF6F6, bottom stop of the same gradient */
 
-	--background: oklch(0.973 0.006 291.7); /* inferred: dulled canvas in www.garp.org's tinted-section family (#F7FBFB/#F1EEFF, chroma dialled down), so the white chrome and cards read as raised surfaces */
-	--foreground: oklch(0 0 0); /* live-verified: true black, not a softened designer-black */
+	/*
+	 * Per-programme page canvas for the guest registration forms. Each is a
+	 * very low-chroma wash of that programme's own brand hue, sampled from the
+	 * 2027 Reg Redesign renders rather than derived, so it matches the art in
+	 * the banner above it. Applied by reassigning `--background` — see the
+	 * `.canvas-*` classes in layout.css.
+	 */
+	--canvas-frm: oklch(0.9571 0.0188 222.2); /* live-verified: #E4F4FA, Figma 392:2674 page fill */
+	--canvas-scr: oklch(0.989 0.0114 84.6); /* live-verified: #FFFBF3, Figma 264:7219 page fill */
+	--canvas-rai: oklch(0.9712 0.0122 276.1); /* live-verified: #F3F5FE, Figma 264:6744 page fill */
+
+	--background: oklch(0.952 0.009 291.7); /* inferred: dulled canvas in www.garp.org's tinted-section family (#F7FBFB/#F1EEFF, chroma dialled down). Was 0.973; dropped one step (light-theme redesign, Sep 2026) so white chrome and cards visibly float instead of merging with the page */
+	--foreground: oklch(0.25 0.02 283.6); /* AA-safe deviation from live: garp.org uses true black, but black everywhere flattened the light theme — a soft ink with the brand hue gives body copy a tone below headings (light-theme redesign, Sep 2026) */
+	--heading: oklch(0.22 0.05 283.6); /* inferred: navy-purple ink for h1–h6 and card titles, one step darker and more chromatic than --foreground so headings lead before size does */
 	--card: oklch(1 0 0); /* live-verified: www.garp.org cards/sections are white; now one step above the dulled canvas */
-	--card-foreground: oklch(0 0 0);
+	--card-foreground: oklch(0.25 0.02 283.6); /* follows --foreground */
+	--card-shadow: 0 1px 2px oklch(0.2 0.03 283.6 / 0.06), 0 8px 20px -10px oklch(0.2 0.03 283.6 / 0.16); /* inferred: brand-tinted lift replacing the neutral shadow-sm; garp.org has no card shadows, deliberate deviation */
+	--inset: oklch(0.9772 0.0096 291.7); /* inferred: surface-gradient-start at 55% over --card — the tinted inset tile inside a card */
+	--inset-border: oklch(0.9308 0.0354 292.8); /* inferred: light-lilac (--accent) at 70% over --card */
 	--popover: oklch(1 0 0); /* inferred */
-	--popover-foreground: oklch(0 0 0);
+	--popover-foreground: oklch(0.25 0.02 283.6); /* follows --foreground */
 	--primary: oklch(0.5836 0.2367 283.6); /* live-verified: deep-purple */
 	--primary-foreground: oklch(1 0 0); /* live-verified: white, tight AA pass at 4.64:1 */
 	--secondary: oklch(0.9451 0.0034 247.9); /* inferred neutral — no live secondary button observed */
-	--secondary-foreground: oklch(0 0 0);
+	--secondary-foreground: oklch(0.25 0.02 283.6); /* follows --foreground */
 	--muted: oklch(0.9451 0.0034 247.9);
-	--muted-foreground: oklch(0.5234 0.0062 197); /* slate-gray, passes AA */
+	--muted-foreground: oklch(0.5 0.01 283.6); /* AA-safe: 6.1:1 on white; hue-aligned with --foreground so the text ladder is one family (was slate 0.5234) */
 	--accent: oklch(0.9016 0.0506 292.8); /* live-verified: light-lilac, active-nav bg */
 	--accent-foreground: oklch(0.521 0.2355 283.8); /* AA-safe darker purple — deliberate deviation from live bright-purple (3.39:1, fails AA), per decision */
 	--destructive: oklch(0.6498 0.2018 35.8); /* accent-vermillion brand hue */
 	--destructive-foreground: oklch(0 0 0); /* white fails at 3.54:1, black passes at 5.94:1 */
-	--border: oklch(0.8684 0.0109 197);
-	--input: oklch(0.8684 0.0109 197);
+	--border: oklch(0.905 0.009 197); /* inferred: lightened from 0.8684 — with the canvas step and card shadow carrying separation, the old border read as a wireframe outline */
+	--input: oklch(0.905 0.009 197);
 	--ring: oklch(0.5836 0.2367 283.6); /* matches primary */
 	--chart-1: oklch(0.646 0.222 41.116);
 	--chart-2: oklch(0.6 0.118 184.704);
@@ -209,15 +262,15 @@
 	--chart-4: oklch(0.828 0.189 84.429);
 	--chart-5: oklch(0.769 0.188 70.08);
 	--sidebar: oklch(1 0 0); /* inferred */
-	--sidebar-foreground: oklch(0 0 0);
+	--sidebar-foreground: oklch(0.25 0.02 283.6); /* follows --foreground */
 	--sidebar-primary: oklch(0.5836 0.2367 283.6); /* live-verified: active-icon-badge bg */
 	--sidebar-primary-foreground: oklch(1 0 0); /* live-verified: icon color */
 	--sidebar-accent: oklch(0.9016 0.0506 292.8); /* live-verified: active-row bg */
 	--sidebar-accent-foreground: oklch(0.521 0.2355 283.8); /* AA-safe, same decision as --accent-foreground */
-	--sidebar-border: oklch(0.8684 0.0109 197);
+	--sidebar-border: oklch(0.905 0.009 197);
 	--sidebar-ring: oklch(0.5836 0.2367 283.6);
 	--toolbar: oklch(1 0 0); /* live-verified: www.garp.org scrolled nav is solid #FFFFFF (transparent at top of page; the scroll swap lives in the components) */
-	--toolbar-foreground: oklch(0 0 0); /* live-verified: www.garp.org nav links are black on the white bar */
+	--toolbar-foreground: oklch(0.25 0.02 283.6); /* follows --foreground (live nav links are black; same deviation as --foreground) */
 	/* shadcn Base UI dialog overlay: bg-black/10 + supports-backdrop-filter:backdrop-blur-xs */
 	--overlay: oklch(0 0 0 / 0.1);
 	/* inferred: mega-menu scrim — heavier than --overlay so the dimmed page reads as inert */
@@ -243,6 +296,10 @@
 	--foreground: oklch(0.985 0 0);
 	--card: oklch(0.21 0.03 283.6);
 	--card-foreground: oklch(0.985 0 0);
+	--heading: oklch(0.985 0 0); /* same as --foreground: dark already has the tonal ladder the light theme was missing */
+	--card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); /* Tailwind shadow-sm — unchanged from before the light-theme redesign */
+	--inset: oklch(0.25 0.025 283.6); /* --muted: an inset tile sits one step above the dark card */
+	--inset-border: oklch(1 0 0 / 14%);
 	--popover: oklch(0.21 0.03 283.6);
 	--popover-foreground: oklch(0.985 0 0);
 	--primary: oklch(0.5836 0.2367 283.6); /* mode-invariant brand hue */
@@ -287,6 +344,15 @@
 	--surface-gradient-end: oklch(0.2 0.02 197);
 	--dark-blue-gray: oklch(0.75 0.02 251.8); /* readable icons on dark surfaces */
 	--dark-blue-gray-foreground: oklch(0.15 0.02 283.6);
+	/*
+	 * Programme canvases, dark. inferred — the 2027 designs define light only.
+	 * Each keeps its programme's hue and chroma direction but drops to the
+	 * lightness of `--background`, so the page still reads as "the FRM form"
+	 * without glowing pastel against the dark cards above it.
+	 */
+	--canvas-frm: oklch(0.16 0.018 222.2);
+	--canvas-scr: oklch(0.16 0.012 84.6);
+	--canvas-rai: oklch(0.16 0.014 276.1);
 }
 
 /*

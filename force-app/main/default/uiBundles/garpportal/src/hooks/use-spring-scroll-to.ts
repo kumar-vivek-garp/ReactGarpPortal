@@ -10,6 +10,29 @@ const SCROLL_SPRING = { mass: 1, tension: 170, friction: 28, clamp: true }
 const SCROLL_OFFSET_PX = 12
 
 /**
+ * How far down the container a target has to sit before `ifNeeded` leaves it
+ * alone. A quarter of the visible height clears the registration forms'
+ * sticky submit bar (5.5rem, ~8rem where it wraps on a phone) on every
+ * viewport that renders one, without this hook knowing the bar exists.
+ */
+const COMFORTABLE_TOP_FRACTION = 0.25
+
+export type SpringScrollOptions = {
+	/**
+	 * `start` puts the target at the top of the container with breathing room —
+	 * the section-jump behaviour. `center` puts it mid-container, which is what
+	 * a control needs when a sticky bar sits inside the same scroller: centred,
+	 * it is clear of the bar on every layout without measuring the bar.
+	 */
+	align?: "start" | "center"
+	/**
+	 * Skip the glide when the target is already comfortably in view — centring
+	 * a control that is right under the pointer reads as a glitch, not help.
+	 */
+	ifNeeded?: boolean
+}
+
+/**
  * Spring-driven scroll to an element inside its own scroll container.
  *
  * The panel body is an `overflow-y-auto` div rather than the document, so
@@ -35,20 +58,35 @@ export function useSpringScrollTo() {
 	}, [api])
 
 	const scrollTo = useCallback(
-		(target: HTMLElement | null) => {
+		(target: HTMLElement | null, options: SpringScrollOptions = {}) => {
 			if (!target) return
+			const { align = "start", ifNeeded = false } = options
 
 			const container = scrollParent(target)
 			if (!container) {
-				target.scrollIntoView({ block: "start" })
+				// No scrolling ancestor (the document scrolls, or jsdom): let the
+				// browser place it, same alignment.
+				target.scrollIntoView({ block: align })
 				return
+			}
+
+			const rect = target.getBoundingClientRect()
+			const frame = container.getBoundingClientRect()
+
+			if (ifNeeded) {
+				const comfortableTop =
+					frame.top + container.clientHeight * COMFORTABLE_TOP_FRACTION
+				const inView =
+					rect.top >= comfortableTop &&
+					rect.bottom <= frame.bottom - SCROLL_OFFSET_PX
+				if (inView) return
 			}
 
 			const from = container.scrollTop
 			const delta =
-				target.getBoundingClientRect().top -
-				container.getBoundingClientRect().top -
-				SCROLL_OFFSET_PX
+				align === "center"
+					? rect.top - frame.top - (container.clientHeight - rect.height) / 2
+					: rect.top - frame.top - SCROLL_OFFSET_PX
 			const max = container.scrollHeight - container.clientHeight
 			const to = Math.max(0, Math.min(max, from + delta))
 			if (Math.abs(to - from) < 1) return

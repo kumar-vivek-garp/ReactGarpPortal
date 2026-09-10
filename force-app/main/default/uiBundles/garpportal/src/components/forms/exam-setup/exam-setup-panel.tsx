@@ -20,7 +20,6 @@ import {
 	REGISTRATION_BAR_CONTROL_GROUP,
 	REGISTRATION_BAR_CONTROL_HEIGHT,
 	REGISTRATION_BAR_SUBMIT,
-	REGISTRATION_BAR_TITLE,
 	REGISTRATION_BAR_TITLE_GROUP,
 	REGISTRATION_BAR_TOTAL_BLOCK,
 	REGISTRATION_GRID,
@@ -31,8 +30,9 @@ import {
 } from "@/components/forms/registration-shell"
 import { CardCta } from "@/components/molecules/card-cta"
 import { EmptyState } from "@/components/molecules/empty-state"
-import { MegaMenuHeadingText } from "@/components/molecules/mega-menu-heading"
 import { ExamSetupContentSkeleton } from "@/components/molecules/page-pending"
+import { ProgramBarIdentity } from "@/components/molecules/program-bar-identity"
+import { registrationChromeForSlug } from "@/lib/registration-chrome"
 import { ProgramsSubpageHeader } from "@/components/molecules/programs-subpage-header"
 import {
 	EXAM_SETUP_MESSAGES,
@@ -86,8 +86,15 @@ type BarProps = {
  * where things are. The back link IS the way out; no screen below needs one.
  */
 function ExamSetupBar({ heading, programType, onNavigateBack, children }: BarProps) {
+	/*
+	 * Same seal and wash the registration bar wears — this is the same bar for
+	 * the same programme, so the two must not diverge. Undefined for a programme
+	 * with no designed chrome, which keeps the plain bar.
+	 */
+	const chrome = registrationChromeForSlug(programType)?.chrome
+
 	return (
-		<div className={REGISTRATION_STICKY_BAR}>
+		<div className={cn(REGISTRATION_STICKY_BAR, chrome?.barWash)}>
 			<div className={REGISTRATION_BAR_TITLE_GROUP}>
 				{/* The acronym the title uses, not the route slug: "RAI", not "RISKAI". */}
 				<ProgramsSubpageHeader
@@ -96,9 +103,7 @@ function ExamSetupBar({ heading, programType, onNavigateBack, children }: BarPro
 					iconOnlyBackOnMobile
 				/>
 				<div className="hidden h-6 w-px shrink-0 bg-border sm:block" aria-hidden />
-				<h1 className={REGISTRATION_BAR_TITLE}>
-					<MegaMenuHeadingText heading={heading} />
-				</h1>
+				<ProgramBarIdentity chrome={chrome} heading={heading} />
 			</div>
 			{children ? <div className={REGISTRATION_BAR_CONTROL_GROUP}>{children}</div> : null}
 		</div>

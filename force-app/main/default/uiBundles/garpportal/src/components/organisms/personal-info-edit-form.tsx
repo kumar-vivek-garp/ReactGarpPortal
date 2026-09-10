@@ -210,7 +210,7 @@ function AddressSection({
 
 	return (
 		<section className="flex flex-col gap-3">
-			<h3 className="font-heading text-sm font-semibold text-foreground">{title}</h3>
+			<h3 className="font-heading text-sm font-semibold text-heading">{title}</h3>
 			<FormField
 				label="Company"
 				htmlFor={ids.company}

@@ -72,7 +72,7 @@ function StudyMaterialRow({
 						}}
 					/>
 				) : (
-					<span className="font-heading text-sm font-bold tracking-wider text-foreground/70">
+					<span className="font-heading text-sm font-bold tracking-wider text-heading/70">
 						{codeLabel}
 					</span>
 				)}
@@ -105,7 +105,7 @@ function StudyMaterialRow({
 						"focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
 					)}
 				>
-					<h3 className="font-heading text-base leading-snug tracking-wide text-foreground">
+					<h3 className="font-heading text-base leading-snug tracking-wide text-heading">
 						{item.title}
 					</h3>
 

@@ -83,7 +83,7 @@ function EventCard({ event, isAttending = false, className }: EventCardProps) {
 								/>
 							) : null}
 						</div>
-						<CardTitle className="font-heading text-lg leading-snug tracking-wide text-foreground">
+						<CardTitle className="font-heading text-lg leading-snug tracking-wide text-heading">
 							{item.title}
 						</CardTitle>
 					</div>

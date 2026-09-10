@@ -91,7 +91,7 @@ function CpdCreditSummaryCard({ cycle, className }: CpdCreditSummaryCardProps) {
 			 * Still an `h2` — it names the region for a screen reader and for the
 			 * document outline — but sized as a label rather than a card title.
 			 */}
-			<h2 className="font-heading text-sm tracking-wide text-foreground">
+			<h2 className="font-heading text-sm tracking-wide text-heading">
 				{cycle.cycleName
 					? `${cycle.cycleName} Credit Summary`
 					: "Credit Summary"}

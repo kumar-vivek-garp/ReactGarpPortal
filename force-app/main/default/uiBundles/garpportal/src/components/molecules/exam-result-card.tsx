@@ -88,7 +88,7 @@ function ExamResultCard({ result, className }: ExamResultCardProps) {
 						</span>
 					) : null}
 				</div>
-				<h2 className="font-heading text-xl font-semibold tracking-wide text-foreground">
+				<h2 className="font-heading text-xl font-semibold tracking-wide text-heading">
 					{result.title}
 				</h2>
 				{result.administration ? (

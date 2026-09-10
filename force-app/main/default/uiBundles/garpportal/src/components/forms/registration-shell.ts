@@ -106,12 +106,66 @@ export const REGISTRATION_BAR_CONTROL_GROUP =
 export const REGISTRATION_BAR_TOTAL_BLOCK =
 	"flex shrink-0 flex-col items-start justify-center text-left sm:items-end sm:text-right"
 
+/*
+ * The guest layout (2027 Reg Redesign). With the title in the banner, the bar
+ * has nothing left to carry but the total and the submit — and the designs do
+ * not put those in a bar at all. They are the FIRST item inside the order rail,
+ * directly above the upsell and summary cards.
+ *
+ * So the guest form drops the sticky bar entirely and the rail column becomes a
+ * stack: controls, then `RegistrationRail`. The rail column is already `sticky`
+ * at `lg`, which is what keeps the total and submit on screen there — the job
+ * the bar used to do.
+ */
+export const REGISTRATION_RAIL_STACK = "flex flex-col gap-6"
+
+/*
+ * `order-last` below `lg`: the rail stacks UNDER the form on a phone, so first
+ * in the column would put the submit between the form and the order summary —
+ * asking for payment before showing what is being paid for. Last puts it after
+ * the summary, which is the order a checkout normally runs in. `lg:order-first`
+ * restores the designed position once the column is beside the form.
+ */
+export const REGISTRATION_RAIL_CONTROLS =
+	"order-last flex w-full items-center justify-between gap-4 lg:order-first"
+
+/** In the rail the total leads the row, so it stays left-aligned throughout. */
+export const REGISTRATION_BAR_TOTAL_LEADING = "sm:items-start sm:text-left"
+
+/**
+ * The guest rail column: same 40% and the same pin, but `top-6` rather than
+ * `top-28`.
+ *
+ * `REGISTRATION_RAIL_COLUMN`'s 7rem is the sticky bar's height plus the grid
+ * gap — the space the bar occupies above it. With no bar, that offset would
+ * pin the rail 5.5rem below where the content starts and leave an obvious gap
+ * above it once the page scrolls. 1.5rem is `PageContainer`'s own `py-6`.
+ */
+export const REGISTRATION_RAIL_COLUMN_GUEST =
+	"lg:sticky lg:top-6 lg:col-span-4 lg:h-fit"
+
 /** The submit fills the mobile row; sm+ returns it to its natural width. */
 export const REGISTRATION_BAR_SUBMIT = "flex-1 sm:flex-none"
 
-/** Full title on desktop, one size down on a phone so less of it truncates. */
+/**
+ * Full title on desktop, one size down on a phone so less of it truncates.
+ *
+ * `font-sans` ExtraBold, not the heading font: this is the same programme name
+ * the guest banner shows, and the 2027 designs set it in Nunito Sans ExtraBold.
+ * `base.css` gives every h1 Klinic Slab at the base layer, so the family has to
+ * be stated here to override it — the banner does the same, and the bar was
+ * simply never brought along, leaving one string rendered in two typefaces
+ * depending on which route you were on.
+ *
+ * The SIZE deliberately does not follow the banner's 30/40px: this bar is
+ * 5.5rem tall and shares its row with the total and the submit. Family and
+ * weight are what make the two read as the same thing.
+ *
+ * Shared with the Exam Setup and affiliate bars, which is the point — they name
+ * the same programmes.
+ */
 export const REGISTRATION_BAR_TITLE =
-	"truncate font-heading text-xl font-semibold sm:text-2xl"
+	"truncate font-sans text-xl font-extrabold sm:text-2xl"
 
 /**
  * The event forms' main column — single, centred, no rail.

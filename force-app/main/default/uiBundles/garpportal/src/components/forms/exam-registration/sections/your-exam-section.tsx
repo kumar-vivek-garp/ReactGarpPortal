@@ -14,7 +14,10 @@ import {
 import { FieldError, RequiredMark } from "@/components/molecules/form-field"
 import { EXAM_REGISTRATION_COPY } from "@/config/registration"
 import { formatMoney } from "@/lib/account-format"
-import { sortSites } from "@/lib/registration-presentation"
+import {
+	sortSites,
+	type ExamSelectionErrors,
+} from "@/lib/registration-presentation"
 
 /** "November 14 – 20, 2026" plus "Standard registration · $800.00". */
 function sittingLabel(admin: ExamAdminView) {
@@ -35,11 +38,19 @@ type PartBlockProps = {
 	onSelectAdmin: (rateId: string) => void
 	onSelectSite: (siteId: string) => void
 	outOfOrder: boolean
+	/** Submit-time messages from `examSelectionErrors`, for this part. */
+	sittingError?: string
+	siteError?: string
 	disabled?: boolean
 }
 
 /**
  * One part's sitting and exam centre.
+ *
+ * Invalid state is drawn on the ITEMS, not the group: the group root has no
+ * border to paint, and each item is a real `<button>` the submit-time reveal
+ * can land focus on directly. Part II's out-of-order rule flags the same way,
+ * so a sitting that cannot be taken is red as well as explained.
  *
  * The centre list belongs to the chosen sitting, so it only appears once one
  * is picked and is replaced whenever it changes — a centre from a different
@@ -54,11 +65,14 @@ function PartBlock({
 	onSelectAdmin,
 	onSelectSite,
 	outOfOrder,
+	sittingError,
+	siteError,
 	disabled,
 }: PartBlockProps) {
 	const selectedAdmin = admins.find((admin) => admin.id === selectedRateId)
 	const sites = selectedAdmin ? sortSites(selectedAdmin.sites) : []
 	const selectedSite = sites.find((site) => site.id === selectedSiteId)
+	const sittingInvalid = Boolean(sittingError) || (outOfOrder && which === 2)
 
 	return (
 		<div className="flex flex-col gap-4 rounded-xl border border-border p-4">
@@ -95,7 +109,12 @@ function PartBlock({
 									key={admin.id}
 									className="flex items-start gap-3 rounded-lg border border-border p-3"
 								>
-									<RadioGroupItem id={id} value={admin.id} className="mt-1" />
+									<RadioGroupItem
+										id={id}
+										value={admin.id}
+										aria-invalid={sittingInvalid ? true : undefined}
+										className="mt-1"
+									/>
 									<Label htmlFor={id} className="font-normal">
 										<span className="block font-medium">{label.primary}</span>
 										<span className="block text-muted-foreground">
@@ -109,7 +128,9 @@ function PartBlock({
 				)}
 				{outOfOrder && which === 2 ? (
 					<FieldError message="Part II cannot be taken before Part I." />
-				) : null}
+				) : (
+					<FieldError message={sittingError} />
+				)}
 			</div>
 
 			{selectedAdmin ? (
@@ -133,7 +154,11 @@ function PartBlock({
 							onValueChange={onSelectSite}
 							disabled={disabled}
 						>
-							<SelectTrigger id={`part${which}-site`} className="w-full">
+							<SelectTrigger
+								id={`part${which}-site`}
+								aria-invalid={siteError ? true : undefined}
+								className="w-full"
+							>
 								<SelectValue placeholder="Select location" />
 							</SelectTrigger>
 							<SelectContent>
@@ -145,6 +170,7 @@ function PartBlock({
 							</SelectContent>
 						</Select>
 					)}
+					<FieldError message={siteError} />
 
 					{selectedSite?.isOSTA ? (
 						<div
@@ -178,6 +204,11 @@ type YourExamSectionProps = {
 	onSelectAdmin: (which: 1 | 2, rateId: string) => void
 	onSelectSite: (which: 1 | 2, siteId: string) => void
 	outOfOrder: boolean
+	/**
+	 * Submit-time messages, from `examSelectionErrors`. Empty until the first
+	 * submit attempt; the caller decides that, not this section.
+	 */
+	errors?: ExamSelectionErrors
 	disabled?: boolean
 }
 
@@ -196,6 +227,7 @@ function YourExamSection({
 	onSelectAdmin,
 	onSelectSite,
 	outOfOrder,
+	errors = {},
 	disabled,
 }: YourExamSectionProps) {
 	const showPart1 = part1Admins.length > 0 && (part1Active || !partSelected)
@@ -230,7 +262,11 @@ function YourExamSection({
 							onValueChange={onSelectPart}
 							disabled={disabled}
 						>
-							<SelectTrigger id="examPart" className="w-full">
+							<SelectTrigger
+								id="examPart"
+								aria-invalid={errors.part ? true : undefined}
+								className="w-full"
+							>
 								<SelectValue placeholder="Select exam" />
 							</SelectTrigger>
 							<SelectContent>
@@ -241,6 +277,7 @@ function YourExamSection({
 								))}
 							</SelectContent>
 						</Select>
+						<FieldError message={errors.part} />
 					</div>
 				) : null}
 
@@ -264,6 +301,8 @@ function YourExamSection({
 						onSelectAdmin={(rateId) => onSelectAdmin(1, rateId)}
 						onSelectSite={(siteId) => onSelectSite(1, siteId)}
 						outOfOrder={outOfOrder}
+						sittingError={errors.part1Sitting}
+						siteError={errors.part1Site}
 						disabled={disabled}
 					/>
 				) : null}
@@ -278,6 +317,8 @@ function YourExamSection({
 						onSelectAdmin={(rateId) => onSelectAdmin(2, rateId)}
 						onSelectSite={(siteId) => onSelectSite(2, siteId)}
 						outOfOrder={outOfOrder}
+						sittingError={errors.part2Sitting}
+						siteError={errors.part2Site}
 						disabled={disabled}
 					/>
 				) : null}

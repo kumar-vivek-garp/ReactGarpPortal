@@ -77,7 +77,7 @@ function MembershipHero({ data, className }: MembershipHeroProps) {
 				</Avatar>
 
 				<div className="min-w-0 flex-1 space-y-2.5">
-					<h2 className="font-heading text-2xl font-semibold tracking-wide break-words text-foreground sm:text-3xl">
+					<h2 className="font-heading text-2xl font-semibold tracking-wide break-words text-heading sm:text-3xl">
 						{identity.fullName ?? "Your membership"}
 					</h2>
 
@@ -160,7 +160,7 @@ function MembershipHero({ data, className }: MembershipHeroProps) {
 					<div className="flex w-full items-start gap-3 rounded-lg border border-border bg-card/70 p-3 text-sm app:max-w-sm app:shrink-0">
 						<Lock className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
 						<div className="min-w-0 space-y-0.5">
-							<p className="font-heading font-semibold text-foreground">
+							<p className="font-heading font-semibold text-heading">
 								Members-only benefits
 							</p>
 							<p className="text-muted-foreground">{lockedNotice}</p>

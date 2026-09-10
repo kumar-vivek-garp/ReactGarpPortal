@@ -89,6 +89,8 @@ type RenderExamFormOptions = {
 	isAuthenticated?: boolean
 	regCode?: string
 	trackCta?: string | null
+	/** True when the shell's banner owns the title — the guest route sets it. */
+	titleInBanner?: boolean
 }
 
 /** Mounts the form under router + query providers with spy callbacks. */
@@ -105,6 +107,7 @@ export async function renderExamForm({
 	isAuthenticated = true,
 	regCode,
 	trackCta,
+	titleInBanner = false,
 }: RenderExamFormOptions = {}) {
 	const onRegistered = vi.fn()
 	const onNavigateBack = vi.fn()
@@ -117,6 +120,7 @@ export async function renderExamForm({
 			regCode={regCode}
 			trackCta={trackCta}
 			isAuthenticated={isAuthenticated}
+			titleInBanner={titleInBanner}
 			onNavigateBack={onNavigateBack}
 			onRegistered={onRegistered}
 		/>,

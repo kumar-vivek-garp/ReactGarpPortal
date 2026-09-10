@@ -1,4 +1,4 @@
-import { Check, Minus, PackagePlus, Plus, ReceiptText } from "lucide-react"
+import { Minus, PackagePlus, Plus, ReceiptText } from "lucide-react"
 
 import type { FeesResult } from "@/api/registration/exam-types"
 import type { SelectableMaterial } from "@/hooks/use-exam-registration"
@@ -202,7 +202,15 @@ function RegistrationRail({
 	emptyState,
 	disabled,
 }: RegistrationRailProps) {
-	const { included, offered } = splitStudyMaterials(materials)
+	/*
+	 * Only the offered half is rendered. The included half — comps the candidate
+	 * cannot decline — had its own "Included with registration" card and no
+	 * longer does: it announced something nobody had to act on, right beside the
+	 * order summary that already lists those lines at no charge. The split still
+	 * matters, because `offered` is what keeps those non-selectable comps out of
+	 * the Add card, where they would render a button that cannot do anything.
+	 */
+	const { offered } = splitStudyMaterials(materials)
 	const currency = fees?.currencyCode || "USD"
 	const lines = sortFeeLines(fees?.lines ?? [])
 	const withSubtotal = showSubtotal(lines, fees?.vatAmount, fees?.njSalesTax)
@@ -254,30 +262,6 @@ function RegistrationRail({
 									onToggle={() => onToggleMaterial(material.productCode)}
 									disabled={disabled}
 								/>
-							))}
-						</StaggerReveal>
-					</CardContent>
-				</Card>
-			) : null}
-
-			{included.length > 0 ? (
-				<Card>
-					<CardHeader>
-						<CardTitle className="flex items-center gap-2 text-base">
-							<Check className="size-4 text-success-green" aria-hidden />
-							Included with registration
-						</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<StaggerReveal className="flex flex-col gap-3">
-							{included.map((material) => (
-								<div
-									key={material.productCode}
-									className="flex items-center gap-3"
-								>
-									<MaterialThumb src={material.imageUrl} alt="" />
-									<p className="text-body">{material.title}</p>
-								</div>
 							))}
 						</StaggerReveal>
 					</CardContent>

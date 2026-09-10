@@ -1,125 +1,59 @@
 import { UserRound } from "lucide-react"
 
-import { useMemo } from "react"
-import {
-	Controller,
-	type Control,
-	type FieldErrors,
-	type UseFormRegister,
-} from "react-hook-form"
+import type { FieldErrors, UseFormRegister } from "react-hook-form"
 
-import type { RegistrationCountry } from "@/api/registration/exam-types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/atoms/card"
-import { Checkbox } from "@/components/atoms/checkbox"
 import { Input } from "@/components/atoms/input"
-import { Label } from "@/components/atoms/label"
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/atoms/select"
-import { FieldError, FormField } from "@/components/molecules/form-field"
+import { FormField } from "@/components/molecules/form-field"
 import type { ExamFormValues } from "@/components/forms/exam-registration/exam-form-values"
 import {
 	EMAIL_PATTERN,
-	PHONE_PATTERN,
 	REGISTRATION_LIMITS,
-	SMS_COPY,
 	isEnglishName,
 } from "@/config/registration"
 
 type YourDetailsSectionProps = {
 	register: UseFormRegister<ExamFormValues>
-	control: Control<ExamFormValues>
 	errors: FieldErrors<ExamFormValues>
-	countries: RegistrationCountry[]
-	/** False on the public form — nothing has been prefilled. */
-	isAuthenticated?: boolean
-	/**
-	 * Whether to ask for the location here.
-	 *
-	 * False once the billing address card is on screen — that card carries its
-	 * own country, and asking twice is two chances to disagree. Matches the
-	 * legacy app, which renders this field under exactly the same condition.
-	 */
-	showLocation?: boolean
-	/**
-	 * Changing the country is not a plain field write: it clears the province
-	 * and re-picks the payment method, because the new country may not permit
-	 * what was already chosen.
-	 */
-	onCountryChange: (countryCode: string) => void
 	/**
 	 * The identity check GarpAppv1 runs on blur — wired to first name, last
-	 * name and email because the check sends all three. The fields only render
-	 * for guests, so members never trigger it.
+	 * name and email because the check sends all three. This card is guest-only,
+	 * so a member never triggers it.
 	 */
 	onIdentityBlur?: () => void
 	disabled?: boolean
 }
 
 /**
- * Who is registering — prefilled from the member's own record.
+ * Who is registering — name and email, and nothing else.
  *
- * Editable rather than read-only: the details GARP holds may be stale, and a
- * registration is exactly the moment someone notices. What they change here
- * travels with the order.
+ * **Guest-only.** A member has all three on their account already, and the 2027
+ * designs cut the rest of the card (location, mobile phone, promotional SMS),
+ * so for a member there would be nothing left to render but a heading. The
+ * caller decides that; this component assumes a guest.
  *
- * Mobile phone is required even though everything else is on file, because
- * GARP sends time-sensitive exam messages to it and a stale number is worse
- * than an absent one.
+ * The values a guest types here create their GARP account and travel with the
+ * order.
  */
 function YourDetailsSection({
 	register,
-	control,
 	errors,
-	countries,
-	isAuthenticated = true,
-	showLocation = true,
-	onCountryChange,
 	onIdentityBlur,
 	disabled,
 }: YourDetailsSectionProps) {
-	const sortedCountries = useMemo(
-		() => [...countries].sort((a, b) => a.name.localeCompare(b.name)),
-		[countries],
-	)
-
-	const phoneCodeOptions = useMemo(
-		() =>
-			sortedCountries
-				.filter((country) => Boolean(country.phoneCode))
-				.map((country) => ({
-					value: `${country.countryCode} (+${country.phoneCode})`,
-					label: `${country.name} (+${country.phoneCode})`,
-				})),
-		[sortedCountries],
-	)
-
 	return (
 		<Card>
 			<CardHeader>
 				<CardTitle className="flex items-center gap-2 text-lg">
 					<UserRound className="size-5 text-muted-foreground" aria-hidden />
-					{isAuthenticated ? "Contact details" : "Your details"}
+					Individual Details
 				</CardTitle>
 				<p className="text-body text-muted-foreground">
-					{isAuthenticated
-						? "Your name and email come from your account. We only need a mobile number, for exam-day updates."
-						: "We will use these details to create your GARP account and to contact you about the exam."}
+					We will use these details to create your GARP account and to contact
+					you about the exam.
 				</p>
 			</CardHeader>
 			<CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-				{/*
-				 * A member already has these on their record, and the registration
-				 * does not change them — showing them invites edits that look saved
-				 * to the account but are not. The values stay in the form and still
-				 * travel with the order; only the controls are hidden.
-				 */}
-				{isAuthenticated ? null : (
-					<>
 					<FormField
 						id="firstName"
 						label="First name"
@@ -193,146 +127,7 @@ function YourDetailsSection({
 							})}
 						/>
 					</FormField>
-					</>
-				)}
 
-				{showLocation ? (
-					<FormField
-						id="country"
-						label="Location"
-						required
-						error={errors.country?.message}
-						hint="Sets your tax, shipping and payment options."
-					>
-						<Controller
-							control={control}
-							name="country"
-							rules={{ required: "Please select your location." }}
-							render={({ field }) => (
-								<Select
-									value={field.value}
-									onValueChange={(next) => {
-										field.onChange(next)
-										onCountryChange(next)
-									}}
-									disabled={disabled}
-								>
-									<SelectTrigger
-										id="country"
-										aria-invalid={errors.country ? true : undefined}
-										className="w-full"
-									>
-										<SelectValue placeholder="Select location" />
-									</SelectTrigger>
-									<SelectContent>
-										{sortedCountries.map((country) => (
-											<SelectItem key={country.id} value={country.countryCode}>
-												{country.name}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							)}
-						/>
-					</FormField>
-				) : null}
-
-				<div className="flex flex-col gap-2 sm:col-span-2">
-					<Label htmlFor="mobilePhone" className="font-bold">
-						Mobile phone
-						<span className="text-destructive" aria-hidden>
-							{" "}
-							*
-						</span>
-					</Label>
-					<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-						<Controller
-							control={control}
-							name="mobilePhoneCode"
-							rules={{ required: "Please select a country code." }}
-							render={({ field }) => (
-								<Select
-									value={field.value}
-									onValueChange={field.onChange}
-									disabled={disabled}
-								>
-									<SelectTrigger
-										id="mobilePhoneCode"
-										aria-label="Mobile phone country code"
-										aria-invalid={errors.mobilePhoneCode ? true : undefined}
-										className="w-full"
-									>
-										<SelectValue placeholder="Country code" />
-									</SelectTrigger>
-									<SelectContent>
-										{phoneCodeOptions.map((option) => (
-											<SelectItem key={option.value} value={option.value}>
-												{option.label}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							)}
-						/>
-						<div className="sm:col-span-2">
-							<Input
-								id="mobilePhone"
-								type="tel"
-								inputMode="numeric"
-								autoComplete="tel"
-								disabled={disabled}
-								aria-invalid={errors.mobilePhone ? true : undefined}
-								{...register("mobilePhone", {
-									required: "Please enter a mobile phone number.",
-									pattern: {
-										value: PHONE_PATTERN,
-										message: "Please enter between 7 and 15 numbers.",
-									},
-								})}
-							/>
-						</div>
-					</div>
-					<FieldError
-						message={
-							errors.mobilePhoneCode?.message ?? errors.mobilePhone?.message
-						}
-					/>
-					<p className="text-caption text-muted-foreground">
-						{SMS_COPY.notice}
-					</p>
-				</div>
-
-				{/*
-				 * Separate from the notice above it, and separately consented to:
-				 * that one explains the exam-critical messages a candidate cannot
-				 * opt out of, this one is a marketing opt-in that starts unticked.
-				 * The payload has always carried `smsPromotionalUpdates`; until now
-				 * nothing set it, so every registration silently sent `false`.
-				 */}
-				<div className="flex flex-col gap-2 sm:col-span-2">
-					<p className="text-body font-bold">{SMS_COPY.promotionalHeading}</p>
-					<Controller
-						control={control}
-						name="smsPromotionalUpdates"
-						render={({ field }) => (
-							<div className="flex items-start gap-3">
-								<Checkbox
-									id="smsPromotionalUpdates"
-									checked={field.value}
-									onCheckedChange={(next) => field.onChange(next === true)}
-									disabled={disabled}
-									className="mt-0.5"
-								/>
-								<Label
-									htmlFor="smsPromotionalUpdates"
-									className="text-body leading-5 font-normal"
-								>
-									{SMS_COPY.promotionalOptIn}
-								</Label>
-							</div>
-						)}
-					/>
-				</div>
 			</CardContent>
 		</Card>
 	)

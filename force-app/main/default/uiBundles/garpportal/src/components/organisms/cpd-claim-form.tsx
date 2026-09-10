@@ -344,7 +344,7 @@ function CpdClaimForm({ claim, onSaved, onCancel }: CpdClaimFormProps) {
 		return (
 			<div className="flex min-h-0 flex-1 flex-col">
 				<div className="min-h-0 flex-1 px-6 py-8 text-center">
-					<p className="font-heading text-base font-semibold tracking-wide text-foreground">
+					<p className="font-heading text-base font-semibold tracking-wide text-heading">
 						Activity types are unavailable
 					</p>
 					<p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">

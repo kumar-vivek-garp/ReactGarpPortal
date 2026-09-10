@@ -105,7 +105,7 @@ function Card({
 				// Interactive owns border + shadow via spring — skip Tailwind shadow
 				// so it cannot fight the animated elevation (esp. dark surfaces).
 				"flex flex-col gap-6 rounded-xl border bg-card py-6 text-card-foreground",
-				!interactive && "border-primary/20 shadow-sm",
+				!interactive && "border-primary/12 shadow-card",
 				interactive &&
 					"relative z-0 cursor-pointer outline-none will-change-transform focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 data-[hovered=true]:z-10",
 				className,

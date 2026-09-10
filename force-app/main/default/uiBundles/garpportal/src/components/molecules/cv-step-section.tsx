@@ -67,7 +67,7 @@ function CvStepSection({
 
 	const heading = (
 		<>
-			<h2 className="font-heading text-lg font-semibold tracking-wide text-foreground">
+			<h2 className="font-heading text-lg font-semibold tracking-wide text-heading">
 				{title}
 			</h2>
 			{summary ? (

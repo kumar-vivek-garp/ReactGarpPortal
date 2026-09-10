@@ -47,9 +47,10 @@ type ShippingAddressSectionProps = {
  * those, and demanding a province a country lacks would block a legitimate
  * address.
  *
- * Plain `required` rules are safe here: the section only mounts when the
- * quote says the item ships, and that cannot change for a loaded quote — so
- * no rule is ever switched off after registration.
+ * The rules are safe as plain per-field rules: the section only mounts when
+ * the quote says the item ships, and that cannot change for a loaded quote —
+ * so no rule is ever switched off after registration. They trim, because Apex
+ * `isPostable` treats whitespace as blank and RHF's `required` does not.
  */
 function ShippingAddressSection({
 	register,
@@ -97,7 +98,9 @@ function ShippingAddressSection({
 						maxLength={255}
 						disabled={disabled}
 						aria-invalid={errors.street ? true : undefined}
-						{...register("street", { required: "Street address is required." })}
+						{...register("street", {
+							validate: (value) => Boolean(value.trim()) || "Street address is required.",
+						})}
 					/>
 				</FormField>
 
@@ -123,7 +126,9 @@ function ShippingAddressSection({
 						maxLength={255}
 						disabled={disabled}
 						aria-invalid={errors.city ? true : undefined}
-						{...register("city", { required: "City is required." })}
+						{...register("city", {
+							validate: (value) => Boolean(value.trim()) || "City is required.",
+						})}
 					/>
 				</FormField>
 
@@ -192,7 +197,9 @@ function ShippingAddressSection({
 							maxLength={255}
 							disabled={disabled}
 							aria-invalid={errors.country ? true : undefined}
-							{...register("country", { required: "Country is required." })}
+							{...register("country", {
+								validate: (value) => Boolean(value.trim()) || "Country is required.",
+							})}
 						/>
 					)}
 				</FormField>

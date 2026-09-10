@@ -52,7 +52,7 @@ function BenefitCard({ benefit, className }: BenefitCardProps) {
 						<StatusBadge label={item.statusLabel} tone={item.statusTone} />
 					</div>
 				) : null}
-				<CardTitle className="font-heading text-base tracking-wide text-foreground">
+				<CardTitle className="font-heading text-base tracking-wide text-heading">
 					{item.title}
 				</CardTitle>
 			</CardHeader>

@@ -50,7 +50,7 @@ function RegistrationStatusPanel({
 			)}
 		>
 			<Icon className={cn("size-12", TONES[tone])} aria-hidden />
-			<h2 className="font-heading text-2xl font-semibold tracking-wide text-foreground">
+			<h2 className="font-heading text-2xl font-semibold tracking-wide text-heading">
 				{title}
 			</h2>
 			{message ? (

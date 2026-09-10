@@ -94,7 +94,7 @@ function CvAttachmentManager({
 		<div className={cn("space-y-3", className)}>
 			<div className="flex items-center gap-2">
 				<Paperclip className="size-4 text-muted-foreground" aria-hidden />
-				<p className="font-heading text-sm font-semibold tracking-wide text-foreground">
+				<p className="font-heading text-sm font-semibold tracking-wide text-heading">
 					Supporting documents
 				</p>
 			</div>

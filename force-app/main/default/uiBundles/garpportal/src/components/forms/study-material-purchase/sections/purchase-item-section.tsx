@@ -42,7 +42,7 @@ function PurchaseItemSection({ quote }: PurchaseItemSectionProps) {
 					</div>
 				) : null}
 				<div className="flex min-w-0 flex-1 flex-col gap-1">
-					<h2 className="font-heading text-lg leading-snug font-semibold tracking-wide text-foreground">
+					<h2 className="font-heading text-lg leading-snug font-semibold tracking-wide text-heading">
 						{quote.title ?? "Study material"}
 					</h2>
 					<p className="text-body text-muted-foreground">

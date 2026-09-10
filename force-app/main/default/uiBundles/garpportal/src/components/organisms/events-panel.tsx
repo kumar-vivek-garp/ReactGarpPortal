@@ -102,7 +102,7 @@ function UpNextHero({ event }: { event: MemberEvent }) {
 					</Badge>
 				</div>
 
-				<h2 className="font-heading text-2xl leading-tight font-semibold tracking-wide text-foreground sm:text-3xl">
+				<h2 className="font-heading text-2xl leading-tight font-semibold tracking-wide text-heading sm:text-3xl">
 					{item.title}
 				</h2>
 
@@ -146,7 +146,7 @@ function UpNextHero({ event }: { event: MemberEvent }) {
 					<span className="text-sm font-extrabold tracking-[0.2em] text-primary uppercase">
 						{item.dateBadge.month}
 					</span>
-					<span className="font-heading text-6xl leading-none font-semibold text-foreground">
+					<span className="font-heading text-6xl leading-none font-semibold text-heading">
 						{item.dateBadge.day}
 					</span>
 					{weekday ? (
@@ -221,7 +221,7 @@ function EventsPanel({ type }: EventsPanelProps) {
 	return (
 		<div className={PAGE_SHELL}>
 			<header className={PAGE_STICKY_HEADER}>
-				<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+				<h1 className="font-heading text-3xl font-semibold tracking-wide text-heading">
 					My Events
 				</h1>
 				<p className="mt-1 text-sm text-muted-foreground">
@@ -252,7 +252,7 @@ function EventsPanel({ type }: EventsPanelProps) {
 				{!isError && rest.length > 0 ? (
 					<section className="space-y-5 pb-2">
 						<div className="flex flex-wrap items-center justify-between gap-3">
-							<h2 className="font-heading text-xl font-semibold tracking-wide text-foreground">
+							<h2 className="font-heading text-xl font-semibold tracking-wide text-heading">
 								{upNext ? "Also happening" : "Upcoming events"}
 							</h2>
 							{/* `value ?? ""` never reaches Radix — "all" is the bar-only

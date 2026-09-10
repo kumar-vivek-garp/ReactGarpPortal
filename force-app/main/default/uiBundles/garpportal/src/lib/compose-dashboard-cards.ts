@@ -11,7 +11,6 @@ import type { CpdView } from "@/api/cpd"
 import type { MemberEvent } from "@/api/events"
 import type { EnrolledProgram } from "@/api/programs"
 import {
-	adRegistrationHref,
 	DASHBOARD_AD_CARD,
 	DASHBOARD_COMPONENT,
 	DASHBOARD_DIRECTORY_CARD,
@@ -25,6 +24,7 @@ import {
 	dashboardCreditRows,
 } from "@/lib/cpd-presentation"
 import { stripProgramFormalName } from "@/lib/program-formal-name"
+import { programRegistrationPath } from "@/lib/program-card-links"
 
 /** TEMP — flip to true to preview every card regardless of mute / enroll. */
 export const FORCE_SHOW_ALL_DASHBOARD_CARDS = false
@@ -307,7 +307,12 @@ export function composeDashboardCards({
 				 */
 				const adType = ad?.adType?.trim()
 				if (!adType) return []
-				const href = adRegistrationHref(adType)
+				// The dashboard is member-only, so this goes straight to the in-app
+				// registration route (`Link`, no full page reload) rather than
+				// round-tripping through `/Login` — that path only exists for guest
+				// entry points and stranded an already-signed-in member back on
+				// `/dashboard` instead of the exam form.
+				const path = programRegistrationPath(adType)
 				const open = ad?.isRegistrationOpen === true
 				return {
 					...composedCard({
@@ -318,7 +323,7 @@ export function composeDashboardCards({
 						ctaLabel: DASHBOARD_AD_CARD.ctaLabel,
 						// Only offered while registration is actually open; the card
 						// still shows the window when it is not.
-						ctaUrl: open && href ? href : "",
+						ctaUrl: open && path ? path : "",
 						meta: {
 							examType: adType,
 							administrationName: ad?.adminName ?? undefined,
@@ -333,8 +338,7 @@ export function composeDashboardCards({
 							: `The next administration is ${ad.adminName}.`
 						: null,
 					ctaLabel: open ? DASHBOARD_AD_CARD.ctaLabel : null,
-					ctaUrl: open && href ? href : null,
-					ctaIsExternal: true,
+					ctaUrl: open && path ? path : null,
 				}
 			}
 

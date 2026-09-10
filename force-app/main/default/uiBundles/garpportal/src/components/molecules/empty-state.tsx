@@ -55,7 +55,7 @@ function EmptyState({
 			)}
 		>
 			<Icon className={cn("size-10", TONES[tone])} aria-hidden />
-			<p className="mt-4 font-heading text-lg font-semibold tracking-wide text-foreground">
+			<p className="mt-4 font-heading text-lg font-semibold tracking-wide text-heading">
 				{title}
 			</p>
 			{message ? (

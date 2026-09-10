@@ -15,6 +15,7 @@ import {
 	visibleExamParts,
 } from "@/lib/program-detail-presentation"
 import { resolvePortalAssetUrl } from "@/lib/resolve-portal-asset-url"
+import { registrationChromeForSlug } from "@/lib/registration-chrome"
 import { cn } from "@/lib/utils"
 import { PAGE_SHELL, PAGE_STICKY_SUBHEADER } from "@/components/molecules/page-shell"
 
@@ -31,16 +32,32 @@ function logoForDetail(detail: ProgramDetail): string | undefined {
 	)
 }
 
-function DetailBody({ detail }: { detail: ProgramDetail }) {
+function DetailBody({
+	detail,
+	programType,
+}: {
+	detail: ProgramDetail
+	programType: string
+}) {
 	const presentation = buildProgramDetailPresentation(detail)
 	const logoUrl = logoForDetail(detail)
+	/*
+	 * Same record the registration bar reads, so a programme looks the same from
+	 * its detail page through to its form. Undefined for a programme with no
+	 * designed chrome, which keeps the neutral tile.
+	 */
+	const chrome = registrationChromeForSlug(programType)?.chrome
 	// Stale passes, ERP's Part I and a one-part programme's Part II are all
 	// decided in one place, so the hero and the cards cannot disagree.
 	const parts = visibleExamParts(detail)
 
 	return (
 		<div className="space-y-6 pb-2">
-			<ProgramDetailHero presentation={presentation} logoUrl={logoUrl} />
+			<ProgramDetailHero
+				presentation={presentation}
+				logoUrl={logoUrl}
+				chrome={chrome}
+			/>
 
 			{/* Mobile: urgent deadlines / notifications right after next step */}
 			<div className="app:hidden">
@@ -125,7 +142,7 @@ function ProgramDetailPanelView({ programType }: ProgramDetailPanelProps) {
 				) : null}
 
 				{!isLoading && !isError && detail ? (
-					<DetailBody detail={detail} />
+					<DetailBody detail={detail} programType={programType} />
 				) : null}
 			</div>
 		</animated.div>

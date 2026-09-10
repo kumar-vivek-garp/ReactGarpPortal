@@ -64,7 +64,7 @@ function BenefitRow({ benefit, priority = false, className }: BenefitRowProps) {
 					</div>
 				) : null}
 
-				<h3 className="font-heading text-base leading-snug tracking-wide text-foreground">
+				<h3 className="font-heading text-base leading-snug tracking-wide text-heading">
 					{item.title}
 				</h3>
 

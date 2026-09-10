@@ -225,8 +225,14 @@ function ProgramsSubpageHeader({
 					</SpringNudge>
 				</Link>
 			)}
+			{/*
+			 * `font-sans` ExtraBold, matching the registration and exam-setup bars
+			 * and the detail hero: one programme should not be named in two
+			 * typefaces depending on which of its subpages you are on. `base.css`
+			 * gives every h1 Klinic Slab, so the family has to be stated here.
+			 */}
 			{title ? (
-				<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+				<h1 className="font-sans text-3xl font-extrabold text-foreground">
 					{title}
 				</h1>
 			) : null}

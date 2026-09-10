@@ -94,7 +94,7 @@ function AddressBlock({
 }) {
 	return (
 		<div className="min-w-0 flex-1">
-			<p className="font-heading text-sm font-semibold text-foreground">
+			<p className="font-heading text-sm font-semibold text-heading">
 				{title}
 			</p>
 			{lines.length > 0 ? (
@@ -259,7 +259,7 @@ function AccountInformationPanel({
 					</AccountEditDialog>
 				}
 			>
-				<p className="font-heading text-sm font-semibold text-foreground">
+				<p className="font-heading text-sm font-semibold text-heading">
 					Employment Information
 				</p>
 				<AccountFieldList
@@ -308,7 +308,7 @@ function AccountInformationPanel({
 					emptyMessage="Add your employment details so we can tailor recommendations."
 				/>
 
-				<p className="pt-2 font-heading text-sm font-semibold text-foreground">
+				<p className="pt-2 font-heading text-sm font-semibold text-heading">
 					Academic Information
 				</p>
 				<AccountFieldList

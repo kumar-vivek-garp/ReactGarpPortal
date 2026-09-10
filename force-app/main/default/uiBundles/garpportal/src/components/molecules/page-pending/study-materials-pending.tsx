@@ -110,7 +110,7 @@ function StudyMaterialsPendingShell({ view }: { view?: ListView }) {
 		<div className={PAGE_SHELL}>
 			<header className={cn(PAGE_STICKY_HEADER, "space-y-4")}>
 				<div className="flex flex-wrap items-center justify-between gap-3">
-					<h1 className="font-heading text-3xl font-semibold tracking-wide text-foreground">
+					<h1 className="font-heading text-3xl font-semibold tracking-wide text-heading">
 						Study Materials for Risk Professionals
 					</h1>
 					<Skeleton className="h-9 w-20 rounded-xl" />

@@ -12,6 +12,7 @@ import {
 } from "@/components/molecules/account-section-card"
 import { DisableAutoRenewDialog } from "@/components/molecules/disable-auto-renew-dialog"
 import { StatusBadge } from "@/components/molecules/status-badge"
+import { ValueChip } from "@/components/molecules/value-chip"
 import {
 	buildAutoRenewReturnUrl,
 	MEMBERSHIP_REGISTRATION_LINK,
@@ -112,7 +113,7 @@ function MembershipAccountCard({
 						{membership.expiryLabel ? (
 							<>
 								{" "}
-								on <strong>{membership.expiryLabel}</strong>
+								on <ValueChip>{membership.expiryLabel}</ValueChip>
 							</>
 						) : null}
 						.
@@ -137,7 +138,7 @@ function MembershipAccountCard({
 						{membership.expiryLabel ? (
 							<>
 								{" "}
-								on <strong>{membership.expiryLabel}</strong>
+								on <ValueChip>{membership.expiryLabel}</ValueChip>
 							</>
 						) : null}{" "}
 						using the same credit card you used previously.

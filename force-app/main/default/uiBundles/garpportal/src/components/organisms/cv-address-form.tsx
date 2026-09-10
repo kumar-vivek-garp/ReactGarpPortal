@@ -117,7 +117,7 @@ function OstaAddressFields({
 			<div>
 				<h3
 					id={`${formId}-osta-heading`}
-					className="font-heading text-sm font-semibold tracking-wide text-foreground"
+					className="font-heading text-sm font-semibold tracking-wide text-heading"
 				>
 					Chinese delivery address
 				</h3>
